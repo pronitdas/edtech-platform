@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Drag and Drop File Upload</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+    <script type="module">
+        import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js"
+        Chatbot.init({
+            chatflowid: "1bd493c5-2cf6-49c7-8d2b-d1faabe7344e",
+            apiHost: "http://localhost:3000",
+            theme: {
+                button: {
+                    backgroundColor: "#DBA979",
+                },
+                chatWindow: {
+                    userMessage: {
+                        backgroundColor: "#DBA979",
+                    },
+                    textInput: {
+                        sendButtonColor: "#DBA979",
+                    },
+                    poweredByTextColor: "rgba(255,255,255,0)",
+                }
+            }
+        })
+    </script>
+    <div class="upload-container" id="uploadContainer">
+        <div class="upload-area" id="uploadArea">
+            <h2>Drag & Drop Files Here</h2>
+            <p>or</p>
+            <button id="browseButton">Browse Files</button>
+            <input type="file" id="fileInput" multiple hidden />
+        </div>
+    </div>
+    <div id="fileOptions" class="file-options hidden">
+        <button id="embedButton">Embed Upload</button>
+        <button id="extractTextButton">Extract Text</button>
+        <button id="gamesButton">Games</button>
+        <button id="backButtonFileOptions">Back</button>
+        <div id="imageOptions" class="hidden">
+            <button id="describeImageButton">Describe the Image</button>
+            <button id="labelImageButton">Label the Image</button>
+            <button id="animateImageButton">Animate the Image</button>
+            <button id="convertTo3DButton">Convert from 2D to 3D</button>
+        </div>
+    </div>
+    <div id="extractTextOptions" class="extract-text-options hidden">
+        <button id="blackBoardButton">Black Board</button>
+        <button id="createAvatarButton">Create Avatar</button>
+        <button id="exerciseButton">Exercise</button>
+        <button id="notesButton">Notes</button>
+        <button id="summaryButton">Summary</button>
+        <button id="backButtonExtractText">Back</button>
+    </div>
+    <div id="gamesOptions" class="extract-text-options hidden">
+        <button id="rolePlayButton">Role Play</button>
+        <button id="boardGameButton">Board Game</button>
+        <button id="immersiveGameButton">Immersive Game</button>
+        <button id="gamesOptionBackButton">Back</button>
+    </div>
+    <div id="exerciseButtonOptionButtons" class="extract-text-options hidden">
+        <button id="exerciseButtonMCQ">MCQ questions</button>
+        <button id="exerciseButtonMCQOptions">MCQ questions with images for options</button>
+        <button id="exerciseButtonDiscriptive">Descriptive questions</button>
+        <button id="exerciseOptionBackButton">Back</button>
+    </div>
+    <div id="blackBoard" class="hidden">
+        <div class="black-board-button-container">
+            <div id="extract-text-buttons" class="hidden">
+                <img id="fastfwdImage" src="fastfwd.png" alt="Next line">
+                <button id="nextButton">Next line</button>
+                <img id="rewindImage" src="rewind.png" alt="Previous line">
+                <button id="prevButton">Previous line</button>
+                <img id="textspeechImage" src="textspeech.png" alt="Read text">
+                <button id="readAloud">Read Text</button>
+                <img id="pauseImage" src="hand.png" alt="Pause">
+                <button id="readAloudPause">Pause</button>
+                <img id="continueImage" src="continue.png" alt="Resume">
+                <button id="readAloudResume">Resume</button>
+            </div>
+            <div id="video-control" class="hidden">
+                <button id="videoPlayPause">Play/Pause video</button>
+                <button id="videoFastForward">Fast Forward</button>
+                <button id="videoRewind">Rewind</button>
+            </div>
+        </div>
+        <div id="blackBoard" class="blackboard output-area">
+            <img src="Blackboard.jpeg" alt="Blackboard" class="blackboard-image" />
+            <div class="text-container" id="blackBoard-data"></div>
+            <button id="backButtonFromblackboard">Back</button>
+        </div>
+    </div>
+
+    <div id="exerciseBoard" class="exerciseBoard hidden">
+        <button id="backButtonFromexerciseBoard">Back</button>
+        <div id="exerciseBoardOutputPanal" class="exerciseBoardOutputPanal"></div>
+        <div id="qna-container" class="qna-container"></div>
+        <div id="qna-results" class="qna-container"></div>
+    </div>
+    <div id="blackScreen" class="black-screen hidden"></div>
+    <div id="loader" class="loader-wrapper hidden">
+        <div class="loader"></div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3/dist/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js"></script>
+    <script src="api.js"></script>
+    <script src="uploadFileScript.js"></script>
+    <script src="decision.js"></script>
+    <script src="backboard.js"></script>
+    <script src="embededContent.js"></script>
+    <script src="globalVariables.js"></script>
+    <script>
+        // Games Button Event Listener
+        const gamesButton = document.getElementById("gamesButton");
+        const gamesOptions = document.getElementById("gamesOptions");
+        const boardGameButton = document.getElementById("boardGameButton");
+        const rolePlayButton = document.getElementById("rolePlayButton");
+        const immersiveGameButton = document.getElementById("immersiveGameButton");
+        const gamesOptionBackButton = document.getElementById("gamesOptionBackButton");
+        const describeImageButton = document.getElementById("describeImageButton");
+        const labelImageButton = document.getElementById("labelImageButton");
+        const animateImageButton = document.getElementById("animateImageButton");
+        const convertTo3DButton = document.getElementById("convertTo3DButton");
+        const imageOptions = document.getElementById("imageOptions");
+        const fileInput = document.getElementById("fileInput");
+        const blackboardImage = document.getElementById("blackboardImage");
+        const blackBoard = document.getElementById("blackBoard");
+
+        document.getElementById("notesButton").addEventListener("click", async () => {
+            await fetchNotesOrSummary("notes");
+        });
+
+        document.getElementById("summaryButton").addEventListener("click", async () => {
+            await fetchNotesOrSummary("summary");
+        });
+
+        async function fetchNotesOrSummary(type) {
+            const apiEndpoint = "https://api.openai.com/v1/chat/completions";
+            const apiKey = "sk-your-api-keysk-proj-9dz5e1pt0qH2NLBuGQq4zGdLw0vRaHCiAr1jCInyvuImK8KWFGlF1Qif4x4zZId-AHjK6K9HK4T3BlbkFJX9QNST2OSvsUYLtxmpRJN2_CAOh5nqj1FM4zwcJEFZhLlqxCkxt2HS2dWx0Kf8Y10nEFGHTeAA"; // Replace with your OpenAI API key
+            const uploadedText = await getUploadedText(); // Extracted text from the uploaded file
+
+            const content = type === "notes" ? "Create detailed notes for this text." : "Create a summary for this text.";
+
+            try {
+                const response = await fetch(apiEndpoint, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-4",
+                        messages: [
+                            { role: "system", content: "You are a helpful assistant." },
+                            { role: "user", content: `${content}\n\n${uploadedText}` }
+                        ]
+                    })
+                });
+                const data = await response.json();
+                const resultText = data.choices[0]?.message?.content || "No response received.";
+
+                document.getElementById("blackBoard-data").innerText = resultText;
+                document.getElementById("blackBoard").classList.remove("hidden");
+            } catch (error) {
+                console.error(`Error fetching ${type}:`, error);
+                alert(`Failed to fetch ${type}. Please try again.`);
+            }
+        }
+
+        async function getUploadedText() {
+            // Implement text extraction from the uploaded file here.
+            // This can involve reading the file input and parsing its contents.
+            // Placeholder return value:
+            return "Sample uploaded text. Replace this with the actual extracted text.";
+        }
+
+        gamesButton.addEventListener("click", () => {
+            fileOptions.classList.add("hidden");
+            gamesOptions.classList.remove("hidden");
+        });
+
+        gamesOptionBackButton.addEventListener("click", () => {
+            gamesOptions.classList.add("hidden");
+            fileOptions.classList.remove("hidden");
+        });
+
+        boardGameButton.addEventListener("click", () => {
+            // Navigate to the Snake and Ladder Game
+            window.location.href = "snakeNladder8.html";
+        });
+
+        immersiveGameButton.addEventListener("click", () => {
+            // Navigate to the Underwater Game
+            window.location.href = "underwater3.html";
+        });
+
+        rolePlayButton.addEventListener("click", () => {
+            // Navigate to the Role Play Game
+            window.location.href = "Role_play10.html";
+        });
+
+        // Handle Image Upload
+        fileInput.addEventListener("change", (event) => {
+            const files = event.target.files;
+            if (files && files.length > 0) {
+                const file = files[0];
+                const validImageTypes = ["image/png", "image/jpeg", "image/tiff", "image/svg+xml", "image/bmp"];
+                if (validImageTypes.includes(file.type)) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        blackboardImage.src = e.target.result;
+                        blackboardImage.classList.remove("hidden");
+                        blackBoard.classList.remove("hidden");
+                        imageOptions.classList.remove("hidden");
+                        fileOptions.classList.add("hidden");
+                        // Hide all other buttons
+                        document.querySelectorAll(".file-options button:not(#describeImageButton, #labelImageButton, #convertTo3DButton, #backButtonFileOptions)")
+                            .forEach(button => button.classList.add("hidden"));
+                    };
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        );
+
+        describeImageButton.addEventListener("click", async () => {
+            const response = await fetch("https://api.openai.com/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer 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`,
+                },
+                body: JSON.stringify({
+                    model: "gpt-4",
+                    messages: [
+                        { role: "system", content: "You are a helpful assistant." },
+                        { role: "user", content: "Describe this image." }
+                    ]
+                })
+            });
+            const data = await response.json();
+            const description = data.choices[0]?.message?.content || "No description available.";
+            document.getElementById("blackBoard-data").innerText = description;
+        });
+
+        // Label the Image
+        labelImageButton.addEventListener("click", () => {
+            window.location.href = "Image_2_Label_3.html";
+        });
+
+        // Convert to 3D
+        convertTo3DButton.addEventListener("click", async () => {
+            try {
+                const response = await fetch("https://api.meshy.ai/v1/image-to-3d", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": "Bearer msy_bLaiasJDBPUCqAzdxPR7SpP0RFrm2GoRqg0h",
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ image: blackboardImage.src })
+                });
+                const data = await response.json();
+                const { modelUrl } = data;
+
+                // Create container for 3D rendering
+                const renderContainer = document.getElementById("blackBoard-data");
+                renderContainer.innerHTML = `<div id="threeContainer" style="width: 100%; height: 500px;"></div>`;
+
+                // Load and render the GLTF model using three.js
+                const script = document.createElement("script");
+                script.src = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js";
+                document.head.appendChild(script);
+
+                script.onload = () => {
+                    const container = document.getElementById("threeContainer");
+                    const scene = new THREE.Scene();
+                    const camera = new THREE.PerspectiveCamera(75, container.offsetWidth / container.offsetHeight, 0.1, 1000);
+                    const renderer = new THREE.WebGLRenderer();
+                    renderer.setSize(container.offsetWidth, container.offsetHeight);
+                    container.appendChild(renderer.domElement);
+
+                    const light = new THREE.DirectionalLight(0xffffff, 1);
+                    light.position.set(10, 10, 10).normalize();
+                    scene.add(light);
+
+                    const loader = new THREE.GLTFLoader();
+                    loader.load(modelUrl, (gltf) => {
+                        scene.add(gltf.scene);
+                        camera.position.z = 5;
+
+                        const animate = function () {
+                            requestAnimationFrame(animate);
+                            gltf.scene.rotation.y += 0.01;
+                            renderer.render(scene, camera);
+                        };
+                        animate();
+                    });
+                };
+            } catch (error) {
+                console.error("Error converting to 3D:", error);
+                alert("Failed to convert image to 3D model.");
+            }
+        });
+    </script>
+</body>
+
+</html>

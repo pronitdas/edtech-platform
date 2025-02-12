@@ -1,0 +1,6 @@
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name TEXT,
+    embedding VECTOR(1536)
+);

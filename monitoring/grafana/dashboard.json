@@ -1,0 +1,18 @@
+{
+    "dashboard": {
+      "id": null,
+      "title": "Edtech Platform Monitoring",
+      "panels": [
+        {
+          "type": "graph",
+          "title": "API Response Time",
+          "targets": [
+            {
+              "expr": "http_request_duration_seconds",
+              "format": "time_series"
+            }
+          ]
+        }
+      ]
+    }
+  }

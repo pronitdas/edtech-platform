@@ -1,0 +1,101 @@
+id,created_at,chapter,topic,subtopic,seeded
+3,2024-11-15 00:05:04.842434+00,Chapter 4,Geography,World War II,false
+4,2024-11-15 00:05:04.842434+00,Chapter 18,Mathematics,Newton's Laws,false
+5,2024-11-15 00:05:04.842434+00,Chapter 15,History,Trigonometry,false
+6,2024-11-15 00:05:04.842434+00,Chapter 8,Computer Science,Photosynthesis,false
+7,2024-11-15 00:05:04.842434+00,Chapter 5,Mathematics,Periodic Table,false
+8,2024-11-15 00:05:04.842434+00,Chapter 1,Biology,Periodic Table,false
+9,2024-11-15 00:05:04.842434+00,Chapter 6,Physics,Algebra,false
+10,2024-11-15 00:05:04.842434+00,Chapter 2,Chemistry,Photosynthesis,false
+11,2024-11-15 00:05:04.842434+00,Chapter 11,Geography,World War II,false
+12,2024-11-15 00:05:04.842434+00,Chapter 11,Geography,Climate Change,false
+13,2024-11-15 00:05:04.842434+00,Chapter 17,Computer Science,Newton's Laws,false
+14,2024-11-15 00:05:04.842434+00,Chapter 5,Biology,Photosynthesis,false
+15,2024-11-15 00:05:04.842434+00,Chapter 1,Computer Science,Algebra,false
+16,2024-11-15 00:05:04.842434+00,Chapter 3,Biology,World War II,false
+17,2024-11-15 00:05:04.842434+00,Chapter 14,English,World War II,false
+18,2024-11-15 00:05:04.842434+00,Chapter 16,English,Photosynthesis,false
+19,2024-11-15 00:05:04.842434+00,Chapter 14,Physics,World War II,false
+20,2024-11-15 00:05:04.842434+00,Chapter 4,Biology,World War II,false
+21,2024-11-15 00:05:04.842434+00,Chapter 17,Mathematics,Periodic Table,false
+22,2024-11-15 00:05:04.842434+00,Chapter 20,Computer Science,Periodic Table,false
+23,2024-11-15 00:05:04.842434+00,Chapter 9,Mathematics,Climate Change,false
+24,2024-11-15 00:05:04.842434+00,Chapter 3,Physics,Algebra,false
+25,2024-11-15 00:05:04.842434+00,Chapter 3,Mathematics,World War II,false
+26,2024-11-15 00:05:04.842434+00,Chapter 3,Computer Science,Periodic Table,false
+27,2024-11-15 00:05:04.842434+00,Chapter 6,Chemistry,Supply and Demand,false
+28,2024-11-15 00:05:04.842434+00,Chapter 8,Science,Photosynthesis,false
+29,2024-11-15 00:05:04.842434+00,Chapter 15,Geography,Photosynthesis,false
+30,2024-11-15 00:05:04.842434+00,Chapter 9,Physics,Trigonometry,false
+31,2024-11-15 00:05:04.842434+00,Chapter 5,Chemistry,World War II,false
+32,2024-11-15 00:05:04.842434+00,Chapter 8,Economics,Algebra,false
+33,2024-11-15 00:05:04.842434+00,Chapter 9,English,Photosynthesis,false
+34,2024-11-15 00:05:04.842434+00,Chapter 10,History,Algebra,false
+35,2024-11-15 00:05:04.842434+00,Chapter 4,Geography,Climate Change,false
+36,2024-11-15 00:05:04.842434+00,Chapter 3,English,Climate Change,false
+37,2024-11-15 00:05:04.842434+00,Chapter 14,Geography,Photosynthesis,false
+38,2024-11-15 00:05:04.842434+00,Chapter 1,Chemistry,Photosynthesis,false
+39,2024-11-15 00:05:04.842434+00,Chapter 4,Geography,Algebra,false
+40,2024-11-15 00:05:04.842434+00,Chapter 3,Science,Python Programming,false
+41,2024-11-15 00:05:04.842434+00,Chapter 5,Mathematics,Python Programming,false
+42,2024-11-15 00:05:04.842434+00,Chapter 2,Science,World War II,false
+43,2024-11-15 00:05:04.842434+00,Chapter 5,Mathematics,Newton's Laws,false
+44,2024-11-15 00:05:04.842434+00,Chapter 15,Geography,Evolution,false
+45,2024-11-15 00:05:04.842434+00,Chapter 19,Computer Science,World War II,false
+46,2024-11-15 00:05:04.842434+00,Chapter 16,Science,Climate Change,false
+47,2024-11-15 00:05:04.842434+00,Chapter 6,English,Algebra,false
+48,2024-11-15 00:05:04.842434+00,Chapter 4,Science,Photosynthesis,false
+49,2024-11-15 00:05:04.842434+00,Chapter 13,Economics,Periodic Table,false
+50,2024-11-15 00:05:04.842434+00,Chapter 4,Computer Science,Periodic Table,false
+51,2024-11-15 00:05:04.842434+00,Chapter 10,English,Algebra,false
+52,2024-11-15 00:05:04.842434+00,Chapter 7,Biology,Climate Change,false
+53,2024-11-15 00:05:04.842434+00,Chapter 1,Economics,Algebra,false
+54,2024-11-15 00:05:04.842434+00,Chapter 10,Geography,Supply and Demand,false
+55,2024-11-15 00:05:04.842434+00,Chapter 13,Chemistry,Photosynthesis,false
+56,2024-11-15 00:05:04.842434+00,Chapter 9,Computer Science,Supply and Demand,false
+57,2024-11-15 00:05:04.842434+00,Chapter 9,Computer Science,Periodic Table,false
+58,2024-11-15 00:05:04.842434+00,Chapter 6,Economics,Supply and Demand,false
+59,2024-11-15 00:05:04.842434+00,Chapter 6,English,Python Programming,false
+60,2024-11-15 00:05:04.842434+00,Chapter 16,English,Photosynthesis,false
+61,2024-11-15 00:05:04.842434+00,Chapter 6,Biology,Newton's Laws,false
+62,2024-11-15 00:05:04.842434+00,Chapter 19,Chemistry,Periodic Table,false
+63,2024-11-15 00:05:04.842434+00,Chapter 17,Chemistry,World War II,false
+64,2024-11-15 00:05:04.842434+00,Chapter 9,Chemistry,Trigonometry,false
+65,2024-11-15 00:05:04.842434+00,Chapter 16,Biology,Evolution,false
+66,2024-11-15 00:05:04.842434+00,Chapter 4,Science,Climate Change,false
+67,2024-11-15 00:05:04.842434+00,Chapter 9,Chemistry,Evolution,false
+68,2024-11-15 00:05:04.842434+00,Chapter 12,English,Evolution,false
+69,2024-11-15 00:05:04.842434+00,Chapter 17,Science,Trigonometry,false
+70,2024-11-15 00:05:04.842434+00,Chapter 16,Physics,Photosynthesis,false
+71,2024-11-15 00:05:04.842434+00,Chapter 8,Computer Science,World War II,false
+72,2024-11-15 00:05:04.842434+00,Chapter 2,Computer Science,Periodic Table,false
+73,2024-11-15 00:05:04.842434+00,Chapter 20,History,Photosynthesis,false
+74,2024-11-15 00:05:04.842434+00,Chapter 13,Physics,Photosynthesis,false
+75,2024-11-15 00:05:04.842434+00,Chapter 11,Computer Science,World War II,false
+76,2024-11-15 00:05:04.842434+00,Chapter 8,Geography,Algebra,false
+77,2024-11-15 00:05:04.842434+00,Chapter 14,Mathematics,Newton's Laws,false
+78,2024-11-15 00:05:04.842434+00,Chapter 11,Computer Science,Periodic Table,false
+79,2024-11-15 00:05:04.842434+00,Chapter 5,Geography,Periodic Table,false
+80,2024-11-15 00:05:04.842434+00,Chapter 2,Science,Newton's Laws,false
+81,2024-11-15 00:05:04.842434+00,Chapter 19,Biology,Periodic Table,false
+82,2024-11-15 00:05:04.842434+00,Chapter 7,Science,Trigonometry,false
+83,2024-11-15 00:05:04.842434+00,Chapter 5,English,Python Programming,false
+84,2024-11-15 00:05:04.842434+00,Chapter 3,Mathematics,Supply and Demand,false
+85,2024-11-15 00:05:04.842434+00,Chapter 8,Computer Science,Algebra,false
+86,2024-11-15 00:05:04.842434+00,Chapter 10,Physics,Trigonometry,false
+87,2024-11-15 00:05:04.842434+00,Chapter 5,Science,Supply and Demand,false
+88,2024-11-15 00:05:04.842434+00,Chapter 14,Biology,Python Programming,false
+89,2024-11-15 00:05:04.842434+00,Chapter 17,History,Supply and Demand,false
+90,2024-11-15 00:05:04.842434+00,Chapter 5,Science,Algebra,false
+91,2024-11-15 00:05:04.842434+00,Chapter 14,Geography,World War II,false
+92,2024-11-15 00:05:04.842434+00,Chapter 1,Geography,Periodic Table,false
+93,2024-11-15 00:05:04.842434+00,Chapter 12,English,Evolution,false
+94,2024-11-15 00:05:04.842434+00,Chapter 14,Geography,Climate Change,false
+95,2024-11-15 00:05:04.842434+00,Chapter 5,Mathematics,World War II,false
+96,2024-11-15 00:05:04.842434+00,Chapter 14,Geography,Python Programming,false
+97,2024-11-15 00:05:04.842434+00,Chapter 19,Biology,Periodic Table,false
+98,2024-11-15 00:05:04.842434+00,Chapter 9,Economics,Supply and Demand,false
+99,2024-11-15 00:05:04.842434+00,Chapter 8,Science,Python Programming,false
+100,2024-11-15 00:05:04.842434+00,Chapter 5,Computer Science,Climate Change,false
+101,2024-11-15 00:05:04.842434+00,Chapter 1,Geography,Python Programming,false
+102,2024-11-15 00:05:04.842434+00,Chapter 16,Chemistry,Algebra,false
