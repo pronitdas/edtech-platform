@@ -10,6 +10,10 @@ const supabaseUrl = 'https://onyibiwnfwxatadlkygz.supabase.co';
 const supabaseKey =
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ueWliaXduZnd4YXRhZGxreWd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE4NTA5NzIsImV4cCI6MjA0NzQyNjk3Mn0.fSowEy_-abbGvLM0_A17SiORxgWqAc1G4mV1w7v3d28';
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+/**
+ * Walks through the textbook object to generate an array of objects for DB storage.
+ */
 const walkTextbook = (textbook, knowledgeId) => {
     const result = [];
     let idCounter = 1;
@@ -19,8 +23,7 @@ const walkTextbook = (textbook, knowledgeId) => {
         subtopic.chapters.forEach((chapter, chapterIndex) => {
             result.push({
                 id: idCounter++,
-                topic: textbook.topic, // Top-level topic0
-                 
+                topic: textbook.topic, // Top-level topic
                 subtopic: `${subtopic.title} ${subtopicIndex + 1}`, // Subtopic title with index
                 chaptertitle: chapter.title, // Chapter title
                 chapter: chapter.content, // Chapter content
@@ -30,14 +33,17 @@ const walkTextbook = (textbook, knowledgeId) => {
             });
         });
     });
-
     return result;
 };
+
+/**
+ * Analyzes a Markdown string and returns a structured textbook object and detected heading patterns.
+ */
 const analyzeMarkdown = (mdContent, knowledgeId, knowledgeName) => {
     const lines = mdContent.split('\n');
     const headingRegex = /^(#{1,6})\s+(.*)/; // Matches headings (#, ##, etc.)
     const patterns = {};
-    
+
     const textbook = {
         topic: knowledgeName, // Default topic
         knowledge_id: knowledgeId,
@@ -65,7 +71,6 @@ const analyzeMarkdown = (mdContent, knowledgeId, knowledgeName) => {
                 finalizeChapter(subtopic, currentChapter, endLine);
                 currentChapter = null;
             }
-
             const leftoverContent = lines.slice(subtopic.startLine, endLine).join('\n').trim();
             if (leftoverContent) {
                 subtopic.chapters.push({
@@ -73,7 +78,6 @@ const analyzeMarkdown = (mdContent, knowledgeId, knowledgeName) => {
                     content: leftoverContent,
                 });
             }
-
             if (subtopic.chapters.length > 0) {
                 textbook.subtopics.push({ ...subtopic });
             }
@@ -84,19 +88,15 @@ const analyzeMarkdown = (mdContent, knowledgeId, knowledgeName) => {
     lines.forEach((line, index) => {
         const headingMatch = line.match(headingRegex);
         const lineNumber = index + 1;
-
         if (headingMatch) {
             const [_, hashes, title] = headingMatch;
             const level = hashes.length;
-
             // Update patterns for frequent word detection
             const firstWord = title.split(' ')[0];
             patterns[firstWord] = (patterns[firstWord] || 0) + 1;
-
             if (level === 1 || level === 2) {
                 // Finalize the current subtopic
                 finalizeSubtopic(currentSubtopic, lineNumber - 1);
-
                 // Start a new subtopic
                 currentSubtopic = {
                     title: title.trim(),
@@ -106,7 +106,6 @@ const analyzeMarkdown = (mdContent, knowledgeId, knowledgeName) => {
             } else if (level === 3 && currentSubtopic) {
                 // Finalize the current chapter
                 finalizeChapter(currentSubtopic, currentChapter, lineNumber - 1);
-
                 // Start a new chapter
                 currentChapter = {
                     title: title.trim(),
@@ -117,67 +116,114 @@ const analyzeMarkdown = (mdContent, knowledgeId, knowledgeName) => {
         }
     });
     const frequentPatterns = Object.entries(patterns)
-    .filter(([_, count]) => count > 4)
-    .map(([pattern]) => new RegExp(`^${pattern}`, 'i'));
+        .filter(([_, count]) => count > 4)
+        .map(([pattern]) => new RegExp(`^${pattern}`, 'i'));
+
     // Finalize the last subtopic and chapter
     finalizeSubtopic(currentSubtopic, lines.length);
-
-    // Step 2: Detect Frequent Patterns (Occurrences > 4)
-   
-
     return { textbook, patterns: frequentPatterns };
 };
 
-// ---------------------- Fetch Data from Supabase ----------------------
-async function getEdtech() {
-    try {
-        const {data: s3Data, error} = await supabase.storage.from('media').list('/media/doc/',{
+/**
+ * Recursively lists files from the storage bucket.
+ * It starts at the given folder (default is the root) and, for each folder encountered (heuristically
+ * determined by the lack of a file extension), it lists one level deep.
+ */
+async function getFilesRecursively(folder = '', level = 2) {
+    const { data, error } = await supabase.storage
+        .from('media')
+        .list(folder, {
             limit: 100,
             offset: 0,
             sortBy: { column: 'name', order: 'asc' },
-          });
-        // const { data, error } = await supabase
-        //     .from('knowledge')
-        //     .select('docling_content, id, name')
-        //     .eq("id" , 39)
-        console.log(s3Data);
-          console.log(error)
-        const data = []
-        if (error) {
-            console.error('Error fetching data from Supabase:', error.message);
-            process.exit(1);
-        }
-
-        if (!data || data.length === 0) {
-            console.error('No data found for the given ID:');
-            
-            process.exit(1);
-        }
-        data.forEach(d => {
-            if (d.docling_content && d.docling_content.markdown) {
-                const content = d.docling_content.markdown;
-
-                // Write content to a Markdown file
-                const outputPath = `./new_content/${d.id || 'content'}.md`;
-                fs.writeFileSync(outputPath, JSON.stringify(content), 'utf8');
-                const { textbook, patterns } = analyzeMarkdown(content, d.id, d.name);
-
-                // Save the structured JSON to the specified output file
-                const outputPathDb = `./new_content/${d.id || 'content'}.analysis.json`;
-
-                const dbPath =  `./new_content/${d.id || 'content'}.db.json`;
-    
-                fs.writeFileSync(outputPathDb, JSON.stringify({ textbook, patterns }, null, 4), 'utf-8');
-                const supadb = walkTextbook(textbook, d.id)
-                fs.writeFileSync(dbPath, JSON.stringify(supadb, null, 4), 'utf-8');
-                console.log(`Analysis complete. Textbook saved to ${outputPathDb}`);
+        });
+    if (error) {
+        console.error(`Error listing files in folder "${folder}":`, error.message);
+        return [];
+    }
+    let files = [];
+    for (const item of data) {
+        const itemPath = folder ? `${folder}/${item.name}` : item.name;
+        // If the file name ends with .pdf, then treat it as a PDF file.
+        console.log(item);
+        if (item.name.toLowerCase().endsWith('.pdf')) {
+            files.push(itemPath);
+        } else {
+            // Otherwise, assume it could be a folder (using a simple heuristic) and, if allowed, list one level deeper.
+            if (level > 0 && !item.name.includes('.')) {
+                const subFiles = await getFilesRecursively(itemPath, level - 1);
+                files.push(...subFiles);
             }
+        }
+    }
+    return files;
+}
 
-        })
+/**
+ * Placeholder API for converting a PDF file to Markdown.
+ * In a real implementation, you might download the PDF and pass its contents to an OCR/pdf-to-md service.
+ */
+async function pdfToMarkdown(pdfPath) {
+    console.log(`Converting PDF "${pdfPath}" to Markdown (placeholder conversion) ...`);
+    // Simulate a delay and return some placeholder markdown content.
+    return `# Converted Markdown for ${pdfPath}
 
-        console.log(`Content successfully saved `);
+This is placeholder markdown content generated from the PDF file "${pdfPath}".
+
+- Item 1
+- Item 2
+
+## Chapter Example
+
+Content goes here.`;
+}
+
+// ---------------------- Fetch and Convert Data from Supabase Storage ----------------------
+async function getEdtech() {
+    try {
+        console.log("Fetching file list from Supabase storage recursively (up to 1 level)...");
+        // Get all PDF file paths (recursive up to one level)
+        const pdfFiles = await getFilesRecursively('media/doc', 1);
+        if (!pdfFiles.length) {
+            console.error("No PDF files found in storage.");
+            process.exit(1);
+        }
+        console.log(`Found ${pdfFiles.length} PDF file(s).`);
+
+        // Process each PDF file
+        for (let i = 0; i < pdfFiles.length; i++) {
+            const filePath = pdfFiles[i];
+            // Use the file name (without extension) as the display name
+            const fileName = path.basename(filePath, '.pdf');
+            console.log(`Processing file: ${filePath}`);
+
+            // Convert the PDF to Markdown using the placeholder API
+            const markdownContent = await pdfToMarkdown(filePath);
+
+            // Write the markdown content to a Markdown file
+            const outputMdPath = `./new_content/${fileName}.md`;
+            fs.writeFileSync(outputMdPath, markdownContent, 'utf8');
+
+            // Analyze the markdown content
+            const { textbook, patterns } = analyzeMarkdown(markdownContent, i + 1, fileName);
+
+            // Save the structured JSON analysis to a file
+            const analysisPath = `./new_content/${fileName}.analysis.json`;
+            fs.writeFileSync(analysisPath, JSON.stringify({ textbook, patterns }, null, 4), 'utf-8');
+
+            // Walk the textbook to create a DB-friendly file
+            const dbData = walkTextbook(textbook, i + 1);
+            const dbPath = `./new_content/${fileName}.db.json`;
+            fs.writeFileSync(dbPath, JSON.stringify(dbData, null, 4), 'utf-8');
+
+            console.log(`Analysis complete for "${fileName}". Files saved:
+    Markdown -> ${outputMdPath}
+    Analysis JSON -> ${analysisPath}
+    DB JSON -> ${dbPath}`);
+        }
+        console.log("Content successfully saved.");
     } catch (error) {
-        console.error('Error fetching data:', error.message);
+        console.error("Error fetching data:", error.message);
         process.exit(1);
     }
 }
@@ -185,10 +231,9 @@ async function getEdtech() {
 // ---------------------- CLI Configuration ----------------------
 program
     .name('EdTech CLI')
-    .description('Fetch edtech content from Supabase and save as Markdown file.')
+    .description('Fetch edtech content from Supabase storage, convert PDF to Markdown, and save analysis.')
     .version('1.0.0')
     .action(async () => {
-        
         await getEdtech();
     });
 
