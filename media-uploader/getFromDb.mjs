@@ -4,6 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import path from 'path';
 import { program } from 'commander';
+import fetch from 'node-fetch';
+import FormData from 'form-data';
 
 // ---------------------- Supabase Initialization ----------------------
 const supabaseUrl = 'https://onyibiwnfwxatadlkygz.supabase.co';
@@ -160,22 +162,54 @@ async function getFilesRecursively(folder = '', level = 2) {
 }
 
 /**
- * Placeholder API for converting a PDF file to Markdown.
- * In a real implementation, you might download the PDF and pass its contents to an OCR/pdf-to-md service.
+ * Instead of simulating a placeholder conversion, this function now retrieves the PDF file from Supabase storage
+ * and makes an HTTP POST request to the FastAPI /upload-pdf endpoint to have it converted into Markdown.
  */
 async function pdfToMarkdown(pdfPath) {
-    console.log(`Converting PDF "${pdfPath}" to Markdown (placeholder conversion) ...`);
-    // Simulate a delay and return some placeholder markdown content.
-    return `# Converted Markdown for ${pdfPath}
+    console.log(`Attempting to convert PDF "${pdfPath}" via API endpoint...`);
 
-This is placeholder markdown content generated from the PDF file "${pdfPath}".
+    // Download the PDF file from Supabase.
+    const { data: pdfData, error: downloadError } = await supabase.storage.from('media').download(pdfPath);
+    if (downloadError) {
+        console.error(`Error downloading PDF "${pdfPath}": ${downloadError.message}`);
+        throw downloadError;
+    }
 
-- Item 1
-- Item 2
+    // Convert pdfData (which is typically a Blob in browser environments or a stream/Buffer in Node) to a Buffer.
+    let buffer;
+    if (typeof pdfData.arrayBuffer === 'function') {
+        const arrayBuffer = await pdfData.arrayBuffer();
+        buffer = Buffer.from(arrayBuffer);
+    } else {
+        buffer = pdfData;
+    }
 
-## Chapter Example
+    // Set up FormData to mimic an upload via a form.
+    const formData = new FormData();
+    formData.append('file', buffer, {
+        filename: path.basename(pdfPath),
+        contentType: 'application/pdf',
+    });
 
-Content goes here.`;
+    const apiUrl = 'http://localhost:8000/upload-pdf';
+    console.log(`Uploading PDF "${pdfPath}" to API server at ${apiUrl}...`);
+
+    // Make the POST request to the FastAPI endpoint.
+    const response = await fetch(apiUrl, {
+        method: 'POST',
+        body: formData,
+        // Note: Do NOT manually set the Content-Type header when using FormData.
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to convert PDF. API responded with status ${response.status}: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    console.log(`Successfully converted PDF "${pdfPath}".`);
+
+    // Return the markdown text from the API response.
+    return result.markdown;
 }
 
 // ---------------------- Fetch and Convert Data from Supabase Storage ----------------------

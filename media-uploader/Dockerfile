@@ -16,6 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code.
 COPY . .
+RUN python -c 'from marker.models import load_all_models; load_all_models()'
 
 # Expose the port uvicorn will run on.
 EXPOSE 8000
