@@ -22,4 +22,4 @@ RUN python -c 'from marker.models import load_all_models; load_all_models()'
 EXPOSE 8000
 
 # Run the application using uvicorn.
-CMD ["uvicorn", "marker_api.api_server:app", "--host", "0.0.0.0", "--port", "8000"] 
+CMD ["uvicorn", "api_server:app", "--host", "0.0.0.0", "--port", "8000"] 
