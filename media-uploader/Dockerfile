@@ -1,25 +1,68 @@
-# Use an official Python runtime (3.11-slim) that meets our dependency constraints.
-FROM python:3.11-slim
+ARG CUDA_VERSION="12.6.3"
+ARG CUDNN_VERSION=""
+ARG UBUNTU_VERSION="22.04"
+ARG MAX_JOBS=4
 
-# Install system dependencies required for libGL.
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
+FROM nvidia/cuda:$CUDA_VERSION-cudnn$CUDNN_VERSION-devel-ubuntu$UBUNTU_VERSION
+
+# ARG PYTHON_VERSION="3.11"
+# ARG PYTORCH_VERSION="2.1.2"
+# ARG CUDA="118"
+# ARG TORCH_CUDA_ARCH_LIST="7.0 7.5 8.0 8.6 9.0+PTX"
+
+# ENV PYTHON_VERSION=$PYTHON_VERSION
+# ENV TORCH_CUDA_ARCH_LIST=$TORCH_CUDA_ARCH_LIST
+
+# RUN apt-get update \
+#     && apt-get install -y wget git build-essential ninja-build git-lfs libaio-dev && rm -rf /var/lib/apt/lists/* \
+#     && wget \
+#     https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+#     && mkdir /root/.conda \
+#     && bash Miniconda3-latest-Linux-x86_64.sh -b \
+#     && rm -f Miniconda3-latest-Linux-x86_64.sh \
+#     && conda create -n "py${PYTHON_VERSION}" python="${PYTHON_VERSION}"
+
+# ENV PATH="/root/miniconda3/envs/py${PYTHON_VERSION}/bin:${PATH}"
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    wget \
+    curl \
+    unzip \
+    git \
+    python3 \
+    python3-pip \
+    libgl1 \
     libglib2.0-0 \
+    curl \
+    gnupg2 \
+    ca-certificates \
+    apt-transport-https \
+    software-properties-common \
+    libreoffice \
+    ffmpeg \
+    git-lfs \
+    xvfb \
+    && ln -s /usr/bin/python3 /usr/bin/python \
+    && apt-get update \
+    && apt install python3-packaging \
     && rm -rf /var/lib/apt/lists/*
 
-# Set the working directory.
+RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
 WORKDIR /app
 
-# Copy the requirements file and install dependencies.
+# Copy the project files into the Docker image
+COPY ../ ./
+
+# Install Python dependencies
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application code.
-COPY . .
 RUN python -c 'from marker.models import load_all_models; load_all_models()'
 
-# Expose the port uvicorn will run on.
+# Expose the port for uvicorn.
 EXPOSE 8000
 
 # Run the application using uvicorn.
-CMD ["uvicorn", "api_server:app", "--host", "0.0.0.0", "--port", "8000"] 
+CMD ["uvicorn", "api_server:app", "--host", "0.0.0.0", "--port", "8000"]
