@@ -29,7 +29,7 @@ function Edtech() {
       reset();
     }
   };
-  
+
   // useEffect(() => {
   //   if (currentTopic?.topic && (!content || currentTopic.language !== language)) {
   //     getEdTechContentForChapter(currentTopic?.topic, language).then(() => {
@@ -78,10 +78,10 @@ function Edtech() {
         >
           {/* Top Controls */}
           {(courseView || uploadedFiles.length > 0) && (
-            <div className="flex justify-between items-center p-4">
+            <div className="flex justify-between items-center p-1 px-2">
               <button
                 onClick={handleBackButton}
-                className="px-2 py-1 text-lg font-semibold text-white bg-gradient-to-r from-blue-500 to-teal-500 rounded-lg shadow-md hover:from-purple-600 hover:via-pink-600 hover:to-red-600 focus:outline-none focus:ring-2 focus:ring-purple-300 focus:ring-offset-2 transform hover:scale-105 transition-transform duration-300"
+                className="px-4 py-1 text-lg font-semibold text-white bg-gradient-to-r from-blue-500 to-teal-500 rounded-lg shadow-md hover:from-purple-600 hover:via-pink-600 hover:to-red-600 focus:outline-none focus:ring-2 focus:ring-purple-300 focus:ring-offset-2 transform hover:scale-105 transition-transform duration-300"
               >
                 Back
               </button>
@@ -119,7 +119,7 @@ function Edtech() {
               <Knowledge dimensions={knowledge} onClick={handleKnowledgeClick} />
             )}
         </main>
-        <div className="absolute left-10 bottom-10 flex flex-row items-center">
+        <div className="absolute gap-4 px-8 bottom-10 flex flex-row items-center">
           <img style={{ height: "50px", width: "50px" }} className='' src="./trs.svg" alt="Description of the image" />
           <span className='text-white'> Made with love at TRS </span>
         </div>
