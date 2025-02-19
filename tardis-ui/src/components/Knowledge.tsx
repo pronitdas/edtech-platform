@@ -39,7 +39,7 @@ export default function Knowledge({ dimensions, onClick }) {
   };
 
   return (
-    <div className="min-h-screen scrollbar-thin overflow-y-scroll bg-gradient-to-br from-purple-100 to-indigo-200 p-4 flex flex-col">
+    <div className="min-h-screen scrollbar-thin bg-gradient-to-br from-purple-100 to-indigo-200 p-4 flex flex-col">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
         {paginatedItems.length > 0 &&
           paginatedItems.map((d) => {
@@ -54,7 +54,7 @@ export default function Knowledge({ dimensions, onClick }) {
             return (
               <motion.div
                 key={d.id}
-                className="bg-white rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105"
+                className="bg-white rounded-xl shadow-lg transform transition-all duration-300 hover:scale-105 cursor-pointer"
                 whileHover={{ y: -5 }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -66,7 +66,7 @@ export default function Knowledge({ dimensions, onClick }) {
                 </div>
                 <div
                   style={{ height: '150px' }}
-                  className="p-4 scrollbar-thin overflow-y-scroll rounded-b-xl"
+                  className="p-4 scrollbar-thin overflow-y-scroll overflow-x-hidden rounded-b-xl"
                 >
                   {Object.entries(subtopicMap).map(([subtopic, chapters]) => (
                     <div key={subtopic} className="mb-2">
