@@ -9,14 +9,13 @@ import UnderwaterAdventure from './Immersive';
 import SnakeAndLadderGame from './SnakesAndLadder';
 import YouTubePlaceholder from './Video';
 import Loader from './ui/Loader';
+import MindMap from './MindMap';
 
 // MainCourse Component
 const MainCourse = ({ content, language }) => {
     const { notes, latex_code, quiz = [], summary, og, video_url = "k85mRPqvMbE" } = content;
-    console.log(notes);
-    // State Management
-    const [activeTab, setActiveTab] = useState<string>("notes");
-
+    const [activeTab, setActiveTab] = useState("notes");
+    const [viewMode, setViewMode] = useState("default"); // Add view mode state
 
     const renderQuiz = useMemo(() =>
         quiz && quiz.length > 0 ? (
@@ -27,11 +26,9 @@ const MainCourse = ({ content, language }) => {
 
     const renderMarkdown = useCallback((activeTab) => {
         let mdContent = null;
-        console.log("render markdown called", activeTab)
         switch (activeTab) {
             case 'notes':
                 mdContent = latex_code || og;
-
                 break;
             case 'regenNotes':
                 mdContent = notes;
@@ -47,15 +44,21 @@ const MainCourse = ({ content, language }) => {
         } else {
             mdContent = [mdContent]
         }
-        return mdContent ? <MarkdownSlideshow
-            key={activeTab}
-            content={mdContent}
-            knowledge_id={content.knowledge_id}
-        /> : <Loader></Loader>;
-    }, [content.knowledge_id, latex_code, notes, og, summary]);
+
+        return mdContent ? (
+            viewMode === "mindmap" ? (
+                <MindMap markdown={Array.isArray(mdContent) ? mdContent.join('\n') : mdContent} />
+            ) : (
+                <MarkdownSlideshow
+                    key={activeTab}
+                    content={mdContent}
+                    knowledge_id={content.knowledge_id}
+                />
+            )
+        ) : <Loader />;
+    }, [content.knowledge_id, latex_code, notes, og, summary, viewMode]);
 
     const tabFactory = useCallback(({ latex_code, notes, og, summary, questions, video_url }) => {
-
         return [
             { label: "Notes", key: "notes", render: () => renderMarkdown(activeTab), condition: latex_code, },
             {
@@ -94,8 +97,8 @@ const MainCourse = ({ content, language }) => {
                 render: () => <YouTubePlaceholder videoId={video_url} />,
             },
         ];
-    }, [activeTab, quiz, renderMarkdown, renderQuiz])
-    // Render Tabs
+    }, [activeTab, quiz, renderMarkdown, renderQuiz]);
+
     const tabs = tabFactory({
         latex_code,
         og,
@@ -103,36 +106,51 @@ const MainCourse = ({ content, language }) => {
         summary,
         questions: quiz,
         video_url
-    })
-    const renderTabs = useMemo(() => {
+    });
 
-        return tabs
-            .filter((tab) => tab.condition === undefined || tab.condition)
-            .map((tab) => (
-                <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`py-2 px-4 rounded ${activeTab === tab.key ? "bg-blue-600" : "bg-gray-700 hover:bg-blue-500"
-                        }`}
-                >
-                    {tab.label}
-                </button>
-            ))
-    }, [activeTab,
-        tabs,
-    ]);
+    const renderTabs = useMemo(() => {
+        const filteredTabs = tabs.filter((tab) => tab.condition === undefined || tab.condition);
+
+        return (
+            <div className="flex items-center">
+                <div className="flex space-x-4">
+                    {filteredTabs.map((tab) => (
+                        <button
+                            key={tab.key}
+                            onClick={() => setActiveTab(tab.key)}
+                            className={`py-2 px-4 rounded ${
+                                activeTab === tab.key ? "bg-blue-600" : "bg-gray-700 hover:bg-blue-500"
+                            }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* View mode toggle for notes tabs */}
+                {['notes', 'regenNotes', 'regenSummary'].includes(activeTab) && (
+                    <div className="ml-6">
+                        <button
+                            onClick={() => setViewMode(prev => prev === "default" ? "mindmap" : "default")}
+                            className="py-2 px-4 rounded bg-gray-700 hover:bg-blue-500"
+                        >
+                            {viewMode === "default" ? "Show as Mind Map" : "Show as Text"}
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+    }, [activeTab, tabs]);
 
     return (
-        <div className="main-course bg-gray-900 h-full text-white  p-3">
+        <div className="main-course bg-gray-900 h-full text-white p-3">
             {/* Tab Navigation */}
-            <div className="flex space-x-4 mb-8">{renderTabs}</div>
+            <div className="mb-8">{renderTabs}</div>
 
             {/* Main Content Area */}
-            <div className="flex  h-3/4 justify-between">
-                <div className="flex pr-6 w-3/4 ">{tabs.find((tab) => tab.key === activeTab)?.render()}</div>
-
+            <div className="flex h-3/4 justify-between">
+                <div className="flex pr-6 w-3/4">{tabs.find((tab) => tab.key === activeTab)?.render()}</div>
                 <div className="flex pl-6 w-1/4">
-
                     <Chatbot language={language} topic={notes || latex_code} />
                 </div>
             </div>

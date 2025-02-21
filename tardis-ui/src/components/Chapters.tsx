@@ -26,6 +26,7 @@ const Chapters: React.FC<ChaptersProps> = ({ chapters, chaptersMeta, onLessonCli
   const [searchQuery, setSearchQuery] = useState('');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [subtopicSearchQuery, setSubtopicSearchQuery] = useState('');
+
   // Group chapters by subtopic
   const filteredChapters = chapters.filter((chapter) =>
     chapter.chaptertitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -45,6 +46,7 @@ const Chapters: React.FC<ChaptersProps> = ({ chapters, chaptersMeta, onLessonCli
   const filteredSubtopics = subtopics.filter((subtopic) =>
     subtopic.toLowerCase().includes(subtopicSearchQuery.toLowerCase())
   ).sort((b, a) => subtopicMap[a].length - subtopicMap[b].length);
+
   const chaptersInSubtopic = currentSubtopic
     ? subtopicMap[currentSubtopic]
     : filteredChapters;
@@ -57,20 +59,36 @@ const Chapters: React.FC<ChaptersProps> = ({ chapters, chaptersMeta, onLessonCli
     currentPage * chaptersPerPage
   );
 
-  const goToNextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  // Generate page numbers array
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    // Adjust start page if we're near the end
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+    return pageNumbers;
   };
 
-  const goToPreviousPage = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
   };
 
   return (
-    <div className="flex ">
+    <div className="flex">
       {/* Collapsible Sidebar */}
       <motion.aside
-        className={`flex-shrink-0 ${isSidebarCollapsed ? 'w-16 h-16' : 'w-1/4 '
-          } bg-gray-800 text-white p-4 transition-all duration-600`}
+        className={`flex-shrink-0 ${isSidebarCollapsed ? 'w-16 h-16' : 'w-1/4'}
+          bg-gray-800 text-white p-4 transition-all duration-600`}
       >
         {/* Collapse Button */}
         <div className="flex justify-between items-center mb-4">
@@ -85,8 +103,8 @@ const Chapters: React.FC<ChaptersProps> = ({ chapters, chaptersMeta, onLessonCli
         </div>
 
         {/* Subtopics List */}
-        {!isSidebarCollapsed &&
-          <div className="relative mb-">
+        {!isSidebarCollapsed && (
+          <div className="relative mb-4">
             <input
               type="text"
               value={subtopicSearchQuery}
@@ -104,11 +122,12 @@ const Chapters: React.FC<ChaptersProps> = ({ chapters, chaptersMeta, onLessonCli
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-        }
+        )}
         <ul className={`space-y-2 px-2 h-full ${isSidebarCollapsed ? 'hidden' : 'overflow-y-auto'}`}>
           <li
-            className={`cursor-pointer py-2rounded-lg hover:bg-gray-700 ${currentSubtopic === null ? "bg-gray-700" : ""
-              }`}
+            className={`cursor-pointer p-2 rounded-lg hover:bg-gray-700 ${
+              currentSubtopic === null ? "bg-gray-700" : ""
+            }`}
             onClick={() => {
               setCurrentSubtopic(null);
               setCurrentPage(1);
@@ -119,8 +138,9 @@ const Chapters: React.FC<ChaptersProps> = ({ chapters, chaptersMeta, onLessonCli
           {filteredSubtopics.map((subtopic) => (
             <li
               key={subtopic}
-              className={`cursor-pointer text-sm text-ellipsis py-2 px-2 rounded-lg hover:bg-gray-700 ${currentSubtopic === subtopic ? "bg-gray-700" : ""
-                }`}
+              className={`cursor-pointer text-sm text-ellipsis p-2 rounded-lg hover:bg-gray-700 ${
+                currentSubtopic === subtopic ? "bg-gray-700" : ""
+              }`}
               onClick={() => {
                 setCurrentSubtopic(subtopic);
                 setCurrentPage(1);
@@ -147,7 +167,7 @@ const Chapters: React.FC<ChaptersProps> = ({ chapters, chaptersMeta, onLessonCli
             className="w-full pt-2 pl-10 text-white rounded-lg shadow-md focus:ring-2 focus:ring-purple-500 focus:outline-none"
           />
           <svg
-            className="absolute left-0 top-0 h-6 w-6 text-gray-400 pointer-events-none"
+            className="absolute left-0 top-0 px-1 h-8 w-8 text-gray-400 pointer-events-none"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -179,28 +199,66 @@ const Chapters: React.FC<ChaptersProps> = ({ chapters, chaptersMeta, onLessonCli
           <div className="text-center text-gray-500">No chapters found.</div>
         )}
 
-        {/* Pagination */}
+        {/* Enhanced Pagination */}
         {totalPages > 1 && (
-          <div className="flex justify-between items-center mt-12">
-            <Button
-              onClick={goToPreviousPage}
-              disabled={currentPage === 1}
-              variant="outline"
-              className="flex items-center"
-            >
-              <ChevronLeft className="mr-2 h-4 w-4" /> Previous
-            </Button>
-            <span className="text-sm font-medium text-gray-600">
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              onClick={goToNextPage}
-              disabled={currentPage === totalPages}
-              variant="outline"
-              className="flex items-center"
-            >
-              Next <ChevronRight className="ml-2 h-4 w-4" />
-            </Button>
+          <div className="mt-3 flex flex-col items-center space-y-4">
+            <div className="flex items-center space-x-2">
+              <Button
+                onClick={() => handlePageChange(1)}
+                disabled={currentPage === 1}
+                variant="outline"
+                className="flex items-center"
+              >
+                <ChevronLeft className="mr-1 h-4 w-4" />
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+
+              <Button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                variant="outline"
+                className="flex items-center"
+              >
+                <ChevronLeft className="mr-2 h-4 w-4" /> Previous
+              </Button>
+
+              <div className="flex space-x-1">
+                {getPageNumbers().map((pageNum) => (
+                  <Button
+                    key={pageNum}
+                    onClick={() => handlePageChange(pageNum)}
+                    variant={currentPage === pageNum ? "default" : "outline"}
+                    className={`px-4 py-2 ${
+                      currentPage === pageNum
+                        ? "bg-blue-500 text-white"
+                        : "hover:bg-gray-100"
+                    }`}
+                  >
+                    {pageNum}
+                  </Button>
+                ))}
+              </div>
+
+              <Button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                variant="outline"
+                className="flex items-center"
+              >
+                Next <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+
+              <Button
+                onClick={() => handlePageChange(totalPages)}
+                disabled={currentPage === totalPages}
+                variant="outline"
+                className="flex items-center"
+              >
+                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </div>
+
           </div>
         )}
       </div>
@@ -220,12 +278,12 @@ const ChapterTile: React.FC<ChapterTileProps> = ({ chapter, chapterMeta, onLesso
       className="hover:shadow-lg transition-all duration-300 cursor-pointer"
       onClick={() => onLessonClick(chapter)}
     >
-      <CardHeader className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+      <CardHeader className="rounded-lg m-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
         <CardTitle className="text-m font-semibold truncate">{chapter.chaptertitle}</CardTitle>
       </CardHeader>
-      <CardContent className="p-2 h-[170px]">
+      <CardContent className="p-2">
         <p className="text-xs text-gray-600 h-[100px]">{chapter.chapter.slice(0, 150)}...</p>
-        <div className="bg-gradient-to-r rounded-lg to-red-500 from-blue-600 flex flex-wrap gap-2 items-end">
+        <div className="bg-gradient-to-r p-1 rounded-lg to-red-500 from-blue-600 flex flex-wrap gap-2 items-end">
           {/* Quiz Section */}
           <div className="flex items-center space-x-1">
             {chapterMeta?.has_quiz ? (
