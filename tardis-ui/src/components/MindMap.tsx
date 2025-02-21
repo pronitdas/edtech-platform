@@ -1,243 +1,237 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import {
+    ReactFlow,
+    Controls,
+    Background,
+    useNodesState,
+    useEdgesState,
+    addEdge,
+    MarkerType,
+    ReactFlowProvider,
+    useReactFlow,
+} from '@xyflow/react';
+import Dagre from '@dagrejs/dagre';
 import { Card } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import useAuthState from '@/hooks/useAuth';
 import { OpenAIClient } from '@/services/openAi';
 
-const MindMap = ({ markdown }) => {
-  const [mindMapData, setMindMapData] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const canvasRef = useRef(null);
-  const { oAiKey } = useAuthState();
-  const [apiClient, setApiClient] = useState(null);
+import '@xyflow/react/dist/style.css';
 
-  useEffect(() => {
-    if (!apiClient && oAiKey) {
-      setApiClient(new OpenAIClient(oAiKey));
-    }
-  }, [oAiKey, apiClient]);
+const getLayoutedElements = (nodes, edges, direction = 'TB') => {
+    const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
+    g.setGraph({ rankdir: direction, ranksep: 80, nodesep: 40 });
 
-  const cleanAndParseJSON = (text) => {
-    // Remove any markdown code block syntax
-    let cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    edges.forEach((edge) => g.setEdge(edge.source, edge.target));
+    nodes.forEach((node) => {
+        // Set default dimensions if not measured
+        const width = 180;  // default width
+        const height = 60;  // default height
+        g.setNode(node.id, { width, height });
+    });
 
-    // Remove any trailing or leading whitespace
-    cleaned = cleaned.trim();
+    Dagre.layout(g);
 
-    try {
-      return JSON.parse(cleaned);
-    } catch (e) {
-      console.error("Failed to parse JSON:", e);
-      console.log("Attempted to parse:", cleaned);
-      return null;
-    }
-  };
+    const layoutedNodes = nodes.map((node) => {
+        const position = g.node(node.id);
+        return {
+            ...node,
+            position: {
+                x: position.x - 10,  // center the node by subtracting half the width
+                y: position.y - 10,  // center the node by subtracting half the height
+            },
+        };
+    });
 
-  const generateMindMapStructure = useCallback(async (markdown) => {
-    if (!apiClient) return null;
+    return {
+        nodes: layoutedNodes,
+        edges,
+    };
+};
 
-    try {
-      const prompt = `Generate a mind map structure from this markdown content as a JSON object. The JSON should have this exact structure, you can add things if you want for a mindmap which a student can easily learn and understand:
+const MindMapInner = ({ markdown }) => {
+    const [nodes, setNodes, onNodesChange] = useNodesState([]);
+    const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const { oAiKey } = useAuthState();
+    const [apiClient, setApiClient] = useState(null);
+    const { fitView } = useReactFlow();
+
+    const onConnect = useCallback(
+        (connection) => {
+            setEdges((oldEdges) => addEdge(connection, oldEdges));
+        },
+        [setEdges],
+    );
+
+    useEffect(() => {
+        if (!apiClient && oAiKey) {
+            setApiClient(new OpenAIClient(oAiKey));
+        }
+    }, [oAiKey, apiClient]);
+
+    const cleanAndParseJSON = (text) => {
+        let cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        try {
+            return JSON.parse(cleaned);
+        } catch (e) {
+            console.error("Failed to parse JSON:", e);
+            return null;
+        }
+    };
+
+    const generateMindMapStructure = useCallback(async (markdown) => {
+        if (!apiClient) return null;
+
+        try {
+            const prompt = `Generate a mind map structure from this markdown content as a JSON object containing both nodes and edges arrays. The JSON should have this exact structure:
 {
-  "name": "Main Topic",
-  "children": [
+  "nodes": [
     {
-      "name": "Subtopic 1",
-      "children": []
+      "id": "1",
+      "type": "input",
+      "data": { "label": "Main Topic" }
+    },
+    {
+      "id": "2",
+      "data": { "label": "Subtopic 1" }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1-2",
+      "source": "1",
+      "target": "2"
     }
   ]
 }
 
-Use the markdown content below to create the mind map structure. Extract the key concepts and their relationships:
+Rules for generation:
+1. Each node must have a numeric or simple string id
+2. Main topic should be type "input"
+3. Leaf nodes should be type "output"
+4. The mindmap should be complex and have all the information but easily understandable by students
+5. Imagine you are an expert teacher in this field while making this mindmap.
+6. You can edit/add/change nodes which you think is right
+
+Use the markdown content below to create the mind map structure:
 
 ${markdown}`;
 
-      const response = await apiClient.chatCompletion(
-        [
-          {
-            role: "system",
-            content: "You are a mind map generator. Generate only valid JSON with no markdown formatting. The JSON should represent a hierarchical mind map structure with 'name' and 'children' properties.",
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        "gpt-4-turbo-2024-04-09",
-        800
-      );
+            const response = await apiClient.chatCompletion(
+                [
+                    {
+                        role: "system",
+                        content: "You are a mind map generator. Generate only valid JSON with no markdown formatting. The JSON should represent nodes and edges for a flow diagram.",
+                    },
+                    {
+                        role: "user",
+                        content: prompt,
+                    },
+                ],
+                "gpt-4-turbo-2024-04-09",
+                800
+            );
 
-      const parsedData = cleanAndParseJSON(response);
-      if (!parsedData) {
-        throw new Error("Failed to parse mind map structure");
-      }
-      return parsedData;
-
-    } catch (error) {
-      console.error("Error generating mind map structure:", error);
-      // Return a basic structure as fallback
-      return {
-        name: "Content Overview",
-        children: [
-          {
-            name: "Unable to generate structure",
-            children: []
-          }
-        ]
-      };
-    }
-  }, [apiClient]);
-
-  const drawMindMap = useCallback((data, canvas, x, y, available_width, available_height) => {
-    const ctx = canvas.getContext('2d');
-    const NODE_HEIGHT = 40;
-    const NODE_PADDING = 15;
-    const LEVEL_SPACING = 80;
-    const MIN_NODE_WIDTH = 120;
-
-    ctx.font = 'bold 14px Arial';
-    ctx.textBaseline = 'middle';
-
-    const drawNode = (node, x, y, width) => {
-      const textWidth = Math.max(ctx.measureText(node.name).width + NODE_PADDING * 2, MIN_NODE_WIDTH);
-      const nodeWidth = Math.min(textWidth, width);
-
-      // Draw connection lines first
-      if (node.children && node.children.length > 0) {
-        const childWidth = width / node.children.length;
-        const startX = x - (width / 2);
-
-        node.children.forEach((child, index) => {
-          const childX = startX + (childWidth * (index + 0.5));
-          const childY = y + LEVEL_SPACING;
-
-          // Curved connection line
-          ctx.strokeStyle = '#4b5563';
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.moveTo(x, y + NODE_HEIGHT / 2);
-          const controlPoint1X = x;
-          const controlPoint1Y = y + LEVEL_SPACING / 3;
-          const controlPoint2X = childX;
-          const controlPoint2Y = childY - LEVEL_SPACING / 3;
-          ctx.bezierCurveTo(
-            controlPoint1X, controlPoint1Y,
-            controlPoint2X, controlPoint2Y,
-            childX, childY - NODE_HEIGHT / 2
-          );
-          ctx.stroke();
-
-          drawNode(child, childX, childY, childWidth);
-        });
-      }
-
-      // Draw node background with gradient
-      const gradient = ctx.createLinearGradient(
-        x - nodeWidth / 2,
-        y - NODE_HEIGHT / 2,
-        x - nodeWidth / 2,
-        y + NODE_HEIGHT / 2
-      );
-      gradient.addColorStop(0, '#2563eb');
-      gradient.addColorStop(1, '#1d4ed8');
-
-      ctx.fillStyle = gradient;
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-      ctx.shadowBlur = 8;
-      ctx.shadowOffsetY = 4;
-      ctx.beginPath();
-      ctx.roundRect(x - nodeWidth / 2, y - NODE_HEIGHT / 2, nodeWidth, NODE_HEIGHT, 10);
-      ctx.fill();
-      ctx.shadowColor = 'transparent';
-
-      // Draw text
-      ctx.fillStyle = 'white';
-      ctx.textAlign = 'center';
-
-      // Handle text wrapping
-      const words = node.name.split(' ');
-      let line = '';
-      let lines = [];
-      const maxWidth = nodeWidth - NODE_PADDING * 2;
-
-      words.forEach(word => {
-        const testLine = line + word + ' ';
-        const metrics = ctx.measureText(testLine);
-        if (metrics.width > maxWidth && line !== '') {
-          lines.push(line);
-          line = word + ' ';
-        } else {
-          line = testLine;
+            return cleanAndParseJSON(response);
+        } catch (error) {
+            console.error("Error generating mind map structure:", error);
+            return {
+                nodes: [
+                    {
+                        id: '1',
+                        type: 'input',
+                        data: { label: 'Unable to generate structure' }
+                    }
+                ],
+                edges: []
+            };
         }
-      });
-      lines.push(line);
+    }, [apiClient]);
 
-      const lineHeight = 18;
-      const totalHeight = lines.length * lineHeight;
-      let startY = y - (totalHeight / 2) + (lineHeight / 2);
+    useEffect(() => {
+        const generateAndRender = async () => {
+            if (!markdown) return;
 
-      lines.forEach(line => {
-        ctx.fillText(line.trim(), x, startY, maxWidth);
-        startY += lineHeight;
-      });
-    };
+            setIsLoading(true);
+            const mindMapData = await generateMindMapStructure(markdown);
 
-    // Clear canvas and draw the mind map
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawNode(data, x, y, available_width);
-  }, []);
+            if (mindMapData) {
+                // Add consistent styling to all nodes
+                const styledNodes = mindMapData.nodes.map(node => ({
+                    ...node,
+                    style: {
+                        background: '#2563eb',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '10px 20px',
+                        fontSize: '14px',
+                        fontWeight: 'bold',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                        width: 'auto',
+                        minWidth: '120px',
+                    }
+                }));
 
-  useEffect(() => {
-    const generateAndDraw = async () => {
-      if (!markdown || !canvasRef.current) return;
+                // Add consistent styling to all edges
+                const styledEdges = mindMapData.edges.map(edge => ({
+                    ...edge,
+                    type: 'default',
+                    markerEnd: { type: MarkerType.ArrowClosed },
+                }));
 
-      setIsLoading(true);
-      const data = await generateMindMapStructure(markdown);
-      setMindMapData(data);
-      setIsLoading(false);
-    };
+                // Apply Dagre layout
+                const layouted = getLayoutedElements(styledNodes, styledEdges);
 
-    generateAndDraw();
-  }, [markdown, generateMindMapStructure]);
+                setNodes(layouted.nodes);
+                setEdges(layouted.edges);
 
-  useEffect(() => {
-    if (!mindMapData || !canvasRef.current) return;
+                // Fit view after a brief delay to ensure proper rendering
+                setTimeout(() => {
+                    fitView({ padding: 0.2 });
+                }, 100);
+            }
 
-    const canvas = canvasRef.current;
+            setIsLoading(false);
+        };
 
-    // Set canvas size
-    canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-    canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+        generateAndRender();
+    }, [markdown, generateMindMapStructure, setNodes, setEdges, fitView]);
 
-    const ctx = canvas.getContext('2d');
-    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-
-    // Draw mindmap
-    drawMindMap(
-      mindMapData,
-      canvas,
-      canvas.offsetWidth / 2,
-      60,
-      canvas.offsetWidth,
-      canvas.offsetHeight
+    return (
+        <Card className="w-full h-full bg-gray-800 p-4 relative">
+            {isLoading ? (
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                </div>
+            ) : (
+                <div style={{ width: '100%', height: '100%' }}>
+                    <ReactFlow
+                        nodes={nodes}
+                        edges={edges}
+                        onNodesChange={onNodesChange}
+                        onEdgesChange={onEdgesChange}
+                        onConnect={onConnect}
+                        proOptions={{ hideAttribution: true }}
+                        fitView
+                    >
+                        <Controls />
+                        <Background/>
+                    </ReactFlow>
+                </div>
+            )}
+        </Card>
     );
-  }, [mindMapData, drawMindMap]);
+};
 
-  return (
-    <Card className="w-full h-full bg-gray-800 p-4 relative">
-      {isLoading ? (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-        </div>
-      ) : (
-        <canvas
-          ref={canvasRef}
-          className="w-full h-full"
-          style={{ width: '100%', height: '100%' }}
-        />
-      )}
-    </Card>
-  );
+// Wrap the component with ReactFlowProvider
+const MindMap = (props) => {
+    return (
+        <ReactFlowProvider>
+            <MindMapInner {...props} />
+        </ReactFlowProvider>
+    );
 };
 
 export default MindMap;
