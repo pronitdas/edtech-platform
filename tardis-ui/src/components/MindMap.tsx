@@ -9,10 +9,20 @@ import {
     MarkerType,
     ReactFlowProvider,
     useReactFlow,
+    Panel,
 } from '@xyflow/react';
 import Dagre from '@dagrejs/dagre';
 import { Card } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, Plus, Copy, Trash2, Edit } from 'lucide-react';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import useAuthState from '@/hooks/useAuth';
 import { OpenAIClient } from '@/services/openAi';
 
@@ -24,9 +34,8 @@ const getLayoutedElements = (nodes, edges, direction = 'TB') => {
 
     edges.forEach((edge) => g.setEdge(edge.source, edge.target));
     nodes.forEach((node) => {
-        // Set default dimensions if not measured
-        const width = 180;  // default width
-        const height = 60;  // default height
+        const width = 230;
+        const height = 60;
         g.setNode(node.id, { width, height });
     });
 
@@ -37,8 +46,8 @@ const getLayoutedElements = (nodes, edges, direction = 'TB') => {
         return {
             ...node,
             position: {
-                x: position.x - 10,  // center the node by subtracting half the width
-                y: position.y - 10,  // center the node by subtracting half the height
+                x: position.x - 10,
+                y: position.y - 10,
             },
         };
     });
@@ -53,9 +62,12 @@ const MindMapInner = ({ markdown }) => {
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [selectedNode, setSelectedNode] = useState(null);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [editLabel, setEditLabel] = useState('');
     const { oAiKey } = useAuthState();
     const [apiClient, setApiClient] = useState(null);
-    const { fitView } = useReactFlow();
+    const { fitView, getNode, getNodes, getEdges, deleteElements, addNodes, addEdges } = useReactFlow();
 
     const onConnect = useCallback(
         (connection) => {
@@ -63,6 +75,108 @@ const MindMapInner = ({ markdown }) => {
         },
         [setEdges],
     );
+
+    const onNodeClick = useCallback((event, node) => {
+        setSelectedNode(node);
+    }, []);
+
+    const handleAddNode = useCallback(() => {
+        const newNodeId = `node-${getNodes().length + 1}`;
+        const parentNode = selectedNode || getNodes()[0];
+
+        if (!parentNode) return;
+
+        const newNode = {
+            id: newNodeId,
+            data: { label: 'New Topic' },
+            position: { x: parentNode.position.x + 200, y: parentNode.position.y },
+            style: {
+                background: '#2563eb',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '10px 20px',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                width: 'auto',
+                minWidth: '120px',
+            }
+        };
+
+        const newEdge = {
+            id: `edge-${parentNode.id}-${newNodeId}`,
+            source: parentNode.id,
+            target: newNodeId,
+            type: 'default',
+            markerEnd: { type: MarkerType.ArrowClosed },
+        };
+
+        addNodes(newNode);
+        addEdges(newEdge);
+
+    }, [selectedNode, getNodes, addNodes, addEdges, getEdges, setNodes, setEdges, fitView]);
+
+    const handleCopyNode = useCallback(() => {
+        if (!selectedNode) return;
+
+        const newNodeId = `node-${getNodes().length + 1}`;
+        const newNode = {
+            ...selectedNode,
+            id: newNodeId,
+            position: {
+                x: selectedNode.position.x + 100,
+                y: selectedNode.position.y + 100,
+            }
+        };
+
+        addNodes(newNode);
+
+    }, [selectedNode, getNodes, addNodes, getEdges, setNodes, setEdges, fitView]);
+
+    const handleDeleteNode = useCallback(() => {
+        if (!selectedNode) return;
+
+        const connectedEdges = getEdges().filter(
+            edge => edge.source === selectedNode.id || edge.target === selectedNode.id
+        );
+
+        deleteElements({
+            nodes: [selectedNode],
+            edges: connectedEdges,
+        });
+
+        setSelectedNode(null);
+
+    }, [selectedNode, getEdges, deleteElements, getNodes, setNodes, setEdges, fitView]);
+
+    const handleEditNode = useCallback(() => {
+        if (!selectedNode) return;
+        setEditLabel(selectedNode.data.label);
+        setIsEditDialogOpen(true);
+    }, [selectedNode]);
+
+    const handleSaveEdit = useCallback(() => {
+        if (!selectedNode || !editLabel.trim()) return;
+
+        setNodes((nds) =>
+            nds.map((node) => {
+                if (node.id === selectedNode.id) {
+                    return {
+                        ...node,
+                        data: {
+                            ...node.data,
+                            label: editLabel.trim(),
+                        },
+                    };
+                }
+                return node;
+            })
+        );
+
+        setIsEditDialogOpen(false);
+        setEditLabel('');
+    }, [selectedNode, editLabel, setNodes]);
 
     useEffect(() => {
         if (!apiClient && oAiKey) {
@@ -213,19 +327,78 @@ ${markdown}`;
                         onNodesChange={onNodesChange}
                         onEdgesChange={onEdgesChange}
                         onConnect={onConnect}
+                        onNodeClick={onNodeClick}
                         proOptions={{ hideAttribution: true }}
                         fitView
                     >
                         <Controls />
-                        <Background/>
+                        <Background />
+                        <Panel position="top-right" className="flex gap-1">
+                            <Button
+                                onClick={handleAddNode}
+                                variant="secondary"
+                                className="flex items-center"
+                                disabled={!nodes.length}
+                            >
+                                <Plus className="h-1 w-1" />
+                            </Button>
+                            <Button
+                                onClick={handleCopyNode}
+                                variant="secondary"
+                                className="flex items-center"
+                                disabled={!selectedNode}
+                            >
+                                <Copy className="h-1 w-1" />
+                            </Button>
+                            <Button
+                                onClick={handleEditNode}
+                                variant="secondary"
+                                className="flex items-center"
+                                disabled={!selectedNode}
+                            >
+                                <Edit className="h-1 w-1" />
+                            </Button>
+                            <Button
+                                onClick={handleDeleteNode}
+                                variant="destructive"
+                                className="flex items-center"
+                                disabled={!selectedNode}
+                            >
+                                <Trash2 className="h-1 w-1" />
+                            </Button>
+                        </Panel>
                     </ReactFlow>
+
+                    <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Edit Node</DialogTitle>
+                            </DialogHeader>
+                            <div className="py-4">
+                                <Input
+                                    value={editLabel}
+                                    onChange={(e) => setEditLabel(e.target.value)}
+                                    placeholder="Enter node label"
+                                    className="w-full"
+                                />
+                            </div>
+                            <DialogFooter>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setIsEditDialogOpen(false)}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button onClick={handleSaveEdit}>Save</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </div>
             )}
         </Card>
     );
 };
 
-// Wrap the component with ReactFlowProvider
 const MindMap = (props) => {
     return (
         <ReactFlowProvider>
