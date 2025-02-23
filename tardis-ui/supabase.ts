@@ -39,18 +39,24 @@ export type Database = {
           apiKeyOpenAi: string | null
           created_at: string
           id: number
+          meshyKey: string | null
+          status: boolean | null
           userId: string | null
         }
         Insert: {
           apiKeyOpenAi?: string | null
           created_at?: string
           id?: number
+          meshyKey?: string | null
+          status?: boolean | null
           userId?: string | null
         }
         Update: {
           apiKeyOpenAi?: string | null
           created_at?: string
           id?: number
+          meshyKey?: string | null
+          status?: boolean | null
           userId?: string | null
         }
         Relationships: []
@@ -255,6 +261,7 @@ export type Database = {
           image_url: string | null
           knowledge_id: number
           latex_code: string | null
+          mindmap: string | null
           notes: string | null
           quiz: Json | null
           subtopic: string
@@ -270,6 +277,7 @@ export type Database = {
           image_url?: string | null
           knowledge_id: number
           latex_code?: string | null
+          mindmap?: string | null
           notes?: string | null
           quiz?: Json | null
           subtopic: string
@@ -285,6 +293,7 @@ export type Database = {
           image_url?: string | null
           knowledge_id?: number
           latex_code?: string | null
+          mindmap?: string | null
           notes?: string | null
           quiz?: Json | null
           subtopic?: string
@@ -303,6 +312,7 @@ export type Database = {
           image_url: string | null
           knowledge_id: number
           latex_code: string | null
+          mindmap: string | null
           notes: string | null
           quiz: Json | null
           subtopic: string
@@ -318,6 +328,7 @@ export type Database = {
           image_url?: string | null
           knowledge_id: number
           latex_code?: string | null
+          mindmap?: string | null
           notes?: string | null
           quiz?: Json | null
           subtopic: string
@@ -333,6 +344,7 @@ export type Database = {
           image_url?: string | null
           knowledge_id?: number
           latex_code?: string | null
+          mindmap?: string | null
           notes?: string | null
           quiz?: Json | null
           subtopic?: string
@@ -351,6 +363,7 @@ export type Database = {
           image_url: string | null
           knowledge_id: number
           latex_code: string | null
+          mindmap: string | null
           notes: string | null
           quiz: Json | null
           subtopic: string
@@ -366,6 +379,7 @@ export type Database = {
           image_url?: string | null
           knowledge_id: number
           latex_code?: string | null
+          mindmap?: string | null
           notes?: string | null
           quiz?: Json | null
           subtopic: string
@@ -381,6 +395,7 @@ export type Database = {
           image_url?: string | null
           knowledge_id?: number
           latex_code?: string | null
+          mindmap?: string | null
           notes?: string | null
           quiz?: Json | null
           subtopic?: string
@@ -450,6 +465,7 @@ export type Database = {
           image_url: string | null
           knowledge_id: number
           latex_code: string | null
+          mindmap: string | null
           notes: string | null
           quiz: Json | null
           subtopic: string
@@ -465,6 +481,7 @@ export type Database = {
           image_url?: string | null
           knowledge_id: number
           latex_code?: string | null
+          mindmap?: string | null
           notes?: string | null
           quiz?: Json | null
           subtopic: string
@@ -480,6 +497,7 @@ export type Database = {
           image_url?: string | null
           knowledge_id?: number
           latex_code?: string | null
+          mindmap?: string | null
           notes?: string | null
           quiz?: Json | null
           subtopic?: string
@@ -498,6 +516,7 @@ export type Database = {
           image_url: string | null
           knowledge_id: number
           latex_code: string | null
+          mindmap: string | null
           notes: string | null
           quiz: Json | null
           subtopic: string
@@ -513,6 +532,7 @@ export type Database = {
           image_url?: string | null
           knowledge_id: number
           latex_code?: string | null
+          mindmap?: string | null
           notes?: string | null
           quiz?: Json | null
           subtopic: string
@@ -528,6 +548,7 @@ export type Database = {
           image_url?: string | null
           knowledge_id?: number
           latex_code?: string | null
+          mindmap?: string | null
           notes?: string | null
           quiz?: Json | null
           subtopic?: string
@@ -541,22 +562,34 @@ export type Database = {
           created_at: string
           filename: string[] | null
           id: number
+          metadata: Json | null
           name: string | null
+          seeded: boolean | null
+          status: string | null
           summarizedrag: string | null
+          userId: string | null
         }
         Insert: {
           created_at?: string
           filename?: string[] | null
           id?: number
+          metadata?: Json | null
           name?: string | null
+          seeded?: boolean | null
+          status?: string | null
           summarizedrag?: string | null
+          userId?: string | null
         }
         Update: {
           created_at?: string
           filename?: string[] | null
           id?: number
+          metadata?: Json | null
           name?: string | null
+          seeded?: boolean | null
+          status?: string | null
           summarizedrag?: string | null
+          userId?: string | null
         }
         Relationships: []
       }
@@ -782,6 +815,8 @@ export type Database = {
           has_quiz: boolean
           has_notes: boolean
           has_summary: boolean
+          has_video: boolean
+          has_image: boolean
         }[]
       }
       halfvec_avg: {

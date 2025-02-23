@@ -76,15 +76,15 @@ const getLayoutedElements = (nodes, edges, direction = 'TB') => {
     };
 };
 
-const MindMapInner = ({ markdown }) => {
+const MindMapInner = (props) => {
+    const { nodes: ogNodes, edges: ogEdges } = JSON.parse(props.markdown);
+
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const { oAiKey } = useAuthState();
     const [apiClient, setApiClient] = useState<OpenAIClient | null>(null);
     const { fitView } = useReactFlow();
-
     const onConnect = useCallback((connection) => {
         setEdges((oldEdges) => addEdge(connection, oldEdges));
     }, [setEdges]);
@@ -96,73 +96,53 @@ const MindMapInner = ({ markdown }) => {
     }, [oAiKey, apiClient]);
 
     useEffect(() => {
-        const generateAndRender = async () => {
-            if (!markdown || !apiClient) return;
+        if (!props) return;
+        setError(null);
+        try {
+            console.log("hi")
+            const styledNodes = ogNodes.map(node => ({
+                ...node,
+                style: {
+                    ...NODE_STYLES.common,
+                    ...NODE_STYLES[node.type || 'default']
+                }
+            }));
 
-            setIsLoading(true);
-            setError(null);
+            const styledEdges = ogEdges.map(edge => ({
+                ...edge,
+                animated: true,
+                markerEnd: { type: MarkerType.ArrowClosed },
+                style: { stroke: '#64748b' }
+            }));
 
-            try {
-                const mindMapData = await generateMindMapStructure(apiClient, markdown);
+            const layouted = getLayoutedElements(styledNodes, styledEdges);
+            setNodes(layouted.nodes);
+            setEdges(layouted.edges);
 
-                const styledNodes = mindMapData.nodes.map(node => ({
-                    ...node,
-                    style: {
-                        ...NODE_STYLES.common,
-                        ...NODE_STYLES[node.type || 'default']
-                    }
-                }));
-
-                const styledEdges = mindMapData.edges.map(edge => ({
-                    ...edge,
-                    type: 'smoothstep',
-                    animated: true,
-                    markerEnd: { type: MarkerType.ArrowClosed },
-                    style: { stroke: '#64748b' }
-                }));
-
-                const layouted = getLayoutedElements(styledNodes, styledEdges);
-                setNodes(layouted.nodes);
-                setEdges(layouted.edges);
-
-                setTimeout(() => fitView({ padding: 0.2 }), 100);
-            } catch (err) {
-                setError('Failed to generate mind map');
-                console.error(err);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        generateAndRender();
-    }, [markdown, apiClient, setNodes, setEdges, fitView]);
+            setTimeout(() => fitView({ padding: 0.2 }), 100);
+        } catch (err) {
+            setError('Failed to generate mind map');
+            console.error(err);
+        }
+    }, [nodes, edges, setNodes, setEdges, fitView]);
 
     return (
         <Card className="w-full h-full bg-gray-800 p-4 relative">
-            {isLoading ? (
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                </div>
-            ) : error ? (
-                <div className="absolute inset-0 flex items-center justify-center text-red-500">
-                    {error}
-                </div>
-            ) : (
-                <div style={{ width: '100%', height: '100%' }}>
-                    <ReactFlow
-                        nodes={nodes}
-                        edges={edges}
-                        onNodesChange={onNodesChange}
-                        onEdgesChange={onEdgesChange}
-                        onConnect={onConnect}
-                        proOptions={{ hideAttribution: true }}
-                        fitView
-                    >
-                        <Controls />
-                        <Background color="#374151" gap={16} />
-                    </ReactFlow>
-                </div>
-            )}
+
+            <div style={{ width: '100%', height: '100%' }}>
+                <ReactFlow
+                    nodes={nodes}
+                    edges={edges}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onConnect={onConnect}
+                    proOptions={{ hideAttribution: true }}
+                    fitView
+                >
+                    <Controls />
+                    <Background color="#374151" gap={16} />
+                </ReactFlow>
+            </div>
         </Card>
     );
 };

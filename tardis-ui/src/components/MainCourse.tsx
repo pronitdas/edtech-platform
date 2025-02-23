@@ -13,7 +13,7 @@ import MindMap from './MindMap';
 
 // MainCourse Component
 const MainCourse = ({ content, language }) => {
-    const { notes, latex_code, quiz = [], summary, og, video_url = "k85mRPqvMbE" } = content;
+    const { notes, latex_code, mindmap, quiz = [], summary, og, video_url = "k85mRPqvMbE" } = content;
     const [activeTab, setActiveTab] = useState("notes");
     const [viewMode, setViewMode] = useState("default"); // Add view mode state
 
@@ -45,17 +45,11 @@ const MainCourse = ({ content, language }) => {
             mdContent = [mdContent]
         }
 
-        return mdContent ? (
-            viewMode === "mindmap" ? (
-                <MindMap markdown={Array.isArray(mdContent) ? mdContent.join('\n') : mdContent} />
-            ) : (
-                <MarkdownSlideshow
-                    key={activeTab}
-                    content={mdContent}
-                    knowledge_id={content.knowledge_id}
-                />
-            )
-        ) : <Loader />;
+        return <MarkdownSlideshow
+            key={activeTab}
+            content={mdContent}
+            knowledge_id={content.knowledge_id}
+        />;
     }, [content.knowledge_id, latex_code, notes, og, summary, viewMode]);
 
     const tabFactory = useCallback(({ latex_code, notes, og, summary, questions, video_url }) => {
@@ -72,6 +66,12 @@ const MainCourse = ({ content, language }) => {
                 key: "regenSummary",
                 render: () => renderMarkdown(activeTab),
                 condition: summary,
+            },
+            {
+                label: "Mindmap",
+                key: "mindmap",
+                render: () => <MindMap markdown={mindmap} />,
+                condition: mindmap,
             },
             {
                 label: "Quiz",
@@ -118,26 +118,14 @@ const MainCourse = ({ content, language }) => {
                         <button
                             key={tab.key}
                             onClick={() => setActiveTab(tab.key)}
-                            className={`py-2 px-4 rounded ${
-                                activeTab === tab.key ? "bg-blue-600" : "bg-gray-700 hover:bg-blue-500"
-                            }`}
+                            className={`py-2 px-4 rounded ${activeTab === tab.key ? "bg-blue-600" : "bg-gray-700 hover:bg-blue-500"
+                                }`}
                         >
                             {tab.label}
                         </button>
                     ))}
                 </div>
 
-                {/* View mode toggle for notes tabs */}
-                {['notes', 'regenNotes', 'regenSummary'].includes(activeTab) && (
-                    <div className="ml-6">
-                        <button
-                            onClick={() => setViewMode(prev => prev === "default" ? "mindmap" : "default")}
-                            className="py-2 px-4 rounded bg-gray-700 hover:bg-blue-500"
-                        >
-                            {viewMode === "default" ? "Show as Mind Map" : "Show as Text"}
-                        </button>
-                    </div>
-                )}
             </div>
         );
     }, [activeTab, tabs]);

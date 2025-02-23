@@ -143,7 +143,7 @@ export async function generateNotes(
 ): Promise<string[]> {
     console.log("stepping donw")
     const prompt = promptsConfig.notes(language);
-    return await generateChunkedContent(openaiClient, text, prompt, 20);
+    return await generateChunkedContent(openaiClient, text, prompt, 500);
 }
 
 export async function generateSummary(
@@ -152,7 +152,7 @@ export async function generateSummary(
     language: string
 ): Promise<string[]> {
     const prompt = promptsConfig.summary(language);
-    return generateChunkedContent(openaiClient, text, prompt, 20);
+    return generateChunkedContent(openaiClient, text, prompt, 500);
 }
 
 export async function generateMindMap(
@@ -160,7 +160,7 @@ export async function generateMindMap(
     text: string
 ): Promise<string[]> {
     const prompt = promptsConfig.mindMap;
-    return generateChunkedContent(openaiClient, text, prompt, 20);
+    return generateChunkedContent(openaiClient, text, prompt, 200);
 }
 
 export async function generate3DPrompts(
