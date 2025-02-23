@@ -74,9 +74,9 @@ export const getChapters = async (id: number, language) => {
     const sortedData = chapters.sort((a, b) => a.id - b.id)
     return sortedData;
 }
-export async function insertKnowledge(name) {
+export async function insertKnowledge(name, user) {
     // Assumes you have a function to insert knowledge into the database and return its ID
-    const { data, error } = await supabase.from('knowledge').insert([{ name }]).select();
+    const { data, error } = await supabase.from('knowledge').insert([{ name, userId: user.id }]).select();
     if (error) {
         console.error("Failed to insert knowledge:", error);
         throw new Error("Failed to insert knowledge.");
@@ -85,7 +85,7 @@ export async function insertKnowledge(name) {
 }
 
 export async function uploadFiles(files, knowledge_id, fileType) {
-    const basePath = `media/${fileType}/${knowledge_id}/`;
+    const basePath = `${fileType}/${knowledge_id}/`;
 
     const promises = files.map(async (file) => {
         // Convert the file to a Blob if not already a Blob

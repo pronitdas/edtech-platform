@@ -2,6 +2,7 @@
 
 import { insertKnowledge, uploadFiles } from "@/services/edtech-content";
 import React, { useState } from "react";
+import { useUser } from '@/contexts/UserContext';
 
 const FileUploaderAPI: React.FC<{ onTextProcessed?: (text: string) => void }> = ({ onTextProcessed }) => {
     const [file, setFile] = useState<File | null>(null);
@@ -9,7 +10,7 @@ const FileUploaderAPI: React.FC<{ onTextProcessed?: (text: string) => void }> = 
     const [response, setResponse] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
-
+    const { user } = useUser()
     // Handle file selection
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files[0]) {
@@ -56,15 +57,15 @@ const FileUploaderAPI: React.FC<{ onTextProcessed?: (text: string) => void }> = 
             setError(null);
 
             // Step 1: Insert knowledge into the database and retrieve knowledge_id
-            const knowledge_id = await insertKnowledge(knowledgeName.trim());
+            const knowledge_id = await insertKnowledge(knowledgeName.trim(), user);
             console.log("Knowledge inserted with ID:", knowledge_id);
 
             // Step 2: Determine file type dynamically
             const fileType = file.type.startsWith("image/")
                 ? "images"
                 : file.type.startsWith("video/")
-                ? "video"
-                : "doc";
+                    ? "video"
+                    : "doc";
 
             // Step 3: Upload file to Supabase storage
             await uploadFiles([file], knowledge_id, fileType);
@@ -116,9 +117,8 @@ const FileUploaderAPI: React.FC<{ onTextProcessed?: (text: string) => void }> = 
             {/* Submit Button */}
             <button
                 onClick={handleSubmit}
-                className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full ${
-                    loading ? "opacity-50 cursor-not-allowed" : ""
-                }`}
+                className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full ${loading ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
                 disabled={loading}
             >
                 {loading ? "Processing..." : "Upload and Convert"}

@@ -18,7 +18,6 @@ export const useChapters = () => {
 
     useEffect(() => {
         if (!apiClient && oAiKey) {
-            console.log(oAiKey)
             setApiClient(new OpenAIClient(oAiKey))
         }
 

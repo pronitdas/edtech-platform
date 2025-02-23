@@ -9,8 +9,7 @@ const useAuthState = () => {
             .from('apikeys')
             .select('apiKeyOpenAi')
             .eq("status", true)
-            .then((({data}) => {
-                console.log(data);
+            .then((({ data }) => {
                 setOaiApikey(data[0].apiKeyOpenAi)
             }))
 
