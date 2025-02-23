@@ -36,40 +36,48 @@ export async function generateMindMapStructure(
     }
 
     const jsonSchema = {
-        type: "object",
-        properties: {
-            nodes: {
-                type: "array",
-                items: {
-                    type: "object",
-                    properties: {
-                        id: { type: "string" },
-                        type: { type: "string", enum: ["input", "default", "output"] },
-                        data: {
-                            type: "object",
-                            properties: {
-                                label: { type: "string" }
-                            },
-                            required: ["label"]
-                        }
-                    },
-                    required: ["id", "data"]
+        "name": "mindmap_schema",
+        "strict": true,
+        "schema": {
+            "type": "object",
+            "properties": {
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": { "type": "string" },
+                            "type": { "type": "string", "enum": ["input", "default", "output"] },
+                            "data": {
+                                "type": "object",
+                                "properties": {
+                                    "label": { "type": "string" }
+                                },
+                                "additionalProperties": false,
+                                "required": ["label"]
+                            }
+                        },
+                        "required": ["id", "type", "data"],
+                        "additionalProperties": false
+                    }
+                },
+                "edges": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": { "type": "string" },
+                            "source": { "type": "string" },
+                            "target": { "type": "string" }
+                        },
+                        "additionalProperties": false,
+                        "required": ["id", "source", "target"]
+                    }
                 }
             },
-            edges: {
-                type: "array",
-                items: {
-                    type: "object",
-                    properties: {
-                        id: { type: "string" },
-                        source: { type: "string" },
-                        target: { type: "string" }
-                    },
-                    required: ["id", "source", "target"]
-                }
-            }
-        },
-        required: ["nodes", "edges"]
+            "required": ["nodes", "edges"],
+            "additionalProperties": false
+        }
     };
 
     try {
@@ -82,7 +90,7 @@ export async function generateMindMapStructure(
                 role: "user",
                 content: text
             }
-        ], "gpt-4-turbo-2024-04-09", 800, jsonSchema);
+        ], "gpt-4o-2024-08-06", 800, jsonSchema);
 
         return JSON.parse(result);
     } catch (error) {
