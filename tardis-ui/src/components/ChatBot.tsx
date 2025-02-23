@@ -246,9 +246,9 @@ const VoiceChatbot = ({ topic, language }) => {
 
     // =============== RENDER ===============
     return (
-        <div className="max-w-3xl mx-auto bg-white overflow-hidden border-0 shadow-lg rounded-lg">
+        <div style={{ height: 470 }} className="max-w-3xl mx-auto bg-white overflow-hidden border-0 shadow-lg rounded-lg">
             {/* Conversation Display */}
-            <div className="p-4 space-y-4 h-80 overflow-y-auto p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <div style={{ height: 320 }} className="p-4 space-y-4 overflow-y-auto p-3 bg-gray-50 rounded-lg border border-gray-200">
                 {conversation.map((message, index) => (
                     <div
                         key={index}
@@ -296,7 +296,7 @@ const VoiceChatbot = ({ topic, language }) => {
                     <Button
                         onClick={handleNext}
                         disabled={!userResponse.trim() || isLoading}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white ml-2 px-3 py-2"
+                        className="text-white ml-2 px-3 py-2 bg-[rgb(58,95,227)] hover:bg-[#2a4fd3]"
                     >
                         {isLoading ? (
                             <>
