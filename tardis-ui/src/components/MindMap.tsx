@@ -53,7 +53,6 @@ const NODE_STYLES = {
         minWidth: '120px',
     }
 };
-
 const getLayoutedElements = (nodes, edges, direction = 'TB') => {
     const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
     g.setGraph({ rankdir: direction, ranksep: 80, nodesep: 40 });
@@ -261,6 +260,10 @@ const MindMapInner = (props) => {
             {isLoading ? (
                 <div className="absolute inset-0 flex items-center justify-center">
                     <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                </div>
+            ) : error ? (
+                <div className="absolute inset-0 flex items-center justify-center text-red-500">
+                    {error}
                 </div>
             ) : (
                 <div style={{ width: '100%', height: '100%' }}>
