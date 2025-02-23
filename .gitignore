@@ -18,17 +18,19 @@
 /out/
 *.svg
 /tardis-ui/dist/*
-marker-api/media/*
-marker-api/new_content/*
-marker-api/output_v1/*
-marker-api/output/*
-marker-api/Shar*
-marker-api/introgis*
-marker-api/history*
-marker-api/*.json
+media-uploader/media/*
+media-uploader/new_content/*
+media-uploader/output_v1/*
+media-uploader/output/*
+media-uploader/Shar*
+media-uploader/introgis*
+media-uploader/history*
+media-uploader/*.json
+media-uploader/*.md
+media-uploader/*.txt
 
 dist.zip
-marker-api/present-english/*
+media-uploader/present-english/*
 # production
 /build
 *.Identifier

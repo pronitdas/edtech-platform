@@ -15,9 +15,36 @@ import { Card } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import useAuthState from '@/hooks/useAuth';
 import { OpenAIClient } from '@/services/openAi';
+import { generateMindMapStructure } from '@/services/openAiFns';
 
 import '@xyflow/react/dist/style.css';
 
+import '@xyflow/react/dist/style.css';
+
+const NODE_STYLES = {
+    input: {
+        background: '#2563eb',
+        color: 'white',
+    },
+    default: {
+        background: '#4b5563',
+        color: 'white',
+    },
+    output: {
+        background: '#059669',
+        color: 'white',
+    },
+    common: {
+        border: 'none',
+        borderRadius: '8px',
+        padding: '10px 20px',
+        fontSize: '14px',
+        fontWeight: 'bold',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+        width: 'auto',
+        minWidth: '120px',
+    }
+};
 const getLayoutedElements = (nodes, edges, direction = 'TB') => {
     const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
     g.setGraph({ rankdir: direction, ranksep: 80, nodesep: 40 });
@@ -53,16 +80,14 @@ const MindMapInner = ({ markdown }) => {
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const { oAiKey } = useAuthState();
-    const [apiClient, setApiClient] = useState(null);
+    const [apiClient, setApiClient] = useState<OpenAIClient | null>(null);
     const { fitView } = useReactFlow();
 
-    const onConnect = useCallback(
-        (connection) => {
-            setEdges((oldEdges) => addEdge(connection, oldEdges));
-        },
-        [setEdges],
-    );
+    const onConnect = useCallback((connection) => {
+        setEdges((oldEdges) => addEdge(connection, oldEdges));
+    }, [setEdges]);
 
     useEffect(() => {
         if (!apiClient && oAiKey) {
@@ -70,140 +95,57 @@ const MindMapInner = ({ markdown }) => {
         }
     }, [oAiKey, apiClient]);
 
-    const cleanAndParseJSON = (text) => {
-        let cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        try {
-            return JSON.parse(cleaned);
-        } catch (e) {
-            console.error("Failed to parse JSON:", e);
-            return null;
-        }
-    };
-
-    const generateMindMapStructure = useCallback(async (markdown) => {
-        if (!apiClient) return null;
-
-        try {
-            const prompt = `Generate a mind map structure from this markdown content as a JSON object containing both nodes and edges arrays. The JSON should have this exact structure:
-{
-  "nodes": [
-    {
-      "id": "1",
-      "type": "input",
-      "data": { "label": "Main Topic" }
-    },
-    {
-      "id": "2",
-      "data": { "label": "Subtopic 1" }
-    }
-  ],
-  "edges": [
-    {
-      "id": "e1-2",
-      "source": "1",
-      "target": "2"
-    }
-  ]
-}
-
-Rules for generation:
-1. Each node must have a numeric or simple string id
-2. Main topic should be type "input"
-3. Leaf nodes should be type "output"
-4. The mindmap should be complex and have all the information but easily understandable by students
-5. Imagine you are an expert teacher in this field while making this mindmap.
-6. You can edit/add/change nodes which you think is right
-
-Use the markdown content below to create the mind map structure:
-
-${markdown}`;
-
-            const response = await apiClient.chatCompletion(
-                [
-                    {
-                        role: "system",
-                        content: "You are a mind map generator. Generate only valid JSON with no markdown formatting. The JSON should represent nodes and edges for a flow diagram.",
-                    },
-                    {
-                        role: "user",
-                        content: prompt,
-                    },
-                ],
-                "gpt-4-turbo-2024-04-09",
-                800
-            );
-
-            return cleanAndParseJSON(response);
-        } catch (error) {
-            console.error("Error generating mind map structure:", error);
-            return {
-                nodes: [
-                    {
-                        id: '1',
-                        type: 'input',
-                        data: { label: 'Unable to generate structure' }
-                    }
-                ],
-                edges: []
-            };
-        }
-    }, [apiClient]);
-
     useEffect(() => {
         const generateAndRender = async () => {
-            if (!markdown) return;
+            if (!markdown || !apiClient) return;
 
             setIsLoading(true);
-            const mindMapData = await generateMindMapStructure(markdown);
+            setError(null);
 
-            if (mindMapData) {
-                // Add consistent styling to all nodes
+            try {
+                const mindMapData = await generateMindMapStructure(apiClient, markdown);
+
                 const styledNodes = mindMapData.nodes.map(node => ({
                     ...node,
                     style: {
-                        background: '#2563eb',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        padding: '10px 20px',
-                        fontSize: '14px',
-                        fontWeight: 'bold',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                        width: 'auto',
-                        minWidth: '120px',
+                        ...NODE_STYLES.common,
+                        ...NODE_STYLES[node.type || 'default']
                     }
                 }));
 
-                // Add consistent styling to all edges
                 const styledEdges = mindMapData.edges.map(edge => ({
                     ...edge,
-                    type: 'default',
+                    type: 'smoothstep',
+                    animated: true,
                     markerEnd: { type: MarkerType.ArrowClosed },
+                    style: { stroke: '#64748b' }
                 }));
 
-                // Apply Dagre layout
                 const layouted = getLayoutedElements(styledNodes, styledEdges);
-
                 setNodes(layouted.nodes);
                 setEdges(layouted.edges);
 
-                // Fit view after a brief delay to ensure proper rendering
-                setTimeout(() => {
-                    fitView({ padding: 0.2 });
-                }, 100);
+                setTimeout(() => fitView({ padding: 0.2 }), 100);
+            } catch (err) {
+                setError('Failed to generate mind map');
+                console.error(err);
+            } finally {
+                setIsLoading(false);
             }
-
-            setIsLoading(false);
         };
 
         generateAndRender();
-    }, [markdown, generateMindMapStructure, setNodes, setEdges, fitView]);
+    }, [markdown, apiClient, setNodes, setEdges, fitView]);
 
     return (
         <Card className="w-full h-full bg-gray-800 p-4 relative">
             {isLoading ? (
                 <div className="absolute inset-0 flex items-center justify-center">
                     <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                </div>
+            ) : error ? (
+                <div className="absolute inset-0 flex items-center justify-center text-red-500">
+                    {error}
                 </div>
             ) : (
                 <div style={{ width: '100%', height: '100%' }}>
@@ -217,7 +159,7 @@ ${markdown}`;
                         fitView
                     >
                         <Controls />
-                        <Background/>
+                        <Background color="#374151" gap={16} />
                     </ReactFlow>
                 </div>
             )}

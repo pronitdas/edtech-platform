@@ -12,7 +12,7 @@
 
 # testing
 /coverage
-
+media-uploader/
 # next.js
 /.next/
 /out/

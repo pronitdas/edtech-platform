@@ -3,66 +3,56 @@ ARG CUDNN_VERSION=""
 ARG UBUNTU_VERSION="22.04"
 ARG MAX_JOBS=4
 
-FROM nvidia/cuda:$CUDA_VERSION-cudnn$CUDNN_VERSION-devel-ubuntu$UBUNTU_VERSION
+FROM nvidia/cuda:${CUDA_VERSION}-cudnn${CUDNN_VERSION}-devel-ubuntu${UBUNTU_VERSION}
 
-# ARG PYTHON_VERSION="3.11"
-# ARG PYTORCH_VERSION="2.1.2"
-# ARG CUDA="118"
-# ARG TORCH_CUDA_ARCH_LIST="7.0 7.5 8.0 8.6 9.0+PTX"
+# Ensure NVIDIA runtime makes GPUs visible
+ENV NVIDIA_VISIBLE_DEVICES=all
 
-# ENV PYTHON_VERSION=$PYTHON_VERSION
-# ENV TORCH_CUDA_ARCH_LIST=$TORCH_CUDA_ARCH_LIST
-
-# RUN apt-get update \
-#     && apt-get install -y wget git build-essential ninja-build git-lfs libaio-dev && rm -rf /var/lib/apt/lists/* \
-#     && wget \
-#     https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-#     && mkdir /root/.conda \
-#     && bash Miniconda3-latest-Linux-x86_64.sh -b \
-#     && rm -f Miniconda3-latest-Linux-x86_64.sh \
-#     && conda create -n "py${PYTHON_VERSION}" python="${PYTHON_VERSION}"
-
-# ENV PATH="/root/miniconda3/envs/py${PYTHON_VERSION}/bin:${PATH}"
-
+# Install system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    wget \
-    curl \
-    unzip \
-    git \
-    python3 \
-    python3-pip \
-    libgl1 \
-    libglib2.0-0 \
-    curl \
-    gnupg2 \
-    ca-certificates \
-    apt-transport-https \
-    software-properties-common \
-    libreoffice \
-    ffmpeg \
-    git-lfs \
-    xvfb \
-    && ln -s /usr/bin/python3 /usr/bin/python \
-    && apt-get update \
-    && apt install python3-packaging \
-    && rm -rf /var/lib/apt/lists/*
+        wget \
+        curl \
+        unzip \
+        git \
+        python3 \
+        python3-pip \
+        python3-packaging \
+        libgl1 \
+        libglib2.0-0 \
+        gnupg2 \
+        ca-certificates \
+        apt-transport-https \
+        software-properties-common \
+        libreoffice \
+        ffmpeg \
+        git-lfs \
+        xvfb \
+        libgl1-mesa-glx && \
+    ln -s /usr/bin/python3 /usr/bin/python && \
+    rm -rf /var/lib/apt/lists/*
 
+# Install PyTorch with CUDA support
 RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
+# Set working directory
 WORKDIR /app
-
-# Copy the project files into the Docker image
-COPY ../ ./
 
 # Install Python dependencies
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy application code
+COPY . .
+
+# Pre-load models
 RUN python -c 'from marker.models import load_all_models; load_all_models()'
 
-# Expose the port for uvicorn.
+# Create temporary directory
+RUN mkdir -p /app/temp
+
+# Expose API port
 EXPOSE 8000
 
-# Run the application using uvicorn.
-CMD ["uvicorn", "api_server:app", "--host", "0.0.0.0", "--port", "8000"]
+# Set the default command
+CMD ["uvicorn", "v2:app", "--host", "0.0.0.0", "--port", "8000"]

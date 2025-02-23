@@ -11,7 +11,7 @@ import { useChapters } from '@/hooks/useChapters';
 import Loader from '@/components/ui/Loader';
 
 function Edtech() {
-  const { knowledge, fetchKnowledge, setKnowledge } = useKnowledgeData();
+  const { knowledge } = useKnowledgeData();
   const { language, setLanguage } = useLanguage();
   const { uploadedFiles, content, setContent, chaptersMeta, fetchChapters, fetchChapterMeta, reset, getEdTechContentForChapter } = useChapters();
   const [currentTopic, setCurrentTopic] = useState({ topicId: null, topic: null, language: null, knowledgeId: null });

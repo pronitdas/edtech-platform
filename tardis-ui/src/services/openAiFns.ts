@@ -8,6 +8,95 @@ interface GenerateQuestionsOutput {
     options: string[];
     answer: string;
 }
+// ... existing code ...
+
+interface MindMapNode {
+    id: string;
+    type?: 'input' | 'default' | 'output';
+    data: { label: string };
+}
+
+interface MindMapEdge {
+    id: string;
+    source: string;
+    target: string;
+}
+
+interface MindMapStructure {
+    nodes: MindMapNode[];
+    edges: MindMapEdge[];
+}
+
+export async function generateMindMapStructure(
+    openaiClient: OpenAIClient,
+    text: string
+): Promise<MindMapStructure> {
+    if (!text || text.length < 10) {
+        return { nodes: [], edges: [] };
+    }
+
+    const jsonSchema = {
+        type: "object",
+        properties: {
+            nodes: {
+                type: "array",
+                items: {
+                    type: "object",
+                    properties: {
+                        id: { type: "string" },
+                        type: { type: "string", enum: ["input", "default", "output"] },
+                        data: {
+                            type: "object",
+                            properties: {
+                                label: { type: "string" }
+                            },
+                            required: ["label"]
+                        }
+                    },
+                    required: ["id", "data"]
+                }
+            },
+            edges: {
+                type: "array",
+                items: {
+                    type: "object",
+                    properties: {
+                        id: { type: "string" },
+                        source: { type: "string" },
+                        target: { type: "string" }
+                    },
+                    required: ["id", "source", "target"]
+                }
+            }
+        },
+        required: ["nodes", "edges"]
+    };
+
+    try {
+        const result = await openaiClient.chatCompletion([
+            {
+                role: "system",
+                content: promptsConfig.mindMap
+            },
+            {
+                role: "user",
+                content: text
+            }
+        ], "gpt-4-turbo-2024-04-09", 800, jsonSchema);
+
+        return JSON.parse(result);
+    } catch (error) {
+        console.error("Error generating mind map structure:", error);
+        return {
+            nodes: [{
+                id: '1',
+                type: 'input',
+                data: { label: 'Error generating mind map' }
+            }],
+            edges: []
+        };
+    }
+}
 
 export async function generateChunkedContent(
     openaiClient: OpenAIClient,
@@ -163,5 +252,6 @@ export async function generateQuestions(
 export const metaMap = {
     notes: generateNotes,
     summary: generateSummary,
-    quiz: generateQuestions
+    quiz: generateQuestions,
+    mindmap: generateMindMapStructure,
 }
