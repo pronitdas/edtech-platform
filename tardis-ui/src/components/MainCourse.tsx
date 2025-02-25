@@ -10,6 +10,16 @@ import SnakeAndLadderGame from './SnakesAndLadder';
 import YouTubePlaceholder from './Video';
 import Loader from './ui/Loader';
 import MindMap from './MindMap';
+import PERatioCalculator from './PERatioCalculator';
+import PriceToCashFlowCalculator from './PriceToCashFlowCalculator';
+import StockValuationModel from './StockValuationModel';
+import DividendGrowthModel from './DividendGrowthModel';
+import DiscountRateCalculator from './DiscountRateModel';
+import PERatioVisualization from './PERatioVisualization';
+import DividendGrowthCalculator from './DividendGrowthModel';
+import BookValueCalculator from './BookValueCalculator';
+import PriceToDividendCalculator from './PriceToDividendCalculator';
+import LiquidationValueCalculator from './LiquidationValueCalculator';
 
 // MainCourse Component
 const MainCourse = ({ content, language }) => {
@@ -29,6 +39,36 @@ const MainCourse = ({ content, language }) => {
         switch (activeTab) {
             case 'notes':
                 mdContent = latex_code || og;
+                if (mdContent.startsWith("How much investors")) {
+                    return <PERatioCalculator />
+                }
+                if (mdContent.startsWith("Evaluate")) {
+                    return <PriceToCashFlowCalculator />
+                }
+                if (mdContent.startsWith("This tool")) {
+                    return <StockValuationModel />
+                }
+                if (mdContent.startsWith("Understanding")) {
+                    return <DividendGrowthCalculator />
+                }
+                if (mdContent.startsWith("The discount rate")) {
+                    return <DiscountRateCalculator/>
+                }
+                if (mdContent.startsWith("Key Insights")) {
+                    return <PERatioVisualization/>
+                }
+                if (mdContent.startsWith("The Dividend Growth Model")) {
+                    return <DividendGrowthModel />
+                }
+                if (mdContent.startsWith("Book Value")) {
+                    return <BookValueCalculator />
+                }
+                if (mdContent.startsWith("Price-to-Dividend")) {
+                    return <PriceToDividendCalculator />
+                }
+                if (mdContent.startsWith("Liquidation value")) {
+                    return <LiquidationValueCalculator />
+                }
                 break;
             case 'regenNotes':
                 mdContent = notes;
@@ -136,7 +176,7 @@ const MainCourse = ({ content, language }) => {
             <div className="mb-8">{renderTabs}</div>
 
             {/* Main Content Area */}
-            <div className="flex h-3/4 justify-between">
+            <div style={{ height: 530 }} className="flex justify-between">
                 <div className="flex pr-6 w-3/4">{tabs.find((tab) => tab.key === activeTab)?.render()}</div>
                 <div className="flex pl-6 w-1/4">
                     <Chatbot language={language} topic={notes || latex_code} />
