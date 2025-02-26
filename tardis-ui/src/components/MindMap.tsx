@@ -103,7 +103,13 @@ const MindMapInner = (props) => {
 
     const onConnect = useCallback(
         (connection) => {
-            setEdges((oldEdges) => addEdge(connection, oldEdges));
+            const newEdge = {
+                ...connection,
+                animated: true,
+                markerEnd: { type: MarkerType.ArrowClosed },
+                style: { stroke: '#64748b' }
+            };
+            setEdges((oldEdges) => addEdge(newEdge, oldEdges));
         },
         [setEdges],
     );
