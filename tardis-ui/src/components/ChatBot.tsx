@@ -157,8 +157,8 @@ const VoiceChatbot = ({ topic, language }) => {
                     ...conversation.map(msg => ({ role: msg.role, content: msg.content })),
                     { role: "user", content: userResponse },
                 ],
-                "gpt-4-turbo-2024-04-09",
-                300
+                "o1-mini",
+                200
             );
 
             setMentorText(newMentorText);
@@ -246,9 +246,9 @@ const VoiceChatbot = ({ topic, language }) => {
 
     // =============== RENDER ===============
     return (
-        <div className="max-w-3xl mx-auto bg-white overflow-hidden border-0 shadow-lg rounded-lg">
+        <div style={{ height: 520 }} className="max-w-3xl mx-auto bg-white overflow-hidden border-0 shadow-lg rounded-lg">
             {/* Conversation Display */}
-            <div className="p-4 space-y-4 h-80 overflow-y-auto p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <div style={{ height: 370 }} className="p-4 space-y-4 overflow-y-auto p-3 bg-gray-50 rounded-lg border border-gray-200">
                 {conversation.map((message, index) => (
                     <div
                         key={index}

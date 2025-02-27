@@ -8,6 +8,103 @@ interface GenerateQuestionsOutput {
     options: string[];
     answer: string;
 }
+// ... existing code ...
+
+interface MindMapNode {
+    id: string;
+    type?: 'input' | 'default' | 'output';
+    data: { label: string };
+}
+
+interface MindMapEdge {
+    id: string;
+    source: string;
+    target: string;
+}
+
+interface MindMapStructure {
+    nodes: MindMapNode[];
+    edges: MindMapEdge[];
+}
+
+export async function generateMindMapStructure(
+    openaiClient: OpenAIClient,
+    text: string
+): Promise<MindMapStructure> {
+    if (!text || text.length < 10) {
+        return { nodes: [], edges: [] };
+    }
+
+    const jsonSchema = {
+        "name": "mindmap_schema",
+        "strict": true,
+        "schema": {
+            "type": "object",
+            "properties": {
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": { "type": "string" },
+                            "type": { "type": "string", "enum": ["input", "default", "output"] },
+                            "data": {
+                                "type": "object",
+                                "properties": {
+                                    "label": { "type": "string" }
+                                },
+                                "additionalProperties": false,
+                                "required": ["label"]
+                            }
+                        },
+                        "required": ["id", "type", "data"],
+                        "additionalProperties": false
+                    }
+                },
+                "edges": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": { "type": "string" },
+                            "source": { "type": "string" },
+                            "target": { "type": "string" }
+                        },
+                        "additionalProperties": false,
+                        "required": ["id", "source", "target"]
+                    }
+                }
+            },
+            "required": ["nodes", "edges"],
+            "additionalProperties": false
+        }
+    };
+
+    try {
+        const result = await openaiClient.chatCompletion([
+            {
+                role: "system",
+                content: promptsConfig.mindMap
+            },
+            {
+                role: "user",
+                content: text
+            }
+        ], "gpt-4o-2024-08-06", 800, jsonSchema);
+
+        return JSON.parse(result);
+    } catch (error) {
+        console.error("Error generating mind map structure:", error);
+        return {
+            nodes: [{
+                id: '1',
+                type: 'input',
+                data: { label: 'Error generating mind map' }
+            }],
+            edges: []
+        };
+    }
+}
 
 export async function generateChunkedContent(
     openaiClient: OpenAIClient,
@@ -46,7 +143,7 @@ export async function generateNotes(
 ): Promise<string[]> {
     console.log("stepping donw")
     const prompt = promptsConfig.notes(language);
-    return await generateChunkedContent(openaiClient, text, prompt, 20);
+    return await generateChunkedContent(openaiClient, text, prompt, 500);
 }
 
 export async function generateSummary(
@@ -55,7 +152,7 @@ export async function generateSummary(
     language: string
 ): Promise<string[]> {
     const prompt = promptsConfig.summary(language);
-    return generateChunkedContent(openaiClient, text, prompt, 20);
+    return generateChunkedContent(openaiClient, text, prompt, 500);
 }
 
 export async function generateMindMap(
@@ -63,7 +160,7 @@ export async function generateMindMap(
     text: string
 ): Promise<string[]> {
     const prompt = promptsConfig.mindMap;
-    return generateChunkedContent(openaiClient, text, prompt, 20);
+    return generateChunkedContent(openaiClient, text, prompt, 200);
 }
 
 export async function generate3DPrompts(
@@ -88,7 +185,7 @@ export async function generateQuestions(
 ): Promise<GenerateQuestionsOutput[]> {
     if (!text || text.length < 10) return [];
 
-    const maxQuestionsPerChunk = 3;
+    const maxQuestionsPerChunk = 10;
     const maxRetries = 3;
 
     const subheadings = extractSubheadings(text, 2).filter(a => a != "Introduction");
@@ -163,5 +260,6 @@ export async function generateQuestions(
 export const metaMap = {
     notes: generateNotes,
     summary: generateSummary,
-    quiz: generateQuestions
+    quiz: generateQuestions,
+    mindmap: generateMindMapStructure,
 }

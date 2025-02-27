@@ -14,5 +14,7 @@ marker-pdf==0.2.17
 pynvml==11.5.3
 art==6.3
 gradio==5.1.0
+supabase==2.13.0
+
 # Include any other dependencies that your marker modules need,
 # for example Pillow, PyPDF2, etc. 

@@ -25,8 +25,8 @@ export class OpenAIClient {
 
         if (jsonSchema) {
             body.response_format = {
-                type: "json_schema",
-                json_schema: jsonSchema
+                "type": "json_schema",
+                "json_schema": jsonSchema
             };
         }
 

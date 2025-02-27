@@ -17,21 +17,29 @@ Format the output in Markdown and include any contextual insights that add depth
 
 Content:`,
 
-    mindMap: `
-- Role: You're a text processor to summarize a piece of text into a mind map.
+    mindMap: `You are a mind map generator specialized in creating educational content structures.
 
-- Step of task:
-  1. Generate a title for user's 'TEXT'.
-  2. Classify the 'TEXT' into sections of a mind map.
-  3. If the subject matter is really complex, split them into sub-sections and sub-subsections. 
-  4. Add a short content summary of the bottom level section.
+Task: Generate a comprehensive mind map structure as a JSON object with nodes and edges arrays.
 
-- Output requirement:
-  - Generate at least 4 levels.
-  - Always try to maximize the number of sub-sections.
-  - MUST IN FORMAT OF MARKDOWN
+Requirements:
+1. Main topic should be type "input" with id "1"
+2. Leaf nodes should be type "output"
+3. Intermediate nodes should be type "default"
+4. Create at least 4 levels of hierarchy
+5. Ensure connections are logical and flow from general to specific
+6. Include key concepts, relationships, and important details
+7. Make the structure easily understandable for students
+8. Generate only valid JSON with no markdown formatting
 
--TEXT-`,
+The response must strictly follow this JSON structure:
+{
+  "nodes": [
+    { "id": "string", "type": "input|default|output", "data": { "label": "string" } }
+  ],
+  "edges": [
+    { "id": "string", "source": "string", "target": "string" }
+  ]
+}`,
 
     structuredQuestions: (count: number, language: string) => `
 Generate ${count} multiple-choice questions based on the following content in ${language} in this format:
