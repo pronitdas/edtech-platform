@@ -5,8 +5,6 @@ import Quiz from '@/components/Quiz';
 
 import MarkdownSlideshow from '@/components/MarkdownSlideshow';
 import Chatbot from './ChatBot';
-import UnderwaterAdventure from './Immersive';
-import SnakeAndLadderGame from './SnakesAndLadder';
 import YouTubePlaceholder from './Video';
 import Loader from './ui/Loader';
 import MindMap from './MindMap';
@@ -120,18 +118,6 @@ const MainCourse = ({ content, language }) => {
                 condition: quiz && quiz.length > 0,
             },
             {
-                label: "Immersive Quiz",
-                key: "immersive",
-                render: () => <UnderwaterAdventure questions={questions} />,
-                condition: quiz && quiz.length > 0,
-            },
-            {
-                label: "Snakes & Ladder",
-                key: "snakes-ladder",
-                render: () => <SnakeAndLadderGame questions={questions} />,
-                condition: quiz && quiz.length > 0,
-            },
-            {
                 label: "Video",
                 key: "video",
                 render: () => <YouTubePlaceholder videoId={video_url} />,
@@ -165,7 +151,6 @@ const MainCourse = ({ content, language }) => {
                         </button>
                     ))}
                 </div>
-
             </div>
         );
     }, [activeTab, tabs]);
