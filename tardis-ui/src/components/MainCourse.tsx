@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Quiz from '@/components/Quiz';
 
 import MarkdownSlideshow from '@/components/MarkdownSlideshow';
@@ -24,72 +24,70 @@ const MainCourse = ({ content, language }) => {
     const { notes, latex_code, mindmap, quiz = [], summary, og, video_url = "k85mRPqvMbE" } = content;
     const [activeTab, setActiveTab] = useState("notes");
     const [viewMode, setViewMode] = useState("default"); // Add view mode state
-
     const renderQuiz = useMemo(() =>
         quiz && quiz.length > 0 ? (
             <Quiz questions={quiz} />
         ) : (
             <p className="text-center">Generate quiz questions in the Text Analysis section to start the quiz.</p>
         ), [quiz]);
-
     const renderMarkdown = useCallback((activeTab) => {
-        let mdContent = null;
+        // Map of special content start phrases to their corresponding components
+        const specialContentMap = {
+            "How much investors": <PERatioCalculator />,
+            "Evaluate": <PriceToCashFlowCalculator />,
+            "This tool": <StockValuationModel />,
+            "Understanding": <DividendGrowthCalculator />,
+            "The discount rate": <DiscountRateCalculator />,
+            "Key Insights": <PERatioVisualization />,
+            "The Dividend Growth Model": <DividendGrowthModel />,
+            "Book Value": <BookValueCalculator />,
+            "Price-to-Dividend": <PriceToDividendCalculator />,
+            "Liquidation value": <LiquidationValueCalculator />
+        };
+
+        // Determine content based on activeTab
+        let mdContent;
         switch (activeTab) {
             case 'notes':
                 mdContent = latex_code || og;
-                if (mdContent.startsWith("How much investors")) {
-                    return <PERatioCalculator />
-                }
-                if (mdContent.startsWith("Evaluate")) {
-                    return <PriceToCashFlowCalculator />
-                }
-                if (mdContent.startsWith("This tool")) {
-                    return <StockValuationModel />
-                }
-                if (mdContent.startsWith("Understanding")) {
-                    return <DividendGrowthCalculator />
-                }
-                if (mdContent.startsWith("The discount rate")) {
-                    return <DiscountRateCalculator/>
-                }
-                if (mdContent.startsWith("Key Insights")) {
-                    return <PERatioVisualization/>
-                }
-                if (mdContent.startsWith("The Dividend Growth Model")) {
-                    return <DividendGrowthModel />
-                }
-                if (mdContent.startsWith("Book Value")) {
-                    return <BookValueCalculator />
-                }
-                if (mdContent.startsWith("Price-to-Dividend")) {
-                    return <PriceToDividendCalculator />
-                }
-                if (mdContent.startsWith("Liquidation value")) {
-                    return <LiquidationValueCalculator />
+
+                // Check for special content components
+                for (const [startPhrase, component] of Object.entries(specialContentMap)) {
+                    if (mdContent?.startsWith(startPhrase)) {
+                        return component;
+                    }
                 }
                 break;
+
             case 'regenNotes':
                 mdContent = notes;
                 break;
+
             case 'regenSummary':
                 mdContent = summary;
                 break;
+
             default:
-                mdContent = "No Content"
+                mdContent = "No Content";
         }
-        if (mdContent.includes("|||||")) {
-            mdContent = mdContent.split("|||||")
+
+        // Handle content processing
+        if (!mdContent) {
+            mdContent = ["Is being generated"];
+        } else if (mdContent.includes("|||||")) {
+            mdContent = mdContent.split("|||||");
         } else {
-            mdContent = [mdContent]
+            mdContent = [mdContent];
         }
 
-        return <MarkdownSlideshow
-            key={activeTab}
-            content={mdContent}
-            knowledge_id={content.knowledge_id}
-        />;
+        return (
+            <MarkdownSlideshow
+                key={activeTab}
+                content={mdContent}
+                knowledge_id={content.knowledge_id}
+            />
+        );
     }, [content.knowledge_id, latex_code, notes, og, summary, viewMode]);
-
     const tabFactory = useCallback(({ latex_code, notes, og, summary, questions, video_url }) => {
         return [
             { label: "Notes", key: "notes", render: () => renderMarkdown(activeTab), condition: latex_code, },
@@ -133,6 +131,31 @@ const MainCourse = ({ content, language }) => {
         questions: quiz,
         video_url
     });
+    useEffect(() => {
+        const tabs = tabFactory({ latex_code, notes, og, summary, questions: quiz, video_url });
+
+        // Find the current active tab configuration
+        const currentTab = tabs.find(tab => tab.key === activeTab);
+
+        // If the current active tab doesn't exist or its condition is falsy (except for notes tab)
+        if (!currentTab || (activeTab !== "notes" && !currentTab.condition)) {
+            // Find the notes tab as a fallback
+            const notesTab = tabs.find(tab => tab.key === "notes");
+
+            // Only switch if the notes tab exists and has a valid condition
+            if (notesTab && notesTab.condition) {
+                setActiveTab("notes");
+            } else {
+                // If notes tab is also invalid, find the first valid tab
+                const firstValidTab = tabs.find(tab => tab.condition);
+                if (firstValidTab) {
+                    setActiveTab(firstValidTab.key);
+                }
+            }
+        }
+    }, [activeTab, tabFactory, latex_code, notes, og, summary, quiz, video_url]);
+
+
 
     const renderTabs = useMemo(() => {
         const filteredTabs = tabs.filter((tab) => tab.condition === undefined || tab.condition);
