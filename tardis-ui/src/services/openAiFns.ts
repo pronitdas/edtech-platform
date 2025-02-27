@@ -185,7 +185,7 @@ export async function generateQuestions(
 ): Promise<GenerateQuestionsOutput[]> {
     if (!text || text.length < 10) return [];
 
-    const maxQuestionsPerChunk = 3;
+    const maxQuestionsPerChunk = 10;
     const maxRetries = 3;
 
     const subheadings = extractSubheadings(text, 2).filter(a => a != "Introduction");
