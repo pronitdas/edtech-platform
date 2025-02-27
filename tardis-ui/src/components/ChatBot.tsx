@@ -157,8 +157,8 @@ const VoiceChatbot = ({ topic, language }) => {
                     ...conversation.map(msg => ({ role: msg.role, content: msg.content })),
                     { role: "user", content: userResponse },
                 ],
-                "gpt-4-turbo-2024-04-09",
-                300
+                "o1-mini",
+                200
             );
 
             setMentorText(newMentorText);
