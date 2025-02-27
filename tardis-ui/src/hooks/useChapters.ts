@@ -51,13 +51,19 @@ export const useChapters = () => {
                 }
 
                 const upsertContent = {
-                    [type]: (type === "quiz"  ||  type === "mindmap") ? generated : generated.join("|||||")
+                    [type]: (type === "quiz" || type === "mindmap") ? generated : generated.join("|||||")
                 };
 
                 // Update content in the database
-                await updateEdtechContent(upsertContent, edtechId, chapter.id, knowledgeId, language);
+                const updatedContent = await updateEdtechContent(upsertContent, edtechId, chapter.id, knowledgeId, language);
+                if (content.id == updatedContent[0].id
+                    && content.chapter_id == updatedContent[0].chapter_id
+                    && content.knowledge_id == updatedContent[0].knowledge_id
+                ) {
+                    setContent(updatedContent[0]);
+                }
 
-                console.log(upsertContent); // Log updated content
+                
             }));
         } catch (error) {
             console.error('Error generating content:', error);
@@ -67,6 +73,9 @@ export const useChapters = () => {
     const getEdTechContentForChapter = async (chapter, language) => {
 
         const c = await getEdTechContent(chapter, language);
+        if (c.length == 0) {
+            console.log("::");
+        }
         if (c.length > 0) {
             setContent(c[0])
             if (!c[0].notes) {
