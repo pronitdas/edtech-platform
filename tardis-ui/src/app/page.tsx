@@ -37,7 +37,11 @@ function Edtech() {
   useEffect(() => {
     fetchChapterMeta(currentTopic.knowledgeId, language);
   }, [currentTopic.knowledgeId, language])
-
+  useEffect(() => {
+    if (courseView) {
+      getEdTechContentForChapter(currentTopic.topic, language);
+    }
+  }, [currentTopic.knowledgeId, currentTopic, language])
   const handleTextProcessed = useCallback(
     async (topic) => {
       console.log(topic, language);
