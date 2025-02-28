@@ -102,7 +102,33 @@ export async function uploadFiles(files, knowledge_id, fileType) {
         return data; // Return upload result for tracking
     });
 
-    return await Promise.all(promises); // Wait for all uploads to complete
+    const results = await Promise.all(promises); // Wait for all uploads to complete
+
+    // After successful upload, trigger the knowledge processing
+    if (fileType === 'doc' || fileType === 'pdf') {
+        try {
+            // Call the process/knowledge endpoint to start processing
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const response = await fetch(`${apiUrl}/process/${knowledge_id}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (!response.ok) {
+                console.warn(`Processing request for knowledge_id ${knowledge_id} returned status ${response.status}`);
+                // We don't throw here to avoid failing the upload if processing fails
+            } else {
+                console.log(`Successfully triggered processing for knowledge_id ${knowledge_id}`);
+            }
+        } catch (error) {
+            console.warn(`Failed to trigger processing for knowledge_id ${knowledge_id}:`, error);
+            // We don't throw here to avoid failing the upload if processing fails
+        }
+    }
+
+    return results;
 }
 async function uploadImages(files, knowledge_id) {
     const basePath = `image/${knowledge_id}/`

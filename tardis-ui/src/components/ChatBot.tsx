@@ -10,7 +10,7 @@ const VoiceChatbot = ({ topic, language }) => {
     const { oAiKey } = useAuthState();
     const [apiClient, setApiClient] = useState(null);
     const [mentorText, setMentorText] = useState(
-        "Hello, I'm AI-Mentor! Let's start your journey. What would you like to know about Physics, Geography, History, or English grammar?"
+        "Hello, I'm Mentor! Let's start your journey. What would you like to know about?"
     );
     const [isListening, setIsListening] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
@@ -18,7 +18,7 @@ const VoiceChatbot = ({ topic, language }) => {
     const [conversation, setConversation] = useState([
         {
             role: "assistant",
-            content: "Hello, I'm AI-Mentor! Let's start your journey. What would you like to know about Physics, Geography, History, or English grammar?"
+            content: "Hello, I'm AI-Mentor! Let's start your journey. What would you like to know about?"
         }
     ]);
 
