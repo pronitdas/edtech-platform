@@ -6,8 +6,8 @@ from datetime import datetime
 from queue import Queue, Empty
 from typing import Dict, Optional, List, Any, Callable
 
-from .database import DatabaseManager
-from .pdf_processor import PDFProcessor
+from database import DatabaseManager
+from pdf_processor import PDFProcessor
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -134,7 +134,7 @@ class QueueManager:
                 filename = filename_field
 
             # Fetch the file from Supabase storage
-            file_path = f"media/doc/{knowledge_id}/{filename}"
+            file_path = f"doc/{knowledge_id}/{filename}"
             file_data = self.db_manager.download_file(file_path)
 
             # Process the PDF

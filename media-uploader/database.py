@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Supabase configuration
-SUPABASE_URL = 'https://onyibiwnfwxatadlkygz.supabase.co'
+SUPABASE_URL = ''
 SUPABASE_KEY = ""  # Should be loaded from environment variables in production
 
 
@@ -49,7 +49,7 @@ class DatabaseManager:
                 .eq("seeded", False)
                 .execute()
             )
-            
+            print(response);
             if not response.data:
                 raise Exception(f"No unseeded knowledge entry found with id={knowledge_id}.")
                 
@@ -191,3 +191,36 @@ class DatabaseManager:
         except Exception as e:
             logger.error(f"Error adding retry history: {str(e)}")
             # Don't raise here to avoid breaking the main process
+            
+    def get_chapter_data(self, knowledge_id: int, chapter_id: Optional[str] = None) -> List[Dict]:
+        """Get chapter data from the chapters_v1 table.
+        
+        Args:
+            knowledge_id: The ID of the knowledge entry
+            chapter_id: Optional chapter ID to filter by
+            
+        Returns:
+            List of chapter data dictionaries
+        """
+        try:
+            query = (
+                self.supabase.table("chapters_v1")
+                .select("*")
+                .eq("knowledge_id", knowledge_id)
+            )
+            
+            if chapter_id:
+                query = query.eq("chapter_id", chapter_id)
+                
+            response = query.execute()
+            
+            if not response.data:
+                logger.warning(f"No chapters found for knowledge_id={knowledge_id}" + 
+                              (f", chapter_id={chapter_id}" if chapter_id else ""))
+                return []
+                
+            return response.data
+            
+        except Exception as e:
+            logger.error(f"Error getting chapter data: {str(e)}")
+            raise

@@ -5,7 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Mic, MicOff, Volume2, VolumeX, Send, Loader2 } from "lucide-react";
 
-const VoiceChatbot = ({ topic, language }) => {
+interface ChatbotProps {
+    topic: any;
+    language: any;
+    onQuestionAsked?: (question: string) => void;
+}
+
+const VoiceChatbot = ({ topic, language, onQuestionAsked }: ChatbotProps) => {
     const [userResponse, setUserResponse] = useState("");
     const { oAiKey } = useAuthState();
     const [apiClient, setApiClient] = useState(null);
@@ -175,13 +181,17 @@ const VoiceChatbot = ({ topic, language }) => {
 
                 speakTextInChunks(newMentorText, langCode);
             }
+
+            if (onQuestionAsked) {
+                onQuestionAsked(userResponse);
+            }
         } catch (error) {
             console.error("Error during chat completion:", error);
             alert("Error during chat completion.");
         } finally {
             setIsLoading(false);
         }
-    }, [userResponse, apiClient, topic, language, speakTextInChunks, conversation]);
+    }, [userResponse, apiClient, topic, language, speakTextInChunks, conversation, onQuestionAsked]);
 
     const toggleListening = useCallback(async () => {
         if (!isListening) {

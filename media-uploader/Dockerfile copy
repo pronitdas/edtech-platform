@@ -3,12 +3,11 @@ ARG CUDNN_VERSION=""
 ARG UBUNTU_VERSION="22.04"
 ARG MAX_JOBS=4
 
-FROM nvidia/cuda:${CUDA_VERSION}-cudnn${CUDNN_VERSION}-devel-ubuntu${UBUNTU_VERSION}
+FROM nvidia/cuda:$CUDA_VERSION-cudnn$CUDNN_VERSION-devel-ubuntu$UBUNTU_VERSION
 
-# Ensure NVIDIA runtime makes GPUs visible
+# Ensure the NVIDIA runtime makes GPUs visible to the container
 ENV NVIDIA_VISIBLE_DEVICES=all
 
-# Install system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         wget \
@@ -17,9 +16,9 @@ RUN apt-get update && \
         git \
         python3 \
         python3-pip \
-        python3-packaging \
         libgl1 \
         libglib2.0-0 \
+        curl \
         gnupg2 \
         ca-certificates \
         apt-transport-https \
@@ -27,32 +26,34 @@ RUN apt-get update && \
         libreoffice \
         ffmpeg \
         git-lfs \
-        xvfb \
-        libgl1-mesa-glx && \
+        xvfb && \
     ln -s /usr/bin/python3 /usr/bin/python && \
+    apt-get update && \
+    apt install -y python3-packaging && \
     rm -rf /var/lib/apt/lists/*
 
-# Install PyTorch with CUDA support
+# Install PyTorch (selecting the wheels built for CUDA 11.8)
 RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
-# Set working directory
+# Install system dependencies required for libGL.
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory.
 WORKDIR /app
 
-# Install Python dependencies
+# Copy the requirements file and install dependencies.
 COPY requirements.txt ./
-RUN pip install --default-timeout=1000  --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Copy the rest of the application code.
 COPY . .
-
-# Pre-load models
 RUN python -c 'from marker.models import load_all_models; load_all_models()'
 
-# Create temporary directory
-RUN mkdir -p /app/temp
-
-# Expose API port
+# Expose the port uvicorn will run on.
 EXPOSE 8000
 
-# Set the default command
-CMD ["uvicorn", "v2:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the application using uvicorn.
+CMD ["uvicorn", "api_server:app", "--host", "0.0.0.0", "--port", "8000"] 

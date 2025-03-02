@@ -159,10 +159,13 @@ export type Database = {
           id: number
           k_id: number
           knowledge_id: number
+          level: number | null
           lines: number | null
+          metadata: Json | null
           seeded: boolean | null
           subtopic: string
           topic: string | null
+          type: string | null
         }
         Insert: {
           chapter?: string | null
@@ -172,10 +175,13 @@ export type Database = {
           id?: number
           k_id: number
           knowledge_id: number
+          level?: number | null
           lines?: number | null
+          metadata?: Json | null
           seeded?: boolean | null
           subtopic: string
           topic?: string | null
+          type?: string | null
         }
         Update: {
           chapter?: string | null
@@ -185,10 +191,13 @@ export type Database = {
           id?: number
           k_id?: number
           knowledge_id?: number
+          level?: number | null
           lines?: number | null
+          metadata?: Json | null
           seeded?: boolean | null
           subtopic?: string
           topic?: string | null
+          type?: string | null
         }
         Relationships: [
           {
@@ -593,6 +602,45 @@ export type Database = {
         }
         Relationships: []
       }
+      learning_analytics: {
+        Row: {
+          content_id: number | null
+          engagement_score: number | null
+          generated_at: string | null
+          id: string
+          raw_data: Json | null
+          recommendations: string[] | null
+          strengths: string[] | null
+          understanding_level: string | null
+          user_id: string
+          weaknesses: string[] | null
+        }
+        Insert: {
+          content_id?: number | null
+          engagement_score?: number | null
+          generated_at?: string | null
+          id?: string
+          raw_data?: Json | null
+          recommendations?: string[] | null
+          strengths?: string[] | null
+          understanding_level?: string | null
+          user_id: string
+          weaknesses?: string[] | null
+        }
+        Update: {
+          content_id?: number | null
+          engagement_score?: number | null
+          generated_at?: string | null
+          id?: string
+          raw_data?: Json | null
+          recommendations?: string[] | null
+          strengths?: string[] | null
+          understanding_level?: string | null
+          user_id?: string
+          weaknesses?: string[] | null
+        }
+        Relationships: []
+      }
       nods_page: {
         Row: {
           checksum: string | null
@@ -693,6 +741,88 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_answers: {
+        Row: {
+          attempt_id: string
+          correct_answer: string | null
+          created_at: string | null
+          id: string
+          is_correct: boolean | null
+          question_id: string
+          time_taken: number | null
+          user_answer: string | null
+        }
+        Insert: {
+          attempt_id: string
+          correct_answer?: string | null
+          created_at?: string | null
+          id?: string
+          is_correct?: boolean | null
+          question_id: string
+          time_taken?: number | null
+          user_answer?: string | null
+        }
+        Update: {
+          attempt_id?: string
+          correct_answer?: string | null
+          created_at?: string | null
+          id?: string
+          is_correct?: boolean | null
+          question_id?: string
+          time_taken?: number | null
+          user_answer?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_answers_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_attempts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_attempts: {
+        Row: {
+          completed_at: string | null
+          id: string
+          max_score: number | null
+          metadata: Json | null
+          quiz_id: number
+          score: number | null
+          started_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          id?: string
+          max_score?: number | null
+          metadata?: Json | null
+          quiz_id: number
+          score?: number | null
+          started_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          id?: string
+          max_score?: number | null
+          metadata?: Json | null
+          quiz_id?: number
+          score?: number | null
+          started_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_attempts_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quiz"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reportcards: {
         Row: {
           context: string | null
@@ -786,6 +916,71 @@ export type Database = {
         }
         Relationships: []
       }
+      user_interactions: {
+        Row: {
+          content_id: number | null
+          created_at: string | null
+          duration: number | null
+          id: string
+          interaction_type: string
+          metadata: Json | null
+          session_id: string
+        }
+        Insert: {
+          content_id?: number | null
+          created_at?: string | null
+          duration?: number | null
+          id?: string
+          interaction_type: string
+          metadata?: Json | null
+          session_id: string
+        }
+        Update: {
+          content_id?: number | null
+          created_at?: string | null
+          duration?: number | null
+          id?: string
+          interaction_type?: string
+          metadata?: Json | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_interactions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "user_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_sessions: {
+        Row: {
+          device_info: Json | null
+          ended_at: string | null
+          id: string
+          metadata: Json | null
+          started_at: string | null
+          user_id: string
+        }
+        Insert: {
+          device_info?: Json | null
+          ended_at?: string | null
+          id?: string
+          metadata?: Json | null
+          started_at?: string | null
+          user_id: string
+        }
+        Update: {
+          device_info?: Json | null
+          ended_at?: string | null
+          id?: string
+          metadata?: Json | null
+          started_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -804,6 +999,13 @@ export type Database = {
             }
             Returns: unknown
           }
+      calculate_engagement_score: {
+        Args: {
+          user_id: string
+          content_id: number
+        }
+        Returns: number
+      }
       check_edtech_columns: {
         Args: {
           language: string

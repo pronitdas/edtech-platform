@@ -33,7 +33,7 @@ const MarkdownViewer: React.FC<{ content: string; images?: string[]; knowledge_i
         }
 
         return (
-            <div className="h-full overflow-y-scroll">
+            <div className="h-full">
                 <ReactMarkdown
                     remarkPlugins={[remarkGfm, remarkMath]}
                     rehypePlugins={[rehypeKatex]}

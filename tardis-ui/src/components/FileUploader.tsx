@@ -32,7 +32,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onTextProcessed }) => {
             setStatus({ message: "", type: null });
 
             // Insert knowledge and get ID
-            const knowledge_id = await insertKnowledge(knowledgeName.trim(), user);
+            const knowledge_id = await insertKnowledge(knowledgeName.trim(), user, file.name);
 
             // Determine file type
             const fileType = file.type.startsWith("image/")
@@ -40,7 +40,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onTextProcessed }) => {
                 : file.type.startsWith("video/")
                     ? "video"
                     : "doc";
-
+            
             // Upload file
             await uploadFiles([file], knowledge_id, fileType);
 

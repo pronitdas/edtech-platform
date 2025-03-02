@@ -74,9 +74,9 @@ export const getChapters = async (id: number, language) => {
     const sortedData = chapters.sort((a, b) => a.id - b.id)
     return sortedData;
 }
-export async function insertKnowledge(name, user) {
+export async function insertKnowledge(name, user, fileName) {
     // Assumes you have a function to insert knowledge into the database and return its ID
-    const { data, error } = await supabase.from('knowledge').insert([{ name, userId: user.id }]).select();
+    const { data, error } = await supabase.from('knowledge').insert([{ name, userId: user.id, filename: [fileName] }]).select();
     if (error) {
         console.error("Failed to insert knowledge:", error);
         throw new Error("Failed to insert knowledge.");
@@ -108,7 +108,7 @@ export async function uploadFiles(files, knowledge_id, fileType) {
     if (fileType === 'doc' || fileType === 'pdf') {
         try {
             // Call the process/knowledge endpoint to start processing
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            const apiUrl = 'http://localhost:8000';
             const response = await fetch(`${apiUrl}/process/${knowledge_id}`, {
                 method: 'GET',
                 headers: {

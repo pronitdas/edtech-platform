@@ -11,11 +11,11 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, Depends
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from .models import ProcessingStatus, RetryRequest, RetryHistory, ImageUploadStatus, PDFResponse
-from .database import DatabaseManager
-from .queue_manager import QueueManager
-from .pdf_processor import PDFProcessor
-from .api_routes import router
+from models import ProcessingStatus, RetryRequest, RetryHistory, ImageUploadStatus, PDFResponse
+from database import DatabaseManager
+from queue_manager import QueueManager
+from pdf_processor import PDFProcessor
+from api_routes import router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -39,4 +39,4 @@ app.include_router(router)
 # Run locally (for testing with: python -m media-uploader.main)
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("media-uploader.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

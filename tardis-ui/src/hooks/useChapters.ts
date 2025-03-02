@@ -1,27 +1,20 @@
 import { useEffect, useState } from 'react';
-import { getChapters, getChapterMetaDataByLanguage, getEdTechContent, updateEdtechContent } from '@/services/edtech-content';
-import { metaMap } from '@/services/openAiFns';
+import { getChapters, getChapterMetaDataByLanguage, getEdTechContent } from '@/services/edtech-content';
 import useAuthState from './useAuth';
-import { OpenAIClient } from '@/services/openAi';
+import supabase from "../services/supabase";
+
 
 export const useChapters = () => {
     const [uploadedFiles, setUploadedFiles] = useState([]);
     const [chaptersMeta, setChapterMeta] = useState([]);
-    const [content, setContent] = useState(null)
-    const { oAiKey } = useAuthState()
-    const [apiClient, setApiClient] = useState(null)
+    const [content, setContent] = useState(null);
+    const [error, setError] = useState(null);
     const fetchChapters = async (knowledgeId, language) => {
         const chapters = await getChapters(knowledgeId, language);
         setUploadedFiles(chapters);
         return chapters;
     };
 
-    useEffect(() => {
-        if (!apiClient && oAiKey) {
-            setApiClient(new OpenAIClient(oAiKey))
-        }
-
-    }, [oAiKey, apiClient])
     const fetchChapterMeta = async (knowledgeId, language) => {
         const metadata = await getChapterMetaDataByLanguage(knowledgeId, language);
         setChapterMeta(metadata);
@@ -30,66 +23,47 @@ export const useChapters = () => {
     const reset = () => {
         setUploadedFiles([]);
         setChapterMeta([]);
-    };
-
-    const generateEdtechContentText = async (edtechId, chapter, knowledgeId, types, language) => {
-        // Content generation and update logic
-        try {
-            // Iterate over each type to generate content
-            await Promise.all(types.map(async (type) => {
-                if (!metaMap[type]) {
-                    console.log(`${type} not supported`);
-                    return;
-                }
-
-                const generator = metaMap[type];
-                const generated = await generator(apiClient, chapter.chapter, language);
-
-                if (!Array.isArray(generated)) {
-                    console.log(`Generated content for ${type} is not an array`);
-                    // return;
-                }
-
-                const upsertContent = {
-                    [type]: (type === "quiz" || type === "mindmap") ? generated : generated.join("|||||")
-                };
-
-                // Update content in the database
-                const updatedContent = await updateEdtechContent(upsertContent, edtechId, chapter.id, knowledgeId, language);
-                if (content.id == updatedContent[0].id
-                    && content.chapter_id == updatedContent[0].chapter_id
-                    && content.knowledge_id == updatedContent[0].knowledge_id
-                ) {
-                    setContent(updatedContent[0]);
-                }
-
-                
-            }));
-        } catch (error) {
-            console.error('Error generating content:', error);
-        }
+        setContent(null);
     };
 
     const getEdTechContentForChapter = async (chapter, language) => {
+        try {
+            const content = await getEdTechContent(chapter, language);
+            if (content.length > 0) {
+                setContent(content[0]);
+                
+                // Check which content types need to be generated
+                const missingTypes = [];
+                if (!content[0].notes) missingTypes.push('notes');
+                if (!content[0].summary) missingTypes.push('summary');
+                if (!content[0].quiz && content[0].notes) missingTypes.push('quiz');
+                if (!content[0].mindmap && content[0].notes) missingTypes.push('mindmap');
 
-        const c = await getEdTechContent(chapter, language);
-        if (c.length == 0) {
-            console.log("::");
-        }
-        if (c.length > 0) {
-            setContent(c[0])
-            if (!c[0].notes) {
-                await generateEdtechContentText(c[0].id, chapter, chapter.k_id, ["notes"], language)
+                if (missingTypes.length > 0 && !error) {
+                    // Call the Edge Function to generate missing content
+                    const { data, error } = await supabase.functions.invoke('edtech-generation', {
+                        body: {
+                            edtechId: content[0].id,
+                            chapter,
+                            knowledgeId: chapter.k_id,
+                            types: missingTypes,
+                            language
+                        }
+                    });
+
+                    if (error) {
+                        console.error('Error generating content:', error);
+                        return;
+                    }
+
+                    if (data) {
+                        setContent(data[0]);
+                    }
+                }
             }
-            if (!c[0].summary) {
-                await generateEdtechContentText(c[0].id, chapter, chapter.k_id, ["summary"], language)
-            }
-            if (!c[0].quiz && c[0].notes) {
-                await generateEdtechContentText(c[0].id, chapter, chapter.k_id, ["quiz"], language)
-            }
-            if (!c[0].mindmap && c[0].notes) {
-                await generateEdtechContentText(c[0].id, chapter, chapter.k_id, ["mindmap"], language)
-            }
+        } catch (error) {
+            setError(error);
+            console.error('Error in getEdTechContentForChapter:', error);
         }
     };
 
