@@ -66,6 +66,38 @@ const defaultScenarios: Scenario[] = [
   }
 ];
 
+// Add responsive hook
+const useScreenSize = () => {
+  const [screenSize, setScreenSize] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 1920,
+    height: typeof window !== 'undefined' ? window.innerHeight : 1080,
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const handleResize = () => {
+      setScreenSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Set initial size
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return {
+    width: screenSize.width,
+    height: screenSize.height,
+    isMobile: screenSize.width < 640,
+    isTablet: screenSize.width >= 640 && screenSize.width < 1024,
+    isDesktop: screenSize.width >= 1024,
+  };
+};
+
 const RoleplayComponent = ({ 
   scenarios = defaultScenarios, 
   onClose,
@@ -77,6 +109,27 @@ const RoleplayComponent = ({
   const [isTyping, setIsTyping] = useState(false);
   const [showScenarioList, setShowScenarioList] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { isMobile, isTablet } = useScreenSize();
+  
+  // Adjust layout for specific screen sizes
+  const adaptToScreenSize = () => {
+    // Return adjusted styles or classNames based on screen size
+    if (isMobile) {
+      return {
+        mainPadding: 'p-2 sm:p-4',
+        messageMaxWidth: 'max-w-[90%] sm:max-w-[80%]',
+        inputHeight: 'h-10',
+      };
+    } else {
+      return {
+        mainPadding: 'p-4 sm:p-6',
+        messageMaxWidth: 'max-w-[75%]',
+        inputHeight: 'h-12',
+      };
+    }
+  };
+  
+  const styles = adaptToScreenSize();
 
   // Initialize with default scenario if provided
   useEffect(() => {
@@ -149,7 +202,7 @@ const RoleplayComponent = ({
     }
   };
 
-  // Simple response generator (placeholder for actual AI integration)
+  // Simplified response generator (placeholder for actual AI integration)
   const generateSimpleResponse = (userInput: string, scenario: Scenario): string => {
     const character = scenario.characters[0];
     
@@ -208,32 +261,32 @@ const RoleplayComponent = ({
   return (
     <div className="w-full h-full bg-gray-900 text-white rounded-lg overflow-hidden flex flex-col">
       {showScenarioList ? (
-        <div className="p-6 flex flex-col h-full">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+        <div className={styles.mainPadding}>
+          <div className="flex justify-between items-center mb-4 sm:mb-6">
+            <h3 className="text-lg sm:text-xl font-semibold text-white flex items-center gap-2">
               <MessageSquare className="w-5 h-5" />
               <span>Role-Play Scenarios</span>
             </h3>
             {onClose && (
               <button 
                 onClick={onClose}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow transition duration-200 ease-in-out"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-1 px-3 sm:py-2 sm:px-4 rounded-md shadow transition duration-200 ease-in-out text-sm sm:text-base"
               >
                 Close
               </button>
             )}
           </div>
           
-          <div className="grid grid-cols-1 gap-4 overflow-y-auto flex-grow">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 overflow-y-auto flex-grow">
             {scenarios.map((scenario) => (
               <button
                 key={scenario.id}
                 onClick={() => handleScenarioSelect(scenario)}
-                className="flex flex-col p-4 bg-gray-800 hover:bg-indigo-600 text-white rounded-md shadow transition-all duration-200 ease-in-out text-left"
+                className="flex flex-col p-3 sm:p-4 bg-gray-800 hover:bg-indigo-600 text-white rounded-md shadow transition-all duration-200 ease-in-out text-left"
               >
-                <span className="text-lg font-medium">{scenario.title}</span>
-                <span className="text-sm text-gray-300 mt-1">{scenario.description}</span>
-                <div className="flex items-center mt-3 text-xs">
+                <span className="text-base sm:text-lg font-medium">{scenario.title}</span>
+                <span className="text-xs sm:text-sm text-gray-300 mt-1">{scenario.description}</span>
+                <div className="flex items-center mt-2 sm:mt-3 text-xs">
                   <span className="bg-indigo-800 px-2 py-1 rounded-full">
                     {scenario.characters.length} character{scenario.characters.length !== 1 ? 's' : ''}
                   </span>
@@ -249,117 +302,110 @@ const RoleplayComponent = ({
         </div>
       ) : (
         <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="bg-gray-800 p-4 flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <button
+          {/* Roleplay header */}
+          <div className="bg-gray-800 p-3 sm:p-4 flex justify-between items-center border-b border-gray-700">
+            <div className="flex items-center">
+              <button 
                 onClick={handleBack}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="mr-3 p-1 hover:bg-gray-700 rounded-full transition-colors"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              <h3 className="font-medium">{selectedScenario?.title}</h3>
+              <div>
+                <h3 className="font-medium text-base sm:text-lg">{selectedScenario?.title}</h3>
+                <p className="text-xs sm:text-sm text-gray-400 hidden sm:block">{selectedScenario?.description}</p>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button
+            <div className="flex items-center gap-2">
+              <button 
                 onClick={handleResetConversation}
-                className="text-gray-400 hover:text-white transition-colors"
+                className="p-2 hover:bg-gray-700 rounded-full transition-colors" 
                 title="Reset conversation"
               >
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
               {onClose && (
                 <button 
                   onClick={onClose}
-                  className="text-gray-400 hover:text-white transition-colors"
-                  title="Close roleplay"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm py-1 px-3 rounded-md shadow transition-colors"
                 >
-                  ✕
+                  Exit
                 </button>
               )}
             </div>
           </div>
           
-          {/* Messages */}
-          <div className="flex-grow overflow-y-auto p-4 space-y-4">
+          {/* Messages area */}
+          <div className={`flex-grow overflow-y-auto ${styles.mainPadding} space-y-3 sm:space-y-4`}>
             {messages.map((message) => {
               const character = message.character ? getCharacterInfo(message.character) : null;
-              
               return (
                 <div 
                   key={message.id} 
                   className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div 
-                    className={`max-w-[80%] rounded-lg p-3 ${
+                    className={`${styles.messageMaxWidth} rounded-lg p-3 sm:p-4 ${
                       message.sender === 'user' 
-                        ? 'bg-indigo-600 text-white' 
-                        : 'bg-gray-800 text-white'
+                        ? 'bg-indigo-600 rounded-tr-none' 
+                        : 'bg-gray-800 rounded-tl-none'
                     }`}
                   >
-                    {message.sender === 'ai' && character && (
-                      <div className="flex items-center gap-2 mb-1 pb-1 border-b border-gray-700">
-                        <div className="w-6 h-6 rounded-full bg-indigo-700 flex items-center justify-center">
-                          {character.avatar ? (
-                            <img 
-                              src={character.avatar} 
-                              alt={character.name} 
-                              className="w-6 h-6 rounded-full"
-                            />
-                          ) : (
-                            <Bot className="w-4 h-4" />
-                          )}
-                        </div>
-                        <span className="text-sm font-medium">{character.name}</span>
+                    <div className="flex items-center mb-1 sm:mb-2">
+                      <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center bg-gray-700 mr-2">
+                        {message.sender === 'user' ? 
+                          <User className="w-3 h-3 sm:w-4 sm:h-4" /> : 
+                          <Bot className="w-3 h-3 sm:w-4 sm:h-4" />
+                        }
                       </div>
-                    )}
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                    <div className="text-xs opacity-50 mt-1 text-right">
-                      {new Intl.DateTimeFormat('en-US', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      }).format(message.timestamp)}
+                      <span className="font-medium text-sm sm:text-base">
+                        {message.sender === 'user' ? 'You' : character?.name || 'AI'}
+                      </span>
+                    </div>
+                    <div className="text-sm sm:text-base whitespace-pre-wrap">
+                      {message.content}
                     </div>
                   </div>
                 </div>
               );
             })}
-            
             {isTyping && (
               <div className="flex justify-start">
-                <div className="bg-gray-800 text-white rounded-lg p-3 max-w-[80%]">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                <div className="bg-gray-800 rounded-lg rounded-tl-none p-3 sm:p-4 max-w-[80%] sm:max-w-[70%]">
+                  <div className="flex space-x-2 items-center text-gray-400">
+                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse"></div>
+                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse delay-75"></div>
+                    <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse delay-150"></div>
                   </div>
                 </div>
               </div>
             )}
-            
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef}></div>
           </div>
           
-          {/* Input */}
-          <div className="p-4 border-t border-gray-800">
-            <div className="flex gap-2">
+          {/* Input area */}
+          <div className={`p-${styles.inputHeight} border-t border-gray-700 bg-gray-800`}>
+            <div className="flex items-center">
               <input
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="Type your message..."
-                className="flex-grow bg-gray-800 text-white rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="flex-grow bg-gray-700 text-white rounded-l-lg px-3 py-2 sm:py-3 outline-none focus:ring-2 focus:ring-indigo-500 text-sm sm:text-base"
               />
               <button
                 onClick={handleSendMessage}
-                disabled={!inputValue.trim() || isTyping}
-                className={`bg-indigo-600 hover:bg-indigo-700 text-white rounded-md p-2 transition-colors ${
-                  !inputValue.trim() || isTyping ? 'opacity-50 cursor-not-allowed' : ''
+                disabled={isTyping || !inputValue.trim()}
+                className={`bg-indigo-600 hover:bg-indigo-700 text-white rounded-r-lg px-3 sm:px-4 py-2 sm:py-3 transition-colors ${
+                  (isTyping || !inputValue.trim()) ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
-                <Send className="w-5 h-5" />
+                <Send className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
+            </div>
+            <div className="mt-2 text-xs text-gray-400 px-1 hidden sm:block">
+              <p>Tip: Ask specific questions about {selectedScenario?.relatedCourse || 'the topic'} to get more detailed responses.</p>
             </div>
           </div>
         </div>

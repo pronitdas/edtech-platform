@@ -97,14 +97,37 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
     const [isFullscreenMindmap, setIsFullscreenMindmap] = useState(false);
     const [timelineMarkers, setTimelineMarkers] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [showSettings, setShowSettings] = useState(true);
+    const [showSettings, setShowSettings] = useState(false);
     const [generatingTypes, setGeneratingTypes] = useState<ContentType[]>([]);
+    const [isMobileView, setIsMobileView] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
     
     const {
         generateMissingContent,
         getMissingContentTypes,
         isGeneratingContent
     } = useChapters();
+
+    // Add responsive behavior detection
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobileView(window.innerWidth < 768);
+            if (window.innerWidth < 1024) {
+                setSidebarOpen(false);
+            } else {
+                setSidebarOpen(true);
+            }
+        };
+        
+        // Set initial state
+        handleResize();
+        
+        // Add event listener
+        window.addEventListener('resize', handleResize);
+        
+        // Cleanup
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Define available tabs
     const tabs = [
@@ -352,51 +375,84 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
         }
     }, [activeTab, content, tabs, quiz, mindmap, video_url, isFullscreenMindmap, timelineMarkers, isLoading]);
 
+    // Toggle sidebar for responsive layouts
+    const toggleSidebar = () => {
+        setSidebarOpen(!sidebarOpen);
+    };
+
     return (
-        <div className="flex h-full">
-            <div className="flex-grow overflow-auto">
-                {/* Main content area */}
-                <div className="p-4">
-                    <div className="flex justify-between items-center mb-4">
-                        <h1 className="text-2xl font-bold text-white">
+        <div className="flex flex-col h-full bg-gray-900">
+            {/* Header with responsive design */}
+            <div className="sticky top-0 z-10 bg-gray-800 border-b border-gray-700 px-4 py-2">
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
+                        <h1 className="text-xl sm:text-2xl font-bold text-white truncate max-w-[200px] sm:max-w-full">
                             {content?.chapter || 'Course Content'}
                         </h1>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <button
+                            onClick={toggleSidebar}
+                            className="p-2 hover:bg-gray-700 rounded-full md:hidden"
+                            title="Toggle Content"
+                        >
+                            <ChevronLeft className={`w-5 h-5 transform transition-transform ${sidebarOpen ? '' : 'rotate-180'}`} />
+                        </button>
                         <button
                             onClick={() => setShowSettings(!showSettings)}
                             className="p-2 hover:bg-gray-700 rounded-full"
                             title="Content Settings"
                         >
-                            <Settings className="w-6 h-6" />
+                            <Settings className="w-5 h-5" />
                         </button>
                     </div>
-                    
-                    {/* Content tabs and display */}
-                    <div className="mb-6">
-                        <div className="flex space-x-2 flex-wrap border-b border-gray-700 pb-2">
-                            {availableTabs.map((tab) => (
-                                <button
-                                    key={tab.key}
-                                    onClick={() => handleTabClick(tab.key)}
-                                    className={`flex items-center gap-2 py-2 px-4 rounded-md text-sm mb-2 transition-colors ${
-                                        activeTab === tab.key
-                                            ? "bg-indigo-600 text-white"
-                                            : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                                        }`}
-                                >
-                                    {tab.icon}
-                                    <span>{tab.label}</span>
-                                </button>
-                            ))}
-                        </div>
+                </div>
+                
+                {/* Responsive Tab Navigation */}
+                <div className="mt-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+                    <div className="flex space-x-1 min-w-max">
+                        {availableTabs.map((tab) => (
+                            <button
+                                key={tab.key}
+                                onClick={() => handleTabClick(tab.key)}
+                                className={`flex items-center gap-1 py-1 px-3 rounded-md text-sm transition-colors ${
+                                    activeTab === tab.key
+                                        ? "bg-indigo-600 text-white"
+                                        : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                                    }`}
+                            >
+                                {tab.icon}
+                                <span className="hidden sm:inline">{tab.label}</span>
+                            </button>
+                        ))}
                     </div>
+                </div>
+            </div>
 
-                    {/* Content Area */}
-                    <div className="flex flex-col md:flex-row h-[600px] gap-4">
-                        <div className="w-full md:w-3/4 h-full bg-gray-800 rounded-lg overflow-hidden">
+            {/* Main content area with responsive layout */}
+            <div className="flex flex-1 overflow-hidden">
+                {/* Main content */}
+                <div className={`flex-1 overflow-auto p-3 transition-all`}>
+                    <div className={`h-full flex flex-col ${isMobileView ? 'space-y-4' : 'md:flex-row md:space-x-4'}`}>
+                        {/* Content Area - Responsive sizing */}
+                        <div className={`${isMobileView ? 'w-full h-1/2' : 'w-full md:w-3/4 h-full'} bg-gray-800 rounded-lg overflow-hidden shadow-lg`}>
                             {renderContent()}
                         </div>
-                        <div className="w-full md:w-1/4 h-full">
-                            <div className="bg-gray-800 h-full rounded-lg overflow-hidden">
+                        
+                        {/* Chatbot - Collapses to bottom on mobile */}
+                        <div className={`${isMobileView ? 'w-full h-1/2' : 'w-full md:w-1/4 h-full'} bg-gray-800 rounded-lg overflow-hidden shadow-lg`}>
+                            <div className="bg-indigo-900/20 p-2 text-white font-medium flex justify-between items-center">
+                                <span>AI Assistant</span>
+                                {isMobileView && (
+                                    <button 
+                                        className="p-1 hover:bg-indigo-800/30 rounded-md"
+                                        onClick={() => setSidebarOpen(!sidebarOpen)}
+                                    >
+                                        <ChevronLeft className={`w-4 h-4 transform transition-transform ${sidebarOpen ? 'rotate-90' : '-rotate-90'}`} />
+                                    </button>
+                                )}
+                            </div>
+                            <div className={`h-[calc(100%-2.5rem)] ${isMobileView && !sidebarOpen ? 'hidden' : 'block'}`}>
                                 <Chatbot 
                                     language={language} 
                                     topic={notes || latex_code}
@@ -405,22 +461,35 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
                             </div>
                         </div>
                     </div>
-
-                    {/* Learning Report Modal */}
-                    {showReport && (
-                        <LearningReport onClose={() => setShowReport(false)} />
-                    )}
                 </div>
+
+                {/* Settings sidebar - Slides in/out */}
+                {showSettings && (
+                    <div className={`bg-gray-800 border-l border-gray-700 overflow-y-auto transition-all duration-300 ${isMobileView ? 'absolute inset-y-0 right-0 z-20 w-[85%] shadow-xl' : 'w-80'}`}>
+                        <div className="flex justify-between items-center p-4 border-b border-gray-700">
+                            <h2 className="text-lg font-medium text-white">Content Settings</h2>
+                            <button 
+                                onClick={() => setShowSettings(false)}
+                                className="p-1 hover:bg-gray-700 rounded-full"
+                            >
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <ContentGenerationPanel
+                            availableTypes={availableTypes}
+                            generatingTypes={generatingTypes}
+                            onGenerateContent={handleGenerateContent}
+                        />
+                    </div>
+                )}
             </div>
 
-            {/* Settings sidebar */}
-            {showSettings && (
-                <div className="w-80 bg-gray-800 border-l border-gray-700 overflow-y-auto">
-                    <ContentGenerationPanel
-                        availableTypes={availableTypes}
-                        generatingTypes={generatingTypes}
-                        onGenerateContent={handleGenerateContent}
-                    />
+            {/* Learning Report Modal */}
+            {showReport && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-gray-800 rounded-lg w-full max-w-3xl max-h-[90vh] overflow-auto">
+                        <LearningReport onClose={() => setShowReport(false)} />
+                    </div>
                 </div>
             )}
         </div>

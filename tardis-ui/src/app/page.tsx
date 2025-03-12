@@ -15,6 +15,7 @@ import { QuizComponent } from '@/components/quiz/QuizComponent';
 import { LearningDashboard } from '@/components/analytics/LearningDashboard';
 import { InteractionTrackerProvider } from '@/contexts/InteractionTrackerContext';
 import { analyticsService } from '@/services/analytics-service';
+import { ChevronLeft } from 'lucide-react';
 
 // Enum for application views
 const VIEW_TYPES = {
@@ -40,7 +41,6 @@ function EdtechApp() {
     chaptersMeta,
     fetchChapters,
     fetchChapterMeta,
-    reset,
     getEdTechContentForChapter
   } = useChapters();
 
@@ -101,7 +101,7 @@ function EdtechApp() {
         break;
       case VIEW_TYPES.CHAPTER_SELECTION:
         setCurrentView(VIEW_TYPES.KNOWLEDGE_SELECTION);
-        reset();
+        setContent(null);
         break;
       default:
         // Do nothing if we're already at the root view
@@ -125,107 +125,128 @@ function EdtechApp() {
 
   return (
     <InteractionTrackerProvider dataService={analyticsService} userId={userId}>
-      <div className="bg-gray-900 w-screen h-screen flex shadow-lg overflow-hidden">
+      <div className="bg-gray-900 w-screen h-screen flex flex-col shadow-lg overflow-hidden">
         {/* Sidebar - Only show in certain views */}
-        {(currentView === VIEW_TYPES.KNOWLEDGE_SELECTION || currentView === VIEW_TYPES.CHAPTER_SELECTION) && (
-          <aside className="bg-gray-800 text-white w-1/4 min-w-[300px] max-w-[350px] p-4 overflow-y-auto">
-            <FileUploader />
-          </aside>
-        )}
-
-        <main className="flex flex-col flex-grow overflow-hidden">
-          {/* Top navigation bar with back button and language selector */}
-          {currentView !== VIEW_TYPES.KNOWLEDGE_SELECTION && (
-            <div className="flex justify-between items-center p-3 bg-gray-800 text-white">
-              <button
-                onClick={handleBack}
-                className="px-4 py-1 bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                Back
-              </button>
-              <LanguageSelector language={language} onChange={setLanguage} />
-            </div>
+        <div className="flex flex-1 overflow-hidden">
+          {(currentView === VIEW_TYPES.KNOWLEDGE_SELECTION || currentView === VIEW_TYPES.CHAPTER_SELECTION) && (
+            <aside className="bg-gray-800 text-white w-full md:w-1/4 md:min-w-[250px] md:max-w-[300px] p-3 sm:p-4 overflow-y-auto">
+              <FileUploader />
+            </aside>
           )}
 
-          {/* Main content area */}
-          <div className="flex-grow overflow-auto">
-            {currentView === VIEW_TYPES.KNOWLEDGE_SELECTION && (
-              <Knowledge dimensions={knowledge} onClick={handleKnowledgeClick} />
+          <main className="flex flex-col flex-grow overflow-hidden">
+            {/* Top navigation bar with back button and language selector */}
+            {currentView !== VIEW_TYPES.KNOWLEDGE_SELECTION && (
+              <div className="flex justify-between items-center p-2 sm:p-3 bg-gray-800 text-white border-b border-gray-700">
+                <button
+                  onClick={handleBack}
+                  className="px-3 py-1 bg-blue-500 rounded-md hover:bg-blue-600 transition-colors text-sm sm:text-base flex items-center gap-1"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>Back</span>
+                </button>
+                <LanguageSelector language={language} onChange={setLanguage} />
+              </div>
             )}
 
-            {currentView === VIEW_TYPES.CHAPTER_SELECTION && (
-              <Chapters
-                chaptersMeta={chaptersMeta}
-                onLessonClick={handleChapterClick}
-                chapters={uploadedFiles}
-              />
-            )}
+            {/* Main content area */}
+            <div className="flex-grow overflow-auto">
+              {currentView === VIEW_TYPES.KNOWLEDGE_SELECTION && (
+                <Knowledge dimensions={knowledge} onClick={handleKnowledgeClick} />
+              )}
 
-            {currentView === VIEW_TYPES.COURSE_CONTENT && (
-              <div className="flex h-full">
-                <div className="flex-grow">
-                  {content ? (
-                    <MainCourse 
-                      language={language} 
-                      content={content}
-                      chapter={currentTopic.topic}
-                    />
-                  ) : (
-                    <div className="flex justify-center items-center h-full">
-                      <Loader size="medium" color="green" />
+              {currentView === VIEW_TYPES.CHAPTER_SELECTION && (
+                <Chapters
+                  chaptersMeta={chaptersMeta}
+                  onLessonClick={handleChapterClick}
+                  chapters={uploadedFiles}
+                />
+              )}
+
+              {currentView === VIEW_TYPES.COURSE_CONTENT && (
+                <div className="flex h-full flex-col lg:flex-row">
+                  <div className="flex-grow">
+                    {content ? (
+                      <MainCourse 
+                        language={language} 
+                        content={content}
+                        chapter={currentTopic.topic}
+                      />
+                    ) : (
+                      <div className="flex justify-center items-center h-full">
+                        <Loader size="medium" color="green" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="lg:w-1/4 lg:min-w-[280px] border-t lg:border-t-0 lg:border-l border-gray-700 bg-gray-800 text-white overflow-y-auto">
+                    {/* Show compact dashboard on smaller screens */}
+                    <div className="block lg:hidden">
+                      <LearningDashboard 
+                        userId={userId} 
+                        courseId={currentTopic.knowledgeId}
+                        compact={true} 
+                      />
                     </div>
-                  )}
-                </div>
-                <div className="w-1/4 min-w-[300px] border-l border-gray-700 p-4 bg-gray-800 text-white overflow-y-auto">
-                  <LearningDashboard 
-                    userId={userId} 
-                    courseId={currentTopic.knowledgeId} 
-                  />
-                </div>
-              </div>
-            )}
-
-            {currentView === VIEW_TYPES.LEARNING_MODULE && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 p-6">
-                <div className="lg:col-span-2 space-y-8">
-                  {videoContent && (
-                    <section>
-                      <h2 className="text-2xl font-bold mb-4 text-white">Video Lesson</h2>
-                      <VideoPlayer 
-                        contentId={videoContent.id} 
-                        videoUrl={videoContent.url}
-                        title={videoContent.title}
-                        poster={videoContent.thumbnail}
+                    {/* Show full dashboard on larger screens */}
+                    <div className="hidden lg:block">
+                      <LearningDashboard 
+                        userId={userId} 
+                        courseId={currentTopic.knowledgeId}
                       />
-                    </section>
-                  )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
-                  {quizContent && (
-                    <section>
-                      <h2 className="text-2xl font-bold mb-4 text-white">Knowledge Check</h2>
-                      <QuizComponent
-                        quizId={quizContent.id}
-                        title={quizContent.title}
-                        questions={quizContent.questions}
+              {currentView === VIEW_TYPES.LEARNING_MODULE && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8 p-3 sm:p-6">
+                  <div className="lg:col-span-2 space-y-6 sm:space-y-8">
+                    {videoContent && (
+                      <section>
+                        <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-white">Video Lesson</h2>
+                        <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg">
+                          <VideoPlayer 
+                            contentId={videoContent.id} 
+                            videoUrl={videoContent.url}
+                            title={videoContent.title}
+                            poster={videoContent.thumbnail}
+                          />
+                        </div>
+                      </section>
+                    )}
+
+                    {quizContent && (
+                      <section>
+                        <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-white">Knowledge Check</h2>
+                        <div className="bg-gray-800 rounded-lg overflow-hidden shadow-lg p-4">
+                          <QuizComponent
+                            quizId={quizContent.id}
+                            title={quizContent.title}
+                            questions={quizContent.questions}
+                          />
+                        </div>
+                      </section>
+                    )}
+                  </div>
+
+                  <div className="lg:col-span-1">
+                    <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-white">Your Progress</h2>
+                    <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+                      <LearningDashboard 
+                        userId={userId} 
+                        courseId={currentTopic.knowledgeId}
+                        compact={window.innerWidth < 1024}
                       />
-                    </section>
-                  )}
+                    </div>
+                  </div>
                 </div>
+              )}
+            </div>
 
-                <div className="lg:col-span-1">
-                  <h2 className="text-2xl font-bold mb-4 text-white">Your Progress</h2>
-                  <LearningDashboard 
-                    userId={userId} 
-                    courseId={currentTopic.knowledgeId}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Footer */}
-          <Footer />
-        </main>
+            {/* Footer */}
+            <Footer />
+          </main>
+        </div>
       </div>
     </InteractionTrackerProvider>
   );
@@ -235,7 +256,7 @@ const LanguageSelector = ({ language, onChange }) => (
   <select
     value={language}
     onChange={(e) => onChange(e.target.value)}
-    className="px-3 py-1 bg-white border rounded-lg"
+    className="px-2 py-1 sm:px-3 sm:py-1 bg-gray-700 text-white border border-gray-600 rounded-md text-sm"
   >
     <option value="English">English</option>
     <option value="Hindi">Hindi</option>
@@ -246,8 +267,8 @@ const LanguageSelector = ({ language, onChange }) => (
 );
 
 const Footer = () => (
-  <div className="p-4 bg-gray-800 text-white flex items-center justify-center gap-4">
-    <img className="h-[30px] w-[30px]" src="./trs.svg" alt="TRS Logo" />
+  <div className="p-2 sm:p-4 bg-gray-800 text-white flex items-center justify-center gap-2 sm:gap-4 border-t border-gray-700 text-sm">
+    <img className="h-[20px] sm:h-[30px] w-[20px] sm:w-[30px]" src="./trs.svg" alt="TRS Logo" />
     <span>Made with love at TRS</span>
   </div>
 );
