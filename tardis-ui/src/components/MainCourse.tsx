@@ -15,6 +15,8 @@ import { ContentGenerationPanel } from './content/ContentGenerationPanel';
 import { useChapters } from '@/hooks/useChapters';
 import { ContentType } from '@/services/edtech-api';
 import { interactionTracker } from '@/services/interaction-tracking';
+import { generateRoleplayScenarios } from '@/services/edtech-content';
+import useAuthState from '@/hooks/useAuth';
 import { 
   BookOpen, 
   FileText, 
@@ -25,7 +27,8 @@ import {
   BarChart2, 
   ChevronLeft,
   MessageSquare,
-  Settings
+  Settings,
+  RefreshCw
 } from 'lucide-react';
 
 // Import calculators and models
@@ -101,6 +104,8 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
     const [generatingTypes, setGeneratingTypes] = useState<ContentType[]>([]);
     const [isMobileView, setIsMobileView] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [isGeneratingRoleplay, setIsGeneratingRoleplay] = useState(false);
+    const { oAiKey } = useAuthState();
     
     const {
         generateMissingContent,
@@ -263,6 +268,34 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
         }
     };
 
+    // Handle roleplay generation
+    const handleGenerateRoleplay = async () => {
+        if (isGeneratingRoleplay || !oAiKey || !content.knowledge_id) return;
+        
+        setIsGeneratingRoleplay(true);
+        try {
+            // Get topic from chapter or content title
+            const topic = content?.chapter || content?.title || '';
+            // Get content from latex_code or original content
+            const contentText = content?.latex_code || content?.og || '';
+            
+            await generateRoleplayScenarios(
+                content.knowledge_id,
+                topic,
+                contentText,
+                oAiKey,
+                language
+            );
+            
+            // Reload chapter data to get the new roleplay scenarios
+            window.location.reload();
+        } catch (error) {
+            console.error('Error generating roleplay scenarios:', error);
+        } finally {
+            setIsGeneratingRoleplay(false);
+        }
+    };
+
     // Render content based on active tab
     const renderContent = useCallback(() => {
         if (isLoading) {
@@ -357,13 +390,52 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
                 );
 
             case 'roleplay':
-                return (
-                    <RoleplayComponent 
-                        defaultScenario={content.title === "Gnosticism" ? "gnosticism-debate" : 
-                                       content.title === "Corporate Valuation" ? "corporate-valuation" : undefined}
-                        onClose={() => setActiveTab('video')}
-                    />
-                );
+                // Check if roleplay data exists
+                if (chapter?.roleplay?.scenarios && chapter.roleplay.scenarios.length > 0) {
+                    return (
+                        <RoleplayComponent 
+                            scenarios={chapter.roleplay.scenarios}
+                            topic={content?.chapter || ''}
+                            language={language || 'English'}
+                            contextualInformation={content?.latex_code?.substring(0, 500) || ''}
+                            showScenarioGeneration={true}
+                            onClose={() => setActiveTab('video')}
+                        />
+                    );
+                } else {
+                    // Show a generator UI if no scenarios exist
+                    return (
+                        <div className="flex flex-col items-center justify-center h-full text-white p-8">
+                            <MessageSquare className="w-16 h-16 text-indigo-400 mb-4" />
+                            <h3 className="text-xl font-semibold text-center mb-3">No Roleplay Scenarios Available</h3>
+                            <p className="text-gray-400 text-center mb-6 max-w-md">
+                                Generate interactive roleplay scenarios to practice and apply concepts from this lesson.
+                            </p>
+                            <button
+                                onClick={handleGenerateRoleplay}
+                                disabled={isGeneratingRoleplay || !oAiKey}
+                                className={`flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors ${isGeneratingRoleplay ? 'opacity-70 cursor-not-allowed' : ''}`}
+                            >
+                                {isGeneratingRoleplay ? (
+                                    <>
+                                        <RefreshCw className="w-5 h-5 animate-spin" />
+                                        Generating Scenarios...
+                                    </>
+                                ) : (
+                                    <>
+                                        <MessageSquare className="w-5 h-5" />
+                                        Generate Roleplay Scenarios
+                                    </>
+                                )}
+                            </button>
+                            {!oAiKey && (
+                                <p className="text-yellow-500 mt-4 text-sm">
+                                    API key required. Please add an OpenAI API key in settings.
+                                </p>
+                            )}
+                        </div>
+                    );
+                }
 
             default:
                 return (

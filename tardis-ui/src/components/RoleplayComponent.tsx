@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { interactionTracker } from '@/services/interaction-tracking';
-import { MessageSquare, Send, User, Bot, RefreshCw, ChevronLeft } from 'lucide-react';
+import { MessageSquare, Send, User, Bot, RefreshCw, ChevronLeft, Loader2 } from 'lucide-react';
+import useAuthState from '@/hooks/useAuth';
+import { OpenAIClient } from '@/services/openAi';
 
 interface Character {
   id: string;
@@ -31,40 +33,28 @@ interface RoleplayComponentProps {
   scenarios?: Scenario[];
   onClose?: () => void;
   defaultScenario?: string;
+  topic?: string;
+  language?: string;
+  contextualInformation?: string;
+  showScenarioGeneration?: boolean;
 }
 
-const defaultScenarios: Scenario[] = [
-  {
-    id: 'gnosticism-debate',
-    title: 'Gnostic Debate',
-    description: 'Engage in a philosophical debate with a Gnostic teacher about the nature of reality and knowledge.',
-    characters: [
-      {
-        id: 'gnostic-teacher',
-        name: 'Valentinus',
-        description: 'A prominent Gnostic teacher from Alexandria',
-        avatar: '/avatars/gnostic-teacher.png'
-      }
-    ],
-    initialPrompt: 'Greetings, seeker of knowledge. I am Valentinus, a teacher of the secret wisdom. What questions do you have about the true nature of our world and the divine spark within you?',
-    relatedCourse: 'Gnosticism'
-  },
-  {
-    id: 'corporate-valuation',
-    title: 'Investment Advisor Meeting',
-    description: 'Role-play as an investment analyst discussing valuation methods with a client.',
-    characters: [
-      {
-        id: 'investment-advisor',
-        name: 'Morgan',
-        description: 'An experienced investment advisor specializing in equity valuation',
-        avatar: '/avatars/investment-advisor.png'
-      }
-    ],
-    initialPrompt: 'Good morning! I am Morgan, your investment advisor. I understand you are interested in learning more about how we value companies before making investment recommendations. What specific valuation methods would you like to discuss today?',
-    relatedCourse: 'Corporate Valuation'
-  }
-];
+// Sample fallback scenario in case API fails
+const fallbackScenario: Scenario = {
+  id: 'default',
+  title: 'Educational Discussion',
+  description: 'Engage in a discussion about the topic you are learning.',
+  characters: [
+    {
+      id: 'expert',
+      name: 'Expert',
+      description: 'An expert in the field',
+      avatar: '/avatars/expert.png'
+    }
+  ],
+  initialPrompt: 'Hello! I\'m here to discuss this topic with you. What would you like to know?',
+  relatedCourse: 'General'
+};
 
 // Add responsive hook
 const useScreenSize = () => {
@@ -99,18 +89,33 @@ const useScreenSize = () => {
 };
 
 const RoleplayComponent = ({ 
-  scenarios = defaultScenarios, 
+  scenarios = [], 
   onClose,
-  defaultScenario 
+  defaultScenario,
+  topic = '',
+  language = 'English',
+  contextualInformation = '',
+  showScenarioGeneration = true
 }: RoleplayComponentProps) => {
+  const { oAiKey } = useAuthState();
+  const [apiClient, setApiClient] = useState<OpenAIClient | null>(null);
   const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showScenarioList, setShowScenarioList] = useState(true);
+  const [generatedScenarios, setGeneratedScenarios] = useState<Scenario[]>([]);
+  const [isGeneratingScenarios, setIsGeneratingScenarios] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { isMobile, isTablet } = useScreenSize();
   
+  // Initialize OpenAI client
+  useEffect(() => {
+    if (!apiClient && oAiKey) {
+      setApiClient(new OpenAIClient(oAiKey));
+    }
+  }, [oAiKey, apiClient]);
+
   // Adjust layout for specific screen sizes
   const adaptToScreenSize = () => {
     // Return adjusted styles or classNames based on screen size
@@ -146,6 +151,83 @@ const RoleplayComponent = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Generate scenarios based on context
+  const generateScenarios = useCallback(async () => {
+    if (!apiClient) {
+      console.error('OpenAI client not initialized');
+      setGeneratedScenarios(scenarios.length > 0 ? scenarios : [fallbackScenario]);
+      return;
+    }
+
+    if (!topic && !contextualInformation) {
+      setGeneratedScenarios(scenarios.length > 0 ? scenarios : [fallbackScenario]);
+      return;
+    }
+
+    setIsGeneratingScenarios(true);
+    
+    try {
+      const systemPrompt = `
+You are an educational roleplay designer. Create ${scenarios.length > 0 ? 'additional' : '3'} engaging roleplay scenarios for students learning about "${topic}" in ${language}.
+Each scenario should:
+1. Be relevant to the subject matter
+2. Feature one or more character personas
+3. Include a compelling initial prompt
+4. Be engaging and educational
+
+${contextualInformation ? `Additional context for the scenarios: ${contextualInformation}` : ''}
+
+Format your response as a valid JSON array of scenarios:
+[
+  {
+    "id": "unique-id-1",
+    "title": "Scenario Title",
+    "description": "Brief description of the scenario",
+    "characters": [
+      {
+        "id": "character-id-1",
+        "name": "Character Name",
+        "description": "Brief description of the character"
+      }
+    ],
+    "initialPrompt": "The initial message from the character to start the conversation",
+    "relatedCourse": "${topic}"
+  }
+]`;
+
+      const scenariosJson = await apiClient.chatCompletion(
+        [{ role: 'system', content: systemPrompt }],
+        'o1-mini',
+        2000
+      );
+
+      try {
+        const parsedScenarios = JSON.parse(scenariosJson) as Scenario[];
+        // Combine with any provided scenarios
+        const combinedScenarios = [...scenarios, ...parsedScenarios];
+        setGeneratedScenarios(combinedScenarios.length > 0 ? combinedScenarios : [fallbackScenario]);
+      } catch (parseError) {
+        console.error('Error parsing generated scenarios:', parseError);
+        // Use fallback if parsing fails
+        setGeneratedScenarios(scenarios.length > 0 ? scenarios : [fallbackScenario]);
+      }
+    } catch (error) {
+      console.error('Error generating scenarios:', error);
+      setGeneratedScenarios(scenarios.length > 0 ? scenarios : [fallbackScenario]);
+    } finally {
+      setIsGeneratingScenarios(false);
+    }
+  }, [apiClient, topic, language, contextualInformation, scenarios]);
+
+  // Generate scenarios on component mount if needed
+  useEffect(() => {
+    if (showScenarioGeneration && scenarios.length === 0) {
+      generateScenarios();
+    } else {
+      setGeneratedScenarios(scenarios);
+    }
+  }, [showScenarioGeneration, scenarios, generateScenarios]);
+
   // Handle scenario selection
   const handleScenarioSelect = (scenario: Scenario) => {
     setSelectedScenario(scenario);
@@ -164,7 +246,7 @@ const RoleplayComponent = ({
 
   // Handle sending a message
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || !selectedScenario) return;
+    if (!inputValue.trim() || !selectedScenario || !apiClient) return;
     
     // Add user message
     const userMessage: Message = {
@@ -179,52 +261,70 @@ const RoleplayComponent = ({
     setIsTyping(true);
     
     try {
-      // In a real implementation, this would call an API to get the AI response
-      // For now, we'll simulate a response after a delay
-      setTimeout(() => {
-        const aiResponse = generateSimpleResponse(inputValue, selectedScenario);
-        const aiMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: aiResponse,
-          sender: 'ai',
-          character: selectedScenario.characters[0].id,
-          timestamp: new Date()
-        };
-        
-        setMessages(prev => [...prev, aiMessage]);
-        setIsTyping(false);
-      }, 1500);
+      // Context-aware roleplay AI responses
+      const character = selectedScenario.characters[0];
+      const conversationHistory = messages.map(msg => ({
+        role: msg.sender === 'user' ? 'user' as const : 'assistant' as const,
+        content: msg.content
+      }));
+
+      const systemPrompt = `
+You are roleplaying as ${character.name}, ${character.description}, in a learning scenario about "${selectedScenario.title}".
+Topic: ${topic || selectedScenario.relatedCourse || 'General Education'}
+Language: ${language}
+
+CHARACTER BACKGROUND:
+${character.description}
+
+SCENARIO CONTEXT:
+${selectedScenario.description}
+
+${contextualInformation ? `ADDITIONAL CONTEXT:
+${contextualInformation}` : ''}
+
+INSTRUCTIONS:
+- Stay in character at all times
+- Be educational but engaging
+- Keep responses concise (2-3 paragraphs maximum)
+- Relate your responses to the educational topic when relevant
+- Use appropriate language and terminology for ${language}
+- Aim to draw out the user's understanding and reasoning through questions`;
+
+      const aiResponse = await apiClient.chatCompletion(
+        [
+          { role: 'system', content: systemPrompt },
+          ...conversationHistory,
+          { role: 'user', content: inputValue }
+        ],
+        'o1-mini',
+        800
+      );
+
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: aiResponse,
+        sender: 'ai',
+        character: selectedScenario.characters[0].id,
+        timestamp: new Date()
+      };
       
+      setMessages(prev => [...prev, aiMessage]);
       interactionTracker.trackAnimationView();
+      interactionTracker.trackChatbotQuestion(inputValue);
     } catch (error) {
       console.error('Error getting AI response:', error);
+      // Fallback to simple response if API fails
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "I'm having trouble responding right now. Could you try a different question?",
+        sender: 'ai',
+        character: selectedScenario.characters[0].id,
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, aiMessage]);
+    } finally {
       setIsTyping(false);
-    }
-  };
-
-  // Simplified response generator (placeholder for actual AI integration)
-  const generateSimpleResponse = (userInput: string, scenario: Scenario): string => {
-    const character = scenario.characters[0];
-    
-    // Very basic response logic based on scenario
-    if (scenario.id === 'gnosticism-debate') {
-      if (userInput.toLowerCase().includes('knowledge') || userInput.toLowerCase().includes('gnosis')) {
-        return `True gnosis is not mere intellectual understanding, but direct spiritual knowledge. It is the recognition of your divine origin and the spark of the true God within you.`;
-      } else if (userInput.toLowerCase().includes('demiurge') || userInput.toLowerCase().includes('creator')) {
-        return `The Demiurge is the false creator god who fashioned this material prison. He is ignorant of the true spiritual realm above him and believes himself to be the only god.`;
-      } else {
-        return `That is an interesting question. In Gnostic teaching, we believe that this material world is a prison created by a lesser deity. The true God is far beyond this realm, and pieces of that divine light are trapped within certain humans. Through gnosis, or spiritual knowledge, we can escape this prison and return to the divine realm.`;
-      }
-    } else if (scenario.id === 'corporate-valuation') {
-      if (userInput.toLowerCase().includes('p/e') || userInput.toLowerCase().includes('price to earnings')) {
-        return `The Price-to-Earnings ratio is one of the most common valuation metrics. It compares a company's share price to its earnings per share. A high P/E might indicate that investors expect high growth in the future, but it could also suggest the stock is overvalued. Industry context is crucial when interpreting P/E ratios.`;
-      } else if (userInput.toLowerCase().includes('dcf') || userInput.toLowerCase().includes('discounted cash flow')) {
-        return `Discounted Cash Flow analysis is a more comprehensive valuation method that estimates a company's intrinsic value based on projected future cash flows. We discount these future cash flows back to present value using an appropriate discount rate that reflects the risk. It's more complex but often provides a more complete picture than simple ratio analysis.`;
-      } else {
-        return `That's a great question about valuation. When analyzing companies, we use multiple methods including P/E ratios, price-to-book, discounted cash flow models, and comparative analysis. Each has strengths and limitations, which is why we typically use several approaches to triangulate a reasonable valuation range.`;
-      }
-    } else {
-      return `I'm interested in discussing that further. Could you elaborate on your thoughts?`;
     }
   };
 
@@ -258,6 +358,12 @@ const RoleplayComponent = ({
     return selectedScenario.characters.find(c => c.id === characterId);
   };
 
+  // Generate new scenarios
+  const handleGenerateNewScenarios = () => {
+    if (isGeneratingScenarios) return;
+    generateScenarios();
+  };
+
   return (
     <div className="w-full h-full bg-gray-900 text-white rounded-lg overflow-hidden flex flex-col">
       {showScenarioList ? (
@@ -265,40 +371,79 @@ const RoleplayComponent = ({
           <div className="flex justify-between items-center mb-4 sm:mb-6">
             <h3 className="text-lg sm:text-xl font-semibold text-white flex items-center gap-2">
               <MessageSquare className="w-5 h-5" />
-              <span>Role-Play Scenarios</span>
+              <span>Role-Play Scenarios {topic ? `for ${topic}` : ''}</span>
             </h3>
-            {onClose && (
-              <button 
-                onClick={onClose}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-1 px-3 sm:py-2 sm:px-4 rounded-md shadow transition duration-200 ease-in-out text-sm sm:text-base"
-              >
-                Close
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {showScenarioGeneration && (
+                <button 
+                  onClick={handleGenerateNewScenarios}
+                  disabled={isGeneratingScenarios || !apiClient}
+                  className={`bg-indigo-700 hover:bg-indigo-800 text-white font-semibold py-1 px-3 rounded-md shadow transition-colors ${isGeneratingScenarios ? 'opacity-50' : ''}`}
+                >
+                  {isGeneratingScenarios ? (
+                    <div className="flex items-center">
+                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      <span>Generating...</span>
+                    </div>
+                  ) : (
+                    <span>Generate New</span>
+                  )}
+                </button>
+              )}
+              {onClose && (
+                <button 
+                  onClick={onClose}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-1 px-3 sm:py-2 sm:px-4 rounded-md shadow transition duration-200 ease-in-out text-sm sm:text-base"
+                >
+                  Close
+                </button>
+              )}
+            </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 overflow-y-auto flex-grow">
-            {scenarios.map((scenario) => (
-              <button
-                key={scenario.id}
-                onClick={() => handleScenarioSelect(scenario)}
-                className="flex flex-col p-3 sm:p-4 bg-gray-800 hover:bg-indigo-600 text-white rounded-md shadow transition-all duration-200 ease-in-out text-left"
-              >
-                <span className="text-base sm:text-lg font-medium">{scenario.title}</span>
-                <span className="text-xs sm:text-sm text-gray-300 mt-1">{scenario.description}</span>
-                <div className="flex items-center mt-2 sm:mt-3 text-xs">
-                  <span className="bg-indigo-800 px-2 py-1 rounded-full">
-                    {scenario.characters.length} character{scenario.characters.length !== 1 ? 's' : ''}
-                  </span>
-                  {scenario.relatedCourse && (
-                    <span className="ml-2 bg-gray-700 px-2 py-1 rounded-full">
-                      {scenario.relatedCourse}
-                    </span>
+          {isGeneratingScenarios ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="w-12 h-12 animate-spin text-indigo-500 mb-4" />
+              <p className="text-gray-300">Creating engaging scenarios about {topic || 'your subject'}...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 overflow-y-auto flex-grow">
+              {generatedScenarios.length > 0 ? (
+                generatedScenarios.map((scenario) => (
+                  <button
+                    key={scenario.id}
+                    onClick={() => handleScenarioSelect(scenario)}
+                    className="flex flex-col p-3 sm:p-4 bg-gray-800 hover:bg-indigo-600 text-white rounded-md shadow transition-all duration-200 ease-in-out text-left"
+                  >
+                    <span className="text-base sm:text-lg font-medium">{scenario.title}</span>
+                    <span className="text-xs sm:text-sm text-gray-300 mt-1">{scenario.description}</span>
+                    <div className="flex items-center mt-2 sm:mt-3 text-xs">
+                      <span className="bg-indigo-800 px-2 py-1 rounded-full">
+                        {scenario.characters.length} character{scenario.characters.length !== 1 ? 's' : ''}
+                      </span>
+                      {scenario.relatedCourse && (
+                        <span className="ml-2 bg-gray-700 px-2 py-1 rounded-full">
+                          {scenario.relatedCourse}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <div className="col-span-full text-center p-6 bg-gray-800 rounded-lg">
+                  <p className="text-gray-300 mb-3">No scenarios available.</p>
+                  {showScenarioGeneration && (
+                    <button
+                      onClick={handleGenerateNewScenarios}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow transition"
+                    >
+                      Generate Scenarios
+                    </button>
                   )}
                 </div>
-              </button>
-            ))}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       ) : (
         <div className="flex flex-col h-full">
@@ -384,7 +529,7 @@ const RoleplayComponent = ({
           </div>
           
           {/* Input area */}
-          <div className={`p-${styles.inputHeight} border-t border-gray-700 bg-gray-800`}>
+          <div className={`p-3 border-t border-gray-700 bg-gray-800`}>
             <div className="flex items-center">
               <input
                 type="text"
@@ -393,19 +538,20 @@ const RoleplayComponent = ({
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="Type your message..."
                 className="flex-grow bg-gray-700 text-white rounded-l-lg px-3 py-2 sm:py-3 outline-none focus:ring-2 focus:ring-indigo-500 text-sm sm:text-base"
+                disabled={isTyping}
               />
               <button
                 onClick={handleSendMessage}
-                disabled={isTyping || !inputValue.trim()}
+                disabled={isTyping || !inputValue.trim() || !apiClient}
                 className={`bg-indigo-600 hover:bg-indigo-700 text-white rounded-r-lg px-3 sm:px-4 py-2 sm:py-3 transition-colors ${
-                  (isTyping || !inputValue.trim()) ? 'opacity-50 cursor-not-allowed' : ''
+                  (isTyping || !inputValue.trim() || !apiClient) ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
                 <Send className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
             <div className="mt-2 text-xs text-gray-400 px-1 hidden sm:block">
-              <p>Tip: Ask specific questions about {selectedScenario?.relatedCourse || 'the topic'} to get more detailed responses.</p>
+              <p>Tip: Ask specific questions about {selectedScenario?.relatedCourse || topic || 'the topic'} to get more detailed responses.</p>
             </div>
           </div>
         </div>

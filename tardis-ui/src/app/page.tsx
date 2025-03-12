@@ -16,6 +16,8 @@ import { LearningDashboard } from '@/components/analytics/LearningDashboard';
 import { InteractionTrackerProvider } from '@/contexts/InteractionTrackerContext';
 import { analyticsService } from '@/services/analytics-service';
 import { ChevronLeft } from 'lucide-react';
+import { useUser } from '@/contexts/UserContext';
+import { useNavigate } from 'react-router-dom';
 
 // Enum for application views
 const VIEW_TYPES = {
@@ -27,7 +29,16 @@ const VIEW_TYPES = {
 
 function EdtechApp() {
   // User auth state - use a simpler approach for user ID
-  const userId = 'user123'; // We'll use a fixed ID for now, in a real app this would come from auth
+  const {user} = useUser();
+  const navigate = useNavigate(); // Initialize useNavigate hook
+
+  let userId = null;
+  if(user) {
+    console.log(user);
+    userId = user.id; // We'll use a fixed ID for now, in a real app this would come from auth
+  } else {
+    navigate('/login');
+  }
 
   // Knowledge and language hooks
   const { knowledge } = useKnowledgeData();

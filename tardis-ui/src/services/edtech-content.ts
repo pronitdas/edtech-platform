@@ -3,6 +3,7 @@
 import { windowedChunk } from "@/components/utils";
 import supabase from "./supabase";
 import { analyzeMarkdown, cleanMarkdown, processMarkdown } from "./markdown-utils";
+import { OpenAIClient } from "./openAi";
 
 
 export const getEdTechContent = async (chapter, language = "English") => {
@@ -221,18 +222,23 @@ export const getKnowledgeMeta = async (id) => {
     return data;
 }
 export const getKnowledge = async () => {
-    const { data, error } = await supabase
-        .from('knowledge')
-        .select("id, name, chapters_v1(k_id, subtopic, chaptertitle)")
-        .order('created_at', { ascending: false }); // Order by created_at in descending order
-
-    if (error) {
-        console.error("Error fetching knowledge:", error);
-        throw error;
+    try {
+        const { data, error } = await supabase
+            .from('knowledge')
+            .select('id, name, seeded, status, filename, roleplay, chapters_v1(k_id, subtopic, chaptertitle)') // Combined both sets of fields
+            .order('created_at', { ascending: false });
+        
+        if (error) {
+            console.error('Error fetching knowledge:', error);
+            return [];
+        }
+        
+        return data || [];
+    } catch (error) {
+        console.error('Exception fetching knowledge:', error);
+        return [];
     }
-
-    return data;
-};
+}
 
 export const lineRanges = {
     small: 6,   // Chapters with 10 lines or less
@@ -376,4 +382,111 @@ export const distributeChaptersEqually = (content, metadata, lineRanges, key) =>
     }
 
     return distributedChapters;
+};
+
+// Function to get roleplay data for a specific knowledge entry
+export const getRoleplayData = async (knowledgeId: number) => {
+    const { data, error } = await supabase
+        .from('knowledge')
+        .select('roleplay')
+        .eq('id', knowledgeId)
+        .single();
+    
+    if (error) {
+        console.error('Error fetching roleplay data:', error);
+        return null;
+    }
+    
+    return data?.roleplay;
+}
+
+// Function to update roleplay data for a knowledge entry
+export const updateRoleplayData = async (knowledgeId: number, roleplayData: any) => {
+    const { data, error } = await supabase
+        .from('knowledge')
+        .update({ roleplay: roleplayData })
+        .eq('id', knowledgeId)
+        .select('roleplay');
+    
+    if (error) {
+        console.error('Error updating roleplay data:', error);
+        return null;
+    }
+    
+    return data?.[0]?.roleplay;
+}
+
+// Function to generate roleplay scenarios based on course content
+export const generateRoleplayScenarios = async (
+    knowledgeId: number, 
+    topic: string, 
+    content: string, 
+    apiKey: string, 
+    language: string = 'English'
+) => {
+    try {
+        // Initialize the OpenAI client
+        const openAIClient = new OpenAIClient(apiKey);
+        
+        const systemPrompt = `
+You are an educational roleplay designer. Create 2 engaging roleplay scenarios for students learning about "${topic}" in ${language}.
+Each scenario should:
+1. Be relevant to the subject matter
+2. Feature one character persona that helps understanding the content
+3. Include a compelling initial prompt
+4. Be engaging and educational
+
+Content context to base scenarios on:
+${content.substring(0, 1500)} // Limiting to 1500 chars to avoid token issues
+
+Format your response as a valid JSON array of scenarios:
+[
+  {
+    "id": "${topic.toLowerCase().replace(/\s+/g, '-')}-scenario-1",
+    "title": "Scenario Title",
+    "description": "Brief description of the scenario",
+    "characters": [
+      {
+        "id": "${topic.toLowerCase().replace(/\s+/g, '-')}-character-1",
+        "name": "Character Name",
+        "description": "Brief description of the character"
+      }
+    ],
+    "initialPrompt": "The initial message from the character to start the conversation",
+    "relatedCourse": "${topic}"
+  }
+]`;
+
+        const scenariosJson = await openAIClient.chatCompletion(
+            [{ role: 'system', content: systemPrompt }],
+            'o1-mini',
+            2000
+        );
+
+        let scenarios = [];
+        try {
+            scenarios = JSON.parse(scenariosJson);
+        } catch (parseError) {
+            console.error('Error parsing generated scenarios:', parseError);
+            return null;
+        }
+
+        // Update the knowledge entry with the generated scenarios
+        const roleplayData = { scenarios };
+        const { data, error } = await supabase
+            .from('knowledge')
+            .update({ roleplay: roleplayData })
+            .eq('id', knowledgeId)
+            .select('roleplay');
+
+        if (error) {
+            console.error('Error updating roleplay data:', error);
+            return null;
+        }
+
+        return data?.[0]?.roleplay;
+    } catch (error) {
+        console.error('Error generating roleplay scenarios:', error);
+        return null;
+    }
 };
