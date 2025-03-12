@@ -15,7 +15,7 @@ import { QuizComponent } from '@/components/quiz/QuizComponent';
 import { LearningDashboard } from '@/components/analytics/LearningDashboard';
 import { InteractionTrackerProvider } from '@/contexts/InteractionTrackerContext';
 import { analyticsService } from '@/services/analytics-service';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Menu, X } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -68,6 +68,14 @@ function EdtechApp() {
   const [videoContent, setVideoContent] = useState(null);
   const [quizContent, setQuizContent] = useState(null);
   
+  // Sidebar mobile toggle state
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Toggle sidebar on mobile
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   // Handle knowledge domain selection
   const handleKnowledgeClick = async (id) => {
     await fetchChapters(id, language);
@@ -137,25 +145,81 @@ function EdtechApp() {
   return (
     <InteractionTrackerProvider dataService={analyticsService} userId={userId}>
       <div className="bg-gray-900 w-screen h-screen flex flex-col shadow-lg overflow-hidden">
-        {/* Sidebar - Only show in certain views */}
+        {/* Main content area with sidebar */}
         <div className="flex flex-1 overflow-hidden">
-          {(currentView === VIEW_TYPES.KNOWLEDGE_SELECTION || currentView === VIEW_TYPES.CHAPTER_SELECTION) && (
-            <aside className="bg-gray-800 text-white w-full md:w-1/4 md:min-w-[250px] md:max-w-[300px] p-3 sm:p-4 overflow-y-auto">
-              <FileUploader />
+          {/* Sidebar - Show in all views except knowledge selection */}
+          {currentView !== VIEW_TYPES.KNOWLEDGE_SELECTION && (
+            <aside className={`${sidebarOpen ? 'absolute inset-y-0 left-0 z-50' : 'hidden'} md:relative md:flex bg-gray-800 text-white md:w-1/4 md:min-w-[250px] md:max-w-[300px] flex-col overflow-hidden border-r border-gray-700 shadow-lg`}>
+              {/* Mobile close button */}
+              <button 
+                className="md:hidden absolute top-2 right-2 p-1 rounded-full bg-gray-700 text-gray-300"
+                onClick={toggleSidebar}
+              >
+                <X className="h-5 w-5" />
+              </button>
+              
+              {/* Course Completion Tracker */}
+              {currentTopic.knowledgeId && (
+                <div className="p-3 sm:p-4 border-b border-gray-700">
+                  <h3 className="text-lg font-semibold mb-2">Your Progress</h3>
+                  <LearningDashboard 
+                    userId={userId} 
+                    courseId={currentTopic.knowledgeId}
+                    compact={true}
+                  />
+                </div>
+              )}
+              
+              {/* Chapter Selector */}
+              {uploadedFiles.length > 0 && (
+                <div className="flex-1 overflow-y-auto">
+                  <div className="p-3 sm:p-4 border-b border-gray-700">
+                    <h3 className="text-lg font-semibold mb-2">Chapters</h3>
+                  </div>
+                  <div className="sidebar-chapters overflow-y-auto">
+                    <Chapters
+                      chaptersMeta={chaptersMeta}
+                      onLessonClick={(chapter) => {
+                        handleChapterClick(chapter);
+                        if (sidebarOpen) setSidebarOpen(false);
+                      }}
+                      chapters={uploadedFiles}
+                      compact={true}
+                    />
+                  </div>
+                </div>
+              )}
+              
+              {/* File uploader - only show in chapter selection view */}
+              {currentView === VIEW_TYPES.CHAPTER_SELECTION && (
+                <div className="p-3 sm:p-4 mt-auto border-t border-gray-700">
+                  <FileUploader />
+                </div>
+              )}
             </aside>
           )}
 
           <main className="flex flex-col flex-grow overflow-hidden">
-            {/* Top navigation bar with back button and language selector */}
+            {/* Top navigation bar with back button, sidebar toggle and language selector */}
             {currentView !== VIEW_TYPES.KNOWLEDGE_SELECTION && (
               <div className="flex justify-between items-center p-2 sm:p-3 bg-gray-800 text-white border-b border-gray-700">
-                <button
-                  onClick={handleBack}
-                  className="px-3 py-1 bg-blue-500 rounded-md hover:bg-blue-600 transition-colors text-sm sm:text-base flex items-center gap-1"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  <span>Back</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  {/* Mobile sidebar toggle */}
+                  <button
+                    onClick={toggleSidebar}
+                    className="md:hidden p-1.5 rounded bg-gray-700 text-white"
+                  >
+                    <Menu className="w-5 h-5" />
+                  </button>
+                  
+                  <button
+                    onClick={handleBack}
+                    className="px-3 py-1 bg-blue-500 rounded-md hover:bg-blue-600 transition-colors text-sm sm:text-base flex items-center gap-1"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    <span>Back</span>
+                  </button>
+                </div>
                 <LanguageSelector language={language} onChange={setLanguage} />
               </div>
             )}
@@ -163,19 +227,30 @@ function EdtechApp() {
             {/* Main content area */}
             <div className="flex-grow overflow-auto">
               {currentView === VIEW_TYPES.KNOWLEDGE_SELECTION && (
-                <Knowledge dimensions={knowledge} onClick={handleKnowledgeClick} />
+                <div className="flex h-full flex-col md:flex-row">
+                  {/* Sidebar for knowledge selection view */}
+                  <aside className="bg-gray-800 text-white w-full md:w-1/4 md:min-w-[250px] md:max-w-[300px] p-3 sm:p-4 overflow-y-auto border-b md:border-b-0 md:border-r border-gray-700">
+                    <FileUploader />
+                  </aside>
+                  
+                  {/* Knowledge grid */}
+                  <div className="flex-1 overflow-auto">
+                    <Knowledge dimensions={knowledge} onClick={handleKnowledgeClick} />
+                  </div>
+                </div>
               )}
 
               {currentView === VIEW_TYPES.CHAPTER_SELECTION && (
-                <Chapters
-                  chaptersMeta={chaptersMeta}
-                  onLessonClick={handleChapterClick}
-                  chapters={uploadedFiles}
-                />
+                <div className="w-full h-full flex items-center justify-center text-white">
+                  <div className="text-center max-w-md mx-auto p-6">
+                    <h2 className="text-2xl font-bold mb-4">Select a Chapter</h2>
+                    <p className="mb-4 text-gray-400">Please select a chapter from the sidebar to view its content.</p>
+                  </div>
+                </div>
               )}
 
               {currentView === VIEW_TYPES.COURSE_CONTENT && (
-                <div className="flex h-full flex-col lg:flex-row">
+                <div className="flex h-full flex-col">
                   <div className="flex-grow">
                     {content ? (
                       <MainCourse 
@@ -188,23 +263,6 @@ function EdtechApp() {
                         <Loader size="medium" color="green" />
                       </div>
                     )}
-                  </div>
-                  <div className="lg:w-1/4 lg:min-w-[280px] border-t lg:border-t-0 lg:border-l border-gray-700 bg-gray-800 text-white overflow-y-auto">
-                    {/* Show compact dashboard on smaller screens */}
-                    <div className="block lg:hidden">
-                      <LearningDashboard 
-                        userId={userId} 
-                        courseId={currentTopic.knowledgeId}
-                        compact={true} 
-                      />
-                    </div>
-                    {/* Show full dashboard on larger screens */}
-                    <div className="hidden lg:block">
-                      <LearningDashboard 
-                        userId={userId} 
-                        courseId={currentTopic.knowledgeId}
-                      />
-                    </div>
                   </div>
                 </div>
               )}
