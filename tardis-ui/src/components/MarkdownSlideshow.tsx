@@ -10,7 +10,6 @@ const MarkdownSlideshow: React.FC<{
     knowledge_id: string;
 }> = ({ content, images = [], knowledge_id }) => {
     const [currentSlide, setCurrentSlide] = useState(0);
-    console.log(content);
     const hasNextSlide = currentSlide < content.length - 1;
     const hasPreviousSlide = currentSlide > 0;
 

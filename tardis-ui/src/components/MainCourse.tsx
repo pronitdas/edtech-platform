@@ -1,195 +1,569 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Quiz from '@/components/Quiz';
-
 import MarkdownSlideshow from '@/components/MarkdownSlideshow';
 import Chatbot from './ChatBot';
-import YouTubePlaceholder from './Video';
+import VideoPlayer from './VideoPlayer';
+import ContentToggle from './ContentToggle';
+import InteractiveModule from './InteractiveModule';
+import EnhancedMindMap from './EnhancedMindMap';
+import LearningReport from './LearningReport';
+import RoleplayComponent from './RoleplayComponent';
 import Loader from './ui/Loader';
-import MindMap from './MindMap';
-import PERatioCalculator from './PERatioCalculator';
-import PriceToCashFlowCalculator from './PriceToCashFlowCalculator';
-import StockValuationModel from './StockValuationModel';
-import DividendGrowthModel from './DividendGrowthModel';
-import DiscountRateCalculator from './DiscountRateModel';
-import PERatioVisualization from './PERatioVisualization';
-import DividendGrowthCalculator from './DividendGrowthModel';
-import BookValueCalculator from './BookValueCalculator';
-import PriceToDividendCalculator from './PriceToDividendCalculator';
-import LiquidationValueCalculator from './LiquidationValueCalculator';
+import { ContentGenerationPanel } from './content/ContentGenerationPanel';
+import { useChapters } from '@/hooks/useChapters';
+import { ContentType } from '@/services/edtech-api';
+import { interactionTracker } from '@/services/interaction-tracking';
+import { generateRoleplayScenarios } from '@/services/edtech-content';
+import useAuthState from '@/hooks/useAuth';
+import { 
+  BookOpen, 
+  FileText, 
+  PieChart, 
+  Video, 
+  Brain, 
+  Play, 
+  BarChart2, 
+  ChevronLeft,
+  MessageSquare,
+  Settings,
+  RefreshCw
+} from 'lucide-react';
 
-// MainCourse Component
-const MainCourse = ({ content, language }) => {
+// Import calculators and models
+import { getSpecialComponent } from '@/services/component-mapper';
+
+interface MainCourseProps {
+    content: any;
+    language: string;
+    chapter: any;
+}
+
+// Define animation modules
+const animationModules = [
+    {
+        title: "Price to Earnings Model",
+        component: "PriceToEarningsModel",
+        type: "animation" as const,
+        relatedVideos: ["Corporate Valuation"],
+        description: "Calculate and visualize price to earnings ratios"
+    },
+    {
+        title: "Price to Cash Flow Model",
+        component: "PriceToCashFlowModel",
+        type: "animation" as const,
+        relatedVideos: ["Corporate Valuation"],
+        description: "Analyze price to cash flow metrics"
+    },
+    {
+        title: "Price to Dividend Model",
+        component: "PriceToDividendModel",
+        type: "animation" as const,
+        relatedVideos: ["Corporate Valuation"],
+        description: "Explore dividend-based valuation"
+    },
+    {
+        title: "Book Value Calculator",
+        component: "BookValueCalculator",
+        type: "animation" as const,
+        relatedVideos: ["Corporate Valuation"],
+        description: "Calculate book value to market price ratios"
+    },
+    {
+        title: "Stock Valuation Model",
+        component: "StockValuationModel",
+        type: "animation" as const,
+        relatedVideos: ["Corporate Valuation"],
+        description: "Comprehensive stock valuation tool"
+    },
+    {
+        title: "Dividend Growth Calculator",
+        component: "DividendGrowthCalculator",
+        type: "animation" as const,
+        relatedVideos: ["Corporate Valuation"],
+        description: "Calculate future dividend growth"
+    },
+    {
+        title: "Discount Rate Model",
+        component: "DiscountRateModel",
+        type: "animation" as const,
+        relatedVideos: ["Corporate Valuation"],
+        description: "Analyze discount rates for valuations"
+    }
+];
+
+const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
     const { notes, latex_code, mindmap, quiz = [], summary, og, video_url = "k85mRPqvMbE" } = content;
     const [activeTab, setActiveTab] = useState("notes");
-    const [viewMode, setViewMode] = useState("default"); // Add view mode state
-    const renderQuiz = useMemo(() =>
-        quiz && quiz.length > 0 ? (
-            <Quiz questions={quiz} />
-        ) : (
-            <p className="text-center">Generate quiz questions in the Text Analysis section to start the quiz.</p>
-        ), [quiz]);
-    const renderMarkdown = useCallback((activeTab) => {
-        // Map of special content start phrases to their corresponding components
-        const specialContentMap = {
-            "How much investors": <PERatioCalculator />,
-            "Evaluate": <PriceToCashFlowCalculator />,
-            "This tool": <StockValuationModel />,
-            "Understanding": <DividendGrowthCalculator />,
-            "The discount rate": <DiscountRateCalculator />,
-            "Key Insights": <PERatioVisualization />,
-            "The Dividend Growth Model": <DividendGrowthModel />,
-            "Book Value": <BookValueCalculator />,
-            "Price-to-Dividend": <PriceToDividendCalculator />,
-            "Liquidation value": <LiquidationValueCalculator />
-        };
+    const [showReport, setShowReport] = useState(false);
+    const [isFullscreenMindmap, setIsFullscreenMindmap] = useState(false);
+    const [timelineMarkers, setTimelineMarkers] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
+    const [generatingTypes, setGeneratingTypes] = useState<ContentType[]>([]);
+    const [isMobileView, setIsMobileView] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [isGeneratingRoleplay, setIsGeneratingRoleplay] = useState(false);
+    const { oAiKey } = useAuthState();
+    
+    const {
+        generateMissingContent,
+        getMissingContentTypes,
+        isGeneratingContent
+    } = useChapters();
 
-        // Determine content based on activeTab
-        let mdContent;
+    // Add responsive behavior detection
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobileView(window.innerWidth < 768);
+            if (window.innerWidth < 1024) {
+                setSidebarOpen(false);
+            } else {
+                setSidebarOpen(true);
+            }
+        };
+        
+        // Set initial state
+        handleResize();
+        
+        // Add event listener
+        window.addEventListener('resize', handleResize);
+        
+        // Cleanup
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    // Define available tabs
+    const tabs = [
+        {
+            label: "Notes",
+            key: "notes",
+            condition: latex_code || og,
+            content: latex_code || og,
+            icon: <FileText className="w-4 h-4" />
+        },
+        {
+            label: "Assisted Notes",
+            key: "regenNotes",
+            condition: notes,
+            content: notes,
+            icon: <BookOpen className="w-4 h-4" />
+        },
+        {
+            label: "Summary",
+            key: "regenSummary",
+            condition: summary,
+            content: summary,
+            icon: <FileText className="w-4 h-4" />
+        },
+        {
+            label: "Mindmap",
+            key: "mindmap",
+            condition: mindmap,
+            content: mindmap,
+            icon: <Brain className="w-4 h-4" />
+        },
+        {
+            label: "Quiz",
+            key: "quiz",
+            condition: quiz && quiz.length > 0,
+            content: quiz,
+            icon: <PieChart className="w-4 h-4" />
+        },
+        {
+            label: "Roleplay",
+            key: "roleplay",
+            condition: true,
+            content: null,
+            icon: <MessageSquare className="w-4 h-4" />
+        },
+        {
+            label: "Video",
+            key: "video",
+            condition: true,
+            content: video_url,
+            icon: <Video className="w-4 h-4" />
+        },
+        {
+            label: "Practice",
+            key: "practice",
+            condition: true,
+            content: null,
+            icon: <Play className="w-4 h-4" />
+        },
+        {
+            label: "Report",
+            key: "report",
+            condition: true,
+            content: null,
+            icon: <BarChart2 className="w-4 h-4" />
+        }
+    ];
+
+    // Filter tabs based on available content
+    const availableTabs = tabs.filter(tab => tab.condition);
+
+    // Set default tab if current is not available
+    useEffect(() => {
+        const currentTabExists = availableTabs.some(tab => tab.key === activeTab);
+        if (!currentTabExists && availableTabs.length > 0) {
+            setActiveTab(availableTabs[0].key);
+        }
+    }, [availableTabs, activeTab]);
+
+    // Handle tab click
+    const handleTabClick = (tabKey: string) => {
+        setIsLoading(true);
+        setActiveTab(tabKey);
+        
+        // Track tab interactions
+        switch (tabKey) {
+            case 'quiz':
+                interactionTracker.trackQuizClick();
+                break;
+            case 'notes':
+            case 'regenNotes':
+                interactionTracker.trackNotesClick();
+                break;
+            case 'regenSummary':
+                interactionTracker.trackSummaryClick();
+                break;
+            case 'mindmap':
+                interactionTracker.trackMindmapClick();
+                break;
+            case 'practice':
+                interactionTracker.trackAnimationView();
+                break;
+            case 'report':
+                setShowReport(true);
+                break;
+        }
+
+        // Simulate loading delay
+        setTimeout(() => {
+            setIsLoading(false);
+        }, 300);
+    };
+
+    // Handle mindmap back button
+    const handleMindmapBack = () => {
+        setIsFullscreenMindmap(false);
+    };
+
+    // Get available and missing content types
+    const availableTypes = Object.keys(content || {}).filter(key => 
+        ['notes', 'summary', 'quiz', 'mindmap'].includes(key) && content[key]
+    ) as ContentType[];
+
+    // Handle content generation
+    const handleGenerateContent = async (type: ContentType) => {
+        if (generatingTypes.includes(type)) return;
+        
+        setGeneratingTypes(prev => [...prev, type]);
+        try {
+            await generateMissingContent(chapter, language, [type]);
+        } finally {
+            setGeneratingTypes(prev => prev.filter(t => t !== type));
+        }
+    };
+
+    // Handle roleplay generation
+    const handleGenerateRoleplay = async () => {
+        if (isGeneratingRoleplay || !oAiKey || !content.knowledge_id) return;
+        
+        setIsGeneratingRoleplay(true);
+        try {
+            // Get topic from chapter or content title
+            const topic = content?.chapter || content?.title || '';
+            // Get content from latex_code or original content
+            const contentText = content?.latex_code || content?.og || '';
+            
+            await generateRoleplayScenarios(
+                content.knowledge_id,
+                topic,
+                contentText,
+                oAiKey,
+                language
+            );
+            
+            // Reload chapter data to get the new roleplay scenarios
+            window.location.reload();
+        } catch (error) {
+            console.error('Error generating roleplay scenarios:', error);
+        } finally {
+            setIsGeneratingRoleplay(false);
+        }
+    };
+
+    // Render content based on active tab
+    const renderContent = useCallback(() => {
+        if (isLoading) {
+            return (
+                <div className="flex items-center justify-center h-full">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+                </div>
+            );
+        }
+
+        const tab = tabs.find(t => t.key === activeTab);
+        if (!tab) return <div>No content available</div>;
+
         switch (activeTab) {
             case 'notes':
-                mdContent = latex_code || og;
-
-                // Check for special content components
-                for (const [startPhrase, component] of Object.entries(specialContentMap)) {
-                    if (mdContent?.startsWith(startPhrase)) {
-                        return component;
-                    }
-                }
-                break;
-
             case 'regenNotes':
-                mdContent = notes;
-                break;
-
             case 'regenSummary':
-                mdContent = summary;
-                break;
+                // Check for special components first
+                const specialComponent = getSpecialComponent(tab.content);
+                if (specialComponent) return specialComponent;
+
+                // Process markdown content
+                let mdContent = tab.content;
+                if (!mdContent) {
+                    mdContent = ["Content is being generated..."];
+                } else if (typeof mdContent === 'string') {
+                    mdContent = mdContent.includes("|||||")
+                        ? mdContent.split("|||||")
+                        : [mdContent];
+                }
+
+                // Use ContentToggle for notes with video
+                if (video_url) {
+                    return (
+                        <ContentToggle
+                            videoSrc={video_url}
+                            videoTitle={content.title || "Course Video"}
+                            markers={timelineMarkers}
+                            notes={mdContent}
+                            knowledgeId={content.knowledge_id}
+                        />
+                    );
+                }
+
+                return (
+                    <MarkdownSlideshow
+                        content={mdContent}
+                        knowledge_id={content.knowledge_id}
+                    />
+                );
+
+            case 'mindmap':
+                return (
+                    <EnhancedMindMap 
+                        markdown={mindmap} 
+                        fullScreen={isFullscreenMindmap}
+                        onBack={handleMindmapBack}
+                    />
+                );
+
+            case 'quiz':
+                return quiz && quiz.length > 0
+                    ? <Quiz questions={quiz} />
+                    : <div className="flex flex-col items-center justify-center h-full text-white">
+                        <PieChart className="w-16 h-16 text-gray-600 mb-4" />
+                        <p className="text-xl">No quiz questions available</p>
+                      </div>;
+
+            case 'video':
+                return (
+                    <VideoPlayer 
+                        src={video_url} 
+                        title={content.title || "Course Video"}
+                        markers={timelineMarkers}
+                        onPlay={() => interactionTracker.trackVideoPlay()}
+                        onPause={() => interactionTracker.trackVideoPause()}
+                        onSeek={() => interactionTracker.trackTimelineSeek()}
+                    />
+                );
+
+            case 'practice':
+                // Filter modules based on content title if available
+                const filteredModules = content.title 
+                    ? animationModules.filter(m => m.relatedVideos?.includes(content.title))
+                    : animationModules;
+                
+                return (
+                    <InteractiveModule 
+                        modules={filteredModules}
+                        onModuleComplete={(title) => console.log(`Completed module: ${title}`)}
+                    />
+                );
+
+            case 'roleplay':
+                // Check if roleplay data exists
+                if (chapter?.roleplay?.scenarios && chapter.roleplay.scenarios.length > 0) {
+                    return (
+                        <RoleplayComponent 
+                            scenarios={chapter.roleplay.scenarios}
+                            topic={content?.chapter || ''}
+                            language={language || 'English'}
+                            contextualInformation={content?.latex_code?.substring(0, 500) || ''}
+                            showScenarioGeneration={true}
+                            onClose={() => setActiveTab('video')}
+                        />
+                    );
+                } else {
+                    // Show a generator UI if no scenarios exist
+                    return (
+                        <div className="flex flex-col items-center justify-center h-full text-white p-8">
+                            <MessageSquare className="w-16 h-16 text-indigo-400 mb-4" />
+                            <h3 className="text-xl font-semibold text-center mb-3">No Roleplay Scenarios Available</h3>
+                            <p className="text-gray-400 text-center mb-6 max-w-md">
+                                Generate interactive roleplay scenarios to practice and apply concepts from this lesson.
+                            </p>
+                            <button
+                                onClick={handleGenerateRoleplay}
+                                disabled={isGeneratingRoleplay || !oAiKey}
+                                className={`flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors ${isGeneratingRoleplay ? 'opacity-70 cursor-not-allowed' : ''}`}
+                            >
+                                {isGeneratingRoleplay ? (
+                                    <>
+                                        <RefreshCw className="w-5 h-5 animate-spin" />
+                                        Generating Scenarios...
+                                    </>
+                                ) : (
+                                    <>
+                                        <MessageSquare className="w-5 h-5" />
+                                        Generate Roleplay Scenarios
+                                    </>
+                                )}
+                            </button>
+                            {!oAiKey && (
+                                <p className="text-yellow-500 mt-4 text-sm">
+                                    API key required. Please add an OpenAI API key in settings.
+                                </p>
+                            )}
+                        </div>
+                    );
+                }
 
             default:
-                mdContent = "No Content";
+                return (
+                    <div className="flex flex-col items-center justify-center h-full text-white">
+                        <FileText className="w-16 h-16 text-gray-600 mb-4" />
+                        <p className="text-xl">Select a tab to view content</p>
+                    </div>
+                );
         }
+    }, [activeTab, content, tabs, quiz, mindmap, video_url, isFullscreenMindmap, timelineMarkers, isLoading]);
 
-        // Handle content processing
-        if (!mdContent) {
-            mdContent = ["Is being generated"];
-        } else if (mdContent.includes("|||||")) {
-            mdContent = mdContent.split("|||||");
-        } else {
-            mdContent = [mdContent];
-        }
-
-        return (
-            <MarkdownSlideshow
-                key={activeTab}
-                content={mdContent}
-                knowledge_id={content.knowledge_id}
-            />
-        );
-    }, [content.knowledge_id, latex_code, notes, og, summary, viewMode]);
-    const tabFactory = useCallback(({ latex_code, notes, og, summary, questions, video_url }) => {
-        return [
-            { label: "Notes", key: "notes", render: () => renderMarkdown(activeTab), condition: latex_code, },
-            {
-                label: "Assisted Notes",
-                key: "regenNotes",
-                render: () => renderMarkdown(activeTab),
-                condition: notes,
-            },
-            {
-                label: "Assisted Summary",
-                key: "regenSummary",
-                render: () => renderMarkdown(activeTab),
-                condition: summary,
-            },
-            {
-                label: "Mindmap",
-                key: "mindmap",
-                render: () => <MindMap markdown={mindmap} />,
-                condition: mindmap,
-            },
-            {
-                label: "Quiz",
-                key: "quiz",
-                render: () => renderQuiz,
-                condition: quiz && quiz.length > 0,
-            },
-            {
-                label: "Video",
-                key: "video",
-                render: () => <YouTubePlaceholder videoId={video_url} />,
-            },
-        ];
-    }, [activeTab, quiz, renderMarkdown, renderQuiz]);
-
-    const tabs = tabFactory({
-        latex_code,
-        og,
-        notes,
-        summary,
-        questions: quiz,
-        video_url
-    });
-    useEffect(() => {
-        const tabs = tabFactory({ latex_code, notes, og, summary, questions: quiz, video_url });
-
-        // Find the current active tab configuration
-        const currentTab = tabs.find(tab => tab.key === activeTab);
-
-        // If the current active tab doesn't exist or its condition is falsy (except for notes tab)
-        if (!currentTab || (activeTab !== "notes" && !currentTab.condition)) {
-            // Find the notes tab as a fallback
-            const notesTab = tabs.find(tab => tab.key === "notes");
-
-            // Only switch if the notes tab exists and has a valid condition
-            if (notesTab && notesTab.condition) {
-                setActiveTab("notes");
-            } else {
-                // If notes tab is also invalid, find the first valid tab
-                const firstValidTab = tabs.find(tab => tab.condition);
-                if (firstValidTab) {
-                    setActiveTab(firstValidTab.key);
-                }
-            }
-        }
-    }, [activeTab, tabFactory, latex_code, notes, og, summary, quiz, video_url]);
-
-
-
-    const renderTabs = useMemo(() => {
-        const filteredTabs = tabs.filter((tab) => tab.condition === undefined || tab.condition);
-
-        return (
-            <div className="flex items-center">
-                <div className="flex space-x-4">
-                    {filteredTabs.map((tab) => (
-                        <button
-                            key={tab.key}
-                            onClick={() => setActiveTab(tab.key)}
-                            className={`py-2 px-4 rounded ${activeTab === tab.key ? "bg-blue-600" : "bg-gray-700 hover:bg-blue-500"
-                                }`}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
-            </div>
-        );
-    }, [activeTab, tabs]);
+    // Toggle sidebar for responsive layouts
+    const toggleSidebar = () => {
+        setSidebarOpen(!sidebarOpen);
+    };
 
     return (
-        <div className="main-course bg-gray-900 h-full text-white p-3">
-            {/* Tab Navigation */}
-            <div className="mb-8">{renderTabs}</div>
-
-            {/* Main Content Area */}
-            <div style={{ height: 530 }} className="flex justify-between">
-                <div className="flex pr-6 w-3/4">{tabs.find((tab) => tab.key === activeTab)?.render()}</div>
-                <div className="flex pl-6 w-1/4">
-                    <Chatbot language={language} topic={notes || latex_code} />
+        <div className="flex flex-col h-full bg-gray-900">
+            {/* Header with responsive design */}
+            <div className="sticky top-0 z-10 bg-gray-800 border-b border-gray-700 px-4 py-2">
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
+                        <h1 className="text-xl sm:text-2xl font-bold text-white truncate max-w-[200px] sm:max-w-full">
+                            {content?.chapter || 'Course Content'}
+                        </h1>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <button
+                            onClick={toggleSidebar}
+                            className="p-2 hover:bg-gray-700 rounded-full md:hidden"
+                            title="Toggle Content"
+                        >
+                            <ChevronLeft className={`w-5 h-5 transform transition-transform ${sidebarOpen ? '' : 'rotate-180'}`} />
+                        </button>
+                        <button
+                            onClick={() => setShowSettings(!showSettings)}
+                            className="p-2 hover:bg-gray-700 rounded-full"
+                            title="Content Settings"
+                        >
+                            <Settings className="w-5 h-5" />
+                        </button>
+                    </div>
+                </div>
+                
+                {/* Responsive Tab Navigation */}
+                <div className="mt-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+                    <div className="flex space-x-1 min-w-max">
+                        {availableTabs.map((tab) => (
+                            <button
+                                key={tab.key}
+                                onClick={() => handleTabClick(tab.key)}
+                                className={`flex items-center gap-1 py-1 px-3 rounded-md text-sm transition-colors ${
+                                    activeTab === tab.key
+                                        ? "bg-indigo-600 text-white"
+                                        : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                                    }`}
+                            >
+                                {tab.icon}
+                                <span className="hidden sm:inline">{tab.label}</span>
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
+
+            {/* Main content area with responsive layout */}
+            <div className="flex flex-1 overflow-hidden">
+                {/* Main content */}
+                <div className={`flex-1 overflow-auto p-3 transition-all`}>
+                    <div className={`h-full flex flex-col ${isMobileView ? 'space-y-4' : 'md:flex-row md:space-x-4'}`}>
+                        {/* Content Area - Responsive sizing */}
+                        <div className={`${isMobileView ? 'w-full h-1/2' : 'w-full md:w-3/4 h-full'} bg-gray-800 rounded-lg overflow-hidden shadow-lg`}>
+                            {renderContent()}
+                        </div>
+                        
+                        {/* Chatbot - Collapses to bottom on mobile */}
+                        <div className={`${isMobileView ? 'w-full h-1/2' : 'w-full md:w-1/4 h-full'} bg-gray-800 rounded-lg overflow-hidden shadow-lg`}>
+                            <div className="bg-indigo-900/20 p-2 text-white font-medium flex justify-between items-center">
+                                <span>AI Assistant</span>
+                                {isMobileView && (
+                                    <button 
+                                        className="p-1 hover:bg-indigo-800/30 rounded-md"
+                                        onClick={() => setSidebarOpen(!sidebarOpen)}
+                                    >
+                                        <ChevronLeft className={`w-4 h-4 transform transition-transform ${sidebarOpen ? 'rotate-90' : '-rotate-90'}`} />
+                                    </button>
+                                )}
+                            </div>
+                            <div className={`h-[calc(100%-2.5rem)] ${isMobileView && !sidebarOpen ? 'hidden' : 'block'}`}>
+                                <Chatbot 
+                                    language={language} 
+                                    topic={notes || latex_code}
+                                    onQuestionAsked={(question) => interactionTracker.trackChatbotQuestion(question)}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Settings sidebar - Slides in/out */}
+                {showSettings && (
+                    <div className={`bg-gray-800 border-l border-gray-700 overflow-y-auto transition-all duration-300 ${isMobileView ? 'absolute inset-y-0 right-0 z-20 w-[85%] shadow-xl' : 'w-80'}`}>
+                        <div className="flex justify-between items-center p-4 border-b border-gray-700">
+                            <h2 className="text-lg font-medium text-white">Content Settings</h2>
+                            <button 
+                                onClick={() => setShowSettings(false)}
+                                className="p-1 hover:bg-gray-700 rounded-full"
+                            >
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <ContentGenerationPanel
+                            availableTypes={availableTypes}
+                            generatingTypes={generatingTypes}
+                            onGenerateContent={handleGenerateContent}
+                        />
+                    </div>
+                )}
+            </div>
+
+            {/* Learning Report Modal */}
+            {showReport && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-gray-800 rounded-lg w-full max-w-3xl max-h-[90vh] overflow-auto">
+                        <LearningReport onClose={() => setShowReport(false)} />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -1,96 +1,117 @@
-import { useEffect, useState } from 'react';
-import { getChapters, getChapterMetaDataByLanguage, getEdTechContent, updateEdtechContent } from '@/services/edtech-content';
-import { metaMap } from '@/services/openAiFns';
+import { useEffect, useRef, useState } from 'react';
+import { getChapters, getChapterMetaDataByLanguage, getEdTechContent } from '@/services/edtech-content';
 import useAuthState from './useAuth';
-import { OpenAIClient } from '@/services/openAi';
+import { EdTechAPI, ContentType, ProcessingStatus } from '@/services/edtech-api';
+
+// Create an instance of the EdTechAPI
+const edtechApi = new EdTechAPI();
+
+// Throttling constants
+const STATUS_CHECK_INTERVAL = 30000; // 30 seconds between status checks
+const MAX_STATUS_CHECKS = 1; // Maximum number of consecutive status checks
 
 export const useChapters = () => {
     const [uploadedFiles, setUploadedFiles] = useState([]);
     const [chaptersMeta, setChapterMeta] = useState([]);
-    const [content, setContent] = useState(null)
-    const { oAiKey } = useAuthState()
-    const [apiClient, setApiClient] = useState(null)
+    const [content, setContent] = useState(null);
+    const [error, setError] = useState(null);
+    const [processingStatus, setProcessingStatus] = useState<ProcessingStatus | null>(null);
+    const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+    const [isGeneratingContent, setIsGeneratingContent] = useState(false);
+
+    // Refs for throttling
+   
+
     const fetchChapters = async (knowledgeId, language) => {
         const chapters = await getChapters(knowledgeId, language);
         setUploadedFiles(chapters);
         return chapters;
     };
 
-    useEffect(() => {
-        if (!apiClient && oAiKey) {
-            setApiClient(new OpenAIClient(oAiKey))
-        }
-
-    }, [oAiKey, apiClient])
     const fetchChapterMeta = async (knowledgeId, language) => {
         const metadata = await getChapterMetaDataByLanguage(knowledgeId, language);
         setChapterMeta(metadata);
+        //         }
+        //     } else if (statusResponse?.status === 'processing' || statusResponse?.status === 'queued') {
+        //         // If still processing, schedule a single check after delay
+        //         scheduleStatusCheck(knowledgeId);
+        //         // Set empty metadata while waiting
+        //         setChapterMeta([]);
+        //     } else {
+        //         // For failed or unknown status, just set empty metadata
+        //         setChapterMeta([]);
+        //     }
+        // } catch (error) {
+        //     console.error("Error fetching chapter metadata:", error);
+        //     setError(error);
+        // }
     };
 
-    const reset = () => {
-        setUploadedFiles([]);
-        setChapterMeta([]);
-    };
-
-    const generateEdtechContentText = async (edtechId, chapter, knowledgeId, types, language) => {
-        // Content generation and update logic
-        try {
-            // Iterate over each type to generate content
-            await Promise.all(types.map(async (type) => {
-                if (!metaMap[type]) {
-                    console.log(`${type} not supported`);
-                    return;
-                }
-
-                const generator = metaMap[type];
-                const generated = await generator(apiClient, chapter.chapter, language);
-
-                if (!Array.isArray(generated)) {
-                    console.log(`Generated content for ${type} is not an array`);
-                    // return;
-                }
-
-                const upsertContent = {
-                    [type]: (type === "quiz" || type === "mindmap") ? generated : generated.join("|||||")
-                };
-
-                // Update content in the database
-                const updatedContent = await updateEdtechContent(upsertContent, edtechId, chapter.id, knowledgeId, language);
-                if (content.id == updatedContent[0].id
-                    && content.chapter_id == updatedContent[0].chapter_id
-                    && content.knowledge_id == updatedContent[0].knowledge_id
-                ) {
-                    setContent(updatedContent[0]);
-                }
-
-                
-            }));
-        } catch (error) {
-            console.error('Error generating content:', error);
-        }
-    };
+    
 
     const getEdTechContentForChapter = async (chapter, language) => {
+        try {
+            const content = await getEdTechContent(chapter, language);
+            if (content.length > 0) {
+                setContent(content[0]);
 
-        const c = await getEdTechContent(chapter, language);
-        if (c.length == 0) {
-            console.log("::");
+                // Check which content types need to be generated
+                const missingTypes = [];
+                if (!content[0].notes) missingTypes.push('notes');
+                if (!content[0].summary) missingTypes.push('summary');
+                if (!content[0].quiz && content[0].notes) missingTypes.push('quiz');
+                if (!content[0].mindmap && content[0].notes) missingTypes.push('mindmap');
+
+
+            }
+
+
+        } catch (error) {
+            // setError(error);
+            console.error('Error in getEdTechContentForChapter:', error);
+            return null;
         }
-        if (c.length > 0) {
-            setContent(c[0])
-            if (!c[0].notes) {
-                await generateEdtechContentText(c[0].id, chapter, chapter.k_id, ["notes"], language)
+    };
+
+    const generateMissingContent = async (chapter, language, contentTypes: ContentType[]) => {
+        if (!chapter || contentTypes.length === 0) return null;
+
+        setIsGeneratingContent(true);
+        try {
+            const generationResponse = await edtechApi.generateContent(
+                chapter.knowledge_id,
+                {
+                    chapterId: chapter.id.toString(),
+                    types: contentTypes,
+                    language
+                }
+            );
+
+            if (generationResponse.success && generationResponse.data?.chapters?.length > 0) {
+                const newContent = generationResponse.data.chapters[0];
+                setContent(newContent);
+                return newContent;
             }
-            if (!c[0].summary) {
-                await generateEdtechContentText(c[0].id, chapter, chapter.k_id, ["summary"], language)
-            }
-            if (!c[0].quiz && c[0].notes) {
-                await generateEdtechContentText(c[0].id, chapter, chapter.k_id, ["quiz"], language)
-            }
-            if (!c[0].mindmap && c[0].notes) {
-                await generateEdtechContentText(c[0].id, chapter, chapter.k_id, ["mindmap"], language)
-            }
+            return null;
+        } catch (error) {
+            setError(error);
+            console.error('Error generating content:', error);
+            return null;
+        } finally {
+            setIsGeneratingContent(false);
         }
+    };
+
+    const getMissingContentTypes = (contentData): ContentType[] => {
+        if (!contentData) return [];
+
+        const missingTypes: ContentType[] = [];
+        if (!contentData.notes) missingTypes.push('notes');
+        if (!contentData.summary) missingTypes.push('summary');
+        if (!contentData.quiz && contentData.notes) missingTypes.push('quiz');
+        if (!contentData.mindmap && contentData.notes) missingTypes.push('mindmap');
+
+        return missingTypes;
     };
 
     return {
@@ -100,8 +121,13 @@ export const useChapters = () => {
         setContent,
         content,
         fetchChapterMeta,
-        reset,
         getEdTechContentForChapter,
+        generateMissingContent,
+        getMissingContentTypes,
+        processingStatus,
+        isCheckingStatus,
+        isGeneratingContent,
+        checkStatus: (knowledgeId: number) => checkProcessingStatus(knowledgeId)
     };
 };
 

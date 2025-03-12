@@ -1,33 +1,47 @@
-import React from 'react'
+import React from 'react';
 
-interface StyleProps {
-  size?: 'small' | 'medium' | 'large'
-  color?: string
+type LoaderSize = 'small' | 'medium' | 'large';
+type LoaderColor = 'blue' | 'green' | 'red' | 'purple';
+
+interface LoaderProps {
+  size?: LoaderSize;
+  color?: LoaderColor;
 }
 
-const Loader: React.FC<StyleProps> = ({ size = 'medium', color = 'blue' }) => {
-  const sizeClasses = {
-    small: 'w-6 h-6',
-    medium: 'w-12 h-12',
-    large: 'w-16 h-16'
-  }
+const Loader: React.FC<LoaderProps> = ({
+  size = 'medium',
+  color = 'blue'
+}) => {
+  // Size mapping
+  const sizeMap: Record<LoaderSize, string> = {
+    small: 'w-5 h-5',
+    medium: 'w-10 h-10',
+    large: 'w-14 h-14'
+  };
 
-  const colorClasses = {
+  // Color mapping
+  const colorMap: Record<LoaderColor, string> = {
     blue: 'from-blue-400 to-blue-600',
     green: 'from-green-400 to-green-600',
     red: 'from-red-400 to-red-600',
     purple: 'from-purple-400 to-purple-600'
-  }
+  };
 
   return (
     <div className="flex items-center justify-center">
-      <div 
-        className={`${sizeClasses[size]} rounded-full animate-spin
-        border-4 border-t-transparent border-opacity-50
-        bg-gradient-to-r ${colorClasses[color as keyof typeof colorClasses] || colorClasses.blue}`}
-      ></div>
+      <div
+        className={`
+          ${sizeMap[size]} 
+          rounded-full 
+          animate-spin
+          border-3 
+          border-t-transparent 
+          bg-gradient-to-r 
+          ${colorMap[color]}
+        `}
+      />
     </div>
-  )
-}
+  );
+};
 
-export default Loader
+export default Loader;

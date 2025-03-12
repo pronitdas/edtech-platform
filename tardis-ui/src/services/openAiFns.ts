@@ -126,7 +126,7 @@ export async function generateChunkedContent(
             const result = await openaiClient.chatCompletion([
                 { role: "system", content: prompt },
                 { role: "user", content: chunkText }
-            ], "gpt-4-turbo-2024-04-09", tokenSize);
+            ], "gpt-4o-mini", tokenSize);
             results.push(result);
         } catch (error) {
             console.error("Error generating notes for chunk:", error);
@@ -172,7 +172,7 @@ export async function generate3DPrompts(
     const result = await openaiClient.chatCompletion([
         { role: "system", content: prompt },
         { role: "user", content: text }
-    ], "gpt-4-turbo-2024-04-09", 20);
+    ], "gpt-4o-mini", 20);
     return result;
 }
 

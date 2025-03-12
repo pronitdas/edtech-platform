@@ -1,8 +1,22 @@
 {
+  "name": "edtech-platform-media-uploader",
+  "version": "1.0.0",
+  "description": "EdTech Platform Media Uploader API Client",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.47.2",
     "commander": "^12.1.0",
     "form-data": "^4.0.1",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "axios": "^1.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "typescript": "^5.3.3"
   }
 }

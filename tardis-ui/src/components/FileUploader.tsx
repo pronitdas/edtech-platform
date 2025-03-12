@@ -4,78 +4,52 @@ import { insertKnowledge, uploadFiles } from "@/services/edtech-content";
 import React, { useState } from "react";
 import { useUser } from '@/contexts/UserContext';
 
-const FileUploaderAPI: React.FC<{ onTextProcessed?: (text: string) => void }> = ({ onTextProcessed }) => {
+interface FileUploaderProps {
+    onTextProcessed?: (text: string) => void;
+}
+
+const FileUploader: React.FC<FileUploaderProps> = ({ onTextProcessed }) => {
     const [file, setFile] = useState<File | null>(null);
     const [knowledgeName, setKnowledgeName] = useState<string>("");
-    const [response, setResponse] = useState<string | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [status, setStatus] = useState<{ message: string; type: 'success' | 'error' | null }>({ message: "", type: null });
     const [loading, setLoading] = useState(false);
-    const { user } = useUser()
-    // Handle file selection
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files && event.target.files[0]) {
-            setFile(event.target.files[0]);
-        }
-    };
+    const { user } = useUser();
 
-    // Handle knowledge name input
-    const handleKnowledgeNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setKnowledgeName(event.target.value);
-    };
-
-    // Download object as JSON utility
-    const downloadObjectAsJson = (exportObj: any, exportName: string) => {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
-        const downloadAnchorNode = document.createElement("a");
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", `${exportName}.json`);
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
-    };
-
-    // Validate form before submission
-    const validateForm = (): boolean => {
+    const handleSubmit = async () => {
+        // Validate inputs
         if (!file) {
-            setError("Please select a file before submitting.");
-            return false;
+            setStatus({ message: "Please select a file before submitting.", type: 'error' });
+            return;
         }
 
         if (!knowledgeName.trim()) {
-            setError("Please enter a knowledge name before submitting.");
-            return false;
+            setStatus({ message: "Please enter a knowledge name before submitting.", type: 'error' });
+            return;
         }
-
-        return true;
-    };
-
-    const handleSubmit = async () => {
-        if (!validateForm()) return;
 
         try {
             setLoading(true);
-            setError(null);
+            setStatus({ message: "", type: null });
 
-            // Step 1: Insert knowledge into the database and retrieve knowledge_id
-            const knowledge_id = await insertKnowledge(knowledgeName.trim(), user);
-            console.log("Knowledge inserted with ID:", knowledge_id);
+            // Insert knowledge and get ID
+            const knowledge_id = await insertKnowledge(knowledgeName.trim(), user, file.name);
 
-            // Step 2: Determine file type dynamically
+            // Determine file type
             const fileType = file.type.startsWith("image/")
                 ? "images"
                 : file.type.startsWith("video/")
                     ? "video"
                     : "doc";
-
-            // Step 3: Upload file to Supabase storage
+            
+            // Upload file
             await uploadFiles([file], knowledge_id, fileType);
 
-            setResponse("File uploaded and knowledge saved successfully!");
-            if (onTextProcessed) onTextProcessed(`Knowledge ${knowledgeName} uploaded with ID: ${knowledge_id}`);
-
-            alert("File uploaded successfully!");
+            setStatus({ message: "File uploaded successfully!", type: 'success' });
+            if (onTextProcessed) {
+                onTextProcessed(`Knowledge ${knowledgeName} uploaded with ID: ${knowledge_id}`);
+            }
         } catch (err) {
-            setError("Failed to process the file. Please try again.");
+            setStatus({ message: "Failed to process the file. Please try again.", type: 'error' });
             console.error("Error during file processing:", err);
         } finally {
             setLoading(false);
@@ -83,64 +57,46 @@ const FileUploaderAPI: React.FC<{ onTextProcessed?: (text: string) => void }> = 
     };
 
     return (
-        <div className="bg-gray-100 rounded-lg p-6 shadow-md text-gray-800 max-w-md mx-auto">
-            <h1 className="text-2xl font-bold mb-4">Upload and Process Document</h1>
+        <div className="bg-gray-100 rounded-lg p-4 text-gray-800">
+            <h1 className="text-xl font-bold mb-3">Upload Document</h1>
 
-            {/* Knowledge Name Input */}
-            <div className="mb-4">
-                <label htmlFor="knowledgeName" className="block text-gray-700 font-bold mb-2">
-                    Knowledge Name
-                </label>
+            <div className="mb-3">
+                <label htmlFor="knowledgeName" className="block font-medium mb-1">Knowledge Name</label>
                 <input
                     id="knowledgeName"
                     type="text"
                     value={knowledgeName}
-                    onChange={handleKnowledgeNameChange}
+                    onChange={(e) => setKnowledgeName(e.target.value)}
                     placeholder="Enter knowledge name..."
-                    className="block w-full text-gray-700 border rounded py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border rounded p-2"
                 />
             </div>
 
-            {/* File Upload Input */}
-            <div className="mb-4">
-                <label htmlFor="fileUpload" className="block text-gray-700 font-bold mb-2">
-                    Upload File
-                </label>
+            <div className="mb-3">
+                <label htmlFor="fileUpload" className="block font-medium mb-1">Upload File</label>
                 <input
                     id="fileUpload"
                     type="file"
-                    onChange={handleFileChange}
-                    className="block w-full text-gray-700 border rounded py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => e.target.files && setFile(e.target.files[0])}
+                    className="w-full border rounded p-2"
                 />
             </div>
 
-            {/* Submit Button */}
             <button
                 onClick={handleSubmit}
-                className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full ${loading ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
                 disabled={loading}
+                className={`bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded w-full ${loading ? "opacity-50" : ""}`}
             >
-                {loading ? "Processing..." : "Upload and Convert"}
+                {loading ? "Processing..." : "Upload"}
             </button>
 
-            {/* Response Message */}
-            {response && (
-                <div className="mt-4 p-4 bg-green-100 border border-green-400 rounded text-green-800">
-                    <h2 className="font-bold">Response:</h2>
-                    <pre className="text-sm whitespace-pre-wrap">{response}</pre>
-                </div>
-            )}
-
-            {/* Error Message */}
-            {error && (
-                <div className="mt-4 p-4 bg-red-100 border border-red-400 rounded text-red-800">
-                    <h2 className="font-bold">Error:</h2>
-                    <p>{error}</p>
+            {status.message && (
+                <div className={`mt-3 p-3 rounded ${status.type === 'success' ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                    {status.message}
                 </div>
             )}
         </div>
     );
 };
 
-export default FileUploaderAPI;
+export default FileUploader;

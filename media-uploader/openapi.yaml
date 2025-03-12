@@ -1,0 +1,299 @@
+openapi: 3.0.0
+info:
+  title: EdTech Platform Media Uploader API
+  description: API for processing and managing educational content, including PDF processing, content generation, and chapter management.
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+
+components:
+  schemas:
+    ProcessingStatus:
+      type: object
+      properties:
+        knowledge_id:
+          type: integer
+        status:
+          type: string
+          enum: [queued, processing, completed, failed, unknown]
+        message:
+          type: string
+        retry_count:
+          type: integer
+        result:
+          type: object
+          nullable: true
+
+    RetryRequest:
+      type: object
+      properties:
+        force:
+          type: boolean
+          description: Force retry even if max retries reached or not in failed state
+        max_retries:
+          type: integer
+          nullable: true
+          description: Override default max retries
+
+    RetryHistory:
+      type: object
+      properties:
+        knowledge_id:
+          type: integer
+        retries:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+              type:
+                type: string
+              message:
+                type: string
+
+    ImageUploadStatus:
+      type: object
+      properties:
+        knowledge_id:
+          type: integer
+        total_images:
+          type: integer
+        uploaded_images:
+          type: integer
+        failed_images:
+          type: array
+          items:
+            type: string
+
+    ContentGenerationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            chapters:
+              type: array
+              items:
+                type: object
+        error:
+          type: string
+          nullable: true
+
+    ChapterDataResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            type: object
+        error:
+          type: string
+          nullable: true
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      responses:
+        '200':
+          description: Service health status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+
+  /process/{knowledge_id}:
+    get:
+      summary: Start processing a knowledge entry
+      parameters:
+        - name: knowledge_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Processing started successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  knowledge_id:
+                    type: integer
+                  status:
+                    type: string
+                  message:
+                    type: string
+        '404':
+          description: Knowledge not found or already seeded
+        '500':
+          description: Internal server error
+
+  /process/{knowledge_id}/retry:
+    post:
+      summary: Retry processing a failed knowledge entry
+      parameters:
+        - name: knowledge_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RetryRequest'
+      responses:
+        '200':
+          description: Retry queued successfully
+        '400':
+          description: Invalid retry request
+        '404':
+          description: Knowledge not found
+        '500':
+          description: Internal server error
+
+  /process/{knowledge_id}/retry-history:
+    get:
+      summary: Get retry history for a knowledge entry
+      parameters:
+        - name: knowledge_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Retry history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RetryHistory'
+        '404':
+          description: Knowledge not found
+        '500':
+          description: Internal server error
+
+  /process/{knowledge_id}/status:
+    get:
+      summary: Get the current processing status
+      parameters:
+        - name: knowledge_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessingStatus'
+        '404':
+          description: Knowledge not found
+        '500':
+          description: Internal server error
+
+  /process/{knowledge_id}/images:
+    get:
+      summary: Get the status of image uploads for a knowledge entry
+      parameters:
+        - name: knowledge_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Image status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageUploadStatus'
+        '500':
+          description: Internal server error
+
+  /generate-content/{knowledge_id}:
+    get:
+      summary: Generate content using OpenAI
+      parameters:
+        - name: knowledge_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: chapter_id
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: types
+          in: query
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [notes, summary, quiz, mindmap]
+        - name: language
+          in: query
+          required: false
+          schema:
+            type: string
+            default: English
+      responses:
+        '200':
+          description: Content generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentGenerationResponse'
+
+  /chapters/{knowledge_id}:
+    get:
+      summary: Get chapter data
+      parameters:
+        - name: knowledge_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: chapter_id
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: types
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+        - name: language
+          in: query
+          required: false
+          schema:
+            type: string
+            default: English
+      responses:
+        '200':
+          description: Chapter data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChapterDataResponse' 

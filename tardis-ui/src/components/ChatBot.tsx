@@ -5,12 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Mic, MicOff, Volume2, VolumeX, Send, Loader2 } from "lucide-react";
 
-const VoiceChatbot = ({ topic, language }) => {
+interface ChatbotProps {
+    topic: any;
+    language: any;
+    onQuestionAsked?: (question: string) => void;
+}
+
+const VoiceChatbot = ({ topic, language, onQuestionAsked }: ChatbotProps) => {
     const [userResponse, setUserResponse] = useState("");
     const { oAiKey } = useAuthState();
     const [apiClient, setApiClient] = useState(null);
     const [mentorText, setMentorText] = useState(
-        "Hello, I'm AI-Mentor! Let's start your journey. What would you like to know about Physics, Geography, History, or English grammar?"
+        "Hello, I'm Mentor! Let's start your journey. What would you like to know about?"
     );
     const [isListening, setIsListening] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
@@ -18,7 +24,7 @@ const VoiceChatbot = ({ topic, language }) => {
     const [conversation, setConversation] = useState([
         {
             role: "assistant",
-            content: "Hello, I'm AI-Mentor! Let's start your journey. What would you like to know about Physics, Geography, History, or English grammar?"
+            content: "Hello, I'm AI-Mentor! Let's start your journey. What would you like to know about?"
         }
     ]);
 
@@ -175,13 +181,17 @@ const VoiceChatbot = ({ topic, language }) => {
 
                 speakTextInChunks(newMentorText, langCode);
             }
+
+            if (onQuestionAsked) {
+                onQuestionAsked(userResponse);
+            }
         } catch (error) {
             console.error("Error during chat completion:", error);
             alert("Error during chat completion.");
         } finally {
             setIsLoading(false);
         }
-    }, [userResponse, apiClient, topic, language, speakTextInChunks, conversation]);
+    }, [userResponse, apiClient, topic, language, speakTextInChunks, conversation, onQuestionAsked]);
 
     const toggleListening = useCallback(async () => {
         if (!isListening) {
