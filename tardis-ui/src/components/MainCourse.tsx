@@ -11,6 +11,9 @@ import EnhancedMindMap from './EnhancedMindMap';
 import LearningReport from './LearningReport';
 import RoleplayComponent from './RoleplayComponent';
 import Loader from './ui/Loader';
+import { ContentGenerationPanel } from './content/ContentGenerationPanel';
+import { useChapters } from '@/hooks/useChapters';
+import { ContentType } from '@/services/edtech-api';
 import { interactionTracker } from '@/services/interaction-tracking';
 import { 
   BookOpen, 
@@ -21,7 +24,8 @@ import {
   Play, 
   BarChart2, 
   ChevronLeft,
-  MessageSquare
+  MessageSquare,
+  Settings
 } from 'lucide-react';
 
 // Import calculators and models
@@ -30,6 +34,7 @@ import { getSpecialComponent } from '@/services/component-mapper';
 interface MainCourseProps {
     content: any;
     language: string;
+    chapter: any;
 }
 
 // Define animation modules
@@ -85,13 +90,21 @@ const animationModules = [
     }
 ];
 
-const MainCourse = ({ content, language }: MainCourseProps) => {
+const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
     const { notes, latex_code, mindmap, quiz = [], summary, og, video_url = "k85mRPqvMbE" } = content;
     const [activeTab, setActiveTab] = useState("notes");
     const [showReport, setShowReport] = useState(false);
     const [isFullscreenMindmap, setIsFullscreenMindmap] = useState(false);
     const [timelineMarkers, setTimelineMarkers] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [showSettings, setShowSettings] = useState(true);
+    const [generatingTypes, setGeneratingTypes] = useState<ContentType[]>([]);
+    
+    const {
+        generateMissingContent,
+        getMissingContentTypes,
+        isGeneratingContent
+    } = useChapters();
 
     // Define available tabs
     const tabs = [
@@ -210,6 +223,23 @@ const MainCourse = ({ content, language }: MainCourseProps) => {
         setIsFullscreenMindmap(false);
     };
 
+    // Get available and missing content types
+    const availableTypes = Object.keys(content || {}).filter(key => 
+        ['notes', 'summary', 'quiz', 'mindmap'].includes(key) && content[key]
+    ) as ContentType[];
+
+    // Handle content generation
+    const handleGenerateContent = async (type: ContentType) => {
+        if (generatingTypes.includes(type)) return;
+        
+        setGeneratingTypes(prev => [...prev, type]);
+        try {
+            await generateMissingContent(chapter, language, [type]);
+        } finally {
+            setGeneratingTypes(prev => prev.filter(t => t !== type));
+        }
+    };
+
     // Render content based on active tab
     const renderContent = useCallback(() => {
         if (isLoading) {
@@ -323,59 +353,75 @@ const MainCourse = ({ content, language }: MainCourseProps) => {
     }, [activeTab, content, tabs, quiz, mindmap, video_url, isFullscreenMindmap, timelineMarkers, isLoading]);
 
     return (
-        <div className="bg-gray-900 h-full text-white p-4 rounded-lg shadow-lg">
-            {/* Course Title */}
-            <div className="mb-6 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <button className="bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded-md transition-colors">
-                        <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <h1 className="text-2xl font-bold">{content.title || "Course Content"}</h1>
-                </div>
-                <div className="text-sm text-gray-400">
-                    Language: {language}
-                </div>
-            </div>
-
-            {/* Tab Navigation */}
-            <div className="mb-6">
-                <div className="flex space-x-2 flex-wrap border-b border-gray-700 pb-2">
-                    {availableTabs.map((tab) => (
+        <div className="flex h-full">
+            <div className="flex-grow overflow-auto">
+                {/* Main content area */}
+                <div className="p-4">
+                    <div className="flex justify-between items-center mb-4">
+                        <h1 className="text-2xl font-bold text-white">
+                            {content?.chapter || 'Course Content'}
+                        </h1>
                         <button
-                            key={tab.key}
-                            onClick={() => handleTabClick(tab.key)}
-                            className={`flex items-center gap-2 py-2 px-4 rounded-md text-sm mb-2 transition-colors ${
-                                activeTab === tab.key
-                                    ? "bg-indigo-600 text-white"
-                                    : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                                }`}
+                            onClick={() => setShowSettings(!showSettings)}
+                            className="p-2 hover:bg-gray-700 rounded-full"
+                            title="Content Settings"
                         >
-                            {tab.icon}
-                            <span>{tab.label}</span>
+                            <Settings className="w-6 h-6" />
                         </button>
-                    ))}
-                </div>
-            </div>
-
-            {/* Content Area */}
-            <div className="flex flex-col md:flex-row h-[600px] gap-4">
-                <div className="w-full md:w-3/4 h-full bg-gray-800 rounded-lg overflow-hidden">
-                    {renderContent()}
-                </div>
-                <div className="w-full md:w-1/4 h-full">
-                    <div className="bg-gray-800 h-full rounded-lg overflow-hidden">
-                        <Chatbot 
-                            language={language} 
-                            topic={notes || latex_code}
-                            onQuestionAsked={(question) => interactionTracker.trackChatbotQuestion(question)}
-                        />
                     </div>
+                    
+                    {/* Content tabs and display */}
+                    <div className="mb-6">
+                        <div className="flex space-x-2 flex-wrap border-b border-gray-700 pb-2">
+                            {availableTabs.map((tab) => (
+                                <button
+                                    key={tab.key}
+                                    onClick={() => handleTabClick(tab.key)}
+                                    className={`flex items-center gap-2 py-2 px-4 rounded-md text-sm mb-2 transition-colors ${
+                                        activeTab === tab.key
+                                            ? "bg-indigo-600 text-white"
+                                            : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                                        }`}
+                                >
+                                    {tab.icon}
+                                    <span>{tab.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Content Area */}
+                    <div className="flex flex-col md:flex-row h-[600px] gap-4">
+                        <div className="w-full md:w-3/4 h-full bg-gray-800 rounded-lg overflow-hidden">
+                            {renderContent()}
+                        </div>
+                        <div className="w-full md:w-1/4 h-full">
+                            <div className="bg-gray-800 h-full rounded-lg overflow-hidden">
+                                <Chatbot 
+                                    language={language} 
+                                    topic={notes || latex_code}
+                                    onQuestionAsked={(question) => interactionTracker.trackChatbotQuestion(question)}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Learning Report Modal */}
+                    {showReport && (
+                        <LearningReport onClose={() => setShowReport(false)} />
+                    )}
                 </div>
             </div>
 
-            {/* Learning Report Modal */}
-            {showReport && (
-                <LearningReport onClose={() => setShowReport(false)} />
+            {/* Settings sidebar */}
+            {showSettings && (
+                <div className="w-80 bg-gray-800 border-l border-gray-700 overflow-y-auto">
+                    <ContentGenerationPanel
+                        availableTypes={availableTypes}
+                        generatingTypes={generatingTypes}
+                        onGenerateContent={handleGenerateContent}
+                    />
+                </div>
             )}
         </div>
     );

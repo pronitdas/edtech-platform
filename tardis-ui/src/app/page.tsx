@@ -74,7 +74,7 @@ function EdtechApp() {
         setCurrentView(VIEW_TYPES.COURSE_CONTENT);
       }
     },  
-    [language, currentTopic, getEdTechContentForChapter]
+    [language, currentTopic]
   );
 
   // Handle navigation to learning module (video, quiz, etc.)
@@ -114,14 +114,14 @@ function EdtechApp() {
     if (currentTopic.knowledgeId) {
       fetchChapterMeta(currentTopic.knowledgeId, language);
     }
-  }, [currentTopic.knowledgeId, language, fetchChapterMeta]);
+  }, [currentTopic.knowledgeId, language]);
 
   // Fetch course content when topic changes
   useEffect(() => {
     if (currentView === VIEW_TYPES.COURSE_CONTENT && currentTopic.topic) {
       getEdTechContentForChapter(currentTopic.topic, language);
     }
-  }, [currentView, currentTopic.topic, language, getEdTechContentForChapter]);
+  }, [currentView, currentTopic.topic, language]);
 
   return (
     <InteractionTrackerProvider dataService={analyticsService} userId={userId}>
@@ -167,7 +167,8 @@ function EdtechApp() {
                   {content ? (
                     <MainCourse 
                       language={language} 
-                      content={content} 
+                      content={content}
+                      chapter={currentTopic.topic}
                     />
                   ) : (
                     <div className="flex justify-center items-center h-full">

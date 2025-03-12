@@ -1,5 +1,3 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
-
 // Types
 export type ProcessingStatus = {
   knowledge_id: number;
@@ -50,24 +48,56 @@ export type ContentType = 'notes' | 'summary' | 'quiz' | 'mindmap';
 
 // API Client Class
 export class EdTechAPI {
-  private client: AxiosInstance;
+  private baseURL: string;
+  private apiKey?: string;
+  private headers: Record<string, string>;
 
-  constructor(baseURL: string = '/api/v1', apiKey?: string) {
-    this.client = axios.create({
-      baseURL,
-      headers: apiKey ? {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      } : {
-        'Content-Type': 'application/json',
-      },
-    });
+  constructor(baseURL: string = 'http://localhost:8000', apiKey?: string) {
+    this.baseURL = baseURL;
+    this.apiKey = apiKey;
+    this.headers = {
+      'Content-Type': 'application/json',
+      ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
+    };
+  }
+
+  private async request<T>(
+    endpoint: string, 
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
+    params?: URLSearchParams,
+    body?: any
+  ): Promise<T> {
+    const url = new URL(`${this.baseURL}${endpoint}`, window.location.origin);
+    
+    if (params) {
+      url.search = params.toString();
+    }
+
+    const options: RequestInit = {
+      method,
+      headers: this.headers,
+    };
+
+    if (body) {
+      options.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(url.toString(), options);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.message || 
+        `Request failed with status ${response.status}`
+      );
+    }
+
+    return await response.json();
   }
 
   // Health Check
   async checkHealth(): Promise<{ status: string }> {
-    const response = await this.client.get('/health');
-    return response.data;
+    return this.request<{ status: string }>('/health');
   }
 
   // Process Knowledge
@@ -76,31 +106,31 @@ export class EdTechAPI {
     status: string;
     message: string;
   }> {
-    const response = await this.client.get(`/process/${knowledgeId}`);
-    return response.data;
+    return this.request<{
+      knowledge_id: number;
+      status: string;
+      message: string;
+    }>(`/process/${knowledgeId}`);
   }
 
   // Retry Processing
   async retryProcessing(knowledgeId: number, request: RetryRequest): Promise<void> {
-    await this.client.post(`/process/${knowledgeId}/retry`, request);
+    return this.request<void>(`/process/${knowledgeId}/retry`, 'POST', undefined, request);
   }
 
   // Get Retry History
   async getRetryHistory(knowledgeId: number): Promise<RetryHistory> {
-    const response = await this.client.get(`/process/${knowledgeId}/retry-history`);
-    return response.data;
+    return this.request<RetryHistory>(`/process/${knowledgeId}/retry-history`);
   }
 
   // Get Processing Status
   async getProcessingStatus(knowledgeId: number): Promise<ProcessingStatus> {
-    const response = await this.client.get(`/process/${knowledgeId}/status`);
-    return response.data;
+    return this.request<ProcessingStatus>(`/process/${knowledgeId}/status`);
   }
 
   // Get Image Status
   async getImageStatus(knowledgeId: number): Promise<ImageUploadStatus> {
-    const response = await this.client.get(`/process/${knowledgeId}/images`);
-    return response.data;
+    return this.request<ImageUploadStatus>(`/process/${knowledgeId}/images`);
   }
 
   // Generate Content
@@ -117,10 +147,7 @@ export class EdTechAPI {
     options.types.forEach(type => params.append('types', type));
     if (options.language) params.append('language', options.language);
 
-    const response = await this.client.get(`/generate-content/${knowledgeId}`, {
-      params
-    });
-    return response.data;
+    return this.request<ContentGenerationResponse>(`/generate-content/${knowledgeId}`, 'GET', params);
   }
 
   // Get Chapter Data
@@ -137,22 +164,7 @@ export class EdTechAPI {
     if (options?.types) options.types.forEach(type => params.append('types', type));
     if (options?.language) params.append('language', options.language);
 
-    const response = await this.client.get(`/chapters/${knowledgeId}`, {
-      params
-    });
-    return response.data;
-  }
-
-  // Error Handler Helper
-  private handleError(error: any): never {
-    if (axios.isAxiosError(error)) {
-      throw new Error(
-        error.response?.data?.message || 
-        error.message || 
-        'An unknown error occurred'
-      );
-    }
-    throw error;
+    return this.request<ChapterDataResponse>(`/chapters/${knowledgeId}`, 'GET', params);
   }
 }
 
