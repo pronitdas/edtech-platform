@@ -28,12 +28,21 @@ RUN apt-get update && \
         ffmpeg \
         git-lfs \
         xvfb \
-        libgl1-mesa-glx && \
+        libgl1-mesa-glx \
+        libsndfile1 \
+        libportaudio2 \
+        python3-dev \
+        libasound-dev \
+        portaudio19-dev && \
     ln -s /usr/bin/python3 /usr/bin/python && \
     rm -rf /var/lib/apt/lists/*
 
 # Install PyTorch with CUDA support
 RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+# Pre-download Whisper model to cache
+RUN pip3 install --no-cache-dir openai-whisper && \
+    python3 -c "import whisper; whisper.load_model('base')"
 
 # Set working directory
 WORKDIR /app

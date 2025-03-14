@@ -210,7 +210,7 @@ class DatabaseManager:
             )
             
             if chapter_id:
-                query = query.eq("chapter_id", chapter_id)
+                query = query.eq("id", chapter_id)
                 
             response = query.execute()
             
