@@ -82,13 +82,6 @@ const KnowledgeCard = ({ item, onClick }: KnowledgeCardProps) => {
         {Object.entries(subtopicMap).map(([subtopic, chapters]) => (
           <div key={subtopic} className="mb-2">
             <h3 className="font-semibold text-gray-600">{subtopic}</h3>
-            <ul className="list-disc list-inside">
-              {chapters.map((chapter) => (
-                <li key={chapter.id} className="text-sm text-gray-700 truncate">
-                  {chapter.chaptertitle}
-                </li>
-              ))}
-            </ul>
           </div>
         ))}
       </div>

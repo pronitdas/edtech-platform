@@ -2,12 +2,14 @@ import logging
 import threading
 import time
 import json
+import os
 from datetime import datetime
 from queue import Queue, Empty
 from typing import Dict, Optional, List, Any, Callable
 
 from database import DatabaseManager
 from pdf_processor import PDFProcessor
+from video_processor import VideoProcessor
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -118,7 +120,7 @@ class QueueManager:
                 knowledge_id, 
                 "processing", 
                 {
-                    "message": f"Starting PDF processing (retry #{retry_count})" if retry_count > 0 else "Starting PDF processing",
+                    "message": f"Starting processing (retry #{retry_count})" if retry_count > 0 else "Starting processing",
                     "start_time": datetime.utcnow().isoformat()
                 }
             )
@@ -132,64 +134,109 @@ class QueueManager:
                 filename = filename_field[0]
             else:
                 filename = filename_field
-
+                
+            # Determine file type
+            file_extension = os.path.splitext(filename)[1].lower()
+            is_video = file_extension in ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v']
+            
             # Fetch the file from Supabase storage
             file_path = f"doc/{knowledge_id}/{filename}"
             file_data = self.db_manager.download_file(file_path)
-
-            # Process the PDF
-            markdown, images, metadata = PDFProcessor.process_pdf(file_data)
-
-            # Upload each extracted image to Supabase
-            image_urls = {}
-            failed_images = []
             
-            # Prepare images for upload
-            prepared_images = PDFProcessor.prepare_images_for_upload(images)
-            
-            # Upload images
-            for img_filename, img_data in prepared_images.items():
-                try:
-                    upload_result = self.db_manager.upload_image(
-                        knowledge_id,
-                        img_filename,
-                        img_data["buffer"],
-                        f"image/{img_data['format']}"
-                    )
-                    
-                    image_urls[img_filename] = {
-                        "url": upload_result["url"],
-                        "metadata": {
-                            "width": img_data["width"],
-                            "height": img_data["height"],
-                            "page": img_data["page"],
-                        },
-                    }
-                except Exception as img_error:
-                    logger.error(f"Failed to upload image {img_filename}: {str(img_error)}")
-                    failed_images.append(img_filename)
-                    continue
-
-            # Analyze content and insert chapters
-            textbook, chapters = PDFProcessor.process_pdf_text_to_index(
-                markdown, 
-                knowledge_id=knowledge["id"],
-                knowledge_name=knowledge["name"]
+            # Update status to indicate file type
+            self.db_manager.update_knowledge_status(
+                knowledge_id, 
+                "processing", 
+                {
+                    "message": f"Processing {'video' if is_video else 'document'}: {filename}",
+                    "file_type": "video" if is_video else "document",
+                    "start_time": datetime.utcnow().isoformat()
+                }
             )
-            
-            # Insert chapters into database
-            self.db_manager.insert_chapters(knowledge_id, chapters)
 
-            # Build final metadata to store in 'knowledge' table
-            result = {
-                "markdown": markdown,
-                "metadata": metadata,
-                "analysis": textbook,
-                "image_urls": image_urls,
-                "failed_images": failed_images,
-                "processed_at": datetime.utcnow().isoformat(),
-                "retry_count": retry_count
-            }
+            if is_video:
+                # Process video file
+                logger.info(f"Processing video file: {filename}")
+                
+                # Process the video to get structured content
+                textbook, chapters = VideoProcessor.process_video_to_chapters(
+                    file_data,
+                    knowledge_id=knowledge["id"],
+                    knowledge_name=knowledge["name"]
+                )
+                
+                # Insert chapters into database
+                self.db_manager.insert_chapters(knowledge_id, chapters)
+                
+                # Build metadata without images
+                result = {
+                    "markdown": "",  # Not using raw markdown for videos
+                    "metadata": textbook.get("metadata", {}),
+                    "analysis": textbook,
+                    "image_urls": {},
+                    "failed_images": [],
+                    "processed_at": datetime.utcnow().isoformat(),
+                    "retry_count": retry_count,
+                    "file_type": "video"
+                }
+            else:
+                # Process PDF/document file
+                logger.info(f"Processing document file: {filename}")
+                
+                # Process the PDF
+                markdown, images, metadata = PDFProcessor.process_pdf(file_data)
+    
+                # Upload each extracted image to Supabase
+                image_urls = {}
+                failed_images = []
+                
+                # Prepare images for upload
+                prepared_images = PDFProcessor.prepare_images_for_upload(images)
+                
+                # Upload images
+                for img_filename, img_data in prepared_images.items():
+                    try:
+                        upload_result = self.db_manager.upload_image(
+                            knowledge_id,
+                            img_filename,
+                            img_data["buffer"],
+                            f"image/{img_data['format']}"
+                        )
+                        
+                        image_urls[img_filename] = {
+                            "url": upload_result["url"],
+                            "metadata": {
+                                "width": img_data["width"],
+                                "height": img_data["height"],
+                                "page": img_data["page"],
+                            },
+                        }
+                    except Exception as img_error:
+                        logger.error(f"Failed to upload image {img_filename}: {str(img_error)}")
+                        failed_images.append(img_filename)
+                        continue
+    
+                # Analyze content and insert chapters
+                textbook, chapters = PDFProcessor.process_pdf_text_to_index(
+                    markdown, 
+                    knowledge_id=knowledge["id"],
+                    knowledge_name=knowledge["name"]
+                )
+                
+                # Insert chapters into database
+                self.db_manager.insert_chapters(knowledge_id, chapters)
+    
+                # Build final metadata to store in 'knowledge' table
+                result = {
+                    "markdown": markdown,
+                    "metadata": metadata,
+                    "analysis": textbook,
+                    "image_urls": image_urls,
+                    "failed_images": failed_images,
+                    "processed_at": datetime.utcnow().isoformat(),
+                    "retry_count": retry_count,
+                    "file_type": "document"
+                }
 
             # Update status to processed
             self.db_manager.update_knowledge_status(knowledge_id, "processed", result)

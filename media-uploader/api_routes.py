@@ -1,10 +1,11 @@
 import logging
 import json
 import os
+import tempfile
 from typing import Dict, Optional, List, Any
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, Depends, BackgroundTasks, Query
+from fastapi import APIRouter, HTTPException, UploadFile, File, Depends, BackgroundTasks, Query, Form
 from fastapi.responses import JSONResponse
 import requests
 
@@ -16,6 +17,7 @@ from models import (
 from database import DatabaseManager
 from queue_manager import QueueManager
 from pdf_processor import PDFProcessor
+from video_processor import VideoProcessor
 from openai_client import OpenAIClient
 from openai_functions import (
     generate_notes, generate_summary, generate_questions, generate_mind_map_structure
@@ -395,3 +397,71 @@ async def get_chapter_data(
             data=None,
             error=str(e)
         )
+
+@router.post("/test/video-process")
+async def test_video_process(
+    file: UploadFile = File(...),
+    knowledge_id: int = Form(...),
+    knowledge_name: str = Form(...),
+    whisper_model: str = Form("base"),
+    openai_model: str = Form("gpt-4o-mini"),
+    db_manager: DatabaseManager = Depends(get_db_manager)
+):
+    """
+    Test endpoint for processing a video file directly.
+    
+    Args:
+        file: The video file to process
+        knowledge_id: ID to associate with the processed content
+        knowledge_name: Name of the knowledge entry
+        whisper_model: Whisper model to use (tiny, base, small, medium, large)
+        openai_model: OpenAI model to use
+        
+    Returns:
+        JSON response with processing results
+    """
+    try:
+        # Check file extension
+        file_extension = os.path.splitext(file.filename)[1].lower()
+        if file_extension not in ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v']:
+            raise HTTPException(400, "File must be a video file")
+            
+        # Read the file content
+        file_content = await file.read()
+        
+        # Process the video
+        logger.info(f"Processing test video: {file.filename}")
+        
+        # Process video to get textbook structure and chapters
+        textbook, chapters = VideoProcessor.process_video_to_chapters(
+            file_content,
+            knowledge_id=knowledge_id,
+            knowledge_name=knowledge_name,
+            whisper_model=whisper_model,
+            openai_model=openai_model
+        )
+        
+        # Insert chapters into database
+        db_manager.insert_chapters(knowledge_id, chapters)
+        
+        # Update knowledge status
+        db_manager.update_knowledge_status(
+            knowledge_id,
+            "processed",
+            {
+                "analysis": textbook,
+                "processed_at": datetime.utcnow().isoformat(),
+                "file_type": "video"
+            }
+        )
+        
+        return {
+            "success": True,
+            "message": "Video processed successfully",
+            "chapters_count": len(chapters),
+            "textbook_structure": textbook
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in test video processing: {str(e)}")
+        raise HTTPException(500, f"Error processing video: {str(e)}")
