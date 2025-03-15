@@ -12,6 +12,8 @@ import torch
 import whisper
 from openai import OpenAI
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import re
+import subprocess
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -203,12 +205,31 @@ class VideoProcessorV2:
                         "type": "array",
                         "items": {"type": "string"},
                     },
+                    # New enhanced metadata fields
+                    "timestamp_start": {"type": "number"},
+                    "timestamp_end": {"type": "number"},
+                    "order": {"type": "integer"},
+                    "needs_latex": {"type": "boolean"},
+                    "needs_code": {"type": "boolean"},
+                    "needs_roleplay": {"type": "boolean"},
+                    "chapter_type": {
+                        "type": "string",
+                        "enum": ["lecture", "demo", "exercise", "quiz", "discussion"]
+                    },
                 },
                 "required": [
                     "title",
                     "sections",
                     "chapter_number",
                     "learning_objectives",
+                    "timestamp_start",
+                    "timestamp_end",
+                    "order",
+                    "needs_latex",
+                    "needs_code",
+                    "needs_roleplay",
+                    "chapter_type",
+                    # Not making the new fields required to maintain backward compatibility
                 ],
                 "additionalProperties": False,
             },
@@ -644,6 +665,214 @@ class VideoProcessorV2:
         return "\n".join(markdown)
 
     @staticmethod
+    def extract_timestamps_from_subtitles(video_data: bytes) -> List[Dict[str, Any]]:
+        """
+        Extract subtitle data from video file.
+        
+        Args:
+            video_data: Binary video data
+            
+        Returns:
+            List[Dict[str, Any]]: List of subtitle entries with start time, end time and text
+        """
+        # Save video data to temporary file
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as temp_file:
+            temp_file.write(video_data)
+            temp_file_path = temp_file.name
+            
+        subtitle_entries = []
+        
+        try:
+            # Create a temporary file for the subtitles
+            with tempfile.NamedTemporaryFile(suffix=".vtt", delete=False) as subtitle_file:
+                subtitle_path = subtitle_file.name
+            
+            # Extract subtitles using ffmpeg
+            ffmpeg_cmd = [
+                "ffmpeg", "-i", temp_file_path, "-map", "0:s:0", 
+                "-f", "webvtt", subtitle_path
+            ]
+            
+            try:
+                subprocess.run(ffmpeg_cmd, check=True, capture_output=True)
+                
+                # Read the subtitle file
+                with open(subtitle_path, 'r', encoding='utf-8') as f:
+                    subtitle_content = f.read()
+                
+                # Parse VTT format
+                # Skip WebVTT header
+                sections = subtitle_content.split("\n\n")
+                for section in sections[1:]:  # Skip the header
+                    lines = section.strip().split("\n")
+                    if len(lines) >= 2:
+                        # Get timestamp line
+                        timestamp_line = lines[0]
+                        if " --> " in timestamp_line:
+                            start_time, end_time = timestamp_line.split(" --> ")
+                            # Join remaining lines as text
+                            text = " ".join(lines[1:])
+                            
+                            entry = {
+                                "start": VideoProcessorV2.vtt_time_to_seconds(start_time),
+                                "end": VideoProcessorV2.vtt_time_to_seconds(end_time),
+                                "text": text
+                            }
+                            subtitle_entries.append(entry)
+                
+            except subprocess.CalledProcessError as e:
+                logger.warning(f"Failed to extract subtitles: {e}")
+                # If extraction fails, return empty list to allow fallback
+                return []
+                
+        finally:
+            # Clean up temporary files
+            if os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+            if 'subtitle_path' in locals() and os.path.exists(subtitle_path):
+                os.remove(subtitle_path)
+                
+        return subtitle_entries
+    
+    @staticmethod
+    def vtt_time_to_seconds(time_str: str) -> float:
+        """
+        Convert VTT timestamp format to seconds.
+        
+        Args:
+            time_str: VTT timestamp (00:00:00.000)
+            
+        Returns:
+            float: Time in seconds
+        """
+        # Handle timestamp formats with or without milliseconds
+        if '.' in time_str:
+            time_parts, milliseconds = time_str.strip().split('.')
+            milliseconds = float(f"0.{milliseconds}")
+        else:
+            time_parts = time_str.strip()
+            milliseconds = 0.0
+            
+        # Split hours, minutes, seconds
+        hours, minutes, seconds = map(int, time_parts.split(':'))
+        
+        # Convert to seconds
+        total_seconds = hours * 3600 + minutes * 60 + seconds + milliseconds
+        
+        return total_seconds
+    
+    @staticmethod
+    def assign_timestamps_to_chapters(
+        chapters: List[Dict], 
+        subtitle_entries: List[Dict[str, Any]], 
+        video_duration: float
+    ) -> List[Dict]:
+        """
+        Assign chapter boundaries based on subtitle segments.
+        
+        Args:
+            chapters: List of chapter entries
+            subtitle_entries: List of subtitle entries with timestamps
+            video_duration: Total duration of the video in seconds
+            
+        Returns:
+            List[Dict]: Updated chapters with timestamps
+        """
+        if not subtitle_entries or not chapters:
+            return chapters
+        
+        # Get the number of content chapters (excluding the overview chapter)
+        content_chapters = chapters[1:] if len(chapters) > 1 else chapters
+        num_chapters = len(content_chapters)
+        
+        # If we have only one chapter, assign the whole video duration
+        if num_chapters == 1:
+            content_chapters[0]["timestamp_start"] = 0.0
+            content_chapters[0]["timestamp_end"] = video_duration
+            return chapters
+            
+        # Calculate target duration for each chapter (aim for 3-10 min segments)
+        target_duration = video_duration / num_chapters
+        
+        # Distribute subtitles across chapters
+        total_subtitle_entries = len(subtitle_entries)
+        entries_per_chapter = total_subtitle_entries / num_chapters
+        
+        for i, chapter in enumerate(content_chapters):
+            # Calculate the rough start and end indices for this chapter's subtitles
+            start_idx = int(i * entries_per_chapter)
+            end_idx = int((i + 1) * entries_per_chapter) if i < num_chapters - 1 else total_subtitle_entries - 1
+            
+            # Adjust boundaries to find better break points (e.g., sentence endings)
+            if i > 0 and end_idx > 0:
+                # Look back a few entries to find a good break (e.g., end of sentence)
+                for j in range(end_idx, max(start_idx, end_idx - 10), -1):
+                    if j < total_subtitle_entries and subtitle_entries[j]["text"].strip().endswith((".", "!", "?")):
+                        end_idx = j
+                        break
+            
+            # Assign timestamps
+            if start_idx < total_subtitle_entries:
+                chapter["timestamp_start"] = subtitle_entries[start_idx]["start"]
+                
+                if end_idx < total_subtitle_entries:
+                    chapter["timestamp_end"] = subtitle_entries[end_idx]["end"]
+                else:
+                    chapter["timestamp_end"] = video_duration
+            
+        # Ensure there are no gaps between chapters
+        for i in range(1, len(content_chapters)):
+            if content_chapters[i-1]["timestamp_end"] < content_chapters[i]["timestamp_start"]:
+                content_chapters[i-1]["timestamp_end"] = content_chapters[i]["timestamp_start"]
+                
+        # If we have an overview chapter, set its time range to the entire video
+        if len(chapters) > num_chapters:
+            chapters[0]["timestamp_start"] = 0.0
+            chapters[0]["timestamp_end"] = video_duration
+            
+        return chapters
+
+    @staticmethod
+    def get_video_duration(video_data: bytes) -> float:
+        """
+        Get the duration of a video in seconds.
+        
+        Args:
+            video_data: Binary video data
+            
+        Returns:
+            float: Duration in seconds
+        """
+        # Save video data to temporary file
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as temp_file:
+            temp_file.write(video_data)
+            temp_file_path = temp_file.name
+            
+        try:
+            # Use ffmpeg to get video duration
+            cmd = [
+                "ffmpeg", "-i", temp_file_path, 
+                "-f", "null", "-"
+            ]
+            
+            result = subprocess.run(cmd, stderr=subprocess.PIPE, check=False)
+            stderr_output = result.stderr.decode()
+            
+            # Extract duration using regex
+            duration_match = re.search(r"Duration: (\d{2}):(\d{2}):(\d{2})\.(\d{2})", stderr_output)
+            if duration_match:
+                hours, minutes, seconds, centiseconds = map(int, duration_match.groups())
+                duration = hours * 3600 + minutes * 60 + seconds + centiseconds / 100
+                return duration
+                
+            return 0.0  # Default if duration cannot be determined
+            
+        finally:
+            # Clean up temporary file
+            if os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+
+    @staticmethod
     def process_video_to_chapters(
         video_data: bytes,
         knowledge_id: int,
@@ -675,6 +904,13 @@ class VideoProcessorV2:
 
         # Step 1: Transcribe video
         transcription = VideoProcessorV2.transcribe_video(video_data, whisper_model)
+        
+        # Step 1.5: Extract subtitles and timestamps
+        subtitle_entries = VideoProcessorV2.extract_timestamps_from_subtitles(video_data)
+        video_duration = VideoProcessorV2.get_video_duration(video_data)
+        
+        logger.info(f"Extracted {len(subtitle_entries)} subtitle entries")
+        logger.info(f"Video duration: {video_duration} seconds")
 
         # Step 2: Split transcription into chunks
         chunks = VideoProcessorV2.chunk_text(transcription)
@@ -705,5 +941,27 @@ class VideoProcessorV2:
         chapters = VideoProcessorV2.create_chapters_from_structure(
             course_structure=course_structure, knowledge_id=knowledge_id
         )
+        
+        # Step 6: Assign timestamps to chapters
+        if subtitle_entries and video_duration > 0:
+            chapters = VideoProcessorV2.assign_timestamps_to_chapters(
+                chapters=chapters,
+                subtitle_entries=subtitle_entries,
+                video_duration=video_duration
+            )
+            logger.info("Assigned timestamps to chapters based on subtitles")
+        else:
+            logger.info("No subtitle data available, falling back to estimation")
+            # Fallback to estimation based on position in transcript
+            # Set approximate timestamps based on chapter position
+            for i, chapter in enumerate(chapters):
+                if i == 0:  # Overview chapter
+                    chapter["timestamp_start"] = 0.0
+                    chapter["timestamp_end"] = video_duration
+                else:
+                    # Estimate position based on transcript line numbers
+                    chapter_position = (i-1) / (len(chapters)-1) if len(chapters) > 1 else 0
+                    chapter["timestamp_start"] = chapter_position * video_duration
+                    chapter["timestamp_end"] = min(video_duration, (i) / (len(chapters)-1) * video_duration) if i < len(chapters)-1 else video_duration
 
         return course_structure, chapters

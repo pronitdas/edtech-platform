@@ -514,7 +514,7 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
                         {/* Chatbot - Collapses to bottom on mobile */}
                         <div className={`${isMobileView ? 'w-full h-1/2' : 'w-full md:w-1/4 h-full'} bg-gray-800 rounded-lg overflow-hidden shadow-lg`}>
                             <div className="bg-indigo-900/20 p-2 text-white font-medium flex justify-between items-center">
-                                <span>AI Assistant</span>
+                                <span>TGC Assistant</span>
                                 {isMobileView && (
                                     <button 
                                         className="p-1 hover:bg-indigo-800/30 rounded-md"
