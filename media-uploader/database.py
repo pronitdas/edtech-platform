@@ -10,8 +10,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Supabase configuration
-SUPABASE_URL = ''
-SUPABASE_KEY = ""  # Should be loaded from environment variables in production
+SUPABASE_URL = 'https://onyibiwnfwxatadlkygz.supabase.co'
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ueWliaXduZnd4YXRhZGxreWd6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczMTg1MDk3MiwiZXhwIjoyMDQ3NDI2OTcyfQ.2pDIMklrwWLljZ8jFPLCL7555T4EwWg9gZzBjLGJGPI"  # Should be loaded from environment variables in production
 
 
 class DatabaseManager:
@@ -36,6 +36,7 @@ class DatabaseManager:
                 
             return response.data[0]
         except Exception as e:
+            print(e)
             logger.error(f"Error getting knowledge {knowledge_id}: {str(e)}")
             raise
             
@@ -55,6 +56,7 @@ class DatabaseManager:
                 
             return response.data[0]
         except Exception as e:
+            print(e)
             logger.error(f"Error getting unseeded knowledge {knowledge_id}: {str(e)}")
             raise
             
@@ -135,8 +137,7 @@ class DatabaseManager:
         """Update retry information for a knowledge entry."""
         try:
             update_data = {
-                "retry_count": retry_count,
-                "last_retry": datetime.utcnow().isoformat()
+                "retry_count": retry_count
             }
             
             response = (

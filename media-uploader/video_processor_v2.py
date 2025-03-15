@@ -49,7 +49,7 @@ class VideoProcessorV2:
     """Enhanced processor for video files that transcribes and generates structured content."""
 
     # Default OpenAI API Key - should be loaded from environment in production
-    DEFAULT_OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+    DEFAULT_OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "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")
 
     # Default model names
     DEFAULT_WHISPER_MODEL = "base"
@@ -490,53 +490,44 @@ class VideoProcessorV2:
         """
         chapters = []
         current_timestamp = datetime.utcnow().isoformat()
+        id_counter = 1
 
-        # Create a root chapter for the course
+        # Create a root chapter for the course overview
         root_chapter = {
-            "id": f"course_{knowledge_id}",
-            "knowledge_id": knowledge_id,
-            "parent_id": None,
-            "type": "course",
-            "title": course_structure.get("title", "Course"),
+            "id": id_counter,
+            "topic": course_structure.get("title", "Course"),
+            "subtopic": "Course Overview",
+            "chaptertitle": "Course Description",
             "chapter": course_structure.get("description", ""),
-            "level": 0,
-            "metadata": {
-                "summary": course_structure.get("summary", ""),
-                "target_audience": course_structure.get("target_audience", []),
-                "difficulty_level": course_structure.get(
-                    "difficulty_level", "Intermediate"
-                ),
-                "prerequisites": course_structure.get("recommended_prerequisites", []),
-            },
-            "created_at": current_timestamp,
+            "lines": len(course_structure.get("description", "").splitlines()),
+            "knowledge_id": int(knowledge_id),
+            "k_id": int(knowledge_id)
         }
         chapters.append(root_chapter)
+        id_counter += 1
 
         # Process each chapter in the course
         for i, chapter_data in enumerate(course_structure.get("chapters", [])):
-            chapter_id = f"chapter_{knowledge_id}_{i}"
-
             # Create chapter entry
+            chapter_content = chapter_data.get("title", f"Chapter {i+1}")
+            if chapter_data.get("learning_objectives"):
+                chapter_content += "\n\nLearning Objectives:\n" + "\n".join(f"- {obj}" for obj in chapter_data["learning_objectives"])
+            
             chapter = {
-                "id": chapter_id,
-                "knowledge_id": knowledge_id,
-                "parent_id": root_chapter["id"],
-                "type": "chapter",
-                "title": chapter_data.get("title", f"Chapter {i+1}"),
-                "chapter": "",  # No content at chapter level - it's in the sections
-                "level": 1,
-                "metadata": {
-                    "learning_objectives": chapter_data.get("learning_objectives", []),
-                    "chapter_number": chapter_data.get("chapter_number", i + 1),
-                },
-                "created_at": current_timestamp,
+                "id": id_counter,
+                "topic": course_structure.get("title", "Course"),
+                "subtopic": f"Chapter {i+1}",
+                "chaptertitle": chapter_data.get("title", f"Chapter {i+1}"),
+                "chapter": chapter_content,
+                "lines": len(chapter_content.splitlines()),
+                "knowledge_id": int(knowledge_id),
+                "k_id": int(knowledge_id)
             }
             chapters.append(chapter)
+            id_counter += 1
 
             # Process each section in the chapter
             for j, section_data in enumerate(chapter_data.get("sections", [])):
-                section_id = f"section_{knowledge_id}_{i}_{j}"
-
                 # Prepare section content
                 section_content = section_data.get("content", "")
 
@@ -556,16 +547,17 @@ class VideoProcessorV2:
 
                 # Create section entry
                 section = {
-                    "id": section_id,
-                    "knowledge_id": knowledge_id,
-                    "parent_id": chapter_id,
-                    "type": "section",
-                    "title": section_data.get("heading", f"Section {j+1}"),
+                    "id": id_counter,
+                    "topic": course_structure.get("title", "Course"),
+                    "subtopic": f"Chapter {i+1}",
+                    "chaptertitle": section_data.get("heading", f"Section {j+1}"),
                     "chapter": section_content,
-                    "level": 2,
-                    "created_at": current_timestamp,
+                    "lines": len(section_content.splitlines()),
+                    "knowledge_id": int(knowledge_id),
+                    "k_id": int(knowledge_id)
                 }
                 chapters.append(section)
+                id_counter += 1
 
         return chapters
 

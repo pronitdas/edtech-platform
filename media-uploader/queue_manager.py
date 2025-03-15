@@ -42,11 +42,14 @@ class QueueManager:
                 "failed", 
                 {"error": f"Maximum retry count ({self.max_retries}) reached"}
             )
-            self.db_manager.add_retry_history(
-                knowledge_id, 
-                "failed", 
-                f"Maximum retry count ({self.max_retries}) reached"
-            )
+            try:
+                self.db_manager.add_retry_history(
+                    knowledge_id, 
+                    "failed", 
+                    f"Maximum retry count ({self.max_retries}) reached"
+                )
+            except Exception as e:
+                logger.warning(f"Failed to add retry history (table may not exist): {str(e)}")
             return
             
         # Calculate delay based on retry count
@@ -58,11 +61,14 @@ class QueueManager:
         self.db_manager.update_retry_info(knowledge_id, retry_count + 1)
         
         # Add retry history
-        self.db_manager.add_retry_history(
-            knowledge_id, 
-            "retry_scheduled", 
-            f"Retry #{retry_count + 1} scheduled"
-        )
+        try:
+            self.db_manager.add_retry_history(
+                knowledge_id, 
+                "retry_scheduled", 
+                f"Retry #{retry_count + 1} scheduled"
+            )
+        except Exception as e:
+            logger.warning(f"Failed to add retry history (table may not exist): {str(e)}")
         
         # Schedule the retry after delay
         threading.Timer(delay, self._add_delayed_job, args=[knowledge_id, retry_count]).start()
