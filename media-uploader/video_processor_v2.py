@@ -885,19 +885,7 @@ class VideoProcessorV2:
     ) -> Tuple[Dict, List[Dict]]:
         """
         Process video data into structured course content and chapters.
-
-        Args:
-            video_data: Binary video data
-            knowledge_id: Knowledge entry ID
-            knowledge_name: Name of the knowledge entry
-            whisper_model: Whisper model size to use
-            openai_model: OpenAI model to use
-            openai_api_key: OpenAI API key
-            batch_size: Size of batches for processing
-            max_workers: Maximum number of worker threads
-
-        Returns:
-            Tuple[Dict, List[Dict]]: Tuple of (course_structure, chapters)
+        Returns the course structure and chapters without database operations.
         """
         # Initialize OpenAI client
         client = OpenAI(api_key=openai_api_key)
@@ -932,10 +920,15 @@ class VideoProcessorV2:
             model_name=openai_model,
         )
 
-        # Add raw transcription to metadata
-        if "metadata" not in course_structure:
-            course_structure["metadata"] = {}
-        course_structure["metadata"]["transcription"] = transcription
+        # Add transcription and video details to metadata
+        course_structure["metadata"] = {
+            "markdown": "",
+            "metadata": {
+                "transcription": transcription,
+                "video_duration": video_duration,
+                "processed_at": datetime.utcnow().isoformat()
+            }
+        }
 
         # Step 5: Create chapters from structure
         chapters = VideoProcessorV2.create_chapters_from_structure(
@@ -949,17 +942,13 @@ class VideoProcessorV2:
                 subtitle_entries=subtitle_entries,
                 video_duration=video_duration
             )
-            logger.info("Assigned timestamps to chapters based on subtitles")
         else:
-            logger.info("No subtitle data available, falling back to estimation")
             # Fallback to estimation based on position in transcript
-            # Set approximate timestamps based on chapter position
             for i, chapter in enumerate(chapters):
                 if i == 0:  # Overview chapter
                     chapter["timestamp_start"] = 0.0
                     chapter["timestamp_end"] = video_duration
                 else:
-                    # Estimate position based on transcript line numbers
                     chapter_position = (i-1) / (len(chapters)-1) if len(chapters) > 1 else 0
                     chapter["timestamp_start"] = chapter_position * video_duration
                     chapter["timestamp_end"] = min(video_duration, (i) / (len(chapters)-1) * video_duration) if i < len(chapters)-1 else video_duration

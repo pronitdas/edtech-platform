@@ -183,7 +183,13 @@ class QueueManager:
                     "failed_images": [],
                     "processed_at": datetime.utcnow().isoformat(),
                     "retry_count": retry_count,
-                    "file_type": "video"
+                    "file_type": "video",
+                    
+                    # Extract key fields to the top level for easier access
+                    "difficulty_level": textbook.get("difficulty_level"),
+                    "target_audience": textbook.get("target_audience", []),
+                    "prerequisites": textbook.get("recommended_prerequisites", []),
+                    "summary": textbook.get("summary")
                 }
             else:
                 # Process PDF/document file
