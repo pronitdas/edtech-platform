@@ -39,7 +39,7 @@ def get_queue_manager(db_manager: DatabaseManager = Depends(get_db_manager)):
 
 def get_openai_client():
     """Get an OpenAI client."""
-    api_key = os.environ.get("OPENAI_API_KEY", "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")
+    api_key = os.environ.get("OPENAI_API_KEY", "")
     if not api_key:
         logger.warning("OPENAI_API_KEY not set, using default key")
     return OpenAIClient(api_key)

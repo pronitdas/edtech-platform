@@ -24,7 +24,7 @@ const VoiceChatbot = ({ topic, language, onQuestionAsked }: ChatbotProps) => {
     const [conversation, setConversation] = useState([
         {
             role: "assistant",
-            content: "Hello, I'm AI-Mentor! Let's start your journey. What would you like to know about?"
+            content: "Hello, I am your companion! Let's start your journey. Just tell me what you need?"
         }
     ]);
 

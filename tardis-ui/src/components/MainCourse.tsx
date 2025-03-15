@@ -181,7 +181,7 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
         {
             label: "Video",
             key: "video",
-            condition: true,
+            condition: Boolean(video_url),
             content: video_url,
             icon: <Video className="w-4 h-4" />
         },
@@ -365,14 +365,28 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
                       </div>;
 
             case 'video':
+                // Only render VideoPlayer if we have a valid video URL
+                if (!video_url) {
+                    return (
+                        <div className="flex flex-col items-center justify-center h-full text-white">
+                            <Video className="w-16 h-16 text-gray-600 mb-4" />
+                            <p className="text-xl">No video available</p>
+                        </div>
+                    );
+                }
+                
                 return (
                     <VideoPlayer 
-                        src={video_url} 
-                        title={content.title || "Course Video"}
-                        markers={timelineMarkers}
+                        src={video_url}
+                        title={content?.title || "Course Video"}
+                        markers={timelineMarkers || []}
                         onPlay={() => interactionTracker.trackVideoPlay()}
                         onPause={() => interactionTracker.trackVideoPause()}
                         onSeek={() => interactionTracker.trackTimelineSeek()}
+                        fallbackImage={content?.thumbnail || "/images/default-video-thumbnail.jpg"}
+                        onError={(e) => {
+                            console.error("Video playback error:", e);
+                        }}
                     />
                 );
 
@@ -514,7 +528,7 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
                         {/* Chatbot - Collapses to bottom on mobile */}
                         <div className={`${isMobileView ? 'w-full h-1/2' : 'w-full md:w-1/4 h-full'} bg-gray-800 rounded-lg overflow-hidden shadow-lg`}>
                             <div className="bg-indigo-900/20 p-2 text-white font-medium flex justify-between items-center">
-                                <span>AI Assistant</span>
+                                <span>TGC Assistant</span>
                                 {isMobileView && (
                                     <button 
                                         className="p-1 hover:bg-indigo-800/30 rounded-md"

@@ -4,6 +4,10 @@ import { Play, Pause, Volume2, VolumeX, Maximize, SkipForward, SkipBack } from '
 interface TimelineMarker {
   time: number;
   label?: string;
+  type?: 'latex' | 'code' | 'roleplay' | 'default';
+  content?: string;
+  active?: boolean;
+  id?: string;
 }
 
 interface VideoPlayerProps {
@@ -11,10 +15,11 @@ interface VideoPlayerProps {
   title: string;
   markers?: TimelineMarker[];
   onTimeUpdate?: (currentTime: number) => void;
-  onMarkerClick?: (time: number) => void;
+  onMarkerClick?: (marker: TimelineMarker) => void;
   onPlay?: () => void;
   onPause?: () => void;
   onSeek?: () => void;
+  activeChapterId?: string;
 }
 
 const VideoPlayer = ({ 
@@ -25,7 +30,8 @@ const VideoPlayer = ({
   onMarkerClick,
   onPlay,
   onPause,
-  onSeek
+  onSeek,
+  activeChapterId
 }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const timelineRef = useRef<HTMLInputElement>(null);
@@ -130,15 +136,15 @@ const VideoPlayer = ({
   };
 
   // Handle marker click
-  const handleMarkerClick = (time: number) => {
+  const handleMarkerClick = (marker: TimelineMarker) => {
     if (videoRef.current) {
-      videoRef.current.currentTime = time;
-      setCurrentTime(time);
+      videoRef.current.currentTime = marker.time;
+      setCurrentTime(marker.time);
       if (timelineRef.current) {
-        timelineRef.current.value = time.toString();
+        timelineRef.current.value = marker.time.toString();
       }
       if (onMarkerClick) {
-        onMarkerClick(time);
+        onMarkerClick(marker);
       }
     }
   };
@@ -218,6 +224,34 @@ const VideoPlayer = ({
     };
   }, []);
 
+  // Get marker color based on type
+  const getMarkerColor = (marker: TimelineMarker) => {
+    switch (marker.type) {
+      case 'latex':
+        return 'bg-purple-500';
+      case 'code':
+        return 'bg-green-500';
+      case 'roleplay':
+        return 'bg-indigo-500';
+      default:
+        return 'bg-red-500';
+    }
+  };
+
+  // Get marker icon based on type
+  const getMarkerIcon = (marker: TimelineMarker) => {
+    switch (marker.type) {
+      case 'latex':
+        return '∑';
+      case 'code':
+        return '<>';
+      case 'roleplay':
+        return '👥';
+      default:
+        return '';
+    }
+  };
+
   return (
     <div 
       ref={containerRef}
@@ -284,14 +318,24 @@ const VideoPlayer = ({
           <div className="absolute bottom-0 left-0 right-0 h-2 pointer-events-none">
             {markers.map((marker, index) => {
               const percent = (marker.time / (duration || 100)) * 100;
+              const isActive = marker.id === activeChapterId;
               return (
                 <button
                   key={index}
-                  className="absolute w-3 h-3 bg-red-500 rounded-full transform -translate-y-1/2 cursor-pointer pointer-events-auto hover:scale-125 transition-transform"
+                  className={`absolute w-3 h-3 ${getMarkerColor(marker)} rounded-full transform -translate-y-1/2 cursor-pointer pointer-events-auto 
+                    ${isActive ? 'ring-2 ring-white' : 'hover:scale-125'} transition-transform`}
                   style={{ left: `${percent}%` }}
-                  onClick={() => handleMarkerClick(marker.time)}
+                  onClick={() => handleMarkerClick(marker)}
                   title={marker.label || `Marker at ${formatTime(marker.time)}`}
-                />
+                  data-tooltip-id="marker-tooltip"
+                  data-tooltip-content={marker.label || `Marker at ${formatTime(marker.time)}`}
+                >
+                  {getMarkerIcon(marker) && (
+                    <span className="absolute inset-0 flex items-center justify-center text-[8px] text-white font-bold">
+                      {getMarkerIcon(marker)}
+                    </span>
+                  )}
+                </button>
               );
             })}
           </div>
