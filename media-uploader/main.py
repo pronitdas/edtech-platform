@@ -15,7 +15,7 @@ from models import ProcessingStatus, RetryRequest, RetryHistory, ImageUploadStat
 from database import DatabaseManager
 from queue_manager import QueueManager
 from pdf_processor import PDFProcessor
-from video_processor import VideoProcessor
+from video_processor_v2 import VideoProcessorV2
 from api_routes import router
 
 # Configure logging

@@ -9,7 +9,7 @@ from typing import Dict, Optional, List, Any, Callable
 
 from database import DatabaseManager
 from pdf_processor import PDFProcessor
-from video_processor import VideoProcessor
+from video_processor_v2 import VideoProcessorV2
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -139,8 +139,8 @@ class QueueManager:
             file_extension = os.path.splitext(filename)[1].lower()
             is_video = file_extension in ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v']
             
-            # Fetch the file from Supabase storage
-            file_path = f"doc/{knowledge_id}/{filename}"
+            # Fetch the file from Supabase storage using appropriate path
+            file_path = f"video/{knowledge_id}/{filename}" if is_video else f"doc/{knowledge_id}/{filename}"
             file_data = self.db_manager.download_file(file_path)
             
             # Update status to indicate file type
@@ -158,8 +158,8 @@ class QueueManager:
                 # Process video file
                 logger.info(f"Processing video file: {filename}")
                 
-                # Process the video to get structured content
-                textbook, chapters = VideoProcessor.process_video_to_chapters(
+                # Process the video to get structured content using VideoProcessorV2
+                textbook, chapters = VideoProcessorV2.process_video_to_chapters(
                     file_data,
                     knowledge_id=knowledge["id"],
                     knowledge_name=knowledge["name"]
