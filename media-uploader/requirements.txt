@@ -134,7 +134,7 @@ rich==13.9.2
 ruff==0.9.6
 safetensors==0.5.2
 scikit-learn==1.4.2
-scipy==1.15.1
+scipy==1.15.2
 semantic-version==2.10.0
 setuptools==75.8.0
 shellingham==1.5.4
