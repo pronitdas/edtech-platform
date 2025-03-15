@@ -225,7 +225,7 @@ export const getKnowledge = async () => {
     try {
         const { data, error } = await supabase
             .from('knowledge')
-            .select('id, name, seeded, status, filename, roleplay, chapters_v1(k_id, subtopic, chaptertitle)') // Combined both sets of fields
+            .select('id, name, seeded, status, filename, roleplay, difficulty_level, target_audience, prerequisites, summary, chapters_v1(k_id, subtopic, chaptertitle)') // Combined both sets of fields
             .order('created_at', { ascending: false });
         
         if (error) {

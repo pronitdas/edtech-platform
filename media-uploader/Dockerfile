@@ -3,7 +3,7 @@ ARG CUDNN_VERSION=""
 ARG UBUNTU_VERSION="22.04"
 ARG MAX_JOBS=4
 
-FROM nvidia/cuda:${CUDA_VERSION}-cudnn${CUDNN_VERSION}-devel-ubuntu${UBUNTU_VERSION}
+FROM runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04
 
 # Ensure NVIDIA runtime makes GPUs visible
 ENV NVIDIA_VISIBLE_DEVICES=all
@@ -34,23 +34,22 @@ RUN apt-get update && \
         python3-dev \
         libasound-dev \
         portaudio19-dev && \
-    ln -s /usr/bin/python3 /usr/bin/python && \
     rm -rf /var/lib/apt/lists/*
 
-# Install PyTorch with CUDA support
-RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
-# Pre-download Whisper model to cache
-RUN pip3 install --no-cache-dir openai-whisper && \
-    python3 -c "import whisper; whisper.load_model('base')"
 
 # Set working directory
 WORKDIR /app
 
 # Install Python dependencies
 COPY requirements.txt ./
-RUN pip install --default-timeout=1000  --no-cache-dir -r requirements.txt
+RUN pip3 install --default-timeout=1000  --no-cache-dir -r requirements.txt
+# Install PyTorch with CUDA support
+RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
+# Pre-download Whisper model to cache
+RUN pip3 install --no-cache-dir openai-whisper && \
+    python3 -c "import whisper; whisper.load_model('base')"
 # Copy application code
 COPY . .
 

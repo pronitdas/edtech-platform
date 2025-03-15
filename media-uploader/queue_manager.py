@@ -9,7 +9,7 @@ from typing import Dict, Optional, List, Any, Callable
 
 from database import DatabaseManager
 from pdf_processor import PDFProcessor
-from video_processor import VideoProcessor
+from video_processor_v2 import VideoProcessorV2
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -42,11 +42,14 @@ class QueueManager:
                 "failed", 
                 {"error": f"Maximum retry count ({self.max_retries}) reached"}
             )
-            self.db_manager.add_retry_history(
-                knowledge_id, 
-                "failed", 
-                f"Maximum retry count ({self.max_retries}) reached"
-            )
+            try:
+                self.db_manager.add_retry_history(
+                    knowledge_id, 
+                    "failed", 
+                    f"Maximum retry count ({self.max_retries}) reached"
+                )
+            except Exception as e:
+                logger.warning(f"Failed to add retry history (table may not exist): {str(e)}")
             return
             
         # Calculate delay based on retry count
@@ -58,11 +61,14 @@ class QueueManager:
         self.db_manager.update_retry_info(knowledge_id, retry_count + 1)
         
         # Add retry history
-        self.db_manager.add_retry_history(
-            knowledge_id, 
-            "retry_scheduled", 
-            f"Retry #{retry_count + 1} scheduled"
-        )
+        try:
+            self.db_manager.add_retry_history(
+                knowledge_id, 
+                "retry_scheduled", 
+                f"Retry #{retry_count + 1} scheduled"
+            )
+        except Exception as e:
+            logger.warning(f"Failed to add retry history (table may not exist): {str(e)}")
         
         # Schedule the retry after delay
         threading.Timer(delay, self._add_delayed_job, args=[knowledge_id, retry_count]).start()
@@ -139,8 +145,8 @@ class QueueManager:
             file_extension = os.path.splitext(filename)[1].lower()
             is_video = file_extension in ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v']
             
-            # Fetch the file from Supabase storage
-            file_path = f"doc/{knowledge_id}/{filename}"
+            # Fetch the file from Supabase storage using appropriate path
+            file_path = f"video/{knowledge_id}/{filename}" if is_video else f"doc/{knowledge_id}/{filename}"
             file_data = self.db_manager.download_file(file_path)
             
             # Update status to indicate file type
@@ -158,8 +164,8 @@ class QueueManager:
                 # Process video file
                 logger.info(f"Processing video file: {filename}")
                 
-                # Process the video to get structured content
-                textbook, chapters = VideoProcessor.process_video_to_chapters(
+                # Process the video to get structured content using VideoProcessorV2
+                textbook, chapters = VideoProcessorV2.process_video_to_chapters(
                     file_data,
                     knowledge_id=knowledge["id"],
                     knowledge_name=knowledge["name"]
@@ -177,7 +183,13 @@ class QueueManager:
                     "failed_images": [],
                     "processed_at": datetime.utcnow().isoformat(),
                     "retry_count": retry_count,
-                    "file_type": "video"
+                    "file_type": "video",
+                    
+                    # Extract key fields to the top level for easier access
+                    "difficulty_level": textbook.get("difficulty_level"),
+                    "target_audience": textbook.get("target_audience", []),
+                    "prerequisites": textbook.get("recommended_prerequisites", []),
+                    "summary": textbook.get("summary")
                 }
             else:
                 # Process PDF/document file
