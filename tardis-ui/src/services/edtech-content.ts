@@ -227,12 +227,12 @@ export const getKnowledge = async () => {
             .from('knowledge')
             .select('id, name, seeded, status, filename, roleplay, difficulty_level, target_audience, prerequisites, summary, chapters_v1(k_id, subtopic, chaptertitle)') // Combined both sets of fields
             .order('created_at', { ascending: false });
-        
+
         if (error) {
             console.error('Error fetching knowledge:', error);
             return [];
         }
-        
+
         return data || [];
     } catch (error) {
         console.error('Exception fetching knowledge:', error);
@@ -391,43 +391,28 @@ export const getRoleplayData = async (knowledgeId: number) => {
         .select('roleplay')
         .eq('id', knowledgeId)
         .single();
-    
+
     if (error) {
         console.error('Error fetching roleplay data:', error);
         return null;
     }
-    
+
     return data?.roleplay;
 }
 
-// Function to update roleplay data for a knowledge entry
-export const updateRoleplayData = async (knowledgeId: number, roleplayData: any) => {
-    const { data, error } = await supabase
-        .from('knowledge')
-        .update({ roleplay: roleplayData })
-        .eq('id', knowledgeId)
-        .select('roleplay');
-    
-    if (error) {
-        console.error('Error updating roleplay data:', error);
-        return null;
-    }
-    
-    return data?.[0]?.roleplay;
-}
 
 // Function to generate roleplay scenarios based on course content
 export const generateRoleplayScenarios = async (
-    knowledgeId: number, 
-    topic: string, 
-    content: string, 
-    apiKey: string, 
+    knowledgeId: number,
+    topic: string,
+    content: string,
+    apiKey: string,
     language: string = 'English'
 ) => {
     try {
         // Initialize the OpenAI client
         const openAIClient = new OpenAIClient(apiKey);
-        
+
         const systemPrompt = `
 You are an educational roleplay designer. Create 2 engaging roleplay scenarios for students learning about "${topic}" in ${language}.
 Each scenario should:
@@ -439,52 +424,110 @@ Each scenario should:
 Content context to base scenarios on:
 ${content.substring(0, 1500)} // Limiting to 1500 chars to avoid token issues
 
-Format your response as a valid JSON array of scenarios:
-[
-  {
-    "id": "${topic.toLowerCase().replace(/\s+/g, '-')}-scenario-1",
-    "title": "Scenario Title",
-    "description": "Brief description of the scenario",
-    "characters": [
-      {
-        "id": "${topic.toLowerCase().replace(/\s+/g, '-')}-character-1",
-        "name": "Character Name",
-        "description": "Brief description of the character"
-      }
-    ],
-    "initialPrompt": "The initial message from the character to start the conversation",
-    "relatedCourse": "${topic}"
-  }
-]`;
+Format your response as a valid JSON object with a 'scenarios' array:
+{
+  "scenarios": [
+    {
+      "id": "${topic.toLowerCase().replace(/\s+/g, '-')}-scenario-1",
+      "title": "Scenario Title",
+      "description": "Brief description of the scenario",
+      "characters": [
+        {
+          "id": "${topic.toLowerCase().replace(/\s+/g, '-')}-character-1",
+          "name": "Character Name",
+          "description": "Brief description of the character"
+        }
+      ],
+      "initialPrompt": "The initial message from the character to start the conversation",
+      "relatedCourse": "${topic}"
+    }
+  ]
+}`;
 
         const scenariosJson = await openAIClient.chatCompletion(
             [{ role: 'system', content: systemPrompt }],
-            'o1-mini',
-            2000
+            'gpt-4o-mini',
+            2000,
+            {
+                name: 'roleplay',
+                schema: {
+                    type: 'object',
+                    properties: {
+                        scenarios: {
+                            type: 'array',
+                            items: { 
+                                type: 'object',
+                                properties: {
+                                    id: { type: 'string' },
+                                    title: { type: 'string' },
+                                    description: { type: 'string' },
+                                    characters: {
+                                        type: 'array',
+                                        items: {
+                                            type: 'object',
+                                            properties: {
+                                                id: { type: 'string' },
+                                                name: { type: 'string' },
+                                                description: { type: 'string' }
+                                            },
+                                            required: ['id', 'name', 'description'],
+                                            additionalProperties: false
+                                        }
+                                    },
+                                    initialPrompt: { type: 'string' },
+                                    relatedCourse: { type: 'string' }
+                                },
+                                required: ['id', 'title', 'description', 'characters', 'initialPrompt', 'relatedCourse'],
+                                additionalProperties: false
+                            }
+                        }
+                    },
+                    required: ['scenarios'],
+                    additionalProperties: false
+                }
+            }
         );
 
-        let scenarios = [];
+        let parsedResponse;
         try {
-            scenarios = JSON.parse(scenariosJson);
+            parsedResponse = JSON.stringify(scenariosJson);
         } catch (parseError) {
             console.error('Error parsing generated scenarios:', parseError);
             return null;
         }
 
-        // Update the knowledge entry with the generated scenarios
-        const roleplayData = { scenarios };
+        console.log('Sending roleplay data to update:', parsedResponse);
+        
+        // Update roleplay directly with the parsed object (not stringified)
         const { data, error } = await supabase
             .from('knowledge')
-            .update({ roleplay: roleplayData })
-            .eq('id', knowledgeId)
-            .select('roleplay');
-
+            .update({ 
+                roleplay: parsedResponse
+            })
+            .eq('id', knowledgeId);
+            
         if (error) {
             console.error('Error updating roleplay data:', error);
             return null;
         }
-
-        return data?.[0]?.roleplay;
+        
+        // Add small delay to ensure database consistency
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Fetch the updated data separately to confirm it was saved
+        const { data: updatedData, error: fetchError } = await supabase
+            .from('knowledge')
+            .select('roleplay')
+            .eq('id', knowledgeId)
+            .single();
+            
+        if (fetchError) {
+            console.error('Error fetching updated roleplay data:', fetchError);
+            return null;
+        }
+        
+        console.log('Retrieved updated roleplay data:', updatedData?.roleplay);
+        return updatedData?.roleplay;
     } catch (error) {
         console.error('Error generating roleplay scenarios:', error);
         return null;

@@ -118,7 +118,7 @@ def windowed_chunk(
 
 async def generate_chunked_content(
     openai_client: OpenAIClient, text: str, prompt: str, max_tokens: int = 500
-) -> List[str]:
+) -> str:
     """
     Generate content by chunking text and processing each chunk.
 
@@ -129,43 +129,97 @@ async def generate_chunked_content(
         max_tokens: Maximum tokens for the response
 
     Returns:
-        List of generated content pieces
+        Consolidated generated content as a string
     """
     if not text or len(text) < 10:
-        return []
+        return ""
 
-    # Heuristic to decide chunking strategy
-    subheadings = extract_subheadings(text, 2)
-    subheadings = [h for h in subheadings if h.lower() != "introduction"]
+    # Split text into paragraphs for more natural chunking
+    paragraphs = re.split(r'\n\s*\n', text)
+    
+    # More intelligent chunking based on semantic paragraphs
+    chunks = []
+    current_chunk = []
+    current_length = 0
+    
+    # Estimate: ~1.5 tokens per word
+    estimated_token_limit = 4000  # Safe limit for most models
+    words_per_chunk = int(estimated_token_limit / 1.5)
+    
+    for paragraph in paragraphs:
+        paragraph_words = len(paragraph.split())
+        
+        # If adding this paragraph would exceed our chunk size,
+        # start a new chunk (unless current chunk is empty)
+        if current_length + paragraph_words > words_per_chunk and current_chunk:
+            chunks.append("\n\n".join(current_chunk))
+            current_chunk = [paragraph]
+            current_length = paragraph_words
+        else:
+            current_chunk.append(paragraph)
+            current_length += paragraph_words
+    
+    # Add the last chunk if it contains anything
+    if current_chunk:
+        chunks.append("\n\n".join(current_chunk))
 
-    sentences = text.split(". ")
-    forced_chunks = windowed_chunk(sentences, 80, 5)
-    print(len(forced_chunks))
-    # Use subheadings if we have enough, otherwise use forced chunks
-    chunks = forced_chunks if len(subheadings) < 3 else [[h] for h in subheadings]
-
-    results = []
-    for chunk in chunks:
-        chunk_text = " ".join(chunk) if isinstance(chunk, list) else chunk
+    # If we have only one small chunk, just process it directly
+    if len(chunks) == 1 and len(chunks[0].split()) < words_per_chunk:
         try:
             result = await openai_client.chat_completion(
                 [
                     {"role": "system", "content": prompt},
-                    {"role": "user", "content": chunk_text},
+                    {"role": "user", "content": chunks[0]},
                 ],
                 model="gpt-4o-mini",
                 max_tokens=max_tokens,
             )
-            results.append(result)
+            return result
         except Exception as e:
-            logger.error(f"Error generating content for chunk: {str(e)}")
+            logger.error(f"Error generating content: {str(e)}")
+            return ""
 
-    return results
+    # For multiple chunks, we'll use a more sophisticated approach
+    results = []
+    previous_context = ""
+    
+    for i, chunk in enumerate(chunks):
+        try:
+            # Add context from previous generation for continuity
+            context_prompt = prompt
+            if i > 0:
+                context_prompt += "\n\nHere's what you've already covered in previous sections to maintain continuity:\n" + previous_context
+                
+            # Add information about chunk position
+            chunk_context = f"This is part {i+1} of {len(chunks)} of the content. "
+            if i > 0:
+                chunk_context += "Continue from the previous part maintaining continuity. "
+            if i < len(chunks) - 1:
+                chunk_context += "There will be more content after this part. "
+                
+            result = await openai_client.chat_completion(
+                [
+                    {"role": "system", "content": context_prompt},
+                    {"role": "user", "content": chunk_context + chunk},
+                ],
+                model="gpt-4o-mini",
+                max_tokens=max_tokens,
+            )
+            
+            results.append(result)
+            # Store a summary of this result to provide context for the next chunk
+            previous_context = result[:500] if len(result) > 500 else result
+            
+        except Exception as e:
+            logger.error(f"Error generating content for chunk {i+1}: {str(e)}")
+
+    # Join results with appropriate spacing
+    return "\n\n".join(results)
 
 
 async def generate_notes(
     openai_client: OpenAIClient, text: str, language: str
-) -> List[str]:
+) -> str:
     """
     Generate notes from text.
 
@@ -175,16 +229,16 @@ async def generate_notes(
         language: The language to generate notes in
 
     Returns:
-        A list of note lines
+        Notes as a single coherent string
     """
-    logger.info("Generating notes with chunking")
+    logger.info("Generating notes with improved chunking")
     prompt = prompts_config.notes(language)
     return await generate_chunked_content(openai_client, text, prompt, 500)
 
 
 async def generate_summary(
     openai_client: OpenAIClient, text: str, language: str
-) -> List[str]:
+) -> str:
     """
     Generate a summary from text.
 
@@ -194,7 +248,7 @@ async def generate_summary(
         language: The language to generate the summary in
 
     Returns:
-        A list of summary lines
+        Summary as a single coherent string
     """
     prompt = prompts_config.summary(language)
     return await generate_chunked_content(openai_client, text, prompt, 500)

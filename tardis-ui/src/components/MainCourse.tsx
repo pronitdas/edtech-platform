@@ -94,8 +94,8 @@ const animationModules = [
 ];
 
 const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
-    const { notes, latex_code, mindmap, quiz = [], summary, og, video_url = "k85mRPqvMbE" } = content;
-    const [activeTab, setActiveTab] = useState("notes");
+    const { notes, latex_code, mindmap, quiz = [], summary, og, video_url } = content;
+    const [activeTab, setActiveTab] = useState(video_url ? "video" : "notes");
     const [showReport, setShowReport] = useState(false);
     const [isFullscreenMindmap, setIsFullscreenMindmap] = useState(false);
     const [timelineMarkers, setTimelineMarkers] = useState([]);
@@ -185,13 +185,13 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
             content: video_url,
             icon: <Video className="w-4 h-4" />
         },
-        {
-            label: "Practice",
-            key: "practice",
-            condition: true,
-            content: null,
-            icon: <Play className="w-4 h-4" />
-        },
+        // {
+        //     label: "Practice",
+        //     key: "practice",
+        //     condition: true,
+        //     content: null,
+        //     icon: <Play className="w-4 h-4" />
+        // },
         {
             label: "Report",
             key: "report",
@@ -279,7 +279,7 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
             // Get content from latex_code or original content
             const contentText = content?.latex_code || content?.og || '';
             
-            await generateRoleplayScenarios(
+            const roleplayData = await generateRoleplayScenarios(
                 content.knowledge_id,
                 topic,
                 contentText,
@@ -287,8 +287,17 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
                 language
             );
             
-            // Reload chapter data to get the new roleplay scenarios
-            window.location.reload();
+            // Update content with new roleplay data to avoid reloading
+            if (roleplayData) {
+                // Simulate content update
+                setIsLoading(true);
+                // Use a timeout to allow UI to show loading state
+                setTimeout(() => {
+                    const updatedContent = { ...content, roleplay: roleplayData };
+                    Object.assign(content, { roleplay: roleplayData });
+                    setIsLoading(false);
+                }, 1000);
+            }
         } catch (error) {
             console.error('Error generating roleplay scenarios:', error);
         } finally {
@@ -314,9 +323,9 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
             case 'regenNotes':
             case 'regenSummary':
                 // Check for special components first
-                const specialComponent = getSpecialComponent(tab.content);
-                if (specialComponent) return specialComponent;
-
+                // const specialComponent = getSpecialComponent(tab.content);
+                // if (specialComponent) return specialComponent;
+                
                 // Process markdown content
                 let mdContent = tab.content;
                 if (!mdContent) {
@@ -379,14 +388,6 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
                     <VideoPlayer 
                         src={video_url}
                         title={content?.title || "Course Video"}
-                        markers={timelineMarkers || []}
-                        onPlay={() => interactionTracker.trackVideoPlay()}
-                        onPause={() => interactionTracker.trackVideoPause()}
-                        onSeek={() => interactionTracker.trackTimelineSeek()}
-                        fallbackImage={content?.thumbnail || "/images/default-video-thumbnail.jpg"}
-                        onError={(e) => {
-                            console.error("Video playback error:", e);
-                        }}
                     />
                 );
 
@@ -404,16 +405,16 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
                 );
 
             case 'roleplay':
-                // Check if roleplay data exists
-                if (chapter?.roleplay?.scenarios && chapter.roleplay.scenarios.length > 0) {
+                // Check if roleplay data exists in content (from knowledge)
+                if (content?.roleplay?.scenarios && content.roleplay.scenarios.length > 0) {
                     return (
                         <RoleplayComponent 
-                            scenarios={chapter.roleplay.scenarios}
+                            scenarios={content.roleplay.scenarios}
                             topic={content?.chapter || ''}
                             language={language || 'English'}
                             contextualInformation={content?.latex_code?.substring(0, 500) || ''}
                             showScenarioGeneration={true}
-                            onClose={() => setActiveTab('video')}
+                            onClose={() => setActiveTab('notes')}
                         />
                     );
                 } else {

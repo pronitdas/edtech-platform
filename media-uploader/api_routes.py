@@ -17,6 +17,8 @@ from models import (
 from database import DatabaseManager
 from queue_manager import QueueManager
 from pdf_processor import PDFProcessor
+from docx_processor import DOCXProcessor
+from pptx_processor import PPTXProcessor
 from video_processor import VideoProcessor
 from openai_client import OpenAIClient
 from openai_functions import (
@@ -55,7 +57,10 @@ def health_check():
 def start_processing(
     knowledge_id: int,
     queue_manager: QueueManager = Depends(get_queue_manager),
-    db_manager: DatabaseManager = Depends(get_db_manager)
+    db_manager: DatabaseManager = Depends(get_db_manager),
+    generate_content: bool = Query(False, description="Whether to generate content after processing"),
+    content_types: List[str] = Query(["notes", "summary", "quiz", "mindmap"], description="Types of content to generate"),
+    content_language: str = Query("English", description="Language for content generation")
 ):
     """Start processing a knowledge entry."""
     try:
@@ -65,8 +70,47 @@ def start_processing(
         except Exception as e:
             raise HTTPException(404, "Knowledge not found or already seeded.")
 
+        # Update metadata with content generation flags if requested
+        if generate_content and content_types:
+            # Get current metadata
+            current_metadata = knowledge.get("metadata", "{}")
+            if current_metadata is None:
+                current_metadata = {}
+            elif isinstance(current_metadata, str):
+                try:
+                    current_metadata = json.loads(current_metadata)
+                except:
+                    current_metadata = {}
+
+            # Add content generation parameters
+            current_metadata.update({
+                "auto_generate_content": True,
+                "content_types": content_types,
+                "content_language": content_language
+            })
+            
+            # Update metadata in database
+            db_manager.update_knowledge_metadata(knowledge_id, current_metadata)
+
         # Add to queue
         queue_manager.add_job(knowledge_id)
+
+        # Queue content generation job if requested (this will be redundant but good for backward compatibility)
+        if generate_content and content_types:
+            queue_manager.add_content_generation_job(
+                knowledge_id=knowledge_id,
+                types=content_types,
+                language=content_language
+            )
+            
+            return {
+                "knowledge_id": knowledge_id,
+                "status": "queued",
+                "message": "Knowledge processing has been queued with subsequent content generation.",
+                "content_generation": True,
+                "content_types": content_types,
+                "content_language": content_language
+            }
 
         return {
             "knowledge_id": knowledge_id,

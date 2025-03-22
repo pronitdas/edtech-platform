@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { getChapters, getChapterMetaDataByLanguage, getEdTechContent } from '@/services/edtech-content';
 import useAuthState from './useAuth';
 import { EdTechAPI, ContentType, ProcessingStatus } from '@/services/edtech-api';
+import supabase from '@/services/supabase';
 
 // Create an instance of the EdTechAPI
 const edtechApi = new EdTechAPI();
@@ -47,12 +48,29 @@ export const useChapters = () => {
         // }
     };
 
-    
-
     const getEdTechContentForChapter = async (chapter, language) => {
         try {
             const content = await getEdTechContent(chapter, language);
             if (content.length > 0) {
+                // Fetch roleplay data and video_url from knowledge
+                const { data: knowledgeData, error } = await supabase
+                    .from('knowledge')
+                    .select('roleplay, video_url')
+                    .eq('id', chapter.knowledge_id)
+                    .single();
+                
+                if (knowledgeData) {
+                    // Merge roleplay data with content
+                    if (knowledgeData.roleplay) {
+                        content[0].roleplay = knowledgeData.roleplay;
+                    }
+                    
+                    // Add video_url from knowledge to content
+                    if (knowledgeData.video_url) {
+                        content[0].video_url = knowledgeData.video_url;
+                    }
+                }
+                
                 setContent(content[0]);
 
                 // Check which content types need to be generated
@@ -61,11 +79,7 @@ export const useChapters = () => {
                 if (!content[0].summary) missingTypes.push('summary');
                 if (!content[0].quiz && content[0].notes) missingTypes.push('quiz');
                 if (!content[0].mindmap && content[0].notes) missingTypes.push('mindmap');
-
-
             }
-
-
         } catch (error) {
             // setError(error);
             console.error('Error in getEdTechContentForChapter:', error);
@@ -90,6 +104,7 @@ export const useChapters = () => {
             if (generationResponse.success && generationResponse.data?.chapters?.length > 0) {
                 const newContent = generationResponse.data.chapters[0];
                 setContent(newContent);
+                debugger
                 return newContent;
             }
             return null;
@@ -126,8 +141,7 @@ export const useChapters = () => {
         getMissingContentTypes,
         processingStatus,
         isCheckingStatus,
-        isGeneratingContent,
-        checkStatus: (knowledgeId: number) => checkProcessingStatus(knowledgeId)
+        isGeneratingContent
     };
 };
 

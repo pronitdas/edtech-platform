@@ -191,11 +191,7 @@ function EdtechApp() {
               )}
               
               {/* File uploader - only show in chapter selection view */}
-              {currentView === VIEW_TYPES.CHAPTER_SELECTION && (
-                <div className="p-3 sm:p-4 mt-auto border-t border-gray-700">
-                  <FileUploader />
-                </div>
-              )}
+              
             </aside>
           )}
 
