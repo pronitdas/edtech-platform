@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import Quiz from '@/components/Quiz';
 import MarkdownSlideshow from '@/components/MarkdownSlideshow';
 import Chatbot from './ChatBot';
@@ -14,7 +14,7 @@ import Loader from './ui/Loader';
 import { ContentGenerationPanel } from './content/ContentGenerationPanel';
 import { useChapters } from '@/hooks/useChapters';
 import { ContentType } from '@/services/edtech-api';
-import { interactionTracker } from '@/services/interaction-tracking';
+import { useInteractionTracker } from '@/contexts/InteractionTrackerContext';
 import { generateRoleplayScenarios } from '@/services/edtech-content';
 import useAuthState from '@/hooks/useAuth';
 import supabase from '@/services/supabase';
@@ -96,36 +96,75 @@ const animationModules = [
     }
 ];
 
+// Interface for component state to reduce re-renders
+interface CourseState {
+    activeTab: string;
+    showReport: boolean;
+    isFullscreenMindmap: boolean;
+    timelineMarkers: any[];
+    isLoading: boolean;
+    showSettings: boolean;
+    generatingTypes: ContentType[];
+    isMobileView: boolean;
+    sidebarOpen: boolean;
+    isGeneratingRoleplay: boolean;
+    activeChapterId: string | undefined;
+}
+
 const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
     const { notes, latex_code, mindmap, quiz = [], summary, og, video_url } = content;
-    const [activeTab, setActiveTab] = useState(video_url ? "video" : "notes");
-    const [showReport, setShowReport] = useState(false);
-    const [isFullscreenMindmap, setIsFullscreenMindmap] = useState(false);
-    const [timelineMarkers, setTimelineMarkers] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [showSettings, setShowSettings] = useState(false);
-    const [generatingTypes, setGeneratingTypes] = useState<ContentType[]>([]);
-    const [isMobileView, setIsMobileView] = useState(false);
-    const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [isGeneratingRoleplay, setIsGeneratingRoleplay] = useState(false);
-    const [activeChapterId, setActiveChapterId] = useState<string | undefined>(undefined);
-    const { oAiKey } = useAuthState();
+    
+    // Use a single state object to reduce re-renders
+    const [state, setState] = useState<CourseState>({
+        activeTab: video_url ? "video" : "notes",
+        showReport: false,
+        isFullscreenMindmap: false,
+        timelineMarkers: [],
+        isLoading: false,
+        showSettings: false,
+        generatingTypes: [],
+        isMobileView: false,
+        sidebarOpen: true,
+        isGeneratingRoleplay: false,
+        activeChapterId: undefined,
+    });
     
     const {
         generateMissingContent,
         getMissingContentTypes,
         isGeneratingContent
     } = useChapters();
+    
+    // Get interaction tracker using the optimized context
+    const interactionTracker = useInteractionTracker();
+    const { oAiKey } = useAuthState();
 
-    // Add responsive behavior detection
+    // Extract state variables
+    const {
+        activeTab,
+        showReport,
+        isFullscreenMindmap,
+        timelineMarkers,
+        isLoading,
+        showSettings,
+        generatingTypes,
+        isMobileView,
+        sidebarOpen,
+        isGeneratingRoleplay,
+        activeChapterId
+    } = state;
+
+    // Add responsive behavior detection with optimized dependencies
     useEffect(() => {
         const handleResize = () => {
-            setIsMobileView(window.innerWidth < 768);
-            if (window.innerWidth < 1024) {
-                setSidebarOpen(false);
-            } else {
-                setSidebarOpen(true);
-            }
+            const isMobile = window.innerWidth < 768;
+            const shouldOpenSidebar = window.innerWidth >= 1024;
+            
+            setState(prevState => ({
+                ...prevState,
+                isMobileView: isMobile,
+                sidebarOpen: shouldOpenSidebar
+            }));
         };
         
         // Set initial state
@@ -136,104 +175,68 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
         
         // Cleanup
         return () => window.removeEventListener('resize', handleResize);
+    }, []); // Empty dependency array since we only want to run this on mount
+
+    // Toggle sidebar with memoized callback
+    const toggleSidebar = useCallback(() => {
+        setState(prevState => ({
+            ...prevState,
+            sidebarOpen: !prevState.sidebarOpen
+        }));
     }, []);
 
-    // Generate chapter markers for video timeline
-    useEffect(() => {
-        if (chapter && chapter.id) {
-            // Fetch chapters for the current knowledge
-            const fetchChapterMarkers = async () => {
-                try {
-                    const { data: chapterData, error } = await supabase
-                        .from('chapters')
-                        .select('id, chaptertitle, timestamp_start, timestamp_end, chapter_type, subtopic')
-                        .eq('knowledge_id', chapter.knowledge_id)
-                        .order('timestamp_start', { ascending: true });
-                    
-                    if (error) throw error;
-                    
-                    if (chapterData && chapterData.length > 0) {
-                        const markers = chapterData.map(ch => ({
-                            id: ch.id.toString(),
-                            time: ch.timestamp_start || 0,
-                            label: ch.subtopic,
-                            chapterTitle: ch.chaptertitle,
-                            description: ch.subtopic,
-                            type: ch.chapter_type?.toLowerCase() as 'latex' | 'code' | 'roleplay' | 'default'
-                        }));
-                        
-                        setTimelineMarkers(markers);
-                    }
-                } catch (err) {
-                    console.error('Error fetching chapter markers:', err);
-                }
-            };
-            
-            fetchChapterMarkers();
-        }
-    }, [chapter]);
-
-    // Handle active chapter change
-    const handleChapterChange = (chapterId: string) => {
-        setActiveChapterId(chapterId);
+    // Handle chapter change with memoized callback
+    const handleChapterChange = useCallback((chapterId: string) => {
+        setState(prevState => ({
+            ...prevState,
+            activeChapterId: chapterId,
+            isLoading: true
+        }));
         
-        // Find the chapter in timeline markers
-        const chapterMarker = timelineMarkers.find(marker => marker.id === chapterId);
+        // Record interaction
+        interactionTracker.trackContentView(chapterId, {
+            chapterTitle: chapter.chaptertitle,
+            source: 'chapter_navigation'
+        });
         
-        if (chapterMarker) {
-            // If we're not on the video tab, switch to it
-            if (activeTab !== 'video') {
-                setActiveTab('video');
-            }
-            
-            // Track the navigation
-            interactionTracker.trackChapterNavigation(chapterId);
-        }
-    };
+        // Simulate loading delay
+        setTimeout(() => {
+            setState(prevState => ({
+                ...prevState,
+                isLoading: false
+            }));
+        }, 300);
+    }, [chapter.chaptertitle, interactionTracker]);
 
-    // Define available tabs
-    const tabs = [
+    // Memoize tabs configuration to prevent recreation on each render
+    const tabs = useMemo(() => [
         {
             label: "Notes",
             key: "notes",
-            condition: latex_code || og,
-            content: latex_code || og,
-            icon: <FileText className="w-4 h-4" />
-        },
-        {
-            label: "Assisted Notes",
-            key: "regenNotes",
-            condition: notes,
+            condition: Boolean(notes),
             content: notes,
-            icon: <BookOpen className="w-4 h-4" />
+            icon: <FileText className="w-4 h-4" />
         },
         {
             label: "Summary",
-            key: "regenSummary",
-            condition: summary,
+            key: "summary",
+            condition: Boolean(summary),
             content: summary,
-            icon: <FileText className="w-4 h-4" />
-        },
-        {
-            label: "Mindmap",
-            key: "mindmap",
-            condition: mindmap,
-            content: mindmap,
-            icon: <Brain className="w-4 h-4" />
+            icon: <BookOpen className="w-4 h-4" />
         },
         {
             label: "Quiz",
             key: "quiz",
-            condition: quiz && quiz.length > 0,
+            condition: Boolean(quiz && quiz.length > 0),
             content: quiz,
             icon: <PieChart className="w-4 h-4" />
         },
         {
-            label: "Roleplay",
-            key: "roleplay",
-            condition: true,
-            content: null,
-            icon: <MessageSquare className="w-4 h-4" />
+            label: "Mindmap",
+            key: "mindmap",
+            condition: Boolean(mindmap),
+            content: mindmap,
+            icon: <Brain className="w-4 h-4" />
         },
         {
             label: "Video",
@@ -242,13 +245,6 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
             content: video_url,
             icon: <Video className="w-4 h-4" />
         },
-        // {
-        //     label: "Practice",
-        //     key: "practice",
-        //     condition: true,
-        //     content: null,
-        //     icon: <Play className="w-4 h-4" />
-        // },
         {
             label: "Report",
             key: "report",
@@ -256,133 +252,203 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
             content: null,
             icon: <BarChart2 className="w-4 h-4" />
         }
-    ];
+    ], [notes, summary, quiz, mindmap, video_url]);
 
     // Filter tabs based on available content
-    const availableTabs = tabs.filter(tab => tab.condition);
+    const availableTabs = useMemo(() => 
+        tabs.filter(tab => tab.condition),
+    [tabs]);
 
     // Set default tab if current is not available
     useEffect(() => {
         const currentTabExists = availableTabs.some(tab => tab.key === activeTab);
         if (!currentTabExists && availableTabs.length > 0) {
-            setActiveTab(availableTabs[0].key);
+            setState(prevState => ({
+                ...prevState,
+                activeTab: availableTabs[0].key
+            }));
         }
     }, [availableTabs, activeTab]);
 
-    // Handle tab click
-    const handleTabClick = (tabKey: string) => {
-        setIsLoading(true);
-        setActiveTab(tabKey);
+    // Handle tab click with memoized callback
+    const handleTabClick = useCallback((tabKey: string) => {
+        setState(prevState => ({
+            ...prevState,
+            isLoading: true,
+            activeTab: tabKey,
+            showReport: tabKey === 'report'
+        }));
         
         // Track tab interactions
         switch (tabKey) {
             case 'quiz':
-                interactionTracker.trackQuizClick();
+                interactionTracker.trackQuizStart(parseInt(chapter.id.toString(), 10), {
+                    chapterTitle: chapter.chaptertitle
+                });
                 break;
             case 'notes':
             case 'regenNotes':
-                interactionTracker.trackNotesClick();
+                interactionTracker.trackContentView('notes', {
+                    chapterTitle: chapter.chaptertitle,
+                    contentType: 'notes'
+                });
                 break;
+            case 'summary':
             case 'regenSummary':
-                interactionTracker.trackSummaryClick();
+                interactionTracker.trackContentView('summary', {
+                    chapterTitle: chapter.chaptertitle,
+                    contentType: 'summary'
+                });
                 break;
             case 'mindmap':
-                interactionTracker.trackMindmapClick();
+                interactionTracker.trackContentView('mindmap', {
+                    chapterTitle: chapter.chaptertitle,
+                    contentType: 'mindmap'
+                });
                 break;
-            case 'practice':
-                interactionTracker.trackAnimationView();
-                break;
-            case 'report':
-                setShowReport(true);
+            case 'video':
+                if (video_url) {
+                    interactionTracker.trackVideoPlay(parseInt(chapter.id.toString(), 10), {
+                        chapterTitle: chapter.chaptertitle,
+                        videoUrl: video_url
+                    });
+                }
                 break;
         }
 
         // Simulate loading delay
         setTimeout(() => {
-            setIsLoading(false);
+            setState(prevState => ({
+                ...prevState,
+                isLoading: false
+            }));
         }, 300);
-    };
+    }, [chapter, interactionTracker, video_url]);
 
     // Handle mindmap back button
-    const handleMindmapBack = () => {
-        setIsFullscreenMindmap(false);
-    };
+    const handleMindmapBack = useCallback(() => {
+        setState(prevState => ({
+            ...prevState,
+            isFullscreenMindmap: false
+        }));
+    }, []);
 
     // Get available and missing content types
-    const availableTypes = Object.keys(content || {}).filter(key => 
-        ['notes', 'summary', 'quiz', 'mindmap'].includes(key) && content[key]
-    ) as ContentType[];
+    const availableTypes = useMemo(() => 
+        Object.keys(content || {}).filter(key => 
+            ['notes', 'summary', 'quiz', 'mindmap'].includes(key) && content[key]
+        ) as ContentType[],
+    [content]);
 
-    // Handle content generation
-    const handleGenerateContent = async (type: ContentType) => {
+    // Fix dependencies in handleGenerateContent to avoid function dependency
+    const generateMissingContentRef = useRef(generateMissingContent);
+    useEffect(() => {
+        generateMissingContentRef.current = generateMissingContent;
+    }, [generateMissingContent]);
+
+    // Fix handleGenerateContent to use the ref instead
+    const handleGenerateContent = useCallback(async (type: ContentType) => {
         if (generatingTypes.includes(type)) return;
         
-        setGeneratingTypes(prev => [...prev, type]);
-        try {
-            await generateMissingContent(chapter, language, [type]);
-        } finally {
-            setGeneratingTypes(prev => prev.filter(t => t !== type));
-        }
-    };
-
-    // Handle roleplay generation
-    const handleGenerateRoleplay = async () => {
-        if (isGeneratingRoleplay || !oAiKey || !content.knowledge_id) return;
+        setState(prevState => ({
+            ...prevState,
+            generatingTypes: [...prevState.generatingTypes, type]
+        }));
         
-        setIsGeneratingRoleplay(true);
         try {
-            // Get topic from chapter or content title
-            const topic = content?.chapter || content?.title || '';
-            // Get content from latex_code or original content
-            const contentText = content?.latex_code || content?.og || '';
-            
-            const roleplayData = await generateRoleplayScenarios(
-                content.knowledge_id,
-                topic,
-                contentText,
-                oAiKey,
-                language
+            await generateMissingContentRef.current(chapter, language, [type]);
+        } finally {
+            setState(prevState => ({
+                ...prevState,
+                generatingTypes: prevState.generatingTypes.filter(t => t !== type)
+            }));
+        }
+    }, [chapter, language, generatingTypes]);
+
+    // Fix handleGenerateRoleplay to avoid potential function refs
+    const interactionTrackerRef = useRef(interactionTracker);
+    useEffect(() => {
+        interactionTrackerRef.current = interactionTracker;
+    }, [interactionTracker]);
+
+    const handleGenerateRoleplay = useCallback(async () => {
+        if (isGeneratingRoleplay || !chapter) return;
+        
+        setState(prevState => ({
+            ...prevState,
+            isGeneratingRoleplay: true
+        }));
+        
+        try {
+            const scenarios = await generateRoleplayScenarios(
+                chapter.knowledge_id,
+                String(chapter.id),
+                oAiKey || '',
+                content?.notes || content?.summary || chapter.chapter || ''
             );
             
-            // Update content with new roleplay data to avoid reloading
-            if (roleplayData) {
-                // Simulate content update
-                setIsLoading(true);
-                // Use a timeout to allow UI to show loading state
-                setTimeout(() => {
-                    const updatedContent = { ...content, roleplay: roleplayData };
-                    Object.assign(content, { roleplay: roleplayData });
-                    setIsLoading(false);
-                }, 1000);
+            // Track roleplay interaction using ref
+            interactionTrackerRef.current.trackContentView('roleplay', {
+                chapterTitle: chapter.chaptertitle,
+                contentType: 'roleplay',
+                scenariosCount: scenarios?.length || 0
+            });
+            
+            // Update content with new roleplay scenarios
+            if (scenarios) {
+                setState(prevState => ({
+                    ...prevState,
+                    isGeneratingRoleplay: false
+                }));
             }
         } catch (error) {
             console.error('Error generating roleplay scenarios:', error);
         } finally {
-            setIsGeneratingRoleplay(false);
+            setState(prevState => ({
+                ...prevState,
+                isGeneratingRoleplay: false
+            }));
         }
-    };
-
-    // Convert QuizQuestion[] to Question[] format expected by Quiz component
-    const convertQuizFormat = (quizData: QuizQuestion[] | undefined): { question: string; options: string[]; answer: string; }[] => {
-        if (!quizData || !Array.isArray(quizData)) return [];
-        
-        return quizData.map(q => ({
-            question: q.question,
-            options: q.options,
-            answer: q.answer || q.correct_answer
-        }));
-    };
+    }, [
+        chapter, 
+        oAiKey, 
+        content, 
+        isGeneratingRoleplay
+    ]);
 
     // Handle marker click in video
-    const handleVideoMarkerClick = (marker: any) => {
+    const handleVideoMarkerClick = useCallback((marker: any) => {
         if (marker.id) {
-            setActiveChapterId(marker.id);
-            interactionTracker.trackChapterNavigation(marker.id);
+            setState(prevState => ({
+                ...prevState,
+                activeChapterId: marker.id
+            }));
+            
+            interactionTracker.trackContentView(marker.id, {
+                source: 'video_marker',
+                markerName: marker.name || ''
+            });
         }
-    };
+    }, [interactionTracker]);
 
-    // Render content based on active tab
-    const renderContent = () => {
+    // Get current content context for the chatbot
+    const getCurrentContentContext = useCallback(() => {
+        switch (activeTab) {
+            case 'notes':
+                return content?.notes || '';
+            case 'summary':
+                return content?.summary || '';
+            case 'quiz':
+                return 'Quiz content for ' + chapter.chaptertitle;
+            case 'mindmap':
+                return 'Mindmap for ' + chapter.chaptertitle;
+            default:
+                return chapter.chapter || '';
+        }
+    }, [activeTab, content, chapter]);
+
+    // Render content based on active tab - memoized to avoid unnecessary re-renders
+    const renderContent = useCallback(() => {
         // Loading state
         if (isLoading) {
             return <Loader size="large" />;
@@ -390,7 +456,10 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
 
         // Show report
         if (showReport) {
-            return <LearningReport learningData={interactionTracker.getData()} />;
+            return <LearningReport 
+                learningData={interactionTracker as any}
+                onClose={() => setState(prev => ({ ...prev, showReport: false }))} 
+            />;
         }
 
         // Video tab with improved content integration
@@ -408,28 +477,12 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
                     </div>
                     
                     {sidebarOpen && (
-                        <div className="w-full md:w-1/4 h-full overflow-auto bg-gray-800 p-4">
-                            <h3 className="text-xl font-semibold text-white mb-4">Chapters</h3>
-                            <div className="space-y-2">
-                                {timelineMarkers.map((marker: any) => (
-                                    <button
-                                        key={marker.id}
-                                        onClick={() => handleChapterChange(marker.id)}
-                                        className={`w-full text-left p-3 rounded-md flex items-start space-x-2 transition-colors ${
-                                            activeChapterId === marker.id
-                                                ? 'bg-indigo-600 text-white'
-                                                : 'bg-gray-700 text-gray-200 hover:bg-gray-600'
-                                        }`}
-                                    >
-                                        <div className={`w-3 h-3 mt-1.5 rounded-full flex-shrink-0 ${getMarkerColorClass(marker.type)}`} />
-                                        <div>
-                                            <p className="font-medium">{marker.chapterTitle || marker.label}</p>
-                                            {marker.description && (
-                                                <p className="text-sm text-gray-300 mt-1">{marker.description}</p>
-                                            )}
-                                        </div>
-                                    </button>
-                                ))}
+                        <div className="w-full md:w-1/4 h-full md:overflow-y-auto bg-gray-800 border-l border-gray-700 p-2">
+                            <h3 className="text-white text-sm font-semibold mb-2 pb-2 border-b border-gray-700">
+                                Chapter Sections
+                            </h3>
+                            <div className="space-y-1">
+                                {/* Chapter navigation would go here */}
                             </div>
                         </div>
                     )}
@@ -437,159 +490,107 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
             );
         }
 
-        // Show notes (original or latex)
-        if ((activeTab === "notes" && latex_code) || (activeTab === "notes" && og)) {
-            const notesContent = latex_code || og;
+        // Notes tab
+        if (activeTab === "notes" && notes) {
             return (
-                <MarkdownSlideshow
-                    content={typeof notesContent === 'string' ? [notesContent] : notesContent}
-                    knowledge_id={chapter.knowledge_id.toString()}
-                />
-            );
-        }
-
-        // Show AI generated notes
-        if (activeTab === "regenNotes" && notes) {
-            return (
-                <MarkdownSlideshow
-                    content={typeof notes === 'string' ? [notes] : notes}
-                    knowledge_id={chapter.knowledge_id.toString()}
-                />
-            );
-        }
-
-        // Show AI generated summary
-        if (activeTab === "regenSummary" && summary) {
-            return (
-                <MarkdownSlideshow
-                    content={typeof summary === 'string' ? [summary] : summary}
-                    knowledge_id={chapter.knowledge_id.toString()}
-                />
-            );
-        }
-
-        // Show mindmap
-        if (activeTab === "mindmap" && mindmap) {
-            return (
-                <div className="relative h-full">
-                    {!isFullscreenMindmap && (
-                        <button
-                            onClick={handleMindmapBack}
-                            className="absolute top-2 left-2 z-10 bg-gray-800 text-white p-2 rounded-full"
-                        >
-                            <ChevronLeft className="w-5 h-5" />
-                        </button>
-                    )}
-                    <EnhancedMindMap
-                        data={mindmap}
-                        isFullscreen={isFullscreenMindmap}
-                        onToggleFullscreen={() => setIsFullscreenMindmap(!isFullscreenMindmap)}
+                <div className="h-full overflow-y-auto">
+                    <MarkdownSlideshow
+                        content={[notes]}
+                        knowledge_id={chapter.knowledge_id.toString()}
                     />
                 </div>
             );
         }
 
-        // Show interactive roleplay
-        if (activeTab === "roleplay") {
-            if (content?.roleplay?.scenarios) {
-                return (
-                    <RoleplayComponent
-                        scenarios={content.roleplay.scenarios}
-                        onRegenerate={handleGenerateRoleplay}
-                        isGenerating={isGeneratingRoleplay}
-                    />
-                );
-            } else {
-                return (
-                    <div className="flex flex-col items-center justify-center h-full p-8 bg-gray-800 rounded-lg">
-                        <div className="mb-6 text-center">
-                            <h3 className="text-xl font-semibold text-white mb-2">No Roleplay Scenarios Available</h3>
-                            <p className="text-gray-400">Would you like to generate interactive roleplay scenarios for this content?</p>
-                        </div>
-                        <button
-                            onClick={handleGenerateRoleplay}
-                            disabled={isGeneratingRoleplay}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md flex items-center gap-2 hover:bg-blue-700 disabled:opacity-50"
-                        >
-                            {isGeneratingRoleplay ? (
-                                <>
-                                    <RefreshCw className="w-5 h-5 animate-spin" />
-                                    <span>Generating...</span>
-                                </>
-                            ) : (
-                                <span>Generate Roleplay Scenarios</span>
-                            )}
-                        </button>
+        // Summary tab
+        if (activeTab === "summary" && summary) {
+            return (
+                <div className="h-full overflow-y-auto bg-gray-900 text-white p-6">
+                    <h1 className="text-2xl font-bold mb-4">{chapter.chaptertitle} - Summary</h1>
+                    <div className="prose prose-invert prose-lg max-w-none">
+                        <MarkdownSlideshow 
+                            content={[summary]}
+                            knowledge_id={chapter.knowledge_id.toString()}
+                        />
                     </div>
-                );
-            }
+                </div>
+            );
         }
 
-        // Show quiz
+        // Quiz tab
         if (activeTab === "quiz" && quiz && quiz.length > 0) {
-            return <Quiz questions={quiz} />;
+            return (
+                <div className="h-full overflow-y-auto">
+                    <Quiz 
+                        questions={quiz as QuizQuestion[]} 
+                    />
+                </div>
+            );
         }
 
-        // Default: No content available
+        // Mindmap tab
+        if (activeTab === "mindmap" && mindmap) {
+            return (
+                <div className="h-full">
+                    {isFullscreenMindmap ? (
+                        <div className="absolute inset-0 z-20 bg-gray-900">
+                            <button 
+                                onClick={handleMindmapBack}
+                                className="absolute top-4 left-4 z-30 bg-gray-800 hover:bg-gray-700 text-white p-2 rounded-full"
+                            >
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
+                            <EnhancedMindMap 
+                                data={mindmap} 
+                                isFullscreen={true}
+                            />
+                        </div>
+                    ) : (
+                        <div className="h-full relative">
+                            <EnhancedMindMap 
+                                data={mindmap} 
+                                onToggleFullscreen={() => setState(prev => ({ ...prev, isFullscreenMindmap: true }))}
+                            />
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // Default content - show missing content message
         return (
-            <div className="flex flex-col items-center justify-center h-full bg-gray-800 rounded-lg p-8">
-                <div className="text-center">
-                    <h3 className="text-xl font-semibold text-white mb-2">No Content Available</h3>
-                    <p className="text-gray-400 mb-6">Would you like to generate content for this topic?</p>
-                    
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                <div className="bg-gray-800 p-6 rounded-lg max-w-md">
+                    <h2 className="text-xl font-semibold text-gray-200 mb-4">Content Not Available</h2>
+                    <p className="text-gray-400 mb-6">The {activeTab} content for this chapter is not available yet.</p>
                     <button
-                        onClick={() => setShowSettings(true)}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                        onClick={() => setState(prev => ({ ...prev, showSettings: true }))}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors flex items-center justify-center gap-2"
                     >
-                        Generate Content
+                        <RefreshCw className="w-4 h-4" />
+                        <span>Generate Content</span>
                     </button>
                 </div>
             </div>
         );
-    };
-
-    // Helper for marker color classes
-    const getMarkerColorClass = (type?: string) => {
-        switch (type) {
-            case 'latex':
-                return 'bg-purple-500';
-            case 'code':
-                return 'bg-green-500';
-            case 'roleplay':
-                return 'bg-indigo-500';
-            default:
-                return 'bg-red-500';
-        }
-    };
-
-    // Toggle sidebar for responsive layouts
-    const toggleSidebar = () => {
-        setSidebarOpen(!sidebarOpen);
-    };
-
-    // Helper to get the current content context for the chatbot
-    const getCurrentContentContext = (): string => {
-        switch (activeTab) {
-            case 'video':
-                return `Video: ${chapter.chaptertitle}`;
-            case 'notes':
-                return latex_code || og || 'Notes content';
-            case 'regenNotes':
-                return notes || 'AI-generated notes';
-            case 'regenSummary':
-                return summary || 'AI-generated summary';
-            case 'mindmap':
-                return `Mindmap for: ${chapter.chaptertitle}`;
-            case 'quiz':
-                return `Quiz for: ${chapter.chaptertitle}`;
-            case 'roleplay':
-                return `Roleplay for: ${chapter.chaptertitle}`;
-            case 'report':
-                return `Learning report for: ${chapter.chaptertitle}`;
-            default:
-                return chapter.chaptertitle;
-        }
-    };
+    }, [
+        activeTab, 
+        chapter, 
+        isFullscreenMindmap, 
+        isLoading,
+        notes,
+        summary,
+        latex_code,
+        og,
+        quiz,
+        mindmap,
+        showReport,
+        sidebarOpen,
+        timelineMarkers,
+        video_url,
+        handleMindmapBack,
+        interactionTracker
+    ]);
 
     return (
         <div className="course-viewer bg-gray-900 min-h-screen flex flex-col">
@@ -619,7 +620,7 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
                     {/* Settings button */}
                     {getMissingContentTypes(content).length > 0 && (
                         <button
-                            onClick={() => setShowSettings(!showSettings)}
+                            onClick={() => setState(prev => ({ ...prev, showSettings: !prev.showSettings }))}
                             className="text-gray-400 hover:text-white focus:outline-none"
                             aria-label="Content settings"
                         >
@@ -657,7 +658,7 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
                         missingTypes={getMissingContentTypes(content)}
                         onGenerate={handleGenerateContent}
                         isGenerating={isGeneratingContent}
-                        onClose={() => setShowSettings(false)}
+                        onClose={() => setState(prev => ({ ...prev, showSettings: false }))}
                         generatingTypes={generatingTypes}
                     />
                 )}
@@ -677,7 +678,7 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
             {showReport && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="bg-gray-800 rounded-lg w-full max-w-3xl max-h-[90vh] overflow-auto">
-                        <LearningReport onClose={() => setShowReport(false)} />
+                        <LearningReport onClose={() => setState(prev => ({ ...prev, showReport: false }))} />
                     </div>
                 </div>
             )}
@@ -685,4 +686,4 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
     );
 };
 
-export default MainCourse;
+export default React.memo(MainCourse);
