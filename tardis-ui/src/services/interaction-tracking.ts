@@ -9,6 +9,7 @@ interface InteractionData {
   mindmapClicks: number;
   animationViews: number;
   chatbotQuestions: string[];
+  chapterNavigations: { chapterId: string; timestamp: number }[];
 }
 
 class InteractionTracker {
@@ -22,7 +23,8 @@ class InteractionTracker {
     summaryClicks: 0,
     mindmapClicks: 0,
     animationViews: 0,
-    chatbotQuestions: []
+    chatbotQuestions: [],
+    chapterNavigations: []
   };
 
   private videoPlayStartTime: number | null = null;
@@ -52,6 +54,14 @@ class InteractionTracker {
 
   trackTimelineSeek(): void {
     this.data.timelineSeeks++;
+  }
+
+  // Chapter navigation tracking
+  trackChapterNavigation(chapterId: string): void {
+    this.data.chapterNavigations.push({
+      chapterId,
+      timestamp: Date.now()
+    });
   }
 
   // Feature usage tracking
@@ -97,7 +107,8 @@ class InteractionTracker {
       summaryClicks: 0,
       mindmapClicks: 0,
       animationViews: 0,
-      chatbotQuestions: []
+      chatbotQuestions: [],
+      chapterNavigations: []
     };
     this.videoPlayStartTime = null;
   }
@@ -141,8 +152,11 @@ class InteractionTracker {
       weaknesses = "Your interaction with the video timeline appears steady.";
     }
 
-    // Analyze mindmap usage
-    if (this.data.mindmapClicks < 1) {
+    // Analyze chapter navigation behavior
+    if (this.data.chapterNavigations.length > 0) {
+      // Add chapter navigation insights
+      improvement = `You've navigated through ${this.data.chapterNavigations.length} different chapters. Consider exploring more interactive tools to further consolidate your learning.`;
+    } else if (this.data.mindmapClicks < 1) {
       improvement = "Engaging with the mindmap section could help in visualizing and reinforcing the connections between concepts.";
     } else {
       improvement = "Consider exploring more interactive tools to further consolidate your learning.";

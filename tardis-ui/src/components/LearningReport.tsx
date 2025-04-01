@@ -7,12 +7,27 @@ import { X, BarChart2, PieChart, FileText, Award, BookOpen, Brain } from 'lucide
 // Register ChartJS components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
-interface LearningReportProps {
-  onClose: () => void;
+interface InteractionData {
+  videoPlays: number;
+  videoWatchDuration: number;
+  videoPauses: number;
+  timelineSeeks: number;
+  quizClicks: number;
+  notesClicks: number;
+  summaryClicks: number;
+  mindmapClicks: number;
+  animationViews: number;
+  chatbotQuestions: string[];
+  chapterNavigations: { chapterId: string; timestamp: number }[];
 }
 
-const LearningReport = ({ onClose }: LearningReportProps) => {
-  const [data, setData] = useState(interactionTracker.getData());
+interface LearningReportProps {
+  onClose?: () => void;
+  learningData?: InteractionData;
+}
+
+const LearningReport = ({ onClose, learningData }: LearningReportProps) => {
+  const [data, setData] = useState<InteractionData>(learningData || interactionTracker.getData());
   const [analysis, setAnalysis] = useState(interactionTracker.generateAnalysis());
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -46,6 +61,38 @@ const LearningReport = ({ onClose }: LearningReportProps) => {
       }
     ]
   };
+
+  // Update analysis when data changes
+  useEffect(() => {
+    // Use the custom generateAnalysis from the tracker for consistency
+    if (learningData) {
+      // Temporarily set the data for analysis generation
+      const oldData = interactionTracker.getData();
+      interactionTracker.resetData();
+      
+      // Copy over the provided data to the tracker
+      for (const key in learningData) {
+        if (key in interactionTracker.getData()) {
+          // @ts-ignore - We know the keys match
+          interactionTracker[key] = learningData[key];
+        }
+      }
+      
+      // Generate analysis with this data
+      setAnalysis(interactionTracker.generateAnalysis());
+      
+      // Restore original data
+      interactionTracker.resetData();
+      for (const key in oldData) {
+        if (key in interactionTracker.getData()) {
+          // @ts-ignore - We know the keys match
+          interactionTracker[key] = oldData[key];
+        }
+      }
+    } else {
+      setAnalysis(interactionTracker.generateAnalysis());
+    }
+  }, [learningData]);
 
   // Prepare data for bar chart
   const barChartData = {
@@ -102,6 +149,13 @@ const LearningReport = ({ onClose }: LearningReportProps) => {
     { id: 'questions', label: 'Questions', icon: <BookOpen className="w-5 h-5" /> }
   ];
 
+  // Handle close button click
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 backdrop-blur-sm">
       <div className="bg-gray-900 text-white p-6 rounded-lg shadow-2xl max-w-4xl w-full overflow-auto border border-gray-700" style={{ maxHeight: '90vh' }}>
@@ -112,7 +166,7 @@ const LearningReport = ({ onClose }: LearningReportProps) => {
             <h2 className="text-3xl font-bold">Learning Report</h2>
           </div>
           <button 
-            onClick={onClose}
+            onClick={handleClose}
             className="text-gray-400 hover:text-white transition-colors"
             aria-label="Close"
           >
@@ -276,7 +330,7 @@ const LearningReport = ({ onClose }: LearningReportProps) => {
         {/* Footer */}
         <div className="flex justify-end pt-4 border-t border-gray-700">
           <button 
-            onClick={onClose}
+            onClick={handleClose}
             className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-md shadow transition duration-200 ease-in-out"
           >
             Close Report

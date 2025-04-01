@@ -4,17 +4,19 @@ import { interactionTracker } from '@/services/interaction-tracking';
 import { Maximize, Minimize, ArrowLeft, X, HelpCircle } from 'lucide-react';
 
 interface EnhancedMindMapProps {
-  markdown: string;
-  fullScreen?: boolean;
+  data: string;
+  isFullscreen?: boolean;
+  onToggleFullscreen?: () => void;
   onBack?: () => void;
 }
 
 const EnhancedMindMap = ({ 
-  markdown, 
-  fullScreen = false,
+  data, 
+  isFullscreen = false,
+  onToggleFullscreen,
   onBack
 }: EnhancedMindMapProps) => {
-  const [isFullScreen, setIsFullScreen] = useState(fullScreen);
+  const [isFullScreen, setIsFullScreen] = useState(isFullscreen);
   const [showHelp, setShowHelp] = useState(false);
   
   // Track mindmap interaction
@@ -22,9 +24,18 @@ const EnhancedMindMap = ({
     interactionTracker.trackMindmapClick();
   }, []);
 
+  // Update state when prop changes
+  useEffect(() => {
+    setIsFullScreen(isFullscreen);
+  }, [isFullscreen]);
+
   // Toggle fullscreen mode
   const toggleFullScreen = () => {
-    setIsFullScreen(!isFullScreen);
+    if (onToggleFullscreen) {
+      onToggleFullscreen();
+    } else {
+      setIsFullScreen(!isFullScreen);
+    }
   };
 
   // Handle back button click
@@ -42,7 +53,10 @@ const EnhancedMindMap = ({
   };
 
   return (
-    <div className={`relative ${isFullScreen ? 'fixed inset-0 z-50 bg-gray-900' : 'w-full h-full'}`}>
+    <div 
+      className={`relative ${isFullScreen ? 'fixed inset-0 z-50 bg-gray-900' : 'w-full h-full'}`}
+      style={{ width: '100%', height: '100%' }}
+    >
       {/* Header Bar */}
       <div className="absolute top-0 left-0 right-0 bg-gray-800 p-3 z-50 flex justify-between items-center">
         <div className="flex items-center gap-3">
@@ -77,9 +91,9 @@ const EnhancedMindMap = ({
         </div>
       </div>
       
-      {/* Mindmap Content */}
-      <div className="w-full h-full pt-12">
-        <MindMap markdown={markdown} />
+      {/* Mindmap Content - Ensure explicit sizing for React Flow */}
+      <div className="w-full h-full pt-12" style={{ width: '100%', height: 'calc(100% - 48px)' }}>
+        <MindMap markdown={data} />
       </div>
       
       {/* Help Overlay */}

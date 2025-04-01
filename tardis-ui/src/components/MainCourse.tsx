@@ -17,6 +17,8 @@ import { ContentType } from '@/services/edtech-api';
 import { interactionTracker } from '@/services/interaction-tracking';
 import { generateRoleplayScenarios } from '@/services/edtech-content';
 import useAuthState from '@/hooks/useAuth';
+import supabase from '@/services/supabase';
+import ChatbotFloatingButton from './ChatbotFloatingButton';
 import { 
   BookOpen, 
   FileText, 
@@ -106,6 +108,7 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
     const [isMobileView, setIsMobileView] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [isGeneratingRoleplay, setIsGeneratingRoleplay] = useState(false);
+    const [activeChapterId, setActiveChapterId] = useState<string | undefined>(undefined);
     const { oAiKey } = useAuthState();
     
     const {
@@ -134,6 +137,59 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
         // Cleanup
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    // Generate chapter markers for video timeline
+    useEffect(() => {
+        if (chapter && chapter.id) {
+            // Fetch chapters for the current knowledge
+            const fetchChapterMarkers = async () => {
+                try {
+                    const { data: chapterData, error } = await supabase
+                        .from('chapters')
+                        .select('id, chaptertitle, timestamp_start, timestamp_end, chapter_type, subtopic')
+                        .eq('knowledge_id', chapter.knowledge_id)
+                        .order('timestamp_start', { ascending: true });
+                    
+                    if (error) throw error;
+                    
+                    if (chapterData && chapterData.length > 0) {
+                        const markers = chapterData.map(ch => ({
+                            id: ch.id.toString(),
+                            time: ch.timestamp_start || 0,
+                            label: ch.subtopic,
+                            chapterTitle: ch.chaptertitle,
+                            description: ch.subtopic,
+                            type: ch.chapter_type?.toLowerCase() as 'latex' | 'code' | 'roleplay' | 'default'
+                        }));
+                        
+                        setTimelineMarkers(markers);
+                    }
+                } catch (err) {
+                    console.error('Error fetching chapter markers:', err);
+                }
+            };
+            
+            fetchChapterMarkers();
+        }
+    }, [chapter]);
+
+    // Handle active chapter change
+    const handleChapterChange = (chapterId: string) => {
+        setActiveChapterId(chapterId);
+        
+        // Find the chapter in timeline markers
+        const chapterMarker = timelineMarkers.find(marker => marker.id === chapterId);
+        
+        if (chapterMarker) {
+            // If we're not on the video tab, switch to it
+            if (activeTab !== 'video') {
+                setActiveTab('video');
+            }
+            
+            // Track the navigation
+            interactionTracker.trackChapterNavigation(chapterId);
+        }
+    };
 
     // Define available tabs
     const tabs = [
@@ -317,265 +373,304 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
         }));
     };
 
+    // Handle marker click in video
+    const handleVideoMarkerClick = (marker: any) => {
+        if (marker.id) {
+            setActiveChapterId(marker.id);
+            interactionTracker.trackChapterNavigation(marker.id);
+        }
+    };
+
     // Render content based on active tab
-    const renderContent = useCallback(() => {
+    const renderContent = () => {
+        // Loading state
         if (isLoading) {
-            return <Loader />;
+            return <Loader size="large" />;
         }
 
-        const tab = tabs.find(t => t.key === activeTab);
-        if (!tab) return <div>No content available</div>;
+        // Show report
+        if (showReport) {
+            return <LearningReport learningData={interactionTracker.getData()} />;
+        }
 
-        switch (activeTab) {
-            case 'notes':
-            case 'regenNotes':
-            case 'regenSummary':
-                // Check for special components first
-                // const specialComponent = getSpecialComponent(tab.content);
-                // if (specialComponent) return specialComponent;
-                
-                // Process markdown content
-                let mdContent = tab.content;
-                if (!mdContent) {
-                    mdContent = ["Content is being generated..."];
-                } else if (typeof mdContent === 'string') {
-                    mdContent = mdContent.includes("|||||")
-                        ? mdContent.split("|||||")
-                        : [mdContent];
-                }
-
-                // Use ContentToggle for notes with video
-                if (video_url) {
-                    return (
+        // Video tab with improved content integration
+        if (activeTab === "video" && video_url) {
+            return (
+                <div className="w-full h-full flex flex-col md:flex-row">
+                    <div className={`w-full ${sidebarOpen ? 'md:w-3/4' : 'md:w-full'} h-full transition-all duration-300`}>
                         <ContentToggle
                             videoSrc={video_url}
-                            videoTitle={content.title || "Course Video"}
+                            videoTitle={chapter.chaptertitle}
                             markers={timelineMarkers}
-                            notes={mdContent}
-                            knowledgeId={content.knowledge_id}
+                            notes={notes || summary || latex_code || og || "No content available"}
+                            knowledgeId={chapter.knowledge_id.toString()}
                         />
-                    );
-                }
-
-                return (
-                    <MarkdownSlideshow
-                        content={mdContent}
-                        knowledge_id={content.knowledge_id}
-                    />
-                );
-
-            case 'mindmap':
-                return (
-                    <EnhancedMindMap 
-                        markdown={mindmap} 
-                        fullScreen={isFullscreenMindmap}
-                        onBack={handleMindmapBack}
-                    />
-                );
-
-            case 'quiz':
-                return (
-                    <div className="quiz-container p-4">
-                        <Quiz questions={convertQuizFormat(quiz)} />
                     </div>
-                );
-
-            case 'video':
-                // Only render VideoPlayer if we have a valid video URL
-                if (!video_url) {
-                    return (
-                        <div className="flex flex-col items-center justify-center h-full text-white">
-                            <Video className="w-16 h-16 text-gray-600 mb-4" />
-                            <p className="text-xl">No video available</p>
+                    
+                    {sidebarOpen && (
+                        <div className="w-full md:w-1/4 h-full overflow-auto bg-gray-800 p-4">
+                            <h3 className="text-xl font-semibold text-white mb-4">Chapters</h3>
+                            <div className="space-y-2">
+                                {timelineMarkers.map((marker: any) => (
+                                    <button
+                                        key={marker.id}
+                                        onClick={() => handleChapterChange(marker.id)}
+                                        className={`w-full text-left p-3 rounded-md flex items-start space-x-2 transition-colors ${
+                                            activeChapterId === marker.id
+                                                ? 'bg-indigo-600 text-white'
+                                                : 'bg-gray-700 text-gray-200 hover:bg-gray-600'
+                                        }`}
+                                    >
+                                        <div className={`w-3 h-3 mt-1.5 rounded-full flex-shrink-0 ${getMarkerColorClass(marker.type)}`} />
+                                        <div>
+                                            <p className="font-medium">{marker.chapterTitle || marker.label}</p>
+                                            {marker.description && (
+                                                <p className="text-sm text-gray-300 mt-1">{marker.description}</p>
+                                            )}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    );
-                }
-                
-                return (
-                    <VideoPlayer 
-                        src={video_url}
-                        title={content?.title || "Course Video"}
-                    />
-                );
-
-            case 'practice':
-                // Filter modules based on content title if available
-                const filteredModules = content.title 
-                    ? animationModules.filter(m => m.relatedVideos?.includes(content.title))
-                    : animationModules;
-                
-                return (
-                    <InteractiveModule 
-                        modules={filteredModules}
-                        onModuleComplete={(title) => console.log(`Completed module: ${title}`)}
-                    />
-                );
-
-            case 'roleplay':
-                // Check if roleplay data exists in content (from knowledge)
-                if (content?.roleplay?.scenarios && content.roleplay.scenarios.length > 0) {
-                    return (
-                        <RoleplayComponent 
-                            scenarios={content.roleplay.scenarios}
-                            topic={content?.chapter || ''}
-                            language={language || 'English'}
-                            contextualInformation={content?.latex_code?.substring(0, 500) || ''}
-                            showScenarioGeneration={true}
-                            onClose={() => setActiveTab('notes')}
-                        />
-                    );
-                } else {
-                    // Show a generator UI if no scenarios exist
-                    return (
-                        <div className="flex flex-col items-center justify-center h-full text-white p-8">
-                            <MessageSquare className="w-16 h-16 text-indigo-400 mb-4" />
-                            <h3 className="text-xl font-semibold text-center mb-3">No Roleplay Scenarios Available</h3>
-                            <p className="text-gray-400 text-center mb-6 max-w-md">
-                                Generate interactive roleplay scenarios to practice and apply concepts from this lesson.
-                            </p>
-                            <button
-                                onClick={handleGenerateRoleplay}
-                                disabled={isGeneratingRoleplay || !oAiKey}
-                                className={`flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors ${isGeneratingRoleplay ? 'opacity-70 cursor-not-allowed' : ''}`}
-                            >
-                                {isGeneratingRoleplay ? (
-                                    <>
-                                        <RefreshCw className="w-5 h-5 animate-spin" />
-                                        Generating Scenarios...
-                                    </>
-                                ) : (
-                                    <>
-                                        <MessageSquare className="w-5 h-5" />
-                                        Generate Roleplay Scenarios
-                                    </>
-                                )}
-                            </button>
-                            {!oAiKey && (
-                                <p className="text-yellow-500 mt-4 text-sm">
-                                    API key required. Please add an OpenAI API key in settings.
-                                </p>
-                            )}
-                        </div>
-                    );
-                }
-
-            default:
-                return (
-                    <div className="flex flex-col items-center justify-center h-full text-white">
-                        <FileText className="w-16 h-16 text-gray-600 mb-4" />
-                        <p className="text-xl">Select a tab to view content</p>
-                    </div>
-                );
+                    )}
+                </div>
+            );
         }
-    }, [activeTab, content, tabs, quiz, mindmap, video_url, isFullscreenMindmap, timelineMarkers, isLoading]);
+
+        // Show notes (original or latex)
+        if ((activeTab === "notes" && latex_code) || (activeTab === "notes" && og)) {
+            const notesContent = latex_code || og;
+            return (
+                <MarkdownSlideshow
+                    content={typeof notesContent === 'string' ? [notesContent] : notesContent}
+                    knowledge_id={chapter.knowledge_id.toString()}
+                />
+            );
+        }
+
+        // Show AI generated notes
+        if (activeTab === "regenNotes" && notes) {
+            return (
+                <MarkdownSlideshow
+                    content={typeof notes === 'string' ? [notes] : notes}
+                    knowledge_id={chapter.knowledge_id.toString()}
+                />
+            );
+        }
+
+        // Show AI generated summary
+        if (activeTab === "regenSummary" && summary) {
+            return (
+                <MarkdownSlideshow
+                    content={typeof summary === 'string' ? [summary] : summary}
+                    knowledge_id={chapter.knowledge_id.toString()}
+                />
+            );
+        }
+
+        // Show mindmap
+        if (activeTab === "mindmap" && mindmap) {
+            return (
+                <div className="relative h-full">
+                    {!isFullscreenMindmap && (
+                        <button
+                            onClick={handleMindmapBack}
+                            className="absolute top-2 left-2 z-10 bg-gray-800 text-white p-2 rounded-full"
+                        >
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
+                    )}
+                    <EnhancedMindMap
+                        data={mindmap}
+                        isFullscreen={isFullscreenMindmap}
+                        onToggleFullscreen={() => setIsFullscreenMindmap(!isFullscreenMindmap)}
+                    />
+                </div>
+            );
+        }
+
+        // Show interactive roleplay
+        if (activeTab === "roleplay") {
+            if (content?.roleplay?.scenarios) {
+                return (
+                    <RoleplayComponent
+                        scenarios={content.roleplay.scenarios}
+                        onRegenerate={handleGenerateRoleplay}
+                        isGenerating={isGeneratingRoleplay}
+                    />
+                );
+            } else {
+                return (
+                    <div className="flex flex-col items-center justify-center h-full p-8 bg-gray-800 rounded-lg">
+                        <div className="mb-6 text-center">
+                            <h3 className="text-xl font-semibold text-white mb-2">No Roleplay Scenarios Available</h3>
+                            <p className="text-gray-400">Would you like to generate interactive roleplay scenarios for this content?</p>
+                        </div>
+                        <button
+                            onClick={handleGenerateRoleplay}
+                            disabled={isGeneratingRoleplay}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-md flex items-center gap-2 hover:bg-blue-700 disabled:opacity-50"
+                        >
+                            {isGeneratingRoleplay ? (
+                                <>
+                                    <RefreshCw className="w-5 h-5 animate-spin" />
+                                    <span>Generating...</span>
+                                </>
+                            ) : (
+                                <span>Generate Roleplay Scenarios</span>
+                            )}
+                        </button>
+                    </div>
+                );
+            }
+        }
+
+        // Show quiz
+        if (activeTab === "quiz" && quiz && quiz.length > 0) {
+            return <Quiz questions={quiz} />;
+        }
+
+        // Default: No content available
+        return (
+            <div className="flex flex-col items-center justify-center h-full bg-gray-800 rounded-lg p-8">
+                <div className="text-center">
+                    <h3 className="text-xl font-semibold text-white mb-2">No Content Available</h3>
+                    <p className="text-gray-400 mb-6">Would you like to generate content for this topic?</p>
+                    
+                    <button
+                        onClick={() => setShowSettings(true)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    >
+                        Generate Content
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+    // Helper for marker color classes
+    const getMarkerColorClass = (type?: string) => {
+        switch (type) {
+            case 'latex':
+                return 'bg-purple-500';
+            case 'code':
+                return 'bg-green-500';
+            case 'roleplay':
+                return 'bg-indigo-500';
+            default:
+                return 'bg-red-500';
+        }
+    };
 
     // Toggle sidebar for responsive layouts
     const toggleSidebar = () => {
         setSidebarOpen(!sidebarOpen);
     };
 
+    // Helper to get the current content context for the chatbot
+    const getCurrentContentContext = (): string => {
+        switch (activeTab) {
+            case 'video':
+                return `Video: ${chapter.chaptertitle}`;
+            case 'notes':
+                return latex_code || og || 'Notes content';
+            case 'regenNotes':
+                return notes || 'AI-generated notes';
+            case 'regenSummary':
+                return summary || 'AI-generated summary';
+            case 'mindmap':
+                return `Mindmap for: ${chapter.chaptertitle}`;
+            case 'quiz':
+                return `Quiz for: ${chapter.chaptertitle}`;
+            case 'roleplay':
+                return `Roleplay for: ${chapter.chaptertitle}`;
+            case 'report':
+                return `Learning report for: ${chapter.chaptertitle}`;
+            default:
+                return chapter.chaptertitle;
+        }
+    };
+
     return (
-        <div className="flex flex-col h-full bg-gray-900">
-            {/* Header with responsive design */}
-            <div className="sticky top-0 z-10 bg-gray-800 border-b border-gray-700 px-4 py-2">
-                <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-2">
-                        <h1 className="text-xl sm:text-2xl font-bold text-white truncate max-w-[200px] sm:max-w-full">
-                            {content?.chapter || 'Course Content'}
+        <div className="course-viewer bg-gray-900 min-h-screen flex flex-col">
+            {/* Header with tabs */}
+            <div className="bg-gray-800 border-b border-gray-700 p-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <ChevronLeft 
+                            className="w-5 h-5 text-gray-400 cursor-pointer hover:text-white transition-colors" 
+                            onClick={() => window.history.back()}
+                        />
+                        <h1 className="text-xl font-semibold text-white">
+                            {chapter.chaptertitle || "Course Content"}
                         </h1>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    
+                    {activeTab === "video" && (
                         <button
                             onClick={toggleSidebar}
-                            className="p-2 hover:bg-gray-700 rounded-full md:hidden"
-                            title="Toggle Content"
+                            className="text-gray-400 hover:text-white focus:outline-none"
+                            aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
                         >
-                            <ChevronLeft className={`w-5 h-5 transform transition-transform ${sidebarOpen ? '' : 'rotate-180'}`} />
+                            {sidebarOpen ? "Hide Chapters" : "Show Chapters"}
                         </button>
+                    )}
+                    
+                    {/* Settings button */}
+                    {getMissingContentTypes(content).length > 0 && (
                         <button
                             onClick={() => setShowSettings(!showSettings)}
-                            className="p-2 hover:bg-gray-700 rounded-full"
-                            title="Content Settings"
+                            className="text-gray-400 hover:text-white focus:outline-none"
+                            aria-label="Content settings"
                         >
                             <Settings className="w-5 h-5" />
                         </button>
-                    </div>
+                    )}
                 </div>
                 
-                {/* Responsive Tab Navigation */}
-                <div className="mt-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
-                    <div className="flex space-x-1 min-w-max">
-                        {availableTabs.map((tab) => (
-                            <button
-                                key={tab.key}
-                                onClick={() => handleTabClick(tab.key)}
-                                className={`flex items-center gap-1 py-1 px-3 rounded-md text-sm transition-colors ${
-                                    activeTab === tab.key
-                                        ? "bg-indigo-600 text-white"
-                                        : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                                    }`}
-                            >
-                                {tab.icon}
-                                <span className="hidden sm:inline">{tab.label}</span>
-                            </button>
-                        ))}
-                    </div>
+                {/* Tab Navigation */}
+                <div className="flex space-x-1 mt-4 overflow-x-auto pb-2">
+                    {availableTabs.map(tab => (
+                        <button
+                            key={tab.key}
+                            onClick={() => handleTabClick(tab.key)}
+                            className={`flex items-center space-x-1 px-4 py-2 rounded-md transition-colors ${
+                                activeTab === tab.key
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            }`}
+                        >
+                            {tab.icon}
+                            <span>{tab.label}</span>
+                        </button>
+                    ))}
                 </div>
             </div>
-
-            {/* Main content area with responsive layout */}
-            <div className="flex flex-1 overflow-hidden">
-                {/* Main content */}
-                <div className={`flex-1 overflow-auto p-3 transition-all`}>
-                    <div className={`h-full flex flex-col ${isMobileView ? 'space-y-4' : 'md:flex-row md:space-x-4'}`}>
-                        {/* Content Area - Responsive sizing */}
-                        <div className={`${isMobileView ? 'w-full h-1/2' : 'w-full md:w-3/4 h-full'} bg-gray-800 rounded-lg overflow-hidden shadow-lg`}>
-                            {renderContent()}
-                        </div>
-                        
-                        {/* Chatbot - Collapses to bottom on mobile */}
-                        <div className={`${isMobileView ? 'w-full h-1/2' : 'w-full md:w-1/4 h-full'} bg-gray-800 rounded-lg overflow-hidden shadow-lg`}>
-                            <div className="bg-indigo-900/20 p-2 text-white font-medium flex justify-between items-center">
-                                <span>TGC Assistant</span>
-                                {isMobileView && (
-                                    <button 
-                                        className="p-1 hover:bg-indigo-800/30 rounded-md"
-                                        onClick={() => setSidebarOpen(!sidebarOpen)}
-                                    >
-                                        <ChevronLeft className={`w-4 h-4 transform transition-transform ${sidebarOpen ? 'rotate-90' : '-rotate-90'}`} />
-                                    </button>
-                                )}
-                            </div>
-                            <div className={`h-[calc(100%-2.5rem)] ${isMobileView && !sidebarOpen ? 'hidden' : 'block'}`}>
-                                <Chatbot 
-                                    language={language} 
-                                    topic={notes || latex_code}
-                                    onQuestionAsked={(question) => interactionTracker.trackChatbotQuestion(question)}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Settings sidebar - Slides in/out */}
+            
+            {/* Main Content Area */}
+            <div className="flex-grow overflow-hidden relative">
+                {/* Settings Panel */}
                 {showSettings && (
-                    <div className={`bg-gray-800 border-l border-gray-700 overflow-y-auto transition-all duration-300 ${isMobileView ? 'absolute inset-y-0 right-0 z-20 w-[85%] shadow-xl' : 'w-80'}`}>
-                        <div className="flex justify-between items-center p-4 border-b border-gray-700">
-                            <h2 className="text-lg font-medium text-white">Content Settings</h2>
-                            <button 
-                                onClick={() => setShowSettings(false)}
-                                className="p-1 hover:bg-gray-700 rounded-full"
-                            >
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
-                        </div>
-                        <ContentGenerationPanel
-                            availableTypes={availableTypes}
-                            generatingTypes={generatingTypes}
-                            onGenerateContent={handleGenerateContent}
-                        />
-                    </div>
+                    <ContentGenerationPanel
+                        chapter={chapter}
+                        language={language}
+                        missingTypes={getMissingContentTypes(content)}
+                        onGenerate={handleGenerateContent}
+                        isGenerating={isGeneratingContent}
+                        onClose={() => setShowSettings(false)}
+                        generatingTypes={generatingTypes}
+                    />
                 )}
+                
+                {renderContent()}
+
+                {/* Chatbot Floating Button */}
+                <div className="absolute bottom-4 left-4 z-50">
+                    <ChatbotFloatingButton 
+                        contentContext={getCurrentContentContext()}
+                        chapterTitle={chapter.chaptertitle}
+                    />
+                </div>
             </div>
 
             {/* Learning Report Modal */}

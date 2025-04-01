@@ -7,6 +7,12 @@ import { interactionTracker } from '@/services/interaction-tracking';
 interface TimelineMarker {
   time: number;
   label?: string;
+  type?: 'latex' | 'code' | 'roleplay' | 'default';
+  content?: string;
+  active?: boolean;
+  id?: string;
+  chapterTitle?: string;
+  description?: string;
 }
 
 interface ContentToggleProps {
@@ -27,6 +33,9 @@ const ContentToggle = ({
   const [showVideo, setShowVideo] = useState(true);
   const [processedNotes, setProcessedNotes] = useState<string[]>([]);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [activeChapterId, setActiveChapterId] = useState<string | undefined>(undefined);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [activeNoteIndex, setActiveNoteIndex] = useState(0);
 
   // Process notes on component mount
   useEffect(() => {
@@ -38,6 +47,16 @@ const ContentToggle = ({
       setProcessedNotes(notes);
     }
   }, [notes]);
+
+  // Sync note index with active chapter
+  useEffect(() => {
+    if (markers.length && activeChapterId) {
+      const index = markers.findIndex(marker => marker.id === activeChapterId);
+      if (index >= 0 && index < processedNotes.length) {
+        setActiveNoteIndex(index);
+      }
+    }
+  }, [activeChapterId, markers, processedNotes]);
 
   // Toggle between video and notes with animation
   const toggleContent = () => {
@@ -56,8 +75,26 @@ const ContentToggle = ({
   };
 
   // Handle marker click from notes
-  const handleMarkerClick = (time: number) => {
-    setShowVideo(true);
+  const handleMarkerClick = (marker: TimelineMarker) => {
+    setActiveChapterId(marker.id);
+    if (!showVideo) {
+      setShowVideo(true);
+    }
+  };
+
+  // Handle video time update to sync with notes
+  const handleVideoTimeUpdate = (time: number) => {
+    setCurrentTime(time);
+    
+    // Find the current marker based on time
+    const currentMarker = [...markers]
+      .sort((a, b) => a.time - b.time)
+      .filter(marker => marker.time <= time)
+      .pop();
+    
+    if (currentMarker && (!activeChapterId || currentMarker.id !== activeChapterId)) {
+      setActiveChapterId(currentMarker.id);
+    }
   };
 
   // Handle video events for tracking
@@ -71,6 +108,16 @@ const ContentToggle = ({
 
   const handleVideoSeek = () => {
     interactionTracker.trackTimelineSeek();
+  };
+
+  // Handle note navigation
+  const handleNoteChange = (index: number) => {
+    setActiveNoteIndex(index);
+    
+    // Find corresponding marker for this note index
+    if (markers.length > index) {
+      setActiveChapterId(markers[index].id);
+    }
   };
 
   return (
@@ -112,6 +159,8 @@ const ContentToggle = ({
             onPause={handleVideoPause}
             onSeek={handleVideoSeek}
             onMarkerClick={handleMarkerClick}
+            onTimeUpdate={handleVideoTimeUpdate}
+            activeChapterId={activeChapterId}
           />
         </div>
 
@@ -127,6 +176,8 @@ const ContentToggle = ({
             <MarkdownSlideshow
               content={processedNotes}
               knowledge_id={knowledgeId}
+              currentIndex={activeNoteIndex}
+              onSlideChange={handleNoteChange}
             />
           </div>
         </div>

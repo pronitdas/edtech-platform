@@ -1,6 +1,7 @@
 import React from 'react';
 import { Loader2, CheckCircle, AlertCircle, FileText, Book, BrainCircuit, HelpCircle, XCircle } from 'lucide-react';
 import { ContentType } from '@/services/edtech-api';
+import { ChapterV1 } from '@/types/database';
 
 interface ContentTypeInfo {
   type: ContentType;
@@ -85,40 +86,45 @@ const ContentTypeCard: React.FC<ContentTypeCardProps> = ({
 );
 
 interface ContentGenerationPanelProps {
-  availableTypes: ContentType[];
+  chapter: ChapterV1;
+  language: string;
+  missingTypes: ContentType[];
   generatingTypes: ContentType[];
-  onGenerateContent: (type: ContentType) => void;
+  isGenerating: boolean;
+  onGenerate: (type: ContentType) => void;
+  onClose: () => void;
 }
 
 export const ContentGenerationPanel: React.FC<ContentGenerationPanelProps> = ({
-  availableTypes,
+  chapter,
+  language,
+  missingTypes,
   generatingTypes,
-  onGenerateContent
+  isGenerating,
+  onGenerate,
+  onClose
 }) => {
   return (
-    <div className="h-full flex flex-col">
-      <div className="border-b border-gray-700 p-3 sm:p-4">
-        <h2 className="text-lg sm:text-xl font-bold flex items-center">
-          <span>Content Generation</span>
-          <div className="ml-auto flex items-center text-xs text-gray-400">
-            <span className="flex items-center mr-3">
-              <CheckCircle className="w-3 h-3 text-green-500 mr-1" /> Available
-            </span>
-            <span className="flex items-center">
-              <AlertCircle className="w-3 h-3 text-yellow-500 mr-1" /> Missing
-            </span>
-          </div>
-        </h2>
+    <div className="absolute top-0 right-0 bottom-0 w-80 bg-gray-800 border-l border-gray-700 shadow-xl z-20 flex flex-col">
+      <div className="border-b border-gray-700 p-4 flex justify-between items-center">
+        <h2 className="text-lg font-bold">Content Generation</h2>
+        <button 
+          onClick={onClose}
+          className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-gray-700"
+          aria-label="Close panel"
+        >
+          <XCircle className="w-5 h-5" />
+        </button>
       </div>
       
-      <div className="flex-grow overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
+      <div className="flex-grow overflow-y-auto p-4 space-y-4">
         {CONTENT_TYPES.map((typeInfo) => (
           <ContentTypeCard
             key={typeInfo.type}
             info={typeInfo}
-            isAvailable={availableTypes.includes(typeInfo.type)}
+            isAvailable={!missingTypes.includes(typeInfo.type)}
             isGenerating={generatingTypes.includes(typeInfo.type)}
-            onGenerate={() => onGenerateContent(typeInfo.type)}
+            onGenerate={() => onGenerate(typeInfo.type)}
           />
         ))}
         
