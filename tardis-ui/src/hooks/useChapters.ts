@@ -69,10 +69,11 @@ export const useChapters = () => {
                     if (knowledgeData.video_url) {
                         content[0].video_url = knowledgeData.video_url;
                     }
+                    console.log(knowledgeData);
                 }
                 
                 setContent(content[0]);
-
+                console.log(content[0]);
                 // Check which content types need to be generated
                 const missingTypes = [];
                 if (!content[0].notes) missingTypes.push('notes');

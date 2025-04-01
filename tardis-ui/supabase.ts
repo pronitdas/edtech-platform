@@ -64,38 +64,59 @@ export type Database = {
       chapters: {
         Row: {
           chapter: string | null
+          chapter_type: string | null
           chaptertitle: string | null
           context: string | null
           created_at: string | null
           id: number
           knowledge_id: number
           lines: number | null
+          needs_code: boolean | null
+          needs_latex: boolean | null
+          needs_roleplay: boolean | null
+          order: number | null
           seeded: boolean | null
           subtopic: string | null
+          timestamp_end: number | null
+          timestamp_start: number | null
           topic: string | null
         }
         Insert: {
           chapter?: string | null
+          chapter_type?: string | null
           chaptertitle?: string | null
           context?: string | null
           created_at?: string | null
           id: number
           knowledge_id: number
           lines?: number | null
+          needs_code?: boolean | null
+          needs_latex?: boolean | null
+          needs_roleplay?: boolean | null
+          order?: number | null
           seeded?: boolean | null
           subtopic?: string | null
+          timestamp_end?: number | null
+          timestamp_start?: number | null
           topic?: string | null
         }
         Update: {
           chapter?: string | null
+          chapter_type?: string | null
           chaptertitle?: string | null
           context?: string | null
           created_at?: string | null
           id?: number
           knowledge_id?: number
           lines?: number | null
+          needs_code?: boolean | null
+          needs_latex?: boolean | null
+          needs_roleplay?: boolean | null
+          order?: number | null
           seeded?: boolean | null
           subtopic?: string | null
+          timestamp_end?: number | null
+          timestamp_start?: number | null
           topic?: string | null
         }
         Relationships: []
@@ -153,6 +174,7 @@ export type Database = {
       chapters_v1: {
         Row: {
           chapter: string | null
+          chapter_type: string | null
           chaptertitle: string
           context: string | null
           created_at: string | null
@@ -162,13 +184,19 @@ export type Database = {
           level: number | null
           lines: number | null
           metadata: Json | null
+          needs_code: boolean | null
+          needs_latex: boolean | null
+          needs_roleplay: boolean | null
           seeded: boolean | null
           subtopic: string
+          timestamp_end: number | null
+          timestamp_start: number | null
           topic: string | null
           type: string | null
         }
         Insert: {
           chapter?: string | null
+          chapter_type?: string | null
           chaptertitle: string
           context?: string | null
           created_at?: string | null
@@ -178,13 +206,19 @@ export type Database = {
           level?: number | null
           lines?: number | null
           metadata?: Json | null
+          needs_code?: boolean | null
+          needs_latex?: boolean | null
+          needs_roleplay?: boolean | null
           seeded?: boolean | null
           subtopic: string
+          timestamp_end?: number | null
+          timestamp_start?: number | null
           topic?: string | null
           type?: string | null
         }
         Update: {
           chapter?: string | null
+          chapter_type?: string | null
           chaptertitle?: string
           context?: string | null
           created_at?: string | null
@@ -194,8 +228,13 @@ export type Database = {
           level?: number | null
           lines?: number | null
           metadata?: Json | null
+          needs_code?: boolean | null
+          needs_latex?: boolean | null
+          needs_roleplay?: boolean | null
           seeded?: boolean | null
           subtopic?: string
+          timestamp_end?: number | null
+          timestamp_start?: number | null
           topic?: string | null
           type?: string | null
         }
@@ -569,36 +608,60 @@ export type Database = {
       knowledge: {
         Row: {
           created_at: string
+          difficulty_level: string | null
           filename: string[] | null
+          has_transcript: boolean | null
           id: number
           metadata: Json | null
           name: string | null
+          prerequisites: string | null
+          roleplay: string | null
           seeded: boolean | null
           status: string | null
           summarizedrag: string | null
+          summary: string | null
+          target_audience: string | null
           userId: string | null
+          video_duration: number | null
+          video_url: string | null
         }
         Insert: {
           created_at?: string
+          difficulty_level?: string | null
           filename?: string[] | null
+          has_transcript?: boolean | null
           id?: number
           metadata?: Json | null
           name?: string | null
+          prerequisites?: string | null
+          roleplay?: string | null
           seeded?: boolean | null
           status?: string | null
           summarizedrag?: string | null
+          summary?: string | null
+          target_audience?: string | null
           userId?: string | null
+          video_duration?: number | null
+          video_url?: string | null
         }
         Update: {
           created_at?: string
+          difficulty_level?: string | null
           filename?: string[] | null
+          has_transcript?: boolean | null
           id?: number
           metadata?: Json | null
           name?: string | null
+          prerequisites?: string | null
+          roleplay?: string | null
           seeded?: boolean | null
           status?: string | null
           summarizedrag?: string | null
+          summary?: string | null
+          target_audience?: string | null
           userId?: string | null
+          video_duration?: number | null
+          video_url?: string | null
         }
         Relationships: []
       }
@@ -954,6 +1017,45 @@ export type Database = {
           },
         ]
       }
+      user_progress: {
+        Row: {
+          completed: boolean | null
+          content_id: number | null
+          course_id: number
+          created_at: string | null
+          id: string
+          last_position: number | null
+          module_id: number | null
+          progress_percentage: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          content_id?: number | null
+          course_id: number
+          created_at?: string | null
+          id?: string
+          last_position?: number | null
+          module_id?: number | null
+          progress_percentage?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          content_id?: number | null
+          course_id?: number
+          created_at?: string | null
+          id?: string
+          last_position?: number | null
+          module_id?: number | null
+          progress_percentage?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_sessions: {
         Row: {
           device_info: Json | null
@@ -999,12 +1101,26 @@ export type Database = {
             }
             Returns: unknown
           }
+      calculate_course_completion: {
+        Args: {
+          p_user_id: string
+          p_course_id: number
+        }
+        Returns: Json
+      }
+      calculate_course_time: {
+        Args: {
+          p_course_id: number
+          p_user_id: string
+        }
+        Returns: Json
+      }
       calculate_engagement_score: {
         Args: {
-          user_id: string
-          content_id: number
+          p_user_id: string
+          p_course_id: number
         }
-        Returns: number
+        Returns: Json
       }
       check_edtech_columns: {
         Args: {

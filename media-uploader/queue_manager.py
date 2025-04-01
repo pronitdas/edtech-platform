@@ -159,6 +159,7 @@ class QueueManager:
                 knowledge_id = job["knowledge_id"]
                 types = job["types"]
                 language = job.get("language", "English")
+                retry_count = job.get("retry_count", 0)
                 
                 logger.info(f"Generating content for knowledge {knowledge_id}, types: {types}, language: {language}")
                 
@@ -169,8 +170,21 @@ class QueueManager:
                     self.content_generation_queue.task_done()
                 except Exception as e:
                     logger.error(f"Error generating content for knowledge {knowledge_id}: {str(e)}")
-                    # Mark job as done even if it failed
-                    self.content_generation_queue.task_done()
+                    
+                    # Handle retry logic
+                    if retry_count < self.max_retries:
+                        logger.info(f"Scheduling retry #{retry_count + 1} for content generation for knowledge {knowledge_id}")
+                        # Re-add the job to the queue with incremented retry count
+                        self.content_generation_queue.put({
+                            "knowledge_id": knowledge_id,
+                            "types": types,
+                            "language": language,
+                            "retry_count": retry_count + 1
+                        })
+                    else:
+                        logger.error(f"Maximum retry count reached for content generation for knowledge {knowledge_id}")
+                        # Mark job as done if max retries reached
+                        self.content_generation_queue.task_done()
                     
             except Empty:
                 self.is_generating_content = False

@@ -95,14 +95,8 @@ def start_processing(
         # Add to queue
         queue_manager.add_job(knowledge_id)
 
-        # Queue content generation job if requested (this will be redundant but good for backward compatibility)
+        # Return response with appropriate message
         if generate_content and content_types:
-            queue_manager.add_content_generation_job(
-                knowledge_id=knowledge_id,
-                types=content_types,
-                language=content_language
-            )
-            
             return {
                 "knowledge_id": knowledge_id,
                 "status": "queued",
