@@ -3,6 +3,7 @@ import { getChapters, getChapterMetaDataByLanguage, getEdTechContent } from '@/s
 import useAuthState from './useAuth';
 import { EdTechAPI, ContentType, ProcessingStatus } from '@/services/edtech-api';
 import supabase from '@/services/supabase';
+import { ChapterContent, ChapterV1, EdTechChapter } from '@/types/database';
 
 // Create an instance of the EdTechAPI
 const edtechApi = new EdTechAPI();
@@ -12,43 +13,28 @@ const STATUS_CHECK_INTERVAL = 30000; // 30 seconds between status checks
 const MAX_STATUS_CHECKS = 1; // Maximum number of consecutive status checks
 
 export const useChapters = () => {
-    const [uploadedFiles, setUploadedFiles] = useState([]);
-    const [chaptersMeta, setChapterMeta] = useState([]);
-    const [content, setContent] = useState(null);
-    const [error, setError] = useState(null);
+    const [uploadedFiles, setUploadedFiles] = useState<ChapterV1[]>([]);
+    const [chaptersMeta, setChapterMeta] = useState<EdTechChapter[]>([]);
+    const [content, setContent] = useState<ChapterContent | null>(null);
+    const [error, setError] = useState<Error | null>(null);
     const [processingStatus, setProcessingStatus] = useState<ProcessingStatus | null>(null);
-    const [isCheckingStatus, setIsCheckingStatus] = useState(false);
-    const [isGeneratingContent, setIsGeneratingContent] = useState(false);
+    const [isCheckingStatus, setIsCheckingStatus] = useState<boolean>(false);
+    const [isGeneratingContent, setIsGeneratingContent] = useState<boolean>(false);
 
     // Refs for throttling
    
-
-    const fetchChapters = async (knowledgeId, language) => {
+    const fetchChapters = async (knowledgeId: number, language: string): Promise<ChapterV1[]> => {
         const chapters = await getChapters(knowledgeId, language);
         setUploadedFiles(chapters);
         return chapters;
     };
 
-    const fetchChapterMeta = async (knowledgeId, language) => {
+    const fetchChapterMeta = async (knowledgeId: number, language: string): Promise<void> => {
         const metadata = await getChapterMetaDataByLanguage(knowledgeId, language);
         setChapterMeta(metadata);
-        //         }
-        //     } else if (statusResponse?.status === 'processing' || statusResponse?.status === 'queued') {
-        //         // If still processing, schedule a single check after delay
-        //         scheduleStatusCheck(knowledgeId);
-        //         // Set empty metadata while waiting
-        //         setChapterMeta([]);
-        //     } else {
-        //         // For failed or unknown status, just set empty metadata
-        //         setChapterMeta([]);
-        //     }
-        // } catch (error) {
-        //     console.error("Error fetching chapter metadata:", error);
-        //     setError(error);
-        // }
     };
 
-    const getEdTechContentForChapter = async (chapter, language) => {
+    const getEdTechContentForChapter = async (chapter: ChapterV1, language: string): Promise<ChapterContent | null> => {
         try {
             const content = await getEdTechContent(chapter, language);
             if (content.length > 0) {
@@ -59,36 +45,32 @@ export const useChapters = () => {
                     .eq('id', chapter.knowledge_id)
                     .single();
                 
+                const contentData = content[0] as ChapterContent;
+                
                 if (knowledgeData) {
                     // Merge roleplay data with content
                     if (knowledgeData.roleplay) {
-                        content[0].roleplay = knowledgeData.roleplay;
+                        contentData.roleplay = knowledgeData.roleplay;
                     }
                     
                     // Add video_url from knowledge to content
                     if (knowledgeData.video_url) {
-                        content[0].video_url = knowledgeData.video_url;
+                        contentData.video_url = knowledgeData.video_url;
                     }
-                    console.log(knowledgeData);
                 }
                 
-                setContent(content[0]);
-                console.log(content[0]);
-                // Check which content types need to be generated
-                const missingTypes = [];
-                if (!content[0].notes) missingTypes.push('notes');
-                if (!content[0].summary) missingTypes.push('summary');
-                if (!content[0].quiz && content[0].notes) missingTypes.push('quiz');
-                if (!content[0].mindmap && content[0].notes) missingTypes.push('mindmap');
+                setContent(contentData);
+                
+                return contentData;
             }
+            return null;
         } catch (error) {
-            // setError(error);
             console.error('Error in getEdTechContentForChapter:', error);
             return null;
         }
     };
 
-    const generateMissingContent = async (chapter, language, contentTypes: ContentType[]) => {
+    const generateMissingContent = async (chapter: ChapterV1, language: string, contentTypes: ContentType[]): Promise<ChapterContent | null> => {
         if (!chapter || contentTypes.length === 0) return null;
 
         setIsGeneratingContent(true);
@@ -103,14 +85,15 @@ export const useChapters = () => {
             );
 
             if (generationResponse.success && generationResponse.data?.chapters?.length > 0) {
-                const newContent = generationResponse.data.chapters[0];
+                const newContent = generationResponse.data.chapters[0] as ChapterContent;
                 setContent(newContent);
-                debugger
                 return newContent;
             }
             return null;
         } catch (error) {
-            setError(error);
+            if (error instanceof Error) {
+                setError(error);
+            }
             console.error('Error generating content:', error);
             return null;
         } finally {
@@ -118,7 +101,7 @@ export const useChapters = () => {
         }
     };
 
-    const getMissingContentTypes = (contentData): ContentType[] => {
+    const getMissingContentTypes = (contentData: ChapterContent | null): ContentType[] => {
         if (!contentData) return [];
 
         const missingTypes: ContentType[] = [];
@@ -142,7 +125,8 @@ export const useChapters = () => {
         getMissingContentTypes,
         processingStatus,
         isCheckingStatus,
-        isGeneratingContent
+        isGeneratingContent,
+        error
     };
 };
 

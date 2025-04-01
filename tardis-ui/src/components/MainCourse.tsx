@@ -30,14 +30,15 @@ import {
   Settings,
   RefreshCw
 } from 'lucide-react';
+import { ChapterContent, ChapterV1, QuizQuestion } from '@/types/database';
 
 // Import calculators and models
 import { getSpecialComponent } from '@/services/component-mapper';
 
 interface MainCourseProps {
-    content: any;
+    content: ChapterContent;
     language: string;
-    chapter: any;
+    chapter: ChapterV1;
 }
 
 // Define animation modules
@@ -305,14 +306,21 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
         }
     };
 
+    // Convert QuizQuestion[] to Question[] format expected by Quiz component
+    const convertQuizFormat = (quizData: QuizQuestion[] | undefined): { question: string; options: string[]; answer: string; }[] => {
+        if (!quizData || !Array.isArray(quizData)) return [];
+        
+        return quizData.map(q => ({
+            question: q.question,
+            options: q.options,
+            answer: q.answer || q.correct_answer
+        }));
+    };
+
     // Render content based on active tab
     const renderContent = useCallback(() => {
         if (isLoading) {
-            return (
-                <div className="flex items-center justify-center h-full">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
-                </div>
-            );
+            return <Loader />;
         }
 
         const tab = tabs.find(t => t.key === activeTab);
@@ -366,12 +374,11 @@ const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
                 );
 
             case 'quiz':
-                return quiz && quiz.length > 0
-                    ? <Quiz questions={quiz} />
-                    : <div className="flex flex-col items-center justify-center h-full text-white">
-                        <PieChart className="w-16 h-16 text-gray-600 mb-4" />
-                        <p className="text-xl">No quiz questions available</p>
-                      </div>;
+                return (
+                    <div className="quiz-container p-4">
+                        <Quiz questions={convertQuizFormat(quiz)} />
+                    </div>
+                );
 
             case 'video':
                 // Only render VideoPlayer if we have a valid video URL
