@@ -94,5 +94,124 @@ export const analyticsTestHelpers = {
       console.error('Failed to test session and event creation:', err);
       return { success: false };
     }
+  },
+
+  /**
+   * Test the roleplay analytics tracking functionality
+   */
+  async testRoleplayAnalytics(userId: string, knowledgeId: string, moduleId: string): Promise<{
+    success: boolean;
+    sessionId?: string;
+    events?: {
+      start?: boolean;
+      response?: boolean;
+      complete?: boolean;
+    };
+  }> {
+    try {
+      // Start a session
+      const sessionResult = await analyticsService.startUserSession(userId);
+      
+      if (!sessionResult || !sessionResult.id) {
+        return { success: false };
+      }
+
+      const sessionId = sessionResult.id;
+      const scenarioId = 'test-scenario-123';
+      
+      // Track roleplay start event
+      await analyticsService.trackEvent({
+        userId,
+        eventType: 'roleplay_start',
+        contentId: scenarioId,
+        timestamp: Date.now(),
+        sessionId,
+        knowledgeId,
+        moduleId,
+        scenarioTitle: 'Test Scenario',
+        difficulty: 'medium',
+        estimatedDuration: 600,
+        studentProfiles: [
+          { name: 'Student A', personality: 'Curious' }
+        ],
+        interactionType: 'scenario_selection'
+      });
+      
+      // Track roleplay response event
+      await analyticsService.trackEvent({
+        userId,
+        eventType: 'roleplay_response',
+        contentId: scenarioId,
+        timestamp: Date.now(),
+        sessionId,
+        knowledgeId,
+        moduleId,
+        step: 1,
+        studentName: 'Student A',
+        studentPersonality: 'Curious',
+        question: 'What is this test about?',
+        response: 'This is a test of the roleplay analytics system.',
+        responseTime: 5000,
+        interactionType: 'teacher_response'
+      });
+      
+      // Track roleplay complete event
+      await analyticsService.trackEvent({
+        userId,
+        eventType: 'roleplay_complete',
+        contentId: scenarioId,
+        timestamp: Date.now(),
+        sessionId,
+        knowledgeId,
+        moduleId,
+        totalSteps: 3,
+        completedSteps: 3,
+        totalScore: 85,
+        maxPossibleScore: 100,
+        durationSeconds: 300,
+        evaluations: [
+          {
+            criteriaId: 'clarity',
+            criteriaName: 'Clarity of Explanation',
+            score: 4,
+            maxScore: 5,
+            feedback: 'Good clarity in responses'
+          }
+        ],
+        interactionType: 'completion'
+      });
+      
+      // Verify events were created
+      const { data: events, error } = await supabase
+        .from('user_interactions')
+        .select('event_type')
+        .eq('session_id', sessionId)
+        .in('event_type', ['roleplay_start', 'roleplay_response', 'roleplay_complete']);
+      
+      if (error) {
+        console.error('Error verifying roleplay events:', error);
+        return { success: false, sessionId };
+      }
+      
+      const hasStartEvent = events.some(e => e.event_type === 'roleplay_start');
+      const hasResponseEvent = events.some(e => e.event_type === 'roleplay_response');
+      const hasCompleteEvent = events.some(e => e.event_type === 'roleplay_complete');
+      
+      // End the session
+      await analyticsService.endUserSession(sessionId);
+      
+      return {
+        success: true,
+        sessionId,
+        events: {
+          start: hasStartEvent,
+          response: hasResponseEvent,
+          complete: hasCompleteEvent
+        }
+      };
+    } catch (err) {
+      console.error('Failed to test roleplay analytics:', err);
+      return { success: false };
+    }
   }
 }; 

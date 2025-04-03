@@ -5,6 +5,7 @@ import { LearningAnalytics } from '@/types/database'; // Import the type
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2'; // Keep for now, might remove later
 import { X, BarChart2, PieChart, FileText, Award, BookOpen, Brain, Loader2 } from 'lucide-react';
+import { LearningAnalyticsDashboard } from './analytics/LearningAnalyticsDashboard';
 
 // Register ChartJS components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
@@ -115,7 +116,7 @@ const LearningReport = ({ userId, knowledgeId, onClose }: LearningReportProps) =
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div className="bg-gray-900 text-white p-6 rounded-lg shadow-2xl max-w-4xl w-full overflow-auto border border-gray-700" style={{ maxHeight: '90vh' }}>
+      <div className="bg-gray-900 text-white p-6 rounded-lg shadow-2xl max-w-5xl w-full overflow-auto border border-gray-700" style={{ maxHeight: '90vh' }}>
         {/* Header */}
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-700">
           <div className="flex items-center gap-3">
@@ -153,78 +154,21 @@ const LearningReport = ({ userId, knowledgeId, onClose }: LearningReportProps) =
         
         {/* Tab Content */}
         <div className="mb-6 min-h-[200px]">
-          {isLoading && (
+          {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-              <span className="ml-2 text-gray-300">Loading analysis...</span>
+              <span className="ml-2 text-gray-300">Loading report...</span>
             </div>
-          )}
-          {error && (
+          ) : error ? (
             <div className="flex items-center justify-center h-full text-red-500">
               <X className="w-6 h-6 mr-2" />
               <span>{error}</span>
             </div>
-          )}
-          {!isLoading && !error && analyticsData && (
-            <>
-              {/* REMOVE Overview Tab Content */}
-              {/* {activeTab === 'overview' && ( ... )} */}
-
-              {/* Analysis Tab */}
-              {activeTab === 'analysis' && (
-                <div className="space-y-6">
-                   <div className="bg-gray-800 p-4 rounded-lg">
-                     <h3 className="text-xl font-semibold mb-3 text-indigo-400">Understanding Level</h3>
-                     <p className="text-gray-300">{analyticsData.understanding_level || 'Analysis pending...'}</p>
-                   </div>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     <div className="bg-gray-800 p-4 rounded-lg">
-                       <h3 className="text-xl font-semibold mb-3 text-green-500">Strengths</h3>
-                       {analyticsData.strengths && analyticsData.strengths.length > 0 ? (
-                         <ul className="list-disc pl-5 text-gray-300 space-y-2">
-                           {analyticsData.strengths.map((item, index) => <li key={index}>{item}</li>)}
-                         </ul>
-                       ) : (
-                         <p className="text-gray-400 italic">No specific strengths identified yet.</p>
-                       )}
-                     </div>
-                     <div className="bg-gray-800 p-4 rounded-lg">
-                       <h3 className="text-xl font-semibold mb-3 text-yellow-500">Areas for Improvement</h3>
-                       {analyticsData.weaknesses && analyticsData.weaknesses.length > 0 ? (
-                         <ul className="list-disc pl-5 text-gray-300 space-y-2">
-                           {analyticsData.weaknesses.map((item, index) => <li key={index}>{item}</li>)}
-                         </ul>
-                       ) : (
-                         <p className="text-gray-400 italic">Keep up the great work!</p>
-                       )}
-                     </div>
-                   </div>
-                   <div className="bg-gray-800 p-4 rounded-lg">
-                     <h3 className="text-xl font-semibold mb-3 text-blue-500">Recommendations</h3>
-                      {analyticsData.recommendations && analyticsData.recommendations.length > 0 ? (
-                         <ul className="list-disc pl-5 text-gray-300 space-y-2">
-                           {analyticsData.recommendations.map((item, index) => <li key={index}>{item}</li>)}
-                         </ul>
-                       ) : (
-                         <p className="text-gray-400 italic">No specific recommendations at this time.</p>
-                       )}
-                   </div>
-                   {analyticsData.engagement_score && (
-                    <div className="bg-gray-800 p-4 rounded-lg text-center">
-                        <h3 className="text-lg font-semibold mb-2 text-indigo-400">Engagement Score</h3>
-                        <p className="text-4xl font-bold text-white">{analyticsData.engagement_score}</p>
-                        <p className="text-xs text-gray-400 mt-1">Based on interactions across the content</p>
-                    </div>
-                   )}
-                </div>
-              )}
-
-              {/* REMOVE Charts Tab Content */}
-              {/* {activeTab === 'charts' && ( ... )} */}
-
-              {/* REMOVE Questions Tab Content */}
-              {/* {activeTab === 'questions' && ( ... )} */}
-            </>
+          ) : (
+            <LearningAnalyticsDashboard 
+              userId={userId} 
+              knowledgeId={knowledgeId} 
+            />
           )}
         </div>
         

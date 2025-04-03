@@ -1,5 +1,17 @@
 import React, { createContext, useContext, ReactNode, useReducer, useCallback, useEffect, useMemo } from 'react';
 import { AnalyticsService } from '@/services/analytics-service';
+import { 
+  VideoPlayEvent, 
+  VideoPauseEvent, 
+  VideoCompleteEvent,
+  VideoProgressEvent,
+  QuizStartEvent,
+  QuizQuestionAnswerEvent,
+  QuizSubmitEvent,
+  ContentViewEvent,
+  NavigationEvent,
+  MindMapInteractionEvent
+} from '../types/analytics';
 
 // Interface definitions
 interface InteractionEvent {
@@ -9,6 +21,51 @@ interface InteractionEvent {
   timestamp: number;
   metadata: Record<string, any>;
   persisted: boolean;
+}
+
+// Roleplay event schemas
+interface RoleplayStartEvent {
+  knowledgeId: string;
+  moduleId: string;
+  scenarioId: string;
+  scenarioTitle: string;
+  difficulty: string;
+  estimatedDuration: number;
+  studentProfiles: Array<{
+    name: string;
+    personality: string;
+  }>;
+}
+
+interface RoleplayResponseEvent {
+  knowledgeId: string;
+  moduleId: string;
+  scenarioId: string;
+  step: number;
+  studentName: string;
+  studentPersonality: string;
+  question: string;
+  response: string;
+  responseTime: number;
+  feedbackProvided?: string;
+}
+
+interface RoleplayCompleteEvent {
+  knowledgeId: string;
+  moduleId: string;
+  scenarioId: string;
+  totalSteps: number;
+  completedSteps: number;
+  totalScore: number;
+  maxPossibleScore: number;
+  durationSeconds: number;
+  evaluations: Array<{
+    criteriaId: string;
+    criteriaName: string;
+    score: number;
+    maxScore: number;
+    feedback: string;
+  }>;
 }
 
 // New state structure as proposed in the epic
@@ -32,13 +89,19 @@ interface InteractionContextState {
 
 // Context value interface
 interface InteractionContextValue extends Omit<InteractionContextState, 'events'> {
-  trackVideoPlay: (contentId: number, data?: Record<string, any>) => void;
-  trackVideoPause: (contentId: number, data?: Record<string, any>) => void;
-  trackVideoComplete: (contentId: number, data?: Record<string, any>) => void;
-  trackQuizStart: (quizId: number, data?: Record<string, any>) => void;
-  trackQuizAnswer: (quizId: number, questionId: string, data?: Record<string, any>) => void;
-  trackQuizComplete: (quizId: number, data?: Record<string, any>) => void;
-  trackContentView: (contentId: string, data?: Record<string, any>) => void;
+  trackVideoPlay: (contentId: number, data: VideoPlayEvent) => void;
+  trackVideoPause: (contentId: number, data: VideoPauseEvent) => void;
+  trackVideoComplete: (contentId: number, data: VideoCompleteEvent) => void;
+  trackVideoProgress: (contentId: number, data: VideoProgressEvent) => void;
+  trackQuizStart: (quizId: number, data: QuizStartEvent) => void;
+  trackQuizAnswer: (quizId: number, questionId: string, data: QuizQuestionAnswerEvent) => void;
+  trackQuizComplete: (quizId: number, data: QuizSubmitEvent) => void;
+  trackContentView: (contentId: string, data: ContentViewEvent) => void;
+  trackNavigation: (data: NavigationEvent) => void;
+  trackMindMapInteraction: (mapId: string, data: MindMapInteractionEvent) => void;
+  trackRoleplayStart: (data: RoleplayStartEvent) => void;
+  trackRoleplayResponse: (data: RoleplayResponseEvent) => void;
+  trackRoleplayComplete: (data: RoleplayCompleteEvent) => void;
   pendingEventsCount: number;
   totalEventsCount: number;
   flushEvents: () => Promise<void>;
@@ -369,44 +432,161 @@ export const InteractionTrackerProvider: React.FC<InteractionTrackerProviderProp
 
   // Specialized tracking methods (memoized)
   const trackVideoPlay = useCallback(
-    (contentId: number, data: Record<string, any> = {}) => 
-      trackEvent('video_play', contentId, data),
+    (contentId: number, data: VideoPlayEvent) => {
+      // Ensure required fields are present
+      if (!data.knowledgeId || !data.moduleId) {
+        console.warn('Missing required fields in trackVideoPlay event data. Required: knowledgeId, moduleId');
+      }
+      
+      trackEvent('video_play', contentId, {
+        ...data,
+        timestamp: data.timestamp || Date.now()
+      });
+    },
     [trackEvent]
   );
 
   const trackVideoPause = useCallback(
-    (contentId: number, data: Record<string, any> = {}) => 
-      trackEvent('video_pause', contentId, data),
+    (contentId: number, data: VideoPauseEvent) => {
+      // Ensure required fields are present
+      if (!data.knowledgeId || !data.moduleId) {
+        console.warn('Missing required fields in trackVideoPause event data. Required: knowledgeId, moduleId');
+      }
+      
+      trackEvent('video_pause', contentId, {
+        ...data,
+        timestamp: data.timestamp || Date.now()
+      });
+    },
     [trackEvent]
   );
 
   const trackVideoComplete = useCallback(
-    (contentId: number, data: Record<string, any> = {}) => 
-      trackEvent('video_complete', contentId, data),
+    (contentId: number, data: VideoCompleteEvent) => {
+      // Ensure required fields are present
+      if (!data.knowledgeId || !data.moduleId) {
+        console.warn('Missing required fields in trackVideoComplete event data. Required: knowledgeId, moduleId');
+      }
+      
+      trackEvent('video_complete', contentId, {
+        ...data,
+        timestamp: data.timestamp || Date.now()
+      });
+    },
+    [trackEvent]
+  );
+
+  const trackVideoProgress = useCallback(
+    (contentId: number, data: VideoProgressEvent) => {
+      // Ensure required fields are present
+      if (!data.knowledgeId || !data.moduleId) {
+        console.warn('Missing required fields in trackVideoProgress event data. Required: knowledgeId, moduleId');
+      }
+      
+      trackEvent('video_progress', contentId, {
+        ...data,
+        timestamp: data.timestamp || Date.now()
+      });
+    },
     [trackEvent]
   );
 
   const trackQuizStart = useCallback(
-    (quizId: number, data: Record<string, any> = {}) => 
+    (quizId: number, data: QuizStartEvent) => 
       trackEvent('quiz_start', quizId, data),
     [trackEvent]
   );
 
   const trackQuizAnswer = useCallback(
-    (quizId: number, questionId: string, data: Record<string, any> = {}) => 
+    (quizId: number, questionId: string, data: QuizQuestionAnswerEvent) => 
       trackEvent('quiz_answer', quizId, { ...data, questionId }),
     [trackEvent]
   );
 
   const trackQuizComplete = useCallback(
-    (quizId: number, data: Record<string, any> = {}) => 
+    (quizId: number, data: QuizSubmitEvent) => 
       trackEvent('quiz_complete', quizId, data),
     [trackEvent]
   );
 
   const trackContentView = useCallback(
-    (contentId: string, data: Record<string, any> = {}) => 
+    (contentId: string, data: ContentViewEvent) => 
       trackEvent('content_view', parseInt(contentId, 10) || 0, data),
+    [trackEvent]
+  );
+
+  // Specialized roleplay tracking methods
+  const trackRoleplayStart = useCallback(
+    (data: RoleplayStartEvent) => {
+      const { knowledgeId, moduleId, scenarioId, ...restData } = data;
+      trackEvent('roleplay_start', parseInt(scenarioId, 10) || 0, {
+        knowledgeId,
+        moduleId,
+        scenarioId,
+        ...restData,
+        interactionType: 'scenario_selection'
+      });
+    },
+    [trackEvent]
+  );
+
+  const trackRoleplayResponse = useCallback(
+    (data: RoleplayResponseEvent) => {
+      const { knowledgeId, moduleId, scenarioId, ...restData } = data;
+      trackEvent('roleplay_response', parseInt(scenarioId, 10) || 0, {
+        knowledgeId,
+        moduleId,
+        scenarioId,
+        ...restData,
+        interactionType: 'teacher_response'
+      });
+    },
+    [trackEvent]
+  );
+
+  const trackRoleplayComplete = useCallback(
+    (data: RoleplayCompleteEvent) => {
+      const { knowledgeId, moduleId, scenarioId, ...restData } = data;
+      trackEvent('roleplay_complete', parseInt(scenarioId, 10) || 0, {
+        knowledgeId,
+        moduleId,
+        scenarioId,
+        ...restData,
+        interactionType: 'completion'
+      });
+    },
+    [trackEvent]
+  );
+
+  // Add new navigation tracking method
+  const trackNavigation = useCallback(
+    (data: NavigationEvent) => {
+      // Ensure required fields are present
+      if (!data.knowledgeId || !data.moduleId) {
+        console.warn('Missing required fields in trackNavigation event data. Required: knowledgeId, moduleId');
+      }
+      
+      trackEvent('navigation', 0, {
+        ...data,
+        timestamp: data.timestamp || Date.now()
+      });
+    },
+    [trackEvent]
+  );
+
+  // Add new mindmap interaction tracking method
+  const trackMindMapInteraction = useCallback(
+    (mapId: string, data: MindMapInteractionEvent) => {
+      // Ensure required fields are present
+      if (!data.knowledgeId || !data.moduleId) {
+        console.warn('Missing required fields in trackMindMapInteraction event data. Required: knowledgeId, moduleId');
+      }
+      
+      trackEvent('mindmap_interaction', parseInt(mapId, 10) || 0, {
+        ...data,
+        timestamp: data.timestamp || Date.now()
+      });
+    },
     [trackEvent]
   );
 
@@ -427,10 +607,16 @@ export const InteractionTrackerProvider: React.FC<InteractionTrackerProviderProp
     trackVideoPlay,
     trackVideoPause,
     trackVideoComplete,
+    trackVideoProgress,
     trackQuizStart,
     trackQuizAnswer,
     trackQuizComplete,
     trackContentView,
+    trackNavigation,
+    trackMindMapInteraction,
+    trackRoleplayStart,
+    trackRoleplayResponse,
+    trackRoleplayComplete,
     pendingEventsCount,
     totalEventsCount,
     flushEvents,
@@ -440,10 +626,16 @@ export const InteractionTrackerProvider: React.FC<InteractionTrackerProviderProp
     trackVideoPlay,
     trackVideoPause,
     trackVideoComplete,
+    trackVideoProgress,
     trackQuizStart,
     trackQuizAnswer,
     trackQuizComplete,
     trackContentView,
+    trackNavigation,
+    trackMindMapInteraction,
+    trackRoleplayStart,
+    trackRoleplayResponse,
+    trackRoleplayComplete,
     pendingEventsCount,
     totalEventsCount,
     flushEvents

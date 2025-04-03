@@ -5,9 +5,12 @@ import { Clock, Video, CheckSquare } from 'lucide-react';
 
 interface ProgressData {
   completion: number;
+  engagementScore: number;
+  videoCompletion: number;
+  quizCompletion: number;
   videosWatched: number;
   quizzesCompleted: number;
-  totalTimeSpent: number; // in minutes
+  totalTimeSpent: number;
 }
 
 interface LearningDashboardProps {
@@ -23,6 +26,9 @@ export const LearningDashboard: React.FC<LearningDashboardProps> = ({
 }) => {
   const [progressData, setProgressData] = useState<ProgressData>({
     completion: 0,
+    engagementScore: 0,
+    videoCompletion: 0,
+    quizCompletion: 0,
     videosWatched: 0,
     quizzesCompleted: 0,
     totalTimeSpent: 0
@@ -37,7 +43,13 @@ export const LearningDashboard: React.FC<LearningDashboardProps> = ({
         const progressData = await analyticsService.getUserProgress(userId);
         
         // If courseId is provided, get completion percentage for this specific course
-        let completionData = { completion: 0 };
+        let completionData = { 
+          completion: 0,
+          engagementScore: 0,
+          videoCompletion: 0,
+          quizCompletion: 0
+        };
+        
         if (courseId) {
           completionData = await analyticsService.getUserCompletion(userId, courseId);
         }
@@ -57,7 +69,6 @@ export const LearningDashboard: React.FC<LearningDashboardProps> = ({
           (item: any) => ['video_play', 'video_pause', 'video_complete'].includes(item.event_type)
         ) || [];
         
-        // This is a simplified calculation - in a real app, this would be more sophisticated
         if (videoEvents.length > 0) {
           totalTimeSpent = Math.round(videoEvents.reduce(
             (total: number, event: any) => total + (event.event_data.duration || 0),
@@ -66,7 +77,7 @@ export const LearningDashboard: React.FC<LearningDashboardProps> = ({
         }
 
         setProgressData({
-          completion: completionData.completion,
+          ...completionData,
           videosWatched,
           quizzesCompleted,
           totalTimeSpent
@@ -106,23 +117,9 @@ export const LearningDashboard: React.FC<LearningDashboardProps> = ({
               style={{ width: `${progressData.completion}%` }}
             ></div>
           </div>
-        </div>
-        
-        <div className="grid grid-cols-3 gap-2">
-          <div className="bg-gray-800 rounded-lg p-2 flex flex-col items-center justify-center">
-            <Video className="w-3 h-3 text-indigo-400 mb-1" />
-            <span className="text-lg font-bold">{progressData.videosWatched}</span>
-            <span className="text-xs text-gray-500">Videos</span>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-2 flex flex-col items-center justify-center">
-            <CheckSquare className="w-3 h-3 text-indigo-400 mb-1" />
-            <span className="text-lg font-bold">{progressData.quizzesCompleted}</span>
-            <span className="text-xs text-gray-500">Quizzes</span>
-          </div>
-          <div className="bg-gray-800 rounded-lg p-2 flex flex-col items-center justify-center">
-            <Clock className="w-3 h-3 text-indigo-400 mb-1" />
-            <span className="text-lg font-bold">{progressData.totalTimeSpent}</span>
-            <span className="text-xs text-gray-500">Minutes</span>
+          <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-gray-400">
+            <div>Videos: {Math.round(progressData.videoCompletion)}%</div>
+            <div>Quizzes: {Math.round(progressData.quizCompletion)}%</div>
           </div>
         </div>
       </div>
@@ -150,46 +147,24 @@ export const LearningDashboard: React.FC<LearningDashboardProps> = ({
               ></div>
             </div>
           </div>
+          <div className="mt-4 grid grid-cols-2 gap-4">
+            <div className="text-gray-400">
+              <div className="text-sm font-medium">Video Progress</div>
+              <div className="text-lg font-semibold text-white">{Math.round(progressData.videoCompletion)}%</div>
+              <div className="text-xs">Videos Watched: {progressData.videosWatched}</div>
+            </div>
+            <div className="text-gray-400">
+              <div className="text-sm font-medium">Quiz Progress</div>
+              <div className="text-lg font-semibold text-white">{Math.round(progressData.quizCompletion)}%</div>
+              <div className="text-xs">Quizzes Completed: {progressData.quizzesCompleted}</div>
+            </div>
+          </div>
+          <div className="mt-4">
+            <div className="text-sm font-medium text-gray-400">Engagement Score</div>
+            <div className="text-lg font-semibold text-white">{Math.round(progressData.engagementScore)}/100</div>
+          </div>
         </CardContent>
       </Card>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Card className="bg-gray-800 border-gray-700">
-          <CardContent className="p-4 flex items-center">
-            <div className="rounded-full p-2 bg-indigo-600/20 mr-3">
-              <Video className="w-5 h-5 text-indigo-400" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-white">{progressData.videosWatched}</p>
-              <p className="text-xs text-gray-400">Videos completed</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gray-800 border-gray-700">
-          <CardContent className="p-4 flex items-center">
-            <div className="rounded-full p-2 bg-indigo-600/20 mr-3">
-              <CheckSquare className="w-5 h-5 text-indigo-400" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-white">{progressData.quizzesCompleted}</p>
-              <p className="text-xs text-gray-400">Quizzes passed</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gray-800 border-gray-700">
-          <CardContent className="p-4 flex items-center">
-            <div className="rounded-full p-2 bg-indigo-600/20 mr-3">
-              <Clock className="w-5 h-5 text-indigo-400" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-white">{progressData.totalTimeSpent}</p>
-              <p className="text-xs text-gray-400">Minutes spent</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }; 

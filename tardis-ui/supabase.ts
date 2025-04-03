@@ -988,6 +988,7 @@ export type Database = {
           event_type: string
           id: string
           session_id: string
+          user_id: string | null
         }
         Insert: {
           content_id?: number | null
@@ -997,6 +998,7 @@ export type Database = {
           event_type: string
           id?: string
           session_id: string
+          user_id?: string | null
         }
         Update: {
           content_id?: number | null
@@ -1006,6 +1008,7 @@ export type Database = {
           event_type?: string
           id?: string
           session_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -1088,6 +1091,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      batch_track_user_interactions: {
+        Args: {
+          p_interactions: Json
+        }
+        Returns: Json
+      }
       binary_quantize:
         | {
             Args: {
@@ -1101,13 +1110,6 @@ export type Database = {
             }
             Returns: unknown
           }
-      calculate_course_completion: {
-        Args: {
-          p_user_id: string
-          p_course_id: number
-        }
-        Returns: Json
-      }
       calculate_course_time: {
         Args: {
           p_course_id: number
@@ -1118,9 +1120,16 @@ export type Database = {
       calculate_engagement_score: {
         Args: {
           p_user_id: string
-          p_course_id: number
+          p_knowledge_id: number
         }
-        Returns: Json
+        Returns: number
+      }
+      calculate_understanding_level: {
+        Args: {
+          p_user_id: string
+          p_knowledge_id: number
+        }
+        Returns: string
       }
       check_edtech_columns: {
         Args: {
@@ -1136,6 +1145,53 @@ export type Database = {
           has_video: boolean
           has_image: boolean
         }[]
+      }
+      end_user_session: {
+        Args: {
+          p_session_id: string
+        }
+        Returns: boolean
+      }
+      generate_learning_analytics: {
+        Args: {
+          p_user_id: string
+          p_knowledge_id: number
+        }
+        Returns: Json
+      }
+      get_knowledge_interaction_summary: {
+        Args: {
+          p_user_id: string
+          p_knowledge_id: number
+        }
+        Returns: Json
+      }
+      get_knowledge_quiz_stats: {
+        Args: {
+          p_user_id: string
+          p_knowledge_id: number
+        }
+        Returns: Json
+      }
+      get_knowledge_video_stats: {
+        Args: {
+          p_user_id: string
+          p_knowledge_id: number
+        }
+        Returns: Json
+      }
+      get_user_interaction_summary: {
+        Args: {
+          p_user_id: string
+          p_content_id_filter?: number
+        }
+        Returns: Json
+      }
+      get_user_session_stats: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: Json
       }
       halfvec_avg: {
         Args: {
@@ -1268,6 +1324,30 @@ export type Database = {
           "": unknown[]
         }
         Returns: number
+      }
+      start_user_session: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      summarize_numeric_event_data: {
+        Args: {
+          p_user_id: string
+          p_event_type_filter: string
+          p_json_key: string
+        }
+        Returns: Json
+      }
+      track_user_interaction: {
+        Args: {
+          p_session_id: string
+          p_event_type: string
+          p_content_id: number
+          p_duration: number
+          p_event_data: Json
+        }
+        Returns: Json
       }
       vector_avg: {
         Args: {
