@@ -1,117 +1,272 @@
-# Responsive Design Implementation
+# Responsive Design Implementation Epic
 
 ## Epic Metadata
-**Epic ID:** EP-003  
-**Priority:** High  
-**Estimated Effort:** 3-4 weeks  
-**Dependencies:** None - can be implemented alongside other epics  
-**Business Value:** High - will expand user base and improve accessibility
+- **ID**: EP-003
+- **Priority**: P0 (Highest)
+- **Effort**: Medium
+- **Dependencies**: 
+  - EP-001: Test Framework Setup (for testing responsive behavior)
+  - EP-004: Core Performance Optimization (for mobile performance)
+- **Status**: Planning
 
 ## Context
-Our platform currently works well on desktop devices but has limited support for tablets and mobile phones. As more learners access educational content on mobile devices, responsive design has become essential. Approximately 40% of our target users primarily access educational content via mobile devices. This epic aims to ensure our platform works seamlessly across all devices, improving accessibility and expanding our potential user base.
+The platform needs to provide a consistent and optimized experience across all devices and screen sizes. Currently, the interface is primarily designed for desktop, leading to suboptimal experiences on mobile and tablet devices.
 
 ## Business Case
-- **Market Reach**: Mobile learning market is growing by 23% annually
-- **User Retention**: Data shows 30% higher retention when users can switch between devices
-- **Accessibility**: Making content available on any device increases access for underserved communities
-- **Competitive Edge**: Major competitors already provide full mobile support
+- **Problem**: Current limitations:
+  - Poor mobile experience
+  - Inconsistent layout across devices
+  - Touch interface issues
+  - Performance issues on mobile
+  - Limited accessibility on small screens
+  
+- **Value Proposition**:
+  - Increased mobile user engagement
+  - Broader platform accessibility
+  - Improved user satisfaction
+  - Higher completion rates
+  - Better SEO rankings
+
+## References
+- [Strategic Roadmap](strategic-roadmap.md) - Epic 3
+- [Roadmap to Production](../tardis-ui/.issues/roadmap-to-production.md)
+- Related: Core Performance Optimization Epic
+- Related: Accessibility Compliance Epic
 
 ## Technical Scope
 
-### Components to Adapt
-- Course navigation and header
-- Content display (video, text, interactive elements)
-- Quiz interface
-- Analytics dashboards
-- User settings and preferences
-- Authentication screens
+### Core Layout System
+1. Grid Framework
+   - Responsive grid system
+   - Flexbox layouts
+   - Container queries
+   - Dynamic spacing
+   - Breakpoint system
 
-### Technical Approach
-- Implement mobile-first design principles
-- Use CSS Grid and Flexbox for responsive layouts
-- Implement touch-friendly UI elements and interactions
-- Optimize assets for different screen sizes and network conditions
-- Create device-specific overrides only when necessary
+2. Component Adaptability
+   - Mobile-first approach
+   - Responsive images
+   - Fluid typography
+   - Touch targets
+   - Viewport considerations
 
-## Relevant Files
-- `/src/components/course/*` - Course components that need responsive adaptation
-- `/src/components/video/*` - Video player components
-- `/src/components/slideshow/*` - Slideshow components
-- `/src/components/ui/*` - Base UI components
-- `/src/styles/*` - CSS/SCSS files requiring responsive breakpoints
-- `/src/hooks/useWindowSize.ts` - Create this hook for responsive logic
+3. Navigation System
+   - Mobile navigation
+   - Touch-friendly menus
+   - Breadcrumb adaptation
+   - Search interface
+   - Action buttons
+
+### Mobile Optimization
+1. Touch Interface
+   - Touch gestures
+   - Swipe actions
+   - Pinch zoom
+   - Touch feedback
+   - Input handling
+
+2. Performance
+   - Image optimization
+   - Lazy loading
+   - Mobile caching
+   - Network handling
+   - Battery optimization
+
+### Device Support
+1. Screen Sizes
+   - Mobile phones
+   - Tablets
+   - Laptops
+   - Large displays
+   - Ultra-wide screens
+
+2. Platform Features
+   - iOS Safari support
+   - Android Chrome support
+   - PWA capabilities
+   - Offline support
+   - Device APIs
 
 ## Implementation Plan
 
-### Phase 1: Foundation (Week 1)
-1. Create responsive design system and breakpoints
-2. Implement base responsive layout components
-3. Create device detection and adaptation utilities
-4. Set up responsive testing infrastructure
+### Phase 1: Foundation (2 weeks)
+1. Core Setup
+   - Implement grid system
+   - Set up breakpoints
+   - Create base layouts
+   - Define typography scale
 
-### Phase 2: Core Components (Week 2)
-1. Adapt course navigation and main layout
-2. Make content renderer components responsive
-3. Optimize video player for mobile experience
-4. Adapt quiz components for touch interfaces
+2. Component Updates
+   - Update navigation
+   - Modify content layouts
+   - Adapt form elements
+   - Implement mobile menus
 
-### Phase 3: Complete Experience (Week 3-4)
-1. Adapt all remaining UI components
-2. Implement responsive analytics dashboards
-3. Optimize performance for mobile networks
-4. Refine touch interactions and mobile UX
+### Phase 2: Enhancement (2 weeks)
+1. Touch Optimization
+   - Add touch gestures
+   - Improve interactions
+   - Enhance feedback
+   - Optimize inputs
 
-## Definition of Done
-- All components function correctly on devices with screen widths from 320px to 2560px
-- Interaction elements are touch-friendly with appropriate hit areas (min 44×44px)
-- Content is readable without zooming at all screen sizes
-- No horizontal scrolling on standard content pages
-- Performance metrics (FCP, LCP, TTI) within 10% of desktop performance
-- All acceptance criteria met and verified
-- Documentation updated to reflect responsive design patterns
+2. Performance
+   - Optimize images
+   - Implement lazy loading
+   - Add mobile caching
+   - Improve load times
+
+### Phase 3: Polish (1 week)
+1. Testing & Refinement
+   - Cross-device testing
+   - Performance testing
+   - Usability testing
+   - Bug fixes
+
+2. Documentation
+   - Update style guide
+   - Document patterns
+   - Create examples
+   - Write guidelines
 
 ## Acceptance Criteria
 
-### Layout and Navigation
-- [ ] Platform layout adapts appropriately to screen size (mobile, tablet, desktop)
-- [ ] Navigation elements collapse into appropriate mobile patterns (e.g., hamburger menu)
-- [ ] Course content navigation is usable on all device sizes
-- [ ] Touch gestures implemented for common navigation actions
+### Layout System
+- [ ] Grid system working across breakpoints
+- [ ] Components adapting correctly
+- [ ] Typography scaling properly
+- [ ] Spacing consistent across devices
+- [ ] Navigation working on all sizes
 
-### Content Display
-- [ ] Text content is readable without zooming on all devices
-- [ ] Images scale appropriately and maintain aspect ratios
-- [ ] Videos are playable and controls are touch-friendly
-- [ ] Interactive elements adapt to touch interfaces
+### Mobile Experience
+- [ ] Touch targets meeting size requirements
+- [ ] Gestures working correctly
+- [ ] Forms optimized for mobile
+- [ ] Performance meeting benchmarks
+- [ ] Offline functionality working
 
-### Performance
-- [ ] First Contentful Paint under 1.5s on 3G connection
-- [ ] Total page weight under 1MB on initial load for mobile devices
-- [ ] Appropriate image sizes served based on device capabilities
-- [ ] No layout shifts during page load (good CLS score)
+### Cross-device Support
+- [ ] Working on iOS devices
+- [ ] Working on Android devices
+- [ ] Desktop experience maintained
+- [ ] Tablet optimization complete
+- [ ] PWA features functional
 
-### User Experience
-- [ ] Forms and input elements are usable on touchscreens
-- [ ] Hover states have touch equivalents
-- [ ] Font sizes adapt to maintain readability
-- [ ] Critical interactions work without requiring precision pointing
+## Definition of Done
+- All layouts responsive across breakpoints
+- Touch interactions optimized
+- Performance benchmarks met
+- Cross-browser testing complete
+- Documentation updated
+- Accessibility requirements met
+- All tests passing
+- Style guide updated
 
-### Compatibility
-- [ ] Functions correctly on latest versions of iOS/Safari and Android/Chrome
-- [ ] Functions acceptably on IE11 and older supported browsers
-- [ ] Works on both portrait and landscape orientations
-- [ ] Adapts appropriately when device orientation changes
+## Good to Have
+- Advanced touch gestures
+- Device-specific optimizations
+- Print stylesheet
+- Custom scrolling experiences
+- Advanced animations
+- Orientation-specific layouts
+- Device feature detection
 
-## Testing Strategy
-- Create automated tests for responsive breakpoints
-- Implement visual regression testing with screenshots at different viewport sizes
-- Test with real devices (not just emulators) for key user journeys
-- Conduct user testing with mobile and tablet users
-- Use Lighthouse mobile scores as performance benchmarks
+## Examples and Models
 
-## Monitoring and Success Metrics
-- **Engagement**: Monitor time spent on site from mobile devices (target: 20% increase)
-- **New Users**: Track percentage of new users on mobile devices (target: 30% increase)
-- **Completion Rates**: Course completion rates on mobile vs desktop (target: parity with desktop)
-- **Performance**: Mobile Core Web Vitals all "Good" according to Google metrics
-- **Satisfaction**: User satisfaction scores for mobile experience (target: >4/5) 
+### Breakpoint System
+```typescript
+const breakpoints = {
+  xs: '320px',
+  sm: '640px',
+  md: '768px',
+  lg: '1024px',
+  xl: '1280px',
+  '2xl': '1536px'
+};
+
+const mediaQueries = {
+  xs: `@media (min-width: ${breakpoints.xs})`,
+  sm: `@media (min-width: ${breakpoints.sm})`,
+  md: `@media (min-width: ${breakpoints.md})`,
+  lg: `@media (min-width: ${breakpoints.lg})`,
+  xl: `@media (min-width: ${breakpoints.xl})`,
+  '2xl': `@media (min-width: ${breakpoints['2xl']})`
+};
+```
+
+### Responsive Component
+```typescript
+interface ResponsiveContainerProps {
+  children: React.ReactNode;
+  breakpoint?: keyof typeof breakpoints;
+}
+
+function ResponsiveContainer({ children, breakpoint = 'md' }: ResponsiveContainerProps) {
+  const [isAboveBreakpoint, setIsAboveBreakpoint] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia(`(min-width: ${breakpoints[breakpoint]})`);
+    setIsAboveBreakpoint(mql.matches);
+
+    const handler = (e: MediaQueryListEvent) => {
+      setIsAboveBreakpoint(e.matches);
+    };
+
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, [breakpoint]);
+
+  return (
+    <div className={`container ${isAboveBreakpoint ? 'desktop' : 'mobile'}`}>
+      {children}
+    </div>
+  );
+}
+```
+
+### Touch Handler
+```typescript
+interface TouchHandlerProps {
+  onSwipe?: (direction: 'left' | 'right' | 'up' | 'down') => void;
+  onPinch?: (scale: number) => void;
+  children: React.ReactNode;
+}
+
+function TouchHandler({ onSwipe, onPinch, children }: TouchHandlerProps) {
+  const touchStart = useRef<Touch | null>(null);
+  const touchEnd = useRef<Touch | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStart.current = e.touches[0];
+    touchEnd.current = null;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEnd.current = e.touches[0];
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart.current || !touchEnd.current) return;
+
+    const xDiff = touchStart.current.clientX - touchEnd.current.clientX;
+    const yDiff = touchStart.current.clientY - touchEnd.current.clientY;
+
+    if (Math.abs(xDiff) > Math.abs(yDiff)) {
+      onSwipe?.(xDiff > 0 ? 'left' : 'right');
+    } else {
+      onSwipe?.(yDiff > 0 ? 'up' : 'down');
+    }
+
+    touchStart.current = null;
+    touchEnd.current = null;
+  };
+
+  return (
+    <div
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {children}
+    </div>
+  );
+} 

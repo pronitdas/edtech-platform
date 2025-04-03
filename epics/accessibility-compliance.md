@@ -1,179 +1,351 @@
-# Accessibility Compliance
+# Accessibility Compliance Epic
 
 ## Epic Metadata
-**Epic ID:** EP-009  
-**Priority:** High  
-**Estimated Effort:** 4-5 weeks  
-**Dependencies:** Should follow Responsive Design Implementation  
-**Business Value:** High - enables compliance with regulations and expands user base
+- **ID**: EP-010
+- **Priority**: P0
+- **Effort**: Large
+- **Dependencies**: 
+  - EP-003: Responsive Design Implementation
+  - EP-004: Core Performance Optimization
+- **Status**: Planning
 
 ## Context
-Educational content must be accessible to all users, including those with disabilities. Currently, our platform has inconsistent accessibility support, with some components lacking proper keyboard navigation, screen reader compatibility, and other accessibility features. This not only limits our platform's usability for individuals with disabilities but also creates potential legal and compliance issues in many jurisdictions.
-
-Educational institutions and enterprise customers increasingly require WCAG 2.1 AA compliance as a prerequisite for adoption. Legal requirements such as the Americans with Disabilities Act (ADA), Section 508, and the European Accessibility Act make accessibility compliance a legal necessity in many markets. Additionally, improving accessibility benefits all users by creating a more usable and navigable interface.
+Ensuring the platform is accessible to all users, including those with disabilities, is both a legal requirement and ethical imperative. This epic focuses on implementing WCAG 2.1 AA compliance across all features.
 
 ## Business Case
-- **Legal Compliance**: Meet requirements for ADA, Section 508, and similar regulations
-- **Market Access**: Enable sales to educational and government institutions requiring compliance
-- **User Expansion**: Make platform accessible to the 15-20% of the population with disabilities
-- **User Experience**: Improve usability for all users through better design practices
-- **Brand Reputation**: Demonstrate commitment to inclusive design principles
+- **Problem**: Current limitations:
+  - Limited accessibility
+  - Non-compliant components
+  - Poor screen reader support
+  - Keyboard navigation issues
+  - Missing ARIA attributes
+  
+- **Value Proposition**:
+  - Universal access
+  - Legal compliance
+  - Broader reach
+  - Better usability
+  - Inclusive design
+
+## References
+- [Strategic Roadmap](strategic-roadmap.md) - Epic 10
+- [Roadmap to Production](../tardis-ui/.issues/roadmap-to-production.md)
+- Related: Responsive Design Implementation Epic
+- Related: Core Performance Optimization Epic
 
 ## Technical Scope
 
-### Keyboard Accessibility
-- Proper focus management
-- Focus indicators
-- Keyboard navigation patterns
-- Keyboard shortcuts
-- Modal and dropdown keyboard handling
+### Core Accessibility
+1. WCAG Compliance
+   - Color contrast
+   - Keyboard navigation
+   - Screen readers
+   - Focus management
+   - Error identification
 
-### Screen Reader Support
-- Semantic HTML structure
-- ARIA attributes
-- Live regions for dynamic content
-- Alternative text for images
-- Descriptive labels for interactive elements
+2. ARIA Implementation
+   - Landmarks
+   - Live regions
+   - Roles
+   - States
+   - Properties
 
-### Visual Accessibility
-- Color contrast compliance
-- Text resizing support
-- Non-text contrast requirements
-- Content reflow on zoom
-- Motion and animation controls
+3. Semantic HTML
+   - Document structure
+   - Heading hierarchy
+   - Form labels
+   - Image alternatives
+   - Table structure
 
-### Content Accessibility
-- Video captions and transcripts
-- Audio descriptions
-- Document accessibility
-- Math notation accessibility
-- Table and data accessibility
+### User Experience
+1. Navigation
+   - Skip links
+   - Focus indicators
+   - Keyboard shortcuts
+   - Tab order
+   - Navigation landmarks
 
-### Assistive Technology Support
-- Screen reader compatibility
-- Voice recognition compatibility
-- Switch device support
-- Browser compatibility with assistive technologies
-- Mobile accessibility features
+2. Content Access
+   - Text scaling
+   - Color modes
+   - Audio alternatives
+   - Video captions
+   - Text alternatives
 
-## Relevant Files
-- `/src/components/**/*` - All component files need accessibility review
-- `/src/styles/global.css` - Global styling for focus states and contrast
-- `/src/hooks/useA11y.ts` - Create accessibility utility hooks
-- `/src/context/A11yContext.tsx` - Accessibility context provider
-- `/src/utils/a11yHelpers.ts` - Accessibility helper functions
-- `/src/components/video/*` - Video player components for caption support
-- `/src/components/ui/*` - Base UI components
+### Testing & Validation
+1. Automated Testing
+   - Accessibility checks
+   - WCAG validation
+   - Color contrast
+   - HTML validation
+   - Focus testing
+
+2. Manual Testing
+   - Screen readers
+   - Keyboard navigation
+   - User testing
+   - Expert review
+   - Device testing
 
 ## Implementation Plan
 
-### Phase 1: Audit and Planning (Week 1)
-1. Conduct accessibility audit
-   - Automated testing with axe-core
-   - Manual testing with screen readers
-   - Create issue inventory
-   - Prioritize remediation efforts
-2. Establish accessibility infrastructure
-   - Set up automated testing
-   - Create accessibility documentation
-   - Develop accessibility patterns library
-   - Train development team
+### Phase 1: Core Features (2 weeks)
+1. Basic Compliance
+   - Add ARIA
+   - Fix contrast
+   - Improve navigation
+   - Add labels
+   - Fix structure
 
-### Phase 2: Core Components (Week 2)
-1. Implement keyboard accessibility
-   - Fix focus management issues
-   - Enhance focus indicators
-   - Implement keyboard navigation patterns
-   - Add keyboard shortcuts
-2. Enhance screen reader support
-   - Fix semantic HTML structure
-   - Add/correct ARIA attributes
-   - Implement live regions
-   - Add comprehensive alt text
+2. Component Updates
+   - Update forms
+   - Fix modals
+   - Improve tables
+   - Update navigation
+   - Fix interactions
 
-### Phase 3: Content Accessibility (Week 3)
-1. Improve visual accessibility
-   - Fix color contrast issues
-   - Ensure text resize functionality
-   - Implement reflow for zoomed content
-   - Add motion controls
-2. Enhance media accessibility
-   - Implement caption system
-   - Add transcript support
-   - Create audio description capability
-   - Ensure media player accessibility
+### Phase 2: Advanced Features (2 weeks)
+1. Enhanced Access
+   - Add shortcuts
+   - Improve focus
+   - Add alternatives
+   - Create modes
+   - Add captions
 
-### Phase 4: Testing and Refinement (Week 4-5)
-1. Conduct comprehensive testing
-   - Screen reader testing on multiple platforms
-   - Keyboard-only testing
-   - Testing with various assistive technologies
-   - User testing with people with disabilities
-2. Implement documentation and training
-   - Create accessibility statement
-   - Document accessibility features
-   - Develop ongoing compliance processes
-   - Train content creators on accessibility
-
-## Definition of Done
-- All user interface components meet WCAG 2.1 AA standards
-- Automated accessibility tests pass with no critical or serious issues
-- Screen reader testing confirms proper functionality across supported browsers
-- Keyboard navigation works for all interactive elements
-- Media includes appropriate accessibility features (captions, transcripts)
-- Color contrast meets minimum ratios throughout the application
-- Documentation includes accessibility features and known limitations
-- Content creation guidelines include accessibility requirements
-- Ongoing monitoring process established for maintaining compliance
+2. Testing
+   - Add automation
+   - Run audits
+   - Test manually
+   - Fix issues
+   - Document changes
 
 ## Acceptance Criteria
 
-### Keyboard Accessibility
-- [ ] All interactive elements are focusable via keyboard
-- [ ] Focus order follows a logical sequence
-- [ ] Focus indicators are clearly visible (>3:1 contrast ratio)
-- [ ] No keyboard traps exist in any component
-- [ ] Custom components handle keyboard events appropriately
+### WCAG Compliance
+- [ ] AA standards met
+- [ ] Contrast sufficient
+- [ ] Navigation working
+- [ ] Forms accessible
+- [ ] Media compliant
 
-### Screen Reader Support
-- [ ] All images have appropriate alt text
-- [ ] Form controls have associated labels
-- [ ] ARIA attributes are correctly implemented where needed
-- [ ] Dynamic content changes are announced appropriately
-- [ ] Custom components have correct roles and states
+### User Experience
+- [ ] Keyboard navigation working
+- [ ] Screen readers supported
+- [ ] Focus management proper
+- [ ] Alternatives available
+- [ ] Errors clear
 
-### Visual Accessibility
-- [ ] Text contrast meets minimum ratio of 4.5:1 (3:1 for large text)
-- [ ] UI component contrast meets minimum ratio of 3:1
-- [ ] Content is readable and functional when zoomed to 200%
-- [ ] No information is conveyed through color alone
-- [ ] Users can pause, stop, or hide any moving content
+### Testing
+- [ ] Automated tests passing
+- [ ] Manual tests complete
+- [ ] User testing done
+- [ ] Issues resolved
+- [ ] Documentation updated
 
-### Content Accessibility
-- [ ] Videos have synchronized captions
-- [ ] Audio content has transcripts
-- [ ] Documents are screen reader compatible
-- [ ] Tables have proper headers and structure
-- [ ] Forms provide clear error messages and recovery options
+## Definition of Done
+- WCAG 2.1 AA compliant
+- All components accessible
+- Testing complete
+- Documentation updated
+- Team trained
+- Performance verified
+- User tested
+- Legal reviewed
 
-### Testing and Validation
-- [ ] Automated tests (axe-core) pass with no critical issues
-- [ ] Manual testing with NVDA, JAWS, and VoiceOver confirms functionality
-- [ ] Mobile accessibility tested with TalkBack and VoiceOver
-- [ ] User testing with people with disabilities validates usability
-- [ ] Accessibility statement accurately reflects compliance level
+## Good to Have
+- AAA compliance
+- Advanced shortcuts
+- Custom themes
+- Voice navigation
+- Gesture support
+- Mobile accessibility
+- Cognitive support
 
-## Testing Strategy
-- Automated testing with axe-core and similar tools
-- Manual testing with screen readers (NVDA, JAWS, VoiceOver)
-- Keyboard navigation testing
-- Color contrast analysis
-- Mobile accessibility testing
-- User testing with people with various disabilities
+## Examples and Models
 
-## Monitoring and Success Metrics
-- **Compliance Rate**: Percentage of WCAG 2.1 AA success criteria met (target: 100%)
-- **Automated Test Score**: axe-core or similar tool score (target: no critical/serious issues)
-- **User Success Rate**: Task completion rate for users with disabilities (target: 95%)
-- **Accessibility Support**: Reduction in accessibility-related support tickets (target: 80% reduction)
-- **Market Access**: Increase in contracts with institutions requiring accessibility (target: 30% increase) 
+### Accessible Component
+```typescript
+interface AccessibleProps {
+  id: string;
+  label: string;
+  description?: string;
+  errorMessage?: string;
+  required?: boolean;
+  disabled?: boolean;
+}
+
+function AccessibleInput({
+  id,
+  label,
+  description,
+  errorMessage,
+  required,
+  disabled,
+  ...props
+}: AccessibleProps & React.InputHTMLAttributes<HTMLInputElement>) {
+  const descriptionId = `${id}-description`;
+  const errorId = `${id}-error`;
+
+  return (
+    <div className="form-field" role="group" aria-labelledby={`${id}-label`}>
+      <label
+        id={`${id}-label`}
+        htmlFor={id}
+        className={required ? 'required' : undefined}
+      >
+        {label}
+        {required && <span aria-hidden="true">*</span>}
+      </label>
+      
+      <input
+        id={id}
+        aria-describedby={`${description ? descriptionId : ''} ${
+          errorMessage ? errorId : ''
+        }`.trim()}
+        aria-required={required}
+        aria-invalid={!!errorMessage}
+        disabled={disabled}
+        {...props}
+      />
+      
+      {description && (
+        <div id={descriptionId} className="description">
+          {description}
+        </div>
+      )}
+      
+      {errorMessage && (
+        <div id={errorId} className="error" role="alert">
+          {errorMessage}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### Focus Management
+```typescript
+interface FocusConfig {
+  trapFocus?: boolean;
+  autoFocus?: boolean;
+  returnFocus?: boolean;
+  focusFirst?: boolean;
+}
+
+function useFocusManagement(
+  containerRef: React.RefObject<HTMLElement>,
+  config: FocusConfig = {}
+) {
+  const [lastFocused, setLastFocused] = useState<HTMLElement | null>(null);
+
+  const handleFocus = (event: FocusEvent) => {
+    const container = containerRef.current;
+    if (!container || !config.trapFocus) return;
+
+    const target = event.target as HTMLElement;
+    if (!container.contains(target)) {
+      const focusable = getFocusableElements(container);
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.relatedTarget === first) {
+        last.focus();
+      } else {
+        first.focus();
+      }
+    }
+  };
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    if (config.autoFocus) {
+      setLastFocused(document.activeElement as HTMLElement);
+      const focusable = getFocusableElements(container);
+      if (focusable.length > 0) {
+        focusable[config.focusFirst ? 0 : focusable.length - 1].focus();
+      }
+    }
+
+    if (config.trapFocus) {
+      document.addEventListener('focusin', handleFocus);
+    }
+
+    return () => {
+      if (config.returnFocus && lastFocused) {
+        lastFocused.focus();
+      }
+      if (config.trapFocus) {
+        document.removeEventListener('focusin', handleFocus);
+      }
+    };
+  }, [config.trapFocus, config.autoFocus, config.returnFocus]);
+
+  return {
+    focusFirst: () => {
+      const focusable = getFocusableElements(containerRef.current);
+      if (focusable.length > 0) focusable[0].focus();
+    },
+    focusLast: () => {
+      const focusable = getFocusableElements(containerRef.current);
+      if (focusable.length > 0) focusable[focusable.length - 1].focus();
+    }
+  };
+}
+```
+
+### Accessibility Testing
+```typescript
+interface AccessibilityTest {
+  id: string;
+  name: string;
+  type: 'automated' | 'manual';
+  standard: 'WCAG2.1A' | 'WCAG2.1AA' | 'WCAG2.1AAA';
+  description: string;
+  steps?: string[];
+}
+
+function useAccessibilityTesting() {
+  const [results, setResults] = useState<Record<string, boolean>>({});
+  const [violations, setViolations] = useState<any[]>([]);
+
+  const runAutomatedTests = async () => {
+    const axeResults = await runAxe();
+    const htmlResults = await validateHTML();
+    const contrastResults = await checkContrast();
+
+    setViolations([
+      ...axeResults.violations,
+      ...htmlResults.errors,
+      ...contrastResults.issues
+    ]);
+
+    return {
+      passed: axeResults.passes && htmlResults.valid && contrastResults.valid,
+      violations: violations.length
+    };
+  };
+
+  const checkComponent = async (
+    component: React.ReactElement,
+    tests: AccessibilityTest[]
+  ) => {
+    const newResults = { ...results };
+
+    for (const test of tests) {
+      if (test.type === 'automated') {
+        const result = await testComponent(component, test);
+        newResults[test.id] = result.passed;
+      }
+    }
+
+    setResults(newResults);
+    return newResults;
+  };
+
+  return { results, violations, runAutomatedTests, checkComponent };
+} 

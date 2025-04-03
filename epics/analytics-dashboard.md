@@ -1,186 +1,321 @@
-# Analytics Dashboard
+# Analytics Dashboard Epic
 
 ## Epic Metadata
-**Epic ID:** EP-010  
-**Priority:** High  
-**Estimated Effort:** 4-5 weeks  
-**Dependencies:** Data Export and Integration should be implemented first or in parallel  
-**Business Value:** High - enables data-driven decision making for educational outcomes
+- **ID**: EP-007
+- **Priority**: P1
+- **Effort**: Large
+- **Dependencies**: 
+  - EP-001: Test Framework Setup
+  - EP-004: Core Performance Optimization
+- **Status**: Planning
 
 ## Context
-While we collect substantial user activity data, we currently lack comprehensive analytics tools that help instructors, administrators, and learners make data-driven decisions. Instructors need insights into student performance and engagement to optimize their teaching approaches. Administrators require program-level metrics to evaluate effectiveness and ROI. Learners benefit from personalized analytics that help them understand their progress and areas for improvement.
-
-Competitors offer sophisticated analytics dashboards as a key differentiator, creating pressure to match these capabilities. Customer interviews indicate that the lack of robust analytics is a significant factor in platform selection decisions, particularly for enterprise and educational institution customers who require data to demonstrate the effectiveness of their learning programs.
+A comprehensive analytics dashboard is essential for understanding user behavior, learning patterns, and platform performance. This epic aims to provide actionable insights for both administrators and instructors while helping students track their progress.
 
 ## Business Case
-- **Instructor Effectiveness**: Enable instructors to identify and address learning gaps
-- **Program Optimization**: Allow administrators to evaluate and improve courses
-- **Learner Engagement**: Motivate learners through progress visualization
-- **Business Intelligence**: Support data-driven decision making at institutional level
-- **Competitive Parity**: Match or exceed analytics features of competing platforms
-- **ROI Demonstration**: Help organizations quantify learning outcomes and value
+- **Problem**: Current limitations:
+  - Limited visibility into user behavior
+  - No real-time analytics
+  - Basic reporting capabilities
+  - Scattered data sources
+  - Manual data analysis
+  
+- **Value Proposition**:
+  - Data-driven decisions
+  - Improved user experience
+  - Better content optimization
+  - Increased engagement
+  - Actionable insights
+
+## References
+- [Strategic Roadmap](strategic-roadmap.md) - Epic 7
+- [Roadmap to Production](../tardis-ui/.issues/roadmap-to-production.md)
+- Related: Gamification Features Epic
+- Related: Content Management Epic
 
 ## Technical Scope
 
-### Student Performance Analytics
-- Progress tracking across courses and modules
-- Assessment performance analysis
-- Time-based engagement metrics
-- Learning objective mastery tracking
-- Comparative performance benchmarks
+### Core Analytics
+1. Data Collection
+   - User behavior tracking
+   - Performance metrics
+   - Error logging
+   - Usage patterns
+   - Custom events
 
-### Content Effectiveness Analysis
-- Content engagement metrics
-- Difficulty analysis
-- Time-to-completion tracking
-- Content bottleneck identification
-- A/B testing frameworks for content optimization
+2. Data Processing
+   - Real-time processing
+   - Data aggregation
+   - Metric calculations
+   - Data validation
+   - Data enrichment
 
-### Instructor Dashboards
-- Class performance overview
-- Individual student progress tracking
-- At-risk student identification
-- Intervention recommendation engine
-- Assignment and assessment analytics
+3. Data Storage
+   - Time-series data
+   - Event data
+   - User profiles
+   - Aggregated metrics
+   - Historical data
 
-### Administrative Reporting
-- Organization-wide learning metrics
-- Department and team comparisons
-- Compliance tracking
-- Cost and time efficiency analysis
-- Custom report generation
+### Dashboard Features
+1. Visualization
+   - Interactive charts
+   - Real-time updates
+   - Custom views
+   - Data filtering
+   - Export options
 
-### User-Facing Analytics
-- Personal progress dashboards
-- Skill acquisition visualization
-- Goal tracking and forecasting
-- Study habit analytics
-- Personalized recommendations
+2. Reports
+   - Automated reports
+   - Custom reports
+   - Scheduled exports
+   - PDF generation
+   - Data sharing
 
-## Relevant Files
-- `/src/components/analytics/*` - Analytics UI components
-- `/src/hooks/useAnalytics.ts` - Analytics data hooks
-- `/src/api/analytics.ts` - Analytics API interface
-- `/src/context/AnalyticsContext.tsx` - Analytics state management
-- `/src/utils/dataVisualization.ts` - Chart and visualization utilities
-- `/src/pages/dashboard/*` - Dashboard page components
-- `/src/services/analytics/*` - Data processing services
+### User Analytics
+1. Learning Analytics
+   - Progress tracking
+   - Time analysis
+   - Performance metrics
+   - Learning patterns
+   - Completion rates
+
+2. Engagement Analytics
+   - User activity
+   - Feature usage
+   - Session analysis
+   - Retention metrics
+   - Drop-off points
 
 ## Implementation Plan
 
-### Phase 1: Data Infrastructure (Week 1)
-1. Design analytics data models
-   - Define event tracking schema
-   - Create aggregation models
-   - Design reporting structures
-   - Implement data validation
-2. Build data processing pipeline
-   - Implement ETL processes
-   - Create data warehousing structure
-   - Set up batch processing jobs
-   - Implement real-time analytics capabilities
+### Phase 1: Data Infrastructure (2 weeks)
+1. Collection System
+   - Set up tracking
+   - Implement logging
+   - Create events
+   - Add validation
+   - Configure storage
 
-### Phase 2: Visualization Components (Week 2)
-1. Develop core visualization components
-   - Create chart and graph library
-   - Build data table components
-   - Implement interactive filters
-   - Create dashboard layout system
-2. Build analytics API layer
-   - Implement data retrieval endpoints
-   - Create aggregation services
-   - Implement caching mechanisms
-   - Build data export functionality
+2. Processing Pipeline
+   - Build aggregation
+   - Add calculations
+   - Set up validation
+   - Create enrichment
+   - Configure caching
 
-### Phase 3: User Dashboards (Week 3)
-1. Create role-based dashboards
-   - Implement learner dashboard
-   - Build instructor analytics view
-   - Create administrator reporting dashboard
-   - Develop organization-level analytics
-2. Implement dashboard customization
-   - Create saved views functionality
-   - Implement widget configuration
-   - Build custom reporting tools
-   - Create notification and alert system
+### Phase 2: Dashboard UI (2 weeks)
+1. Core Features
+   - Create layouts
+   - Add charts
+   - Implement filters
+   - Add exports
+   - Set up sharing
 
-### Phase 4: Advanced Analytics (Week 4-5)
-1. Implement predictive analytics
-   - Create at-risk student identification
-   - Implement trend analysis
-   - Build forecasting tools
-   - Develop recommendation engines
-2. Final integration and optimization
-   - Optimize query performance
-   - Implement dashboard preloading
-   - Integrate with export functionality
-   - Create analytics documentation
+2. Reports
+   - Build templates
+   - Add scheduling
+   - Create exports
+   - Set up automation
+   - Add customization
 
-## Definition of Done
-- All dashboards function correctly for their target user roles
-- Data visualizations accurately represent the underlying data
-- Performance meets requirements for dashboard loading and interaction
-- Export functionality works for all visualization types
-- Customization options save and restore correctly
-- All analytics features are properly documented
-- Security ensures users can only access authorized data
-- All acceptance criteria verified and passed
+### Phase 3: Integration (1 week)
+1. User Features
+   - Add profiles
+   - Create insights
+   - Set up alerts
+   - Add recommendations
+   - Implement sharing
 
 ## Acceptance Criteria
 
-### Data Collection and Processing
-- [ ] All relevant learning activities are tracked and stored
-- [ ] Data aggregation processes run on schedule without errors
-- [ ] Historical data is correctly imported and available
-- [ ] Real-time metrics update within acceptable timeframes (< 5 minutes)
-- [ ] Data quality checks flag anomalies and inconsistencies
+### Data Collection
+- [ ] Events tracking properly
+- [ ] Metrics calculating correctly
+- [ ] Storage working efficiently
+- [ ] Processing pipeline stable
+- [ ] Real-time updates working
 
-### Visualization Components
-- [ ] Charts and graphs render correctly across all supported browsers
-- [ ] Interactive elements (filters, tooltips, etc.) function as designed
-- [ ] Visualizations adapt appropriately to different screen sizes
-- [ ] Data table components support sorting, filtering, and pagination
-- [ ] Export options function for all visualization types
+### Dashboard Features
+- [ ] Charts rendering correctly
+- [ ] Filters working properly
+- [ ] Reports generating
+- [ ] Exports functioning
+- [ ] Sharing working
 
-### Learner Dashboard
-- [ ] Students can view their progress across all enrolled courses
-- [ ] Performance metrics compare to class averages where appropriate
-- [ ] Skill acquisition and learning objective mastery is clearly visualized
-- [ ] Time management and study pattern analytics provide actionable insights
-- [ ] Goal tracking accurately reflects progress toward defined objectives
+### User Analytics
+- [ ] Progress tracking accurate
+- [ ] Engagement metrics correct
+- [ ] Patterns identified
+- [ ] Alerts working
+- [ ] Recommendations generating
 
-### Instructor Dashboard
-- [ ] Class-level performance metrics provide clear overview
-- [ ] Individual student tracking highlights progress and issues
-- [ ] Content effectiveness analytics identify problematic materials
-- [ ] Assessment analytics show question-level performance data
-- [ ] At-risk student identification uses multiple factors with appropriate sensitivity
+## Definition of Done
+- Data collection complete
+- Dashboard features implemented
+- User analytics working
+- Performance optimized
+- Documentation updated
+- Security verified
+- Privacy compliant
+- Team trained
 
-### Administrator Dashboard
-- [ ] Organization-wide metrics provide clear program performance overview
-- [ ] Department and team comparisons avoid misleading statistical presentations
-- [ ] Custom report builder generates accurate reports from selected metrics
-- [ ] Compliance tracking accurately reflects completion status
-- [ ] ROI analytics correctly calculate efficiency and value metrics
+## Good to Have
+- Predictive analytics
+- Machine learning insights
+- Custom dashboards
+- Advanced visualizations
+- API access
+- Mobile dashboard
+- Data exploration tools
 
-### Performance and Security
-- [ ] Dashboards load initial data within 3 seconds
-- [ ] Interactions and filter changes respond within 1 second
-- [ ] Users can only access data for which they have permissions
-- [ ] PII is appropriately protected according to data protection requirements
-- [ ] System maintains performance under load (100+ simultaneous dashboard users)
+## Examples and Models
 
-## Testing Strategy
-- Unit tests for data processing functions
-- Visual regression tests for dashboard components
-- Performance testing under various load conditions
-- Security testing for data access controls
-- Usability testing with representatives from each user role
-- Integration testing with the notification system
+### Analytics Event
+```typescript
+interface AnalyticsEvent {
+  id: string;
+  type: 'page_view' | 'interaction' | 'completion' | 'error';
+  timestamp: Date;
+  userId?: string;
+  properties: {
+    page?: string;
+    action?: string;
+    category?: string;
+    label?: string;
+    value?: number;
+    metadata?: Record<string, any>;
+  };
+  context: {
+    userAgent: string;
+    platform: string;
+    locale: string;
+    timezone: string;
+  };
+}
 
-## Monitoring and Success Metrics
-- **Adoption**: Dashboard usage rate by role (target: 85% weekly active usage)
-- **Engagement**: Average time spent analyzing data (target: 10+ minutes per session)
-- **Utility**: User satisfaction rating for analytics features (target: 4.5/5)
-- **Actions**: Percentage of analytics sessions resulting in instructional changes (target: 25%)
-- **Performance**: Dashboard load time (target: 95th percentile under 3 seconds) 
+function useAnalytics() {
+  const trackEvent = async (event: Omit<AnalyticsEvent, 'id' | 'timestamp'>) => {
+    const completeEvent: AnalyticsEvent = {
+      ...event,
+      id: generateId(),
+      timestamp: new Date(),
+    };
+
+    await sendToAnalytics(completeEvent);
+    await processRealTime(completeEvent);
+  };
+
+  return { trackEvent };
+}
+```
+
+### Dashboard Component
+```typescript
+interface DashboardMetrics {
+  activeUsers: number;
+  completionRate: number;
+  averageTime: number;
+  errorRate: number;
+  satisfaction: number;
+}
+
+function AnalyticsDashboard() {
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+  const [timeRange, setTimeRange] = useState<[Date, Date]>([
+    subDays(new Date(), 7),
+    new Date()
+  ]);
+
+  useEffect(() => {
+    loadMetrics(timeRange).then(setMetrics);
+  }, [timeRange]);
+
+  return (
+    <div className="analytics-dashboard">
+      <header className="dashboard-header">
+        <h1>Platform Analytics</h1>
+        <DateRangePicker value={timeRange} onChange={setTimeRange} />
+      </header>
+      
+      <div className="metrics-grid">
+        <MetricCard
+          title="Active Users"
+          value={metrics?.activeUsers}
+          trend={calculateTrend('activeUsers')}
+        />
+        <MetricCard
+          title="Completion Rate"
+          value={`${metrics?.completionRate}%`}
+          trend={calculateTrend('completionRate')}
+        />
+        <MetricCard
+          title="Avg. Time"
+          value={formatTime(metrics?.averageTime)}
+          trend={calculateTrend('averageTime')}
+        />
+      </div>
+
+      <div className="charts-grid">
+        <TimeSeriesChart
+          data={metrics?.timeSeriesData}
+          metric="activeUsers"
+        />
+        <PieChart
+          data={metrics?.userTypes}
+          title="User Distribution"
+        />
+        <BarChart
+          data={metrics?.topContent}
+          title="Most Popular Content"
+        />
+      </div>
+    </div>
+  );
+}
+```
+
+### Report Generator
+```typescript
+interface ReportConfig {
+  id: string;
+  name: string;
+  type: 'user' | 'content' | 'performance';
+  schedule?: {
+    frequency: 'daily' | 'weekly' | 'monthly';
+    time: string;
+    timezone: string;
+  };
+  metrics: string[];
+  filters: {
+    field: string;
+    operator: 'eq' | 'gt' | 'lt' | 'contains';
+    value: any;
+  }[];
+  format: 'pdf' | 'csv' | 'json';
+}
+
+function useReportGenerator() {
+  const generateReport = async (config: ReportConfig) => {
+    const data = await fetchReportData(config);
+    const report = await formatReport(data, config.format);
+    
+    if (config.schedule) {
+      await scheduleReport(config);
+    }
+    
+    return report;
+  };
+
+  const scheduleReport = async (config: ReportConfig) => {
+    if (!config.schedule) return;
+
+    await createScheduledTask({
+      taskId: config.id,
+      schedule: config.schedule,
+      action: () => generateReport(config)
+    });
+  };
+
+  return { generateReport, scheduleReport };
+} 

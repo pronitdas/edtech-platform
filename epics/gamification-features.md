@@ -1,175 +1,317 @@
-# Gamification Features
+# Gamification Features Epic
 
 ## Epic Metadata
-**Epic ID:** EP-008  
-**Priority:** Medium  
-**Estimated Effort:** 3-4 weeks  
-**Dependencies:** Can benefit from Analytics Dashboard but not strictly dependent  
-**Business Value:** Medium-High - increases student motivation and completion rates
+- **ID**: EP-006
+- **Priority**: P1
+- **Effort**: Medium
+- **Dependencies**: 
+  - EP-002: Interactive Quiz Platform
+  - EP-004: Core Performance Optimization
+  - EP-007: Analytics Dashboard
+- **Status**: Planning
 
 ## Context
-Educational research consistently shows that engagement is a critical factor in learning outcomes. Our platform currently provides strong content but lacks motivational elements that encourage consistent usage and course completion. User feedback indicates that learning often feels like a chore rather than an engaging experience, particularly for self-directed learning where external motivators are minimal.
-
-Analytics show that course completion rates hover around 23%, with significant drop-offs occurring at predictable intervals when learner motivation naturally declines. Competitors have implemented gamification features that have demonstrably improved their completion rates to 40-60%, creating a competitive disadvantage for our platform.
+To increase user engagement and motivation, the platform needs gamification elements that make learning more enjoyable and rewarding. These features will encourage consistent participation and create a sense of achievement and progress.
 
 ## Business Case
-- **Improved Completion Rates**: Targeted 30% increase in course completion
-- **Enhanced Engagement**: Increase average session duration by 25%
-- **Increased Retention**: Reduce user churn by 20%
-- **Learning Effectiveness**: Improve knowledge retention through spaced repetition
-- **Community Building**: Foster healthy competition and social learning dynamics
-- **Competitive Advantage**: Match or exceed competitor features in this area
+- **Problem**: Current limitations:
+  - Low user engagement
+  - Limited motivation for completion
+  - No reward system
+  - No social learning elements
+  - No progress visualization
+  
+- **Value Proposition**:
+  - Increased user engagement
+  - Higher completion rates
+  - Better retention
+  - Enhanced social learning
+  - Improved motivation
+
+## References
+- [Strategic Roadmap](strategic-roadmap.md) - Epic 6
+- [Roadmap to Production](../tardis-ui/.issues/roadmap-to-production.md)
+- Related: Analytics Dashboard Epic
+- Related: Interactive Quiz Platform Epic
 
 ## Technical Scope
 
-### Achievement System
-- Skill-based badges and achievements
-- Progress milestones
-- Special challenge accomplishments
-- Customizable achievement displays
-- Achievement notification system
+### Core Gamification
+1. Achievement System
+   - Badges/Achievements
+   - Progress tracking
+   - Milestones
+   - Rewards
+   - Certificates
 
-### Progress Visualization
-- Learning path visualization
-- Progress bars and indicators
-- Skill trees and knowledge maps
-- Completion percentage displays
-- Milestone markers
+2. Point System
+   - Experience points
+   - Skill points
+   - Level progression
+   - Bonus points
+   - Point history
 
-### Streak Mechanics
-- Daily login rewards
-- Study streak tracking
-- Streak recovery mechanisms
-- Streak multipliers
-- Timed challenges
+3. Social Features
+   - Leaderboards
+   - User rankings
+   - Team challenges
+   - Social sharing
+   - Peer recognition
 
-### Rewards System
-- Virtual currency or points
-- Digital rewards (themes, avatars)
-- Unlockable content
-- Privilege escalation
-- Real-world reward integration
+### Engagement Features
+1. Progress Visualization
+   - Progress bars
+   - Achievement trees
+   - Skill maps
+   - Learning paths
+   - Milestone markers
 
-### Social Elements
-- Leaderboards with privacy options
-- Friend challenges
-- Team-based activities
-- Social sharing of achievements
-- Mentor/mentee relationships
+2. Reward Mechanics
+   - Daily streaks
+   - Challenge completion
+   - Time-based rewards
+   - Special achievements
+   - Bonus content unlock
 
-## Relevant Files
-- `/src/components/gamification/*` - Gamification UI components
-- `/src/hooks/useAchievements.ts` - Achievement management hook
-- `/src/api/gamification.ts` - Gamification API integration
-- `/src/context/GamificationContext.tsx` - Gamification state management
-- `/src/pages/Profile.tsx` - User profile with achievements display
-- `/src/utils/streakCalculator.ts` - Streak calculation utilities
-- `/src/db/schemas/achievements.ts` - Achievement data models
+### Analytics Integration
+1. Engagement Metrics
+   - Activity tracking
+   - Achievement rates
+   - Completion trends
+   - Social interactions
+   - Reward distribution
+
+2. Performance Analysis
+   - User progression
+   - Achievement difficulty
+   - Engagement patterns
+   - Retention impact
+   - Feature effectiveness
 
 ## Implementation Plan
 
-### Phase 1: Achievement System (Week 1)
-1. Design achievement framework
-   - Create achievement categories and types
-   - Design badge visuals
-   - Define achievement criteria
-   - Implement achievement tracking system
-2. Build achievement UI components
-   - Develop achievement notifications
-   - Create achievement showcase
-   - Build progress indicators
-   - Implement unlocking animations
+### Phase 1: Core Features (2 weeks)
+1. Achievement System
+   - Set up achievement framework
+   - Implement badges
+   - Create progress tracking
+   - Add basic rewards
+   - Design certificates
 
-### Phase 2: Progress and Streaks (Week 2)
-1. Implement progress visualization
-   - Create learning path visualizer
-   - Build progress bars and indicators
-   - Develop skill tree visualization
-   - Implement milestone markers
-2. Develop streak mechanics
-   - Create daily streak tracking
-   - Build streak recovery mechanism
-   - Implement streak rewards
-   - Design streak notifications
+2. Point System
+   - Implement XP system
+   - Add level progression
+   - Create point tracking
+   - Set up rewards
+   - Add history
 
-### Phase 3: Rewards and Social (Week 3-4)
-1. Build rewards system
-   - Implement virtual currency
-   - Create reward store
-   - Develop unlockable content system
-   - Build reward notification system
-2. Implement social elements
-   - Create leaderboards with privacy controls
-   - Develop friend connections
-   - Build challenge system
-   - Implement social sharing
+### Phase 2: Social Features (2 weeks)
+1. Social Integration
+   - Create leaderboards
+   - Add rankings
+   - Implement challenges
+   - Set up sharing
+   - Add interactions
 
-## Definition of Done
-- Achievement system tracks and awards badges for all defined criteria
-- Progress visualization accurately represents user advancement
-- Streak mechanics function correctly across day boundaries
-- Rewards system properly tracks and dispenses virtual currency/rewards
-- Social elements respect privacy settings while enabling competition
-- Performance impact of gamification features is within acceptable limits
-- All animations and visual elements render correctly across devices
-- Database schema supports efficient querying of gamification data
-- All acceptance criteria met and verified through user testing
+2. Progress Features
+   - Add progress bars
+   - Create skill trees
+   - Implement paths
+   - Add visualizations
+   - Set up tracking
+
+### Phase 3: Analytics (1 week)
+1. Metrics
+   - Add tracking
+   - Create dashboards
+   - Set up reporting
+   - Implement analysis
+   - Configure alerts
 
 ## Acceptance Criteria
 
 ### Achievement System
-- [ ] System awards badges for at least 25 distinct achievements
-- [ ] Achievements appear in user profile immediately upon earning
-- [ ] Users receive clear notifications when achievements are earned
-- [ ] Achievement progress is tracked and displayed for in-progress items
-- [ ] Achievement history persists correctly across sessions
+- [ ] Badges working correctly
+- [ ] Progress tracking accurate
+- [ ] Rewards system functional
+- [ ] Certificates generating
+- [ ] History maintained
 
-### Progress Visualization
-- [ ] Course completion percentage is accurately displayed
-- [ ] Learning path visualization shows clear progression
-- [ ] Skill trees accurately reflect competencies gained
-- [ ] Progress persists correctly between sessions
-- [ ] Visualizations are responsive and work on all device sizes
+### Social Features
+- [ ] Leaderboards updating
+- [ ] Rankings accurate
+- [ ] Challenges working
+- [ ] Sharing functional
+- [ ] Interactions tracked
 
-### Streak Mechanics
-- [ ] Daily streaks correctly increment with daily activity
-- [ ] Streak counters reset appropriately when days are missed
-- [ ] Streak recovery mechanics function as designed
-- [ ] Streak rewards are correctly awarded at specified milestones
-- [ ] Streak status is clearly indicated in the UI
+### Analytics
+- [ ] Metrics collecting
+- [ ] Reports generating
+- [ ] Analysis working
+- [ ] Dashboards updating
+- [ ] Alerts functioning
 
-### Rewards System
-- [ ] Virtual currency or points accrue at the correct rate
-- [ ] Reward store allows redemption of points for digital items
-- [ ] Unlockable content becomes available at appropriate thresholds
-- [ ] Transaction history maintains record of rewards earned and spent
-- [ ] Reward notifications display correctly
+## Definition of Done
+- Achievement system implemented
+- Point system working
+- Social features active
+- Progress tracking complete
+- Analytics integrated
+- Documentation updated
+- Performance verified
+- Security validated
 
-### Social Elements
-- [ ] Leaderboards display accurate ranking information
-- [ ] Privacy settings effectively control visibility of personal data
-- [ ] Friend connections work correctly for adding/removing connections
-- [ ] Challenges can be created, sent, accepted, and completed
-- [ ] Social sharing respects platform and user permissions
+## Good to Have
+- Custom badge creation
+- Advanced achievement paths
+- Team competitions
+- Virtual currency
+- Achievement sharing
+- Mobile notifications
+- AR/VR achievements
 
-### Technical Performance
-- [ ] Gamification features add no more than 200ms to initial load time
-- [ ] Achievement checks do not cause perceptible UI lag
-- [ ] Database queries for gamification data complete in <100ms
-- [ ] Animations run at 60fps on target devices
-- [ ] Memory usage remains within acceptable limits
+## Examples and Models
 
-## Testing Strategy
-- Unit tests for gamification logic and calculations
-- Integration tests for streak and achievement tracking
-- User testing to validate engagement impact
-- Performance testing to ensure minimal impact
-- Cross-device testing for visualization components
-- Time-based testing for streak mechanics
+### Achievement System
+```typescript
+interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  type: 'badge' | 'milestone' | 'certificate';
+  requirements: {
+    type: 'points' | 'completion' | 'streak' | 'time';
+    value: number;
+    condition?: string;
+  }[];
+  rewards: {
+    type: 'points' | 'badge' | 'content';
+    value: number | string;
+  }[];
+  metadata: {
+    difficulty: 'easy' | 'medium' | 'hard';
+    category: string;
+    points: number;
+  };
+}
 
-## Monitoring and Success Metrics
-- **Engagement**: Average session duration (target: 25% increase)
-- **Completion**: Course completion rate (target: 30% increase)
-- **Retention**: 30-day retention rate (target: 20% improvement)
-- **Achievement Engagement**: Percentage of users who earn at least 5 achievements (target: 70%)
-- **Social Interaction**: Percentage of users participating in social features (target: 40%) 
+function useAchievements(userId: string) {
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [progress, setProgress] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    // Load user achievements
+    loadUserAchievements(userId).then(setAchievements);
+    loadAchievementProgress(userId).then(setProgress);
+  }, [userId]);
+
+  const checkAchievement = async (achievementId: string) => {
+    const achievement = achievements.find(a => a.id === achievementId);
+    if (!achievement) return false;
+
+    const isComplete = achievement.requirements.every(req => {
+      const currentProgress = progress[achievementId] || 0;
+      return currentProgress >= req.value;
+    });
+
+    if (isComplete) {
+      await unlockAchievement(userId, achievementId);
+      // Grant rewards
+      await grantAchievementRewards(userId, achievement.rewards);
+    }
+
+    return isComplete;
+  };
+
+  return { achievements, progress, checkAchievement };
+}
+```
+
+### Progress Tracking
+```typescript
+interface ProgressState {
+  userId: string;
+  level: number;
+  experience: number;
+  streakDays: number;
+  achievements: string[];
+  skillLevels: Record<string, number>;
+}
+
+function useProgress() {
+  const [progress, setProgress] = useState<ProgressState | null>(null);
+  const [levelThresholds] = useState<number[]>([0, 100, 250, 500, 1000]);
+
+  const addExperience = async (amount: number) => {
+    if (!progress) return;
+
+    const newXP = progress.experience + amount;
+    const newLevel = levelThresholds.findIndex(t => newXP < t) - 1;
+
+    if (newLevel > progress.level) {
+      // Level up!
+      await handleLevelUp(progress.userId, newLevel);
+    }
+
+    setProgress({
+      ...progress,
+      experience: newXP,
+      level: newLevel
+    });
+  };
+
+  const updateSkill = async (skillId: string, level: number) => {
+    if (!progress) return;
+
+    setProgress({
+      ...progress,
+      skillLevels: {
+        ...progress.skillLevels,
+        [skillId]: level
+      }
+    });
+
+    await updateUserSkills(progress.userId, skillId, level);
+  };
+
+  return { progress, addExperience, updateSkill };
+}
+```
+
+### Leaderboard Component
+```typescript
+interface LeaderboardEntry {
+  userId: string;
+  username: string;
+  points: number;
+  level: number;
+  achievements: number;
+  rank: number;
+}
+
+function Leaderboard({ category }: { category: string }) {
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [timeFrame, setTimeFrame] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
+
+  useEffect(() => {
+    loadLeaderboard(category, timeFrame).then(setEntries);
+  }, [category, timeFrame]);
+
+  return (
+    <div className="leaderboard">
+      <h2>Top Learners</h2>
+      <div className="time-filters">
+        <TimeFrameSelector value={timeFrame} onChange={setTimeFrame} />
+      </div>
+      <div className="entries">
+        {entries.map(entry => (
+          <LeaderboardRow
+            key={entry.userId}
+            entry={entry}
+            showDetails={entry.rank <= 3}
+          />
+        ))}
+      </div>
+    </div>
+  );
+} 

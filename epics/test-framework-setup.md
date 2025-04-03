@@ -1,384 +1,202 @@
-# Test Framework Implementation Plan
+# Test Framework Setup Epic
 
-## Objective
-Implement a comprehensive testing framework to support the development of high-quality, reliable, and maintainable code across the edtech platform.
+## Epic Metadata
+- **ID**: EP-001
+- **Priority**: P0 (Highest)
+- **Effort**: Large
+- **Dependencies**: None (Foundation Epic)
+- **Status**: In Progress
 
-## Value Proposition
-- Prevent regressions during development
-- Ensure consistent behavior across components
-- Facilitate refactoring with confidence
-- Document expected behavior through tests
-- Enable continuous integration and delivery
+## Context
+Currently, the codebase lacks comprehensive testing infrastructure, making it difficult to ensure quality and prevent regressions. Manual testing is time-consuming and error-prone, and there's no standardized approach to testing across the platform.
+
+## Business Case
+- **Problem**: Lack of automated testing leads to:
+  - Increased time to detect bugs
+  - Higher risk of regressions
+  - Reduced confidence in deployments
+  - Difficulty in refactoring
+  
+- **Value Proposition**:
+  - Faster development cycles
+  - Improved code quality
+  - Reduced production issues
+  - Better developer experience
+  - Foundation for continuous integration
+
+## References
+- [Roadmap to Production](../tardis-ui/.issues/roadmap-to-production.md)
+- [Strategic Roadmap](strategic-roadmap.md)
+- Issue: [#001] Add unit tests for InteractionTracker
+- Issue: [#005] Add unit tests for flushEvents functionality
+
+## Technical Scope
+
+### Testing Infrastructure
+1. Unit Testing Setup
+   - Jest configuration
+   - React Testing Library integration
+   - Mock service worker for API testing
+   - Test utilities and helpers
+
+2. Integration Testing Framework
+   - Component integration tests
+   - API integration tests
+   - Database integration tests
+   - Authentication testing
+
+3. End-to-End Testing
+   - Playwright setup
+   - Cross-browser testing
+   - Mobile device testing
+   - Visual regression testing
+
+4. Performance Testing
+   - Lighthouse integration
+   - Load testing setup
+   - Performance regression testing
+   - Core Web Vitals monitoring
+
+### Component Testing
+1. Visual Testing
+   - Storybook setup
+   - Visual snapshot testing
+   - Component documentation
+   - Accessibility testing
+
+2. Test Coverage
+   - Coverage reporting
+   - Coverage thresholds
+   - Critical path identification
+   - Test quality metrics
 
 ## Implementation Plan
 
-### 1. Unit Testing Setup (Week 1)
+### Phase 1: Foundation (2 weeks)
+1. Basic Setup
+   - Configure Jest and React Testing Library
+   - Set up test runners and scripts
+   - Create initial test utilities
+   - Implement first unit tests
 
-#### Tools
-- Jest for test runner and assertions
-- React Testing Library for component testing
-- jest-dom for DOM testing utilities
+2. CI Integration
+   - Configure GitHub Actions
+   - Set up test automation
+   - Implement test reporting
+   - Configure coverage reporting
 
-#### Setup Tasks
-```bash
-# Installation
-npm install --save-dev jest @testing-library/react @testing-library/jest-dom @testing-library/user-event jest-environment-jsdom ts-jest
+### Phase 2: Component Testing (2 weeks)
+1. Storybook Implementation
+   - Set up Storybook
+   - Create component stories
+   - Implement visual testing
+   - Add documentation
 
-# Configuration
-# Create jest.config.js file
-```
+2. Test Coverage Expansion
+   - Add component tests
+   - Implement integration tests
+   - Create E2E test suite
+   - Set up performance tests
 
-#### Configuration Files
-- `jest.config.js` - Main Jest configuration
-- `jest.setup.js` - Setup file for Jest
-- `.babelrc` - Babel configuration for Jest
+### Phase 3: Advanced Features (2 weeks)
+1. Advanced Testing
+   - Implement visual regression
+   - Add accessibility testing
+   - Set up load testing
+   - Create security tests
 
-#### Example Jest Configuration
-```javascript
-// jest.config.js
-module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  moduleNameMapper: {
-    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
-    '^@/(.*)$': '<rootDir>/src/$1',
-  },
-  transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest',
-  },
-  testMatch: ['**/__tests__/**/*.+(ts|tsx|js)', '**/?(*.)+(spec|test).+(ts|tsx|js)'],
-  collectCoverage: true,
-  collectCoverageFrom: [
-    'src/**/*.{js,jsx,ts,tsx}',
-    '!src/**/*.d.ts',
-    '!src/index.tsx',
-    '!src/serviceWorker.ts',
-  ],
-  coverageThreshold: {
-    global: {
-      branches: 70,
-      functions: 70,
-      lines: 70,
-      statements: 70,
-    },
-  },
-};
-```
+2. Documentation and Training
+   - Create testing guidelines
+   - Document best practices
+   - Provide team training
+   - Create example tests
 
-#### Example Test
+## Acceptance Criteria
+
+### Unit Testing Framework
+- [ ] Jest and React Testing Library configured
+- [ ] Test utilities created
+- [ ] Mock service worker integrated
+- [ ] Coverage reporting working
+
+### Integration Testing
+- [ ] Component integration tests running
+- [ ] API integration tests implemented
+- [ ] Database integration tests working
+- [ ] Authentication tests passing
+
+### E2E Testing
+- [ ] Playwright tests running
+- [ ] Cross-browser tests passing
+- [ ] Mobile testing implemented
+- [ ] Visual regression tests working
+
+### CI/CD Integration
+- [ ] Tests running in CI
+- [ ] Coverage reports generated
+- [ ] Test results reported
+- [ ] Branch protection rules set
+
+## Definition of Done
+- All test types implemented and running
+- Coverage meets minimum thresholds (80%)
+- CI pipeline successfully integrated
+- Documentation completed
+- Team trained on testing practices
+- Example tests created for each type
+- Performance testing baseline established
+
+## Good to Have
+- Automated performance regression detection
+- Advanced mocking capabilities
+- Custom test reporters
+- Test data generators
+- Parallel test execution
+- Test environment management
+- Automated test generation tools
+
+## Examples and Models
+
+### Test Structure Example
 ```typescript
-// src/components/ui/Button/Button.test.tsx
-import { render, screen, fireEvent } from '@testing-library/react';
-import { Button } from './Button';
-
-describe('Button component', () => {
-  it('renders correctly', () => {
-    render(<Button>Click me</Button>);
-    expect(screen.getByRole('button')).toHaveTextContent('Click me');
+describe('InteractionTracker', () => {
+  beforeEach(() => {
+    // Setup
   });
 
-  it('handles click events', () => {
-    const handleClick = jest.fn();
-    render(<Button onClick={handleClick}>Click me</Button>);
-    fireEvent.click(screen.getByRole('button'));
-    expect(handleClick).toHaveBeenCalledTimes(1);
+  it('should track user interactions correctly', () => {
+    // Test implementation
   });
-});
-```
 
-### 2. Integration Testing Setup (Week 1-2)
-
-#### Approach
-- Test component interactions
-- Test hooks with components
-- Test context providers with consumers
-
-#### Example Integration Test
-```typescript
-// src/components/course/CourseMain.test.tsx
-import { render, screen, fireEvent } from '@testing-library/react';
-import { CourseMain } from './CourseMain';
-import { CourseProvider } from '../../contexts/CourseContext';
-
-// Mock the required props and context
-const mockProps = {
-  chapterId: '123',
-  initialTab: 'content',
-};
-
-describe('CourseMain integration', () => {
-  it('changes tab when clicked', async () => {
-    render(
-      <CourseProvider>
-        <CourseMain {...mockProps} />
-      </CourseProvider>
-    );
-    
-    // Find and click the quiz tab
-    const quizTab = screen.getByRole('tab', { name: /quiz/i });
-    fireEvent.click(quizTab);
-    
-    // Verify the quiz content is displayed
-    expect(await screen.findByTestId('quiz-container')).toBeInTheDocument();
+  it('should flush events when threshold reached', () => {
+    // Test implementation
   });
 });
 ```
 
-### 3. E2E Testing with Playwright (Week 2-3)
-
-#### Setup
-```bash
-# Installation
-npm install --save-dev @playwright/test
-
-# Initialize Playwright
-npx playwright install
-```
-
-#### Configuration
+### Visual Testing Example
 ```typescript
-// playwright.config.ts
-import { PlaywrightTestConfig } from '@playwright/test';
-
-const config: PlaywrightTestConfig = {
-  testDir: './e2e',
-  timeout: 30000,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: [['html'], ['list']],
-  use: {
-    baseURL: 'http://localhost:3000',
-    trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
-  },
-  projects: [
-    {
-      name: 'chromium',
-      use: { browserName: 'chromium' },
-    },
-    {
-      name: 'firefox',
-      use: { browserName: 'firefox' },
-    },
-    {
-      name: 'webkit',
-      use: { browserName: 'webkit' },
-    },
-  ],
-};
-
-export default config;
-```
-
-#### Example E2E Test
-```typescript
-// e2e/course-navigation.spec.ts
-import { test, expect } from '@playwright/test';
-
-test('navigate through course content', async ({ page }) => {
-  // Login and navigate to a course
-  await page.goto('/login');
-  await page.fill('[data-testid="email-input"]', 'test@example.com');
-  await page.fill('[data-testid="password-input"]', 'password123');
-  await page.click('[data-testid="login-button"]');
-  
-  // Wait for dashboard to load and select a course
-  await page.waitForSelector('[data-testid="course-card"]');
-  await page.click('[data-testid="course-card"]:first-child');
-  
-  // Navigate between tabs
-  await page.click('[role="tab"][aria-label="Quiz"]');
-  expect(await page.isVisible('[data-testid="quiz-container"]')).toBeTruthy();
-  
-  await page.click('[role="tab"][aria-label="Video"]');
-  expect(await page.isVisible('[data-testid="video-player"]')).toBeTruthy();
-});
-```
-
-### 4. Storybook Setup (Week 3)
-
-#### Installation
-```bash
-npx storybook init
-```
-
-#### Configuration
-Edit `.storybook/main.js` to include TypeScript support:
-
-```javascript
-// .storybook/main.js
-module.exports = {
-  stories: ['../src/**/*.stories.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
-  addons: [
-    '@storybook/addon-links',
-    '@storybook/addon-essentials',
-    '@storybook/addon-interactions',
-    '@storybook/addon-a11y',
-  ],
-  framework: '@storybook/react',
-  core: {
-    builder: '@storybook/builder-webpack5',
-  },
-  typescript: {
-    check: true,
-  },
-};
-```
-
-#### Example Story
-```typescript
-// src/components/ui/Button/Button.stories.tsx
-import { ComponentMeta, ComponentStory } from '@storybook/react';
-import { Button } from './Button';
-
+// Storybook story
 export default {
-  title: 'UI/Button',
-  component: Button,
-  argTypes: {
-    onClick: { action: 'clicked' },
-    variant: {
-      control: { type: 'select', options: ['primary', 'secondary', 'danger'] },
-    },
-  },
-} as ComponentMeta<typeof Button>;
+  title: 'Components/InteractionTracker',
+  component: InteractionTracker,
+} as Meta;
 
-const Template: ComponentStory<typeof Button> = (args) => <Button {...args} />;
-
-export const Primary = Template.bind({});
-Primary.args = {
-  children: 'Primary Button',
-  variant: 'primary',
-};
-
-export const Secondary = Template.bind({});
-Secondary.args = {
-  children: 'Secondary Button',
-  variant: 'secondary',
-};
-
-export const Danger = Template.bind({});
-Danger.args = {
-  children: 'Danger Button',
-  variant: 'danger',
-};
-
-export const Disabled = Template.bind({});
-Disabled.args = {
-  children: 'Disabled Button',
-  disabled: true,
-};
+export const Default: Story = () => <InteractionTracker />;
+export const WithEvents: Story = () => <InteractionTracker events={mockEvents} />;
 ```
 
-### 5. CI Pipeline Integration (Week 4)
-
-#### GitHub Actions Workflow
-```yaml
-# .github/workflows/test.yml
-name: Test
-
-on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main, develop]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Use Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '16'
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm ci
-      - name: Run linting
-        run: npm run lint
-      - name: Run unit and integration tests
-        run: npm test -- --coverage
-      - name: Build Storybook
-        run: npm run build-storybook
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
-      - name: Run E2E tests
-        run: npm run test:e2e
-
-  visual-regression:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Use Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '16'
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm ci
-      - name: Build Storybook
-        run: npm run build-storybook
-      - name: Run visual regression tests
-        run: npm run test:visual
-```
-
-### 6. Implementation Strategy for Components
-
-#### Prioritization
-1. Core UI components
-2. Custom hooks
-3. Context providers
-4. Complex components like CourseMain, VideoPlayer
-5. Integration points
-
-#### Testing Structure
-- Place tests alongside the components they test
-- Use descriptive test names that explain what's being tested
-- Group tests logically by behavior
-
-#### Testing Standards
-- Each component should have:
-  - Basic rendering tests
-  - Interaction tests
-  - Props validation tests
-  - Accessibility tests
-- Each hook should have:
-  - State management tests
-  - Side effect tests
-  - Error handling tests
-
-## Package.json Scripts
-```json
-"scripts": {
-  "test": "jest",
-  "test:watch": "jest --watch",
-  "test:coverage": "jest --coverage",
-  "test:e2e": "playwright test",
-  "storybook": "start-storybook -p 6006",
-  "build-storybook": "build-storybook",
-  "test:visual": "loki"
-}
-```
-
-## Documentation
-- Create testing guidelines document
-- Document test patterns and best practices
-- Provide examples for different component types
-
-## Success Criteria
-- All new components have unit tests
-- Integration tests cover major user flows
-- E2E tests validate critical paths
-- Storybook documents all reusable components
-- CI pipeline runs all tests automatically
-- Code coverage meets thresholds (70% minimum)
-
-## Next Steps
-1. Set up Jest and React Testing Library
-2. Create first component tests
-3. Configure Playwright for E2E tests
-4. Set up Storybook for component documentation
-5. Integrate with CI pipeline
-6. Start testing existing components 
+### Integration Test Example
+```typescript
+test('should process events end-to-end', async () => {
+  // Setup
+  render(<InteractionTracker />);
+  
+  // Trigger events
+  fireEvent.click(screen.getByRole('button'));
+  
+  // Assert
+  await waitFor(() => {
+    expect(screen.getByText('Event processed')).toBeInTheDocument();
+  });
+}); 
