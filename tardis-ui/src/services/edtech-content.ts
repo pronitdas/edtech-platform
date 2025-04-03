@@ -122,7 +122,7 @@ export async function uploadFiles(files, knowledge_id, fileType) {
     if (fileType === 'doc' || fileType === 'pdf') {
         try {
             // Call the process/knowledge endpoint to start processing
-            const apiUrl = 'http://localhost:8000';
+            const apiUrl = 'https://qbf0e8btmrrsd4-8000.proxy.runpod.net';
             const response = await fetch(`${apiUrl}/process/${knowledge_id}`, {
                 method: 'GET',
                 headers: {
