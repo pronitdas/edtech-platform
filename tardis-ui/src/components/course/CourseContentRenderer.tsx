@@ -17,13 +17,22 @@ import { useInteractionTracker } from '@/contexts/InteractionTrackerContext'; //
 // import { InteractionTracker } from '@/contexts/InteractionTrackerContext';
 // import { VideoMarkerType } from '../video/VideoTypes';
 
-// Define Scenario type locally based on ChapterContent structure
+// Import the actual types used by RoleplayComponent if possible
+// Assuming TeacherPersona is defined like this within RoleplayComponent's scope or types
+interface TeacherPersona { 
+    name: string;
+    description: string;
+    icon: string; // Expect icon here
+}
+
+// Define Scenario type locally, ensuring it includes icon
 interface Scenario {
     title: string;
     context: string;
     roles: Array<{
         name: string;
         description: string;
+        icon: string; // Add icon here
     }>;
 }
 
@@ -44,24 +53,29 @@ const recursiveJSONParse = (data: any): any => {
     }
 };
 
-// Map the incoming data structure to our Scenario format
+// Map the incoming data structure to our Scenario format, including icon
 const mapToScenario = (rawScenario: any): Scenario | null => {
     if (!rawScenario || typeof rawScenario !== 'object') {
         return null;
     }
-
     try {
-        // Map the incoming structure to our expected format
         return {
             title: rawScenario.title || '',
             context: rawScenario.description || rawScenario.initialPrompt || rawScenario.context || '',
-            roles: Array.isArray(rawScenario.characters) 
+            // Ensure roles/characters are mapped correctly and include an icon
+            roles: Array.isArray(rawScenario.characters)
                 ? rawScenario.characters.map((char: any) => ({
                     name: char.name || '',
-                    description: char.description || ''
+                    description: char.description || '',
+                    // Provide default icon if missing, e.g., emoji or placeholder
+                    icon: char.icon || '🧑‍🏫' // Default teacher emoji
                 }))
                 : Array.isArray(rawScenario.roles)
-                    ? rawScenario.roles
+                    ? rawScenario.roles.map((role: any) => ({
+                        name: role.name || '',
+                        description: role.description || '',
+                        icon: role.icon || '🧑‍🏫' // Default icon for roles too
+                    }))
                     : []
         };
     } catch (error) {
@@ -105,14 +119,11 @@ const ensureRoleplayDataFormat = (data: any): Scenario[] => {
             }
         }
 
-        // Map and validate each scenario
+        // Map and validate each scenario, checking for icon
         const scenarios = rawScenarios
             .map(mapToScenario)
             .filter((scenario): scenario is Scenario => {
-                if (!scenario) {
-                    return false;
-                }
-                
+                if (!scenario) return false;
                 const isValid = 
                     typeof scenario.title === 'string' &&
                     scenario.title.length > 0 &&
@@ -122,16 +133,13 @@ const ensureRoleplayDataFormat = (data: any): Scenario[] => {
                     scenario.roles.length > 0 &&
                     scenario.roles.every(role =>
                         role &&
-                        typeof role.name === 'string' &&
-                        role.name.length > 0 &&
-                        typeof role.description === 'string' &&
-                        role.description.length > 0
+                        typeof role.name === 'string' && role.name.length > 0 &&
+                        typeof role.description === 'string' && role.description.length > 0 &&
+                        typeof role.icon === 'string' && role.icon.length > 0 // Add check for icon
                     );
-                
                 if (!isValid) {
-                    console.warn('Invalid scenario structure:', scenario);
+                    console.warn('Invalid scenario structure (might be missing icon):', scenario);
                 }
-                
                 return isValid;
             });
 
@@ -173,6 +181,7 @@ interface CourseContentRendererProps {
   showReport: boolean;
   isFullscreenMindmap: boolean;
   sidebarOpen: boolean;
+  language: string;
   onMindmapBack: () => void;
   onToggleMindmapFullscreen: () => void;
   onCloseReport: () => void;
@@ -348,6 +357,7 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
   showReport,
   isFullscreenMindmap,
   sidebarOpen,
+  language,
   onMindmapBack,
   onToggleMindmapFullscreen,
   onCloseReport,
@@ -810,8 +820,12 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
     return (
       <div className="h-full overflow-y-auto p-4 md:p-6">
         <RoleplayComponent 
-          scenarios={validatedScenarios}
+          scenarios={validatedScenarios as any} 
           onRegenerate={onGenerateContentRequest}
+          // TODO: Provide a valid OpenAI API key, potentially from environment variables or context
+          // Pass missing props
+          userId={userId || 'anonymous'} 
+          language={language} 
         />
       </div>
     );

@@ -1,69 +1,270 @@
-import React, { useState } from 'react';
-import { MessageSquare, RefreshCw, Users, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { MessageSquare, RefreshCw, Users, User, ChevronLeft, ChevronRight, Send } from 'lucide-react';
+import { OpenAIClient } from '@/services/openAi';
+import { RoleplayService } from '@/services/RoleplayService';
+import { EvaluationService } from '@/services/EvaluationService';
+import { analyticsService } from '@/services/analytics-service';
+import BlackboardDisplay from '@/components/BlackboardDisplay';
+import StudentCard from '@/components/StudentCard';
+
+interface TeacherPersona {
+  name: string;
+  description: string;
+  icon: string;
+}
 
 interface RoleplayScenario {
   title: string;
   context: string;
-  roles: Array<{
-    name: string;
-    description: string;
-  }>;
+  roles: TeacherPersona[];
+  maxSteps?: number;
 }
 
 interface RoleplayComponentProps {
   scenarios: RoleplayScenario[];
   onRegenerate?: () => void;
   isGenerating?: boolean;
+  openaiApiKey: string;
+  userId: string;
+  language: string;
 }
+
+interface RoleplayState {
+  studentInput: string;
+  responses: { type: 'student' | 'teacher', content: string }[];
+  currentStep: number;
+  isLoading: boolean;
+  sessionId: string | null;
+}
+
+const MAX_ROLEPLAY_STEPS = 5;
 
 const RoleplayComponent: React.FC<RoleplayComponentProps> = ({
   scenarios,
   onRegenerate,
-  isGenerating = false
+  isGenerating = false,
+  openaiApiKey,
+  userId,
+  language
 }) => {
+  console.log("RoleplayComponent received scenarios:", scenarios, "Language:", language);
+
   const [activeScenarioIndex, setActiveScenarioIndex] = useState(0);
-  const [activeRole, setActiveRole] = useState<string | null>(null);
+  const [activeTeacherPersona, setActiveTeacherPersona] = useState<string | null>(null);
   const [isViewingScenarios, setIsViewingScenarios] = useState(true);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const getInitialRoleplayState = (): RoleplayState => ({
+    studentInput: '',
+    responses: [],
+    currentStep: 0,
+    isLoading: false,
+    sessionId: null,
+  });
+
+  const [roleplayState, setRoleplayState] = useState<RoleplayState>(getInitialRoleplayState());
+
+  const openaiClient = useMemo(() => new OpenAIClient(openaiApiKey), [openaiApiKey]);
+  const roleplayService = useMemo(() => new RoleplayService(openaiClient), [openaiClient]);
 
   const activeScenario = scenarios[activeScenarioIndex];
+  const maxSteps = activeScenario?.maxSteps ?? MAX_ROLEPLAY_STEPS;
 
-  // Navigation functions
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [roleplayState.responses]);
+
+  useEffect(() => {
+    console.log("Resetting Roleplay state due to prop change...");
+    setRoleplayState(getInitialRoleplayState());
+    setActiveTeacherPersona(null);
+    setIsViewingScenarios(true);
+  }, [openaiApiKey, activeScenarioIndex, language, scenarios]);
+
   const nextScenario = () => {
     if (activeScenarioIndex < scenarios.length - 1) {
       setActiveScenarioIndex(activeScenarioIndex + 1);
-      setActiveRole(null);
     }
   };
 
   const prevScenario = () => {
     if (activeScenarioIndex > 0) {
       setActiveScenarioIndex(activeScenarioIndex - 1);
-      setActiveRole(null);
     }
   };
 
-  // View role details
-  const selectRole = (roleName: string) => {
-    setActiveRole(roleName);
+  const selectTeacherPersona = async (personaName: string) => {
+    setRoleplayState(getInitialRoleplayState());
+    setActiveTeacherPersona(personaName);
     setIsViewingScenarios(false);
+    
+    const selectedPersona = activeScenario?.roles.find(p => p.name === personaName);
+    if (selectedPersona) {
+       setRoleplayState(prevState => ({ 
+           ...prevState, 
+           responses: [{type: 'teacher', content: `Hello! I am ${selectedPersona.name}. ${selectedPersona.description} How can I help you with the scenario: '${activeScenario.title}'?`}]
+       }));
+    }
+
+    if (userId && activeScenario) {
+      try {
+        const session = await analyticsService.startUserSession(userId);
+        if (session && session.id) {
+          setRoleplayState(prevState => ({ ...prevState, sessionId: session.id }));
+          console.log("Analytics session started:", session.id);
+
+          await analyticsService.trackEvent({
+            userId,
+            eventType: 'roleplay_start',
+            contentId: activeScenario.title,
+            timestamp: Date.now(),
+            sessionId: session.id,
+            scenarioTitle: activeScenario.title,
+            selectedTeacherPersona: personaName,
+            interactionType: 'scenario_selection'
+          });
+        } else {
+           console.warn("Failed to start analytics session or retrieve ID.");
+        }
+      } catch (error) {
+        console.error("Error starting analytics session:", error);
+      }
+    }
   };
 
-  // Back to scenario selection
-  const backToScenarios = () => {
+  const backToScenarios = async () => {
+    if (roleplayState.sessionId) {
+        console.log("Ending analytics session due to backing out:", roleplayState.sessionId);
+        await analyticsService.endUserSession(roleplayState.sessionId);
+    }
     setIsViewingScenarios(true);
-    setActiveRole(null);
+    setActiveTeacherPersona(null);
+    setRoleplayState(getInitialRoleplayState());
   };
 
-  // Get the selected role details
-  const getSelectedRole = () => {
-    return activeScenario.roles.find(role => role.name === activeRole);
+  const getSelectedTeacherPersona = (): TeacherPersona | null => {
+    if (!activeScenario || !activeTeacherPersona) return null;
+    const scenarioFromProp = scenarios[activeScenarioIndex]; 
+    if (!scenarioFromProp || !Array.isArray(scenarioFromProp.roles)) return null;
+    return scenarioFromProp.roles.find(p => p.name === activeTeacherPersona) || null;
   };
 
-  // Render scenario selection view
+  const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setRoleplayState(prevState => ({ ...prevState, studentInput: event.target.value }));
+  };
+
+  const isValidInput = (input: string): boolean => {
+    return input.trim().length > 0;
+  };
+
+  const handleStudentSubmit = async () => {
+    const selectedPersona = getSelectedTeacherPersona();
+    if (!isValidInput(roleplayState.studentInput) || roleplayState.isLoading || !selectedPersona || !activeScenario || !language) {
+      console.warn("Submission blocked: Invalid input, loading, no persona, no session, no scenario, or no language.");
+      return;
+    }
+
+    const currentInput = roleplayState.studentInput;
+    const step = roleplayState.currentStep;
+    const currentSessionId = roleplayState.sessionId;
+
+    setRoleplayState(prevState => ({
+      ...prevState,
+      isLoading: true, 
+      studentInput: '',
+      responses: [...prevState.responses, { type: 'student', content: currentInput }],
+    }));
+
+    try {
+      const teacherResponse = await roleplayService.getTeacherResponse(
+        currentInput, 
+        selectedPersona.name,
+        activeScenario.context,
+        language
+      );
+
+      const nextStep = step + 1;
+      const isComplete = nextStep >= maxSteps;
+
+      await analyticsService.trackEvent({
+        userId,
+        eventType: 'roleplay_student_response',
+        contentId: activeScenario.title,
+        timestamp: Date.now(),
+        sessionId: currentSessionId,
+        step: nextStep,
+        teacherPersona: selectedPersona.name, 
+        studentResponse: currentInput,
+        teacherResponse: teacherResponse,
+        language: language,
+        interactionType: 'student_response'
+      });
+
+      if (isComplete) {
+         console.log("Roleplay Complete.");
+         await analyticsService.trackEvent({
+            userId,
+            eventType: 'roleplay_complete',
+            contentId: activeScenario.title,
+            timestamp: Date.now(),
+            sessionId: currentSessionId,
+            totalSteps: nextStep,
+            language: language,
+            interactionType: 'completion'
+          });
+
+         console.log("Ending analytics session on completion:", currentSessionId);
+         await analyticsService.endUserSession(currentSessionId);
+      }
+
+      setRoleplayState(prevState => ({
+        ...prevState,
+        responses: [...prevState.responses, { type: 'teacher', content: teacherResponse }],
+        currentStep: nextStep,
+        isLoading: false,
+        sessionId: isComplete ? null : prevState.sessionId 
+      }));
+
+    } catch (error) {
+      console.error("Error during student submission/teacher response flow:", error);
+      if (currentSessionId) {
+          console.warn("Ending analytics session due to error:", currentSessionId);
+          await analyticsService.endUserSession(currentSessionId);
+      }
+      setRoleplayState(prevState => ({ 
+          ...prevState, 
+          sessionId: null,
+          isLoading: false, 
+          responses: [...prevState.responses, { type: 'teacher', content: "Sorry, I encountered an error generating my response. Please try again." }],
+      }));
+    }
+  };
+
   const renderScenarioView = () => {
+    if (!scenarios || scenarios.length === 0) {
+        console.warn("Render blocked: scenarios prop is empty or undefined.");
+        return <div className="p-4 text-center text-gray-400">No scenarios available.</div>;
+    }
+
+    if (activeScenarioIndex < 0 || activeScenarioIndex >= scenarios.length) {
+        console.error(`Render blocked: Invalid activeScenarioIndex (${activeScenarioIndex}) for scenarios length (${scenarios.length}).`);
+        return <div className="p-4 text-center text-gray-400">Error loading scenario index.</div>;
+    }
+
+    const currentScenario = scenarios[activeScenarioIndex];
+
+    if (!currentScenario || !Array.isArray(currentScenario.roles)) {
+        console.warn(`Render blocked: Scenario data or roles array missing for index ${activeScenarioIndex}. Scenario data:`, currentScenario);
+        return <div className="p-4 text-center text-gray-400">Loading scenario details...</div>;
+    }
+
+    if (currentScenario.roles.length === 0) {
+       console.warn(`Render blocked: Scenario roles array is empty for index ${activeScenarioIndex}.`);
+       return <div className="p-4 text-center text-gray-400">No teacher personas defined for this scenario.</div>;
+    }
+
     return (
       <div className="h-full flex flex-col">
-        {/* Header with navigation */}
         <div className="bg-gray-800 p-4 flex justify-between items-center border-b border-gray-700">
           <h2 className="text-xl font-semibold text-white">Roleplay Scenarios</h2>
           <div className="flex items-center gap-2">
@@ -89,41 +290,29 @@ const RoleplayComponent: React.FC<RoleplayComponentProps> = ({
           </div>
         </div>
 
-        {/* Scenario content */}
         <div className="flex-grow overflow-auto p-4">
           <div className="mb-6">
-            <h3 className="text-xl font-semibold mb-2 text-indigo-400">{activeScenario.title}</h3>
-            <p className="text-gray-300 mb-4">{activeScenario.context}</p>
+            <h3 className="text-xl font-semibold mb-2 text-indigo-400">{currentScenario.title}</h3>
+            <p className="text-gray-300 mb-4">{currentScenario.context}</p>
             
             <div className="mt-6">
               <h4 className="text-lg font-medium mb-3 flex items-center gap-2">
                 <Users className="w-5 h-5 text-indigo-400" />
-                <span>Available Roles</span>
+                <span>Select AI Teacher Persona</span>
               </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {activeScenario.roles.map((role) => (
-                  <button
-                    key={role.name}
-                    onClick={() => selectRole(role.name)}
-                    className="bg-gray-700 hover:bg-gray-600 p-4 rounded-lg text-left transition-colors"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="bg-indigo-500 rounded-full p-2 mt-1">
-                        <User className="w-4 h-4 text-white" />
-                      </div>
-                      <div>
-                        <h5 className="font-semibold text-white">{role.name}</h5>
-                        <p className="text-sm text-gray-300 mt-1 line-clamp-2">{role.description}</p>
-                      </div>
-                    </div>
-                  </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {currentScenario.roles.map((persona) => (
+                  <StudentCard
+                    key={persona.name}
+                    role={persona}
+                    onClick={selectTeacherPersona}
+                  />
                 ))}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Footer with regenerate button */}
         {onRegenerate && (
           <div className="bg-gray-800 p-4 border-t border-gray-700">
             <button
@@ -149,88 +338,124 @@ const RoleplayComponent: React.FC<RoleplayComponentProps> = ({
     );
   };
 
-  // Render selected role view
-  const renderRoleView = () => {
-    const selectedRole = getSelectedRole();
-    
-    if (!selectedRole) return null;
+  const renderTeacherIcon = (icon: string) => {
+      const isEmoji = /\p{Emoji}/u.test(icon);
+      if (isEmoji) {
+          return <span className="text-xl" role="img">{icon}</span>;
+      } else {
+          return <User className="w-5 h-5 text-indigo-300" />; 
+      }
+  };
+
+  const renderInteractionView = () => {
+    const selectedPersona = getSelectedTeacherPersona();
+    if (!selectedPersona || !activeScenario) return null;
+
+    const currentTeacherMessage = roleplayState.responses.length > 0
+      ? roleplayState.responses[roleplayState.responses.length - 1].type === 'teacher'
+        ? roleplayState.responses[roleplayState.responses.length - 1].content
+        : "Waiting for your input..."
+      : "";
+
+    const progressText = roleplayState.currentStep >= maxSteps 
+      ? "Roleplay Complete"
+      : `Interaction: ${roleplayState.currentStep + 1} / ${maxSteps}`;
+
+    const isComplete = roleplayState.currentStep >= maxSteps;
 
     return (
-      <div className="h-full flex flex-col">
-        {/* Header */}
-        <div className="bg-gray-800 p-4 flex items-center gap-3 border-b border-gray-700">
-          <button
-            onClick={backToScenarios}
-            className="p-1 rounded-full text-gray-400 hover:text-white hover:bg-gray-700"
-            aria-label="Back to scenarios"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <h2 className="text-lg font-semibold text-white">{selectedRole.name}</h2>
+      <div className="h-full flex flex-col bg-gray-900">
+        <div className="bg-gray-800 p-4 flex items-center justify-between border-b border-gray-700">
+          <div className="flex items-center gap-3">
+             <button
+                onClick={backToScenarios}
+                className="p-1 rounded-full text-gray-400 hover:text-white hover:bg-gray-700"
+                aria-label="Back to scenarios"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+             <div className="flex items-center gap-2">
+               <div className="bg-gray-700 rounded-full p-1.5 flex items-center justify-center">
+                   {renderTeacherIcon(selectedPersona.icon)} 
+               </div>
+               <h2 className="text-lg font-semibold text-white">Teacher: {selectedPersona.name}</h2>
+             </div>
+          </div>
+          <span className="text-sm text-indigo-400 font-medium">{progressText}</span>
         </div>
 
-        {/* Role content */}
-        <div className="flex-grow overflow-auto p-4">
-          <div className="bg-gray-800 rounded-lg p-4 mb-4 border border-gray-700">
-            <h3 className="text-lg font-semibold mb-2 text-indigo-400">Scenario: {activeScenario.title}</h3>
-            <p className="text-gray-300">{activeScenario.context}</p>
+        <div className="flex-grow overflow-y-auto p-4 space-y-4">
+          <BlackboardDisplay 
+            title={`Scenario: ${activeScenario.title}`}
+            currentQuestion={currentTeacherMessage}
+          />
+
+          <div className="space-y-4">
+            {roleplayState.responses.map((msg, index) => (
+              <div key={index} className={`flex items-end gap-2 ${msg.type === 'student' ? 'justify-end' : 'justify-start'}`}>
+                 {msg.type === 'teacher' && (
+                     <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0 mb-1">
+                        {renderTeacherIcon(selectedPersona.icon)} 
+                     </div>
+                 )}
+                 <div
+                   className={`p-3 rounded-lg max-w-md sm:max-w-lg ${msg.type === 'student' ? 'bg-indigo-600 text-white' : 'bg-gray-700 text-gray-200'}`}>
+                   {msg.content}
+                 </div>
+              </div>
+            ))}
+             <div ref={chatEndRef} /> 
           </div>
 
-          <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-            <h3 className="text-lg font-semibold mb-2 text-indigo-400">Your Role: {selectedRole.name}</h3>
-            <p className="text-gray-300">{selectedRole.description}</p>
-            
-            <div className="mt-6 bg-gray-700 p-4 rounded-lg">
-              <h4 className="font-medium text-white mb-2">Tips for Role-Playing:</h4>
-              <ul className="text-gray-300 space-y-2 list-disc pl-5">
-                <li>Consider how this character would approach the situation</li>
-                <li>Think about their goals, motivations, and constraints</li>
-                <li>Practice responding to questions as this character would</li>
-                <li>Consider how your role interacts with others in the scenario</li>
-              </ul>
+          {roleplayState.isLoading && (
+            <div className="flex justify-center items-center py-2">
+              <RefreshCw className="w-5 h-5 text-indigo-400 animate-spin" />
+              <span className="ml-2 text-indigo-400">Teacher is thinking...</span>
+            </div>
+          )}
+        </div>
+
+        {!isComplete && (
+          <div className="bg-gray-800 p-4 border-t border-gray-700">
+            <div className="flex items-center gap-2">
+              <textarea
+                rows={2}
+                value={roleplayState.studentInput}
+                onChange={handleInputChange}
+                placeholder="Your response or question..."
+                className="flex-grow px-3 py-2 border border-gray-600 rounded-md bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none disabled:opacity-50"
+                disabled={roleplayState.isLoading}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleStudentSubmit();
+                    }
+                }}
+              />
+              <button
+                onClick={handleStudentSubmit}
+                disabled={!isValidInput(roleplayState.studentInput) || roleplayState.isLoading}
+                className="p-2 bg-indigo-600 hover:bg-indigo-700 rounded-md text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                aria-label="Send response"
+              >
+                {roleplayState.isLoading ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+              </button>
             </div>
           </div>
-        </div>
-
-        {/* Navigation footer */}
-        <div className="bg-gray-800 p-4 border-t border-gray-700 flex justify-between">
-          <button
-            onClick={backToScenarios}
-            className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            <span>Back to Scenarios</span>
-          </button>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={prevScenario}
-              disabled={activeScenarioIndex === 0}
-              className="p-1 rounded-full text-gray-400 hover:text-white hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label="Previous scenario"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <span className="text-sm text-gray-400">
-              {activeScenarioIndex + 1} of {scenarios.length}
-            </span>
-            <button
-              onClick={nextScenario}
-              disabled={activeScenarioIndex === scenarios.length - 1}
-              className="p-1 rounded-full text-gray-400 hover:text-white hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label="Next scenario"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
+        )}
+        {isComplete && (
+          <div className="bg-gray-800 p-4 border-t border-gray-700 text-center text-gray-400">
+            Roleplay finished.
+             <button onClick={backToScenarios} className="ml-4 text-indigo-400 hover:underline">Select New Scenario</button> 
           </div>
-        </div>
+        )}
       </div>
     );
   };
 
   return (
-    <div className="bg-gray-900 h-full rounded-lg overflow-hidden">
-      {isViewingScenarios ? renderScenarioView() : renderRoleView()}
+    <div className="bg-gray-900 h-full rounded-lg overflow-hidden shadow-lg flex flex-col">
+      {isViewingScenarios ? renderScenarioView() : renderInteractionView()}
     </div>
   );
 };

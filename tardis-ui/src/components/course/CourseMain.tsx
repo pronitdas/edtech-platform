@@ -107,6 +107,7 @@ const CourseContent: React.FC<CourseContentProps> = ({ content, chapter, languag
           activeTab={activeTab}
           content={content}
           chapter={chapter}
+          language={language}
           chaptersMeta={chaptersMeta}
           isLoading={isLoading}
           showReport={showReport}

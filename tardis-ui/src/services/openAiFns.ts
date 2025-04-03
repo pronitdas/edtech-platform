@@ -90,7 +90,7 @@ export async function generateMindMapStructure(
                 role: "user",
                 content: text
             }
-        ], "gpt-4o-2024-08-06", 800, jsonSchema);
+        ], "gpt-4o-2024-08-06", 800, undefined, jsonSchema);
 
         return JSON.parse(result);
     } catch (error) {
@@ -229,7 +229,7 @@ export async function generateQuestions(
             const result = await openaiClient.chatCompletion([
                 { role: "system", content: prompt },
                 { role: "user", content: chunk.join(" ") }
-            ], "gpt-4o-2024-08-06", 4096, jsonSchema);
+            ], "gpt-4o-2024-08-06", 4096, undefined, jsonSchema);
 
             const parsed = JSON.parse(result);
             return parsed.questions;
@@ -249,17 +249,94 @@ export async function generateQuestions(
         accumulatedQuestions.push(...questions);
 
         if (accumulatedQuestions.length >= questionsCount) {
-            return accumulatedQuestions.slice(0, questionsCount);
+            break;
         }
     }
 
-    return accumulatedQuestions;
+    return accumulatedQuestions.slice(0, questionsCount);
 }
 
+// --- Roleplay Functions Start ---
 
+// Comment out or remove old roleplay functions
+/*
+export async function generateRoleplayQuestion(
+    openaiClient: OpenAIClient,
+    studentPersonality: string,
+    teacherResponse: string,
+    responseType: 'summary' | 'response'
+): Promise<string> { ... }
+
+interface EvaluationResponse { ... }
+
+export async function evaluateTeacherResponse(
+    openaiClient: OpenAIClient,
+    response: string,
+    responseType: 'summary' | 'response',
+    context: string | null,
+    criteria: string[]
+): Promise<EvaluationResponse> { ... }
+*/
+
+// NEW: Function for AI to generate Teacher response
+export async function generateTeacherResponse(
+    openaiClient: OpenAIClient,
+    studentResponse: string,
+    teacherPersona: string, 
+    scenarioContext: string,
+    language: string
+): Promise<string> {
+    // Refined prompt structure using message history
+
+    try {
+        const result = await openaiClient.chatCompletion(
+            [
+                {
+                  role: "system",
+                  content: `You are roleplaying as a teacher with the persona: ${teacherPersona}. You must strictly adhere to this persona. The scenario context is: ${scenarioContext}. Respond directly to the student in character, using the scenario context. **IMPORTANT: Respond ONLY in the following language: ${language}**`
+                },
+                {
+                  role: "user",
+                  content: `Scenario Reminder: "${scenarioContext}"
+Student Input: "${studentResponse}"
+
+Based on the scenario and my input, what is your response as the teacher (${teacherPersona})? **Remember to respond ONLY in ${language}.**`
+                },
+            ],
+            "gpt-4o-mini",
+            -1
+        );
+        return result;
+    } catch (error) {
+        console.error("Error generating teacher response:", error);
+        // Provide a generic fallback, ideally this would also be localized
+        return language === 'es' ? "Ese es un punto interesante. ¿Puedes dar más detalles?" : "That's an interesting point. Can you elaborate further?";
+    }
+}
+
+// --- Roleplay Functions End ---
+
+// Existing metaMap might be here or at the end of the file
+// Assuming it's at the end based on common patterns
+
+// ... potentially other existing functions ...
+
+// Update or add the metaMap export
 export const metaMap = {
     notes: generateNotes,
     summary: generateSummary,
     quiz: generateQuestions,
-    mindmap: generateMindMapStructure,
-}
+    mindmapStructure: generateMindMapStructure,
+    // Add new teacher response function
+    teacherResponse: generateTeacherResponse,
+    // Remove or comment out old roleplay functions
+    // roleplayQuestion: generateRoleplayQuestion,
+    // evaluateResponse: evaluateTeacherResponse
+    // Add other existing mappings if they were present
+    // e.g., mindmap: generateMindMap, threeDPrompts: generate3DPrompts
+};
+
+// Ensure all previously exported functions remain exported
+// ... potentially export other functions if they were defined after generateQuestions ...
+
+// Final check: Ensure all imports and interfaces are correctly placed/defined.
