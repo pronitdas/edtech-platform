@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { ChapterContent, ChapterV1 } from '@/types/database';
 import { CourseProvider } from '@/contexts/CourseContext';
 import { useCourse } from '@/contexts/CourseContext';
@@ -37,7 +37,7 @@ interface CourseContentProps {
   language: string;
 }
 
-const CourseContent: React.FC<CourseContentProps> = ({ content, chapter, language }) => { // Accept props
+const CourseContent: React.FC<CourseContentProps> = ({ content, chapter, language }) => {
   const { 
     activeTab,
     showReport,
@@ -48,54 +48,42 @@ const CourseContent: React.FC<CourseContentProps> = ({ content, chapter, languag
     availableTabs,
     toggleSidebar,
     handleTabClick,
-    showContentGenerationPanel, // Use this to show settings
-    hideContentGenerationPanel, // Use this to hide settings
+    showContentGenerationPanel,
+    hideContentGenerationPanel,
     handleMindmapBack,
     generatingTypes,
-    handleGenerateContent: generateContentFromHook, // Get the handler from the hook
-    handleCloseReport, // Destructure close report handler
-    handleShowReport, // Destructure show report handler
+    handleGenerateContent: generateContentFromHook,
+    handleCloseReport,
+    handleShowReport,
   } = useCourse();
   
   const {
     getMissingContentTypes,
-    isGeneratingContent: isHookGenerating // Renamed to avoid conflict
+    isGeneratingContent: isHookGenerating
   } = useChapters();
   
   const interactionTracker = useInteractionTracker();
-  
-  // Reinstate local function using props
-  const getCurrentContentContext = () => {
-    switch (activeTab) {
-      case 'notes':
-        return content?.notes || '';
-      case 'summary':
-        return content?.summary || '';
-      case 'quiz':
-        // Ensure chapter is not null/undefined before accessing properties
-        return chapter ? 'Quiz content for ' + chapter.chaptertitle : 'Quiz content';
-      case 'mindmap':
-        return chapter ? 'Mindmap for ' + chapter.chaptertitle : 'Mindmap';
-      default:
-        // Check if chapter and chapter.chapter exist
-        return chapter?.chapter || '';
-    }
-  };
+
+  // Create chaptersMeta array from the current chapter
+  const chaptersMeta = useMemo(() => {
+    if (!chapter) return [];
+    return [chapter];
+  }, [chapter]);
   
   return (
     <div className="course-viewer bg-gray-900 min-h-screen flex flex-col">
       {/* Course Header Component */}
       <CourseHeader
-        chapter={chapter} // Pass prop
+        chapter={chapter}
         activeTab={activeTab}
         sidebarOpen={sidebarOpen}
         availableTabs={availableTabs}
-        getMissingContentTypes={getMissingContentTypes} // Pass function from useChapters
+        getMissingContentTypes={getMissingContentTypes}
         toggleSidebar={toggleSidebar}
         handleTabClick={handleTabClick}
-        onShowSettings={showContentGenerationPanel} // Pass correct handler
+        onShowSettings={showContentGenerationPanel}
         showSettingsButton={content ? getMissingContentTypes(content).length > 0 : false} 
-        onShowReport={handleShowReport} // Pass the show report handler
+        onShowReport={handleShowReport}
       />
       
       {/* Main Content Area */}
@@ -103,36 +91,36 @@ const CourseContent: React.FC<CourseContentProps> = ({ content, chapter, languag
         {/* Settings Panel */}
         {showSettings && (
           <ContentGenerationPanel
-            chapter={chapter} // Pass prop
-            language={language} // Pass prop
+            chapter={chapter}
+            language={language}
             missingTypes={content ? getMissingContentTypes(content) : []} 
-            onGenerate={generateContentFromHook} // Pass correct handler
-            isGenerating={isHookGenerating} // Pass the check function from useChapters
-            onClose={hideContentGenerationPanel} // Pass correct handler
+            onGenerate={generateContentFromHook}
+            isGenerating={isHookGenerating}
+            onClose={hideContentGenerationPanel}
             generatingTypes={generatingTypes}
           />
         )}
         
         {/* Content Renderer Component */}
-        <CourseContentRenderer 
-          content={content} // Pass prop
-          chapter={chapter} // Pass prop
+        <CourseContentRenderer
           activeTab={activeTab}
+          content={content}
+          chapter={chapter}
+          chaptersMeta={chaptersMeta}
           isLoading={isLoading}
           showReport={showReport}
           isFullscreenMindmap={isFullscreenMindmap}
           sidebarOpen={sidebarOpen}
-          onMindmapBack={handleMindmapBack} // Correct prop name
-          onGenerateContent={generateContentFromHook} // Correct prop name
-          showSettings={showSettings} 
-          onShowSettings={showContentGenerationPanel} // Pass handler
-          interactionTracker={interactionTracker}
+          onMindmapBack={handleMindmapBack}
+          onToggleMindmapFullscreen={handleMindmapBack}
+          onCloseReport={handleCloseReport}
+          onGenerateContentRequest={showContentGenerationPanel}
         />
 
         {/* Chatbot Floating Button */}
         <div className="absolute bottom-4 left-4 z-50">
           <ChatbotFloatingButton 
-            contentContext={getCurrentContentContext()} // Use reinstated local function
+            contentContext={content?.notes || ''}
             chapterTitle={chapter?.chaptertitle || 'Current Chapter'}
           />
         </div>

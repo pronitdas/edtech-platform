@@ -39,6 +39,11 @@ interface CourseProviderProps {
   content: ChapterContent;
   chapter: ChapterV1;
   language?: string;
+  availableTabs: Array<{
+    key: string;
+    label: string;
+    icon: React.ReactNode;
+  }>;
 }
 
 export const CourseProvider: React.FC<CourseProviderProps> = ({ 
@@ -46,6 +51,7 @@ export const CourseProvider: React.FC<CourseProviderProps> = ({
   content,
   chapter,
   language = 'English',
+  availableTabs,
 }) => {
   // Log any missing data for debugging
   useEffect(() => {

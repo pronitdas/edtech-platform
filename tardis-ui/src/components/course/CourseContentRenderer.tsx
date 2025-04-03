@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Loader from '../ui/Loader';
 import LearningReport from '../LearningReport'; // Assuming path
 import ModernVideoPlayer from '../video/ModernVideoPlayer'; // Use modernized video player
@@ -167,89 +167,249 @@ interface CourseContentRendererProps {
   activeTab: string;
   content: ChapterContent;
   chapter: ChapterV1;
+  chaptersMeta?: ChapterV1[];
   isLoading: boolean;
   showReport: boolean;
   isFullscreenMindmap: boolean;
-  sidebarOpen: boolean; // Needed for video layout
-  // timelineMarkers: VideoMarkerType[]; // Prop for video player
+  sidebarOpen: boolean;
   onMindmapBack: () => void;
   onToggleMindmapFullscreen: () => void;
   onCloseReport: () => void;
-  onGenerateContentRequest: () => void; // Callback to trigger settings/generation panel
-  // interactionTracker?: InteractionTracker; // Pass if needed by sub-components
-  // onVideoMarkerClick?: (marker: any) => void; // Pass to video player if needed
+  onGenerateContentRequest: () => void;
 }
+
+const formatTime = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
+// Add a combined video and notes view
+const CombinedVideoAndNotes: React.FC<{
+  videoUrl: string;
+  chapter: ChapterV1;
+  chaptersMeta: ChapterV1[];
+  content: ChapterContent;
+  currentVideoChapter: ChapterV1 | null;
+  setCurrentVideoChapter: (chapter: ChapterV1 | null) => void;
+}> = ({ videoUrl, chapter, chaptersMeta = [], content, currentVideoChapter, setCurrentVideoChapter }) => {
+  const notesContainerRef = useRef<HTMLDivElement>(null);
+
+  // Debug log for chaptersMeta
+  useEffect(() => {
+    console.log('CombinedVideoAndNotes - chaptersMeta:', chaptersMeta);
+  }, [chaptersMeta]);
+
+  const handleVideoTimeUpdate = useCallback((currentTime: number) => {
+    console.log('Video time update:', currentTime);
+    // Find the chapter that matches the current time
+    const matchingChapter = chaptersMeta?.find(chapter => {
+      const start = Number(chapter.timestamp_start) || 0;
+      const end = Number(chapter.timestamp_end) || Infinity;
+      console.log(`Checking chapter ${chapter.chaptertitle}:`, { start, end, currentTime });
+      return currentTime >= start && currentTime < end;
+    });
+
+    if (matchingChapter) {
+      console.log('Found matching chapter:', matchingChapter.chaptertitle);
+      if (!currentVideoChapter || matchingChapter.id !== currentVideoChapter.id) {
+        setCurrentVideoChapter(matchingChapter);
+        const chapterElement = notesContainerRef.current?.querySelector(
+          `[data-chapter-id="${matchingChapter.id}"]`
+        );
+        chapterElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    } else {
+      console.log('No matching chapter found for time:', currentTime);
+    }
+  }, [chaptersMeta, currentVideoChapter, setCurrentVideoChapter]);
+
+  // Create video markers only if chaptersMeta exists and has items
+  const videoMarkers = useMemo(() => {
+    if (!chaptersMeta?.length) {
+      console.log('No chapters available for video markers');
+      return [];
+    }
+
+    const markers = chaptersMeta.map(chapterMeta => ({
+      id: chapterMeta.id.toString(),
+      time: Number(chapterMeta.timestamp_start) || 0,
+      title: chapterMeta.chaptertitle,
+      description: chapterMeta.subtopic,
+      type: 'chapter' as const
+    })).filter(marker => marker.time >= 0);
+
+    console.log('Created video markers:', markers);
+    return markers;
+  }, [chaptersMeta]);
+
+  // If no chapters are available, show a message
+  if (!chaptersMeta?.length) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center text-gray-400">
+          <p className="mb-2">No chapters available for this content.</p>
+          <p className="text-sm">Please make sure chapters are properly configured.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full gap-4">
+      {/* Video Section */}
+      <div className="w-1/2 h-full">
+        <ModernVideoPlayer
+          src={videoUrl}
+          title={chapter.chaptertitle}
+          chapterId={chapter.id.toString()}
+          knowledgeId={chapter.knowledge_id.toString()}
+          className="w-full h-full"
+          markers={videoMarkers}
+          onMarkerClick={(marker) => {
+            const selectedChapter = chaptersMeta.find(c => c.id.toString() === marker.id);
+            if (selectedChapter) {
+              setCurrentVideoChapter(selectedChapter);
+            }
+          }}
+          onTimeUpdate={handleVideoTimeUpdate}
+          showChapterOverlay={true}
+          currentChapter={currentVideoChapter ? {
+            title: currentVideoChapter.chaptertitle,
+            startTime: Number(currentVideoChapter.timestamp_start) || 0,
+            endTime: Number(currentVideoChapter.timestamp_end) || undefined
+          } : undefined}
+        />
+      </div>
+
+      {/* Notes Section */}
+      <div className="w-1/2 h-full">
+        <div ref={notesContainerRef} className="h-full overflow-y-auto p-4 bg-gray-900 rounded-lg">
+          {chaptersMeta.map((chapterMeta) => {
+            const isCurrentChapter = currentVideoChapter?.id === chapterMeta.id;
+            
+            // Get chapter notes with proper null checking
+            let chapterNotes = null;
+            if (content.notes) {
+              if (typeof content.notes === 'object' && !Array.isArray(content.notes)) {
+                chapterNotes = content.notes[chapterMeta.id] || null;
+              } else {
+                chapterNotes = content.notes;
+              }
+            }
+
+            return (
+              <div
+                key={chapterMeta.id}
+                data-chapter-id={chapterMeta.id}
+                className={`mb-8 p-4 rounded-lg transition-colors ${
+                  isCurrentChapter ? 'bg-blue-900/20 border-2 border-blue-500' : 'bg-gray-800'
+                }`}
+              >
+                <h3 className="text-lg font-semibold text-white mb-2 flex items-center justify-between">
+                  <span>{chapterMeta.chaptertitle}</span>
+                  {isCurrentChapter && (
+                    <span className="text-sm text-blue-400 bg-blue-900/40 px-3 py-1 rounded-full">
+                      Currently Playing
+                    </span>
+                  )}
+                </h3>
+                <div className="text-sm text-gray-400 mb-4">
+                  {formatTime(Number(chapterMeta.timestamp_start) || 0)} - {formatTime(Number(chapterMeta.timestamp_end) || 0)}
+                </div>
+                {chapterNotes ? (
+                  <div className={`prose prose-invert max-w-none ${
+                    isCurrentChapter ? 'prose-blue' : ''
+                  }`}>
+                    <ModernMarkdownSlideshow
+                      content={Array.isArray(chapterNotes) ? chapterNotes : [chapterNotes]}
+                      knowledge_id={chapter.knowledge_id.toString()}
+                    />
+                  </div>
+                ) : (
+                  <p className="text-gray-400">No notes available for this chapter.</p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
   activeTab,
   content,
   chapter,
+  chaptersMeta = [],
   isLoading,
   showReport,
   isFullscreenMindmap,
   sidebarOpen,
-  // timelineMarkers,
   onMindmapBack,
   onToggleMindmapFullscreen,
   onCloseReport,
   onGenerateContentRequest,
 }) => {
-  // Parse content data
-  const parseContent = (content: ChapterContent) => {
-    console.log('Raw content before parsing:', content);
-    try {
-      // Create a base object with all properties, using defaults for missing ones
-      const parsed = {
-        notes: content.notes || '',
-        latex_code: content.latex_code || '',
-        mindmap: content.mindmap || '',
-        quiz: content.quiz || [],
-        summary: content.summary || '',
-        og: content.og || content.chapter || '',
-        video_url: content.video_url || '',
-        roleplay: null as any
-      };
-      
-      // Special handling for roleplay data
-      if (content.roleplay) {
-        try {
-          // Let ensureRoleplayDataFormat handle the parsing and validation
-          const validatedRoleplay = ensureRoleplayDataFormat(content.roleplay);
-          if (validatedRoleplay.length > 0) {
-              parsed.roleplay = validatedRoleplay;
-          } else {
-              console.warn('No valid roleplay scenarios found in:', content.roleplay);
-              parsed.roleplay = null;
-          }
-        } catch (e) {
-          console.error('Error processing roleplay data:', e);
-          parsed.roleplay = null;
-        }
-      }
-      
-      console.log('Parsed content:', parsed);
-      return parsed;
-    } catch (error) {
-      console.error('Error parsing content:', error);
-      return content; // Return original if parsing fails
-    }
-  };
+  // Add debug logging for props
+  useEffect(() => {
+    console.log('CourseContentRenderer - Props:', {
+      activeTab,
+      chapter,
+      chaptersMeta,
+      content
+    });
+  }, [activeTab, chapter, chaptersMeta, content]);
 
-  const parsedContent = parseContent(content);
-  console.log('Parsed content:', parsedContent); // Debug log
-  console.log('Active tab:', activeTab); // Debug log
+  const [currentVideoChapter, setCurrentVideoChapter] = useState<ChapterV1 | null>(null);
+  const [viewMode, setViewMode] = useState<'video' | 'notes' | 'combined'>('combined');
 
-  const { notes, latex_code, mindmap, quiz, summary, og, video_url, roleplay } = parsedContent;
-
-  // State for video URL signing
+  // State for video URL
   const [signedVideoUrl, setSignedVideoUrl] = useState<string | null>(null);
   const [isSigningUrl, setIsSigningUrl] = useState<boolean>(false);
   const [signingError, setSigningError] = useState<string | null>(null);
 
+  const notesContainerRef = useRef<HTMLDivElement>(null);
+
+  // Function to scroll to current chapter's notes
+  const scrollToChapterNotes = useCallback((chapterId: string) => {
+    if (notesContainerRef.current) {
+      const chapterElement = notesContainerRef.current.querySelector(`[data-chapter-id="${chapterId}"]`);
+      if (chapterElement) {
+        chapterElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  }, []);
+
+  // Add debug logging for video time updates
+  const handleVideoTimeUpdate = useCallback((currentTime: number) => {
+    console.log('Video time update:', currentTime);
+    const currentChapter = chaptersMeta.find(chapter => {
+      const start = chapter.timestamp_start || 0;
+      const end = chapter.timestamp_end || Infinity;
+      console.log(`Checking chapter ${chapter.chaptertitle}:`, { start, end, currentTime });
+      return currentTime >= start && currentTime < end;
+    });
+
+    if (currentChapter) {
+      console.log('Found current chapter:', currentChapter.chaptertitle);
+      if (!currentVideoChapter || currentChapter.id !== currentVideoChapter.id) {
+        console.log('Updating current chapter and scrolling');
+        setCurrentVideoChapter(currentChapter);
+        if (activeTab === 'notes') {
+          scrollToChapterNotes(currentChapter.id.toString());
+        }
+      }
+    } else {
+      console.log('No matching chapter found for time:', currentTime);
+    }
+  }, [chaptersMeta, currentVideoChapter, activeTab, scrollToChapterNotes]);
+
   // Effect to handle video URL
   useEffect(() => {
-    if (activeTab === 'video' && video_url) {
-      console.log('Setting up video with URL:', video_url);
+    if (activeTab === 'video' && content.video_url) {
+      console.log('Setting up video with URL:', content.video_url);
       let isMounted = true;
       
       const setupVideoUrl = async () => {
@@ -257,7 +417,7 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
         setSigningError(null);
         setSignedVideoUrl(null);
         try {
-          const url = await fetchPublicVideoUrl(video_url);
+          const url = await fetchPublicVideoUrl(content.video_url);
           console.log('Ready to use URL:', url);
           if (isMounted) {
             setSignedVideoUrl(url);
@@ -284,7 +444,7 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
       setIsSigningUrl(false);
       setSigningError(null);
     }
-  }, [activeTab, video_url]);
+  }, [activeTab, content.video_url]);
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-full"><Loader size="large" /></div>;
@@ -305,65 +465,145 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
     // return null;
   }
 
-  // Video Tab
-  if (activeTab === "video" && video_url) {
-    // Show loader while signing
+  // Video and Notes Combined View
+  if (activeTab === "video" && content.video_url) {
     if (isSigningUrl) {
-        return (
-            <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                    <Loader size="medium" />
-                    <p className="mt-4 text-gray-400">Loading video...</p>
-                </div>
-            </div>
-        );
-    }
-
-    // Show error if signing failed
-    if (signingError) {
-        return (
-            <div className="flex flex-col items-center justify-center h-full p-4 text-center">
-                <div className="text-red-400 mb-4">{signingError}</div>
-                <button 
-                    onClick={() => {
-                        setSigningError(null);
-                        setIsSigningUrl(true);
-                        fetchPublicVideoUrl(video_url)
-                            .then(url => setSignedVideoUrl(url))
-                            .catch(err => setSigningError(err.message))
-                            .finally(() => setIsSigningUrl(false));
-                    }}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                >
-                    Retry Loading
-                </button>
-            </div>
-        );
-    }
-
-    // Render player only if signed URL is available
-    if (signedVideoUrl) {
-        return (
-            <div className={`h-full ${sidebarOpen ? 'md:pr-64' : ''}`}>
-                <ModernVideoPlayer
-                    src={signedVideoUrl}
-                    title={chapter.chaptertitle}
-                    chapterId={chapter.id.toString()}
-                    knowledgeId={chapter.knowledge_id.toString()}
-                    className="w-full h-full"
-                />
-            </div>
-        );
-    }
-
-    return (
-        <div className="flex items-center justify-center h-full p-4 text-center text-gray-400">
-            <div>
-                <Loader size="small" />
-                <p className="mt-2">Preparing video playback...</p>
-            </div>
+      return <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <Loader size="medium" />
+          <p className="mt-4 text-gray-400">Loading video...</p>
         </div>
-    );
+      </div>;
+    }
+
+    if (signingError) {
+      return <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+        <div className="text-red-400 mb-4">{signingError}</div>
+        <button 
+          onClick={() => {
+            setSigningError(null);
+            setIsSigningUrl(true);
+            fetchPublicVideoUrl(content.video_url)
+              .then(url => setSignedVideoUrl(url))
+              .catch(err => setSigningError(err.message))
+              .finally(() => setIsSigningUrl(false));
+          }}
+          className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+        >
+          Retry Loading
+        </button>
+      </div>;
+    }
+
+    if (signedVideoUrl) {
+      return (
+        <div className="h-full flex flex-col">
+          {/* View Mode Selector */}
+          <div className="flex items-center gap-4 p-4 bg-gray-800 border-b border-gray-700">
+            <button
+              onClick={() => setViewMode('video')}
+              className={`px-4 py-2 rounded ${viewMode === 'video' ? 'bg-blue-600' : 'bg-gray-700'}`}
+            >
+              Video Only
+            </button>
+            <button
+              onClick={() => setViewMode('notes')}
+              className={`px-4 py-2 rounded ${viewMode === 'notes' ? 'bg-blue-600' : 'bg-gray-700'}`}
+            >
+              Notes Only
+            </button>
+            <button
+              onClick={() => setViewMode('combined')}
+              className={`px-4 py-2 rounded ${viewMode === 'combined' ? 'bg-blue-600' : 'bg-gray-700'}`}
+            >
+              Side by Side
+            </button>
+          </div>
+
+          {/* Content Area */}
+          <div className="flex-1 overflow-hidden">
+            {viewMode === 'combined' ? (
+              <CombinedVideoAndNotes
+                videoUrl={signedVideoUrl}
+                chapter={chapter}
+                chaptersMeta={chaptersMeta}
+                content={content}
+                currentVideoChapter={currentVideoChapter}
+                setCurrentVideoChapter={setCurrentVideoChapter}
+              />
+            ) : viewMode === 'video' ? (
+              <div className="h-full">
+                <ModernVideoPlayer
+                  src={signedVideoUrl}
+                  title={chapter.chaptertitle}
+                  chapterId={chapter.id.toString()}
+                  knowledgeId={chapter.knowledge_id.toString()}
+                  className="w-full h-full"
+                  markers={chaptersMeta.map(cm => ({
+                    id: cm.id.toString(),
+                    time: Number(cm.timestamp_start) || 0,
+                    title: cm.chaptertitle,
+                    description: cm.subtopic,
+                    type: 'chapter' as const
+                  }))}
+                  showChapterOverlay={true}
+                />
+              </div>
+            ) : (
+              <div ref={notesContainerRef} className="h-full overflow-y-auto p-4">
+                {chaptersMeta.map((chapterMeta) => {
+                  const isCurrentChapter = currentVideoChapter?.id === chapterMeta.id;
+                  
+                  // Get chapter notes with proper null checking
+                  let chapterNotes = null;
+                  if (content.notes) {
+                    if (typeof content.notes === 'object' && !Array.isArray(content.notes)) {
+                      chapterNotes = content.notes[chapterMeta.id] || null;
+                    } else {
+                      chapterNotes = content.notes;
+                    }
+                  }
+
+                  return (
+                    <div
+                      key={chapterMeta.id}
+                      data-chapter-id={chapterMeta.id}
+                      className={`mb-8 p-4 rounded-lg transition-colors ${
+                        isCurrentChapter ? 'bg-blue-900/20 border-2 border-blue-500' : 'bg-gray-800'
+                      }`}
+                    >
+                      <h3 className="text-lg font-semibold text-white mb-2 flex items-center justify-between">
+                        <span>{chapterMeta.chaptertitle}</span>
+                        {isCurrentChapter && (
+                          <span className="text-sm text-blue-400 bg-blue-900/40 px-3 py-1 rounded-full">
+                            Currently Playing
+                          </span>
+                        )}
+                      </h3>
+                      <div className="text-sm text-gray-400 mb-4">
+                        {formatTime(Number(chapterMeta.timestamp_start) || 0)} - {formatTime(Number(chapterMeta.timestamp_end) || 0)}
+                      </div>
+                      {chapterNotes ? (
+                        <div className={`prose prose-invert max-w-none ${
+                          isCurrentChapter ? 'prose-blue' : ''
+                        }`}>
+                          <ModernMarkdownSlideshow
+                            content={Array.isArray(chapterNotes) ? chapterNotes : [chapterNotes]}
+                            knowledge_id={chapter.knowledge_id.toString()}
+                          />
+                        </div>
+                      ) : (
+                        <p className="text-gray-400">No notes available for this chapter.</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
   }
 
   // Original Content Tab (from chapter.chapter)
@@ -386,27 +626,67 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
     );
   }
 
-  // Notes Tab
+  // Notes Tab with synchronized highlighting
   if (activeTab === "notes") {
+    console.log('Rendering notes tab with chapters:', chaptersMeta);
+    console.log('Current video chapter:', currentVideoChapter);
+    
     return (
-        <div className="h-full overflow-y-auto p-4 md:p-6">
-            {notes ? (
-                <ModernMarkdownSlideshow
-                    content={Array.isArray(notes) ? notes : [notes]}
+      <div ref={notesContainerRef} className="h-full overflow-y-auto p-4 md:p-6">
+        {chaptersMeta.map((chapterMeta) => {
+          const isCurrentChapter = currentVideoChapter?.id === chapterMeta.id;
+          
+          // Get chapter notes with proper null checking
+          let chapterNotes = null;
+          if (content.notes) {
+            if (typeof content.notes === 'object' && !Array.isArray(content.notes)) {
+              chapterNotes = content.notes[chapterMeta.id] || null;
+            } else {
+              chapterNotes = content.notes;
+            }
+          }
+
+          console.log(`Chapter ${chapterMeta.chaptertitle}:`, {
+            isCurrentChapter,
+            hasNotes: !!chapterNotes,
+            notes: chapterNotes
+          });
+          
+          return (
+            <div
+              key={chapterMeta.id}
+              data-chapter-id={chapterMeta.id}
+              className={`mb-8 p-4 rounded-lg transition-colors ${
+                isCurrentChapter ? 'bg-blue-900/20 border-2 border-blue-500' : 'bg-gray-800'
+              }`}
+            >
+              <h3 className="text-lg font-semibold text-white mb-2 flex items-center justify-between">
+                <span>{chapterMeta.chaptertitle}</span>
+                {isCurrentChapter && (
+                  <span className="text-sm text-blue-400 bg-blue-900/40 px-3 py-1 rounded-full">
+                    Currently Playing
+                  </span>
+                )}
+              </h3>
+              <div className="text-sm text-gray-400 mb-4">
+                {formatTime(Number(chapterMeta.timestamp_start) || 0)} - {formatTime(Number(chapterMeta.timestamp_end) || 0)}
+              </div>
+              {chapterNotes ? (
+                <div className={`prose prose-invert max-w-none ${
+                  isCurrentChapter ? 'prose-blue' : ''
+                }`}>
+                  <ModernMarkdownSlideshow
+                    content={Array.isArray(chapterNotes) ? chapterNotes : [chapterNotes]}
                     knowledge_id={chapter.knowledge_id.toString()}
-                />
-            ) : (
-                <div className="text-center text-gray-400">
-                    <p>Notes are not available for this content.</p>
-                    <button
-                        onClick={onGenerateContentRequest}
-                        className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                    >
-                        Generate Notes
-                    </button>
+                  />
                 </div>
-            )}
-        </div>
+              ) : (
+                <p className="text-gray-400">No notes available for this chapter.</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
     );
   }
 
@@ -415,9 +695,9 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
     return (
         <div className="h-full overflow-y-auto p-4 md:p-6 bg-gray-900 text-white">
             <div className="prose prose-invert prose-lg max-w-none">
-                {summary ? (
+                {content.summary ? (
                     <ModernMarkdownSlideshow
-                        content={Array.isArray(summary) ? summary : [summary]}
+                        content={Array.isArray(content.summary) ? content.summary : [content.summary]}
                         knowledge_id={chapter.knowledge_id.toString()}
                     />
                 ) : (
@@ -437,15 +717,13 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
   }
 
   // Quiz Tab
-  if (activeTab === "quiz" && quiz) { // Check if quiz exists
-    const validatedQuizQuestions = ensureQuizDataFormat(quiz);
+  if (activeTab === "quiz" && content.quiz) { // Check if quiz exists
+    const validatedQuizQuestions = ensureQuizDataFormat(content.quiz);
     if (validatedQuizQuestions.length > 0) {
         return (
             <div className="h-full overflow-y-auto p-4 md:p-6">
                 <Quiz
                 questions={validatedQuizQuestions}
-                // chapterId={chapter.id.toString()} // Removed earlier
-                // knowledgeId={chapter.knowledge_id.toString()} // Removed earlier
                 />
             </div>
         );
@@ -454,7 +732,7 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
   }
 
   // Mindmap Tab
-  if (activeTab === "mindmap" && mindmap) {
+  if (activeTab === "mindmap" && content.mindmap) {
     return (
       <div className={`h-full ${isFullscreenMindmap ? 'fixed inset-0 z-20 bg-gray-900' : 'relative'}`}>
         {isFullscreenMindmap && (
@@ -467,7 +745,7 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
           </button>
         )}
         <EnhancedMindMap
-          data={mindmap} // Ensure data format is correct
+          data={content.mindmap} // Ensure data format is correct
           isFullscreen={isFullscreenMindmap}
           onToggleFullscreen={onToggleMindmapFullscreen} // Pass the callback
         />
@@ -477,7 +755,7 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
 
   // Roleplay Tab
   if (activeTab === "roleplay") {
-    if (!roleplay) {
+    if (!content.roleplay) {
       return (
         <div className="flex flex-col items-center justify-center h-full p-8 text-center">
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg max-w-md">
@@ -496,7 +774,7 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
       );
     }
 
-    const validatedScenarios = ensureRoleplayDataFormat(roleplay);
+    const validatedScenarios = ensureRoleplayDataFormat(content.roleplay);
     if (validatedScenarios.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center h-full p-8 text-center">

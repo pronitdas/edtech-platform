@@ -113,14 +113,18 @@ export interface ChapterContent {
   topic?: string;
   video_url?: string | null;
   quiz?: QuizQuestion[];
-  roleplay?: {
+  roleplay?: string | {
     scenarios: Array<{
+      id: string;
       title: string;
-      context: string;
-      roles: Array<{
+      description: string;
+      characters: Array<{
+        id: string;
         name: string;
         description: string;
       }>;
+      initialPrompt: string;
+      relatedCourse: string;
     }>;
   };
   mindmap?: string;
