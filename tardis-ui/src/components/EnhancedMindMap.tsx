@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import MindMap from './MindMap';
-import { interactionTracker } from '@/services/interaction-tracking';
+import { useInteractionTracker } from '@/contexts/InteractionTrackerContext';
 import { Maximize, Minimize, ArrowLeft, X, HelpCircle } from 'lucide-react';
 
 interface EnhancedMindMapProps {
@@ -18,11 +18,13 @@ const EnhancedMindMap = ({
 }: EnhancedMindMapProps) => {
   const [isFullScreen, setIsFullScreen] = useState(isFullscreen);
   const [showHelp, setShowHelp] = useState(false);
+  const { trackContentView } = useInteractionTracker();
   
   // Track mindmap interaction
   useEffect(() => {
-    interactionTracker.trackMindmapClick();
-  }, []);
+    // interactionTracker.trackMindmapClick();
+    trackContentView("mindmap", { type: "mindmap_view" });
+  }, [trackContentView]);
 
   // Update state when prop changes
   useEffect(() => {

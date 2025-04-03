@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
-import { interactionTracker } from '@/services/interaction-tracking';
+// import { interactionTracker } from '@/services/interaction-tracking';
+import { analyticsService } from '@/services/analytics-service';
+import { LearningAnalytics } from '@/types/database'; // Import the type
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
-import { Pie, Bar } from 'react-chartjs-2';
-import { X, BarChart2, PieChart, FileText, Award, BookOpen, Brain } from 'lucide-react';
+import { Pie, Bar } from 'react-chartjs-2'; // Keep for now, might remove later
+import { X, BarChart2, PieChart, FileText, Award, BookOpen, Brain, Loader2 } from 'lucide-react';
 
 // Register ChartJS components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
+// REMOVE OLD INTERFACE
+/*
 interface InteractionData {
   videoPlays: number;
   videoWatchDuration: number;
@@ -20,133 +24,86 @@ interface InteractionData {
   chatbotQuestions: string[];
   chapterNavigations: { chapterId: string; timestamp: number }[];
 }
+*/
 
 interface LearningReportProps {
+  userId: string;
+  knowledgeId: string; // Use knowledgeId for consistency
   onClose?: () => void;
-  learningData?: InteractionData;
+  // learningData?: InteractionData; // Remove old prop
 }
 
-const LearningReport = ({ onClose, learningData }: LearningReportProps) => {
-  const [data, setData] = useState<InteractionData>(learningData || interactionTracker.getData());
-  const [analysis, setAnalysis] = useState(interactionTracker.generateAnalysis());
-  const [activeTab, setActiveTab] = useState('overview');
+const LearningReport = ({ userId, knowledgeId, onClose }: LearningReportProps) => {
+  // const [data, setData] = useState<InteractionData>(learningData || interactionTracker.getData());
+  // const [analysis, setAnalysis] = useState(interactionTracker.generateAnalysis());
+  const [analyticsData, setAnalyticsData] = useState<LearningAnalytics | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Prepare data for pie chart
-  const pieChartData = {
-    labels: ['Quiz', 'Notes', 'Summary', 'Mindmap', 'Animation'],
-    datasets: [
-      {
-        data: [
-          data.quizClicks,
-          data.notesClicks,
-          data.summaryClicks,
-          data.mindmapClicks,
-          data.animationViews
-        ],
-        backgroundColor: [
-          'rgba(99, 102, 241, 0.7)',
-          'rgba(16, 185, 129, 0.7)',
-          'rgba(245, 158, 11, 0.7)',
-          'rgba(239, 68, 68, 0.7)',
-          'rgba(139, 92, 246, 0.7)'
-        ],
-        borderColor: [
-          'rgba(99, 102, 241, 1)',
-          'rgba(16, 185, 129, 1)',
-          'rgba(245, 158, 11, 1)',
-          'rgba(239, 68, 68, 1)',
-          'rgba(139, 92, 246, 1)'
-        ],
-        borderWidth: 1
-      }
-    ]
-  };
+  const [activeTab, setActiveTab] = useState('analysis'); // Default to analysis now
 
-  // Update analysis when data changes
   useEffect(() => {
-    // Use the custom generateAnalysis from the tracker for consistency
-    if (learningData) {
-      // Temporarily set the data for analysis generation
-      const oldData = interactionTracker.getData();
-      interactionTracker.resetData();
-      
-      // Copy over the provided data to the tracker
-      for (const key in learningData) {
-        if (key in interactionTracker.getData()) {
-          // @ts-ignore - We know the keys match
-          interactionTracker[key] = learningData[key];
-        }
+    const fetchAnalytics = async () => {
+      if (!userId || !knowledgeId) {
+        setError("User ID or Knowledge ID is missing.");
+        setIsLoading(false);
+        return;
       }
-      
-      // Generate analysis with this data
-      setAnalysis(interactionTracker.generateAnalysis());
-      
-      // Restore original data
-      interactionTracker.resetData();
-      for (const key in oldData) {
-        if (key in interactionTracker.getData()) {
-          // @ts-ignore - We know the keys match
-          interactionTracker[key] = oldData[key];
+      setIsLoading(true);
+      setError(null);
+      try {
+        // TODO: Verify/update analyticsService to return LearningAnalytics structure
+        // Assuming getUserCompletion or a similar function returns the required data.
+        // The current getUserCompletion returns { completion: number, ... }
+        // We might need a new function like getUserLearningAnalytics(userId, knowledgeId)
+        const fetchedData = await analyticsService.getUserCompletion(userId, knowledgeId);
+        
+        // TEMP: Map fetched data to LearningAnalytics - replace with actual data structure later
+        const mappedData: LearningAnalytics = {
+            engagement_score: fetchedData.engagement_score || null,
+            understanding_level: fetchedData.understanding || "Not available",
+            strengths: fetchedData.strengths || [],
+            weaknesses: fetchedData.weaknesses || [],
+            recommendations: fetchedData.recommendations || []
         }
+        
+        // setAnalyticsData(fetchedData as LearningAnalytics); // Use this once service returns correct type
+        setAnalyticsData(mappedData);
+
+      } catch (err) {
+        console.error("Failed to fetch learning analytics:", err);
+        setError("Could not load learning analytics data.");
+        setAnalyticsData(null);
+      } finally {
+        setIsLoading(false);
       }
-    } else {
-      setAnalysis(interactionTracker.generateAnalysis());
-    }
+    };
+
+    fetchAnalytics();
+  }, [userId, knowledgeId]);
+
+  // REMOVE OLD CHART DATA PREPARATION (Pie and Bar)
+  // ... (pieChartData preparation removed)
+  // ... (barChartData preparation removed)
+
+  // REMOVE OLD useEffect for analysis generation
+  /*
+  useEffect(() => {
+    // ... (old analysis generation logic removed)
   }, [learningData]);
+  */
 
-  // Prepare data for bar chart
-  const barChartData = {
-    labels: ['Plays', 'Pauses', 'Timeline Seeks', 'Watch Duration (s)'],
-    datasets: [
-      {
-        label: 'Video Engagement',
-        data: [
-          data.videoPlays || 0,
-          data.videoPauses || 0,
-          data.timelineSeeks || 0,
-          data.videoWatchDuration ? parseFloat(data.videoWatchDuration.toFixed(2)) : 0
-        ],
-        backgroundColor: 'rgba(99, 102, 241, 0.7)',
-        borderColor: 'rgba(99, 102, 241, 1)',
-        borderWidth: 1
-      }
-    ]
-  };
-
-  // Chart options
+  // Chart options (Keep for now, might reuse or remove)
   const pieChartOptions = {
-    responsive: true,
-    plugins: {
-      legend: { position: 'bottom' as const },
-      title: { display: true, text: 'Interaction Distribution', color: '#fff', font: { size: 16 } }
-    }
+// ... existing code ...
   };
 
-  const barChartOptions = {
-    responsive: true,
-    scales: { 
-      y: { 
-        beginAtZero: true,
-        ticks: { color: '#fff' },
-        grid: { color: 'rgba(255, 255, 255, 0.1)' }
-      },
-      x: {
-        ticks: { color: '#fff' },
-        grid: { color: 'rgba(255, 255, 255, 0.1)' }
-      }
-    },
-    plugins: {
-      legend: { display: false },
-      title: { display: true, text: 'Video Engagement Metrics', color: '#fff', font: { size: 16 } }
-    }
-  };
-
-  // Define tabs
+  // Define tabs (removing Overview, Charts, Questions)
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: <FileText className="w-5 h-5" /> },
+    // { id: 'overview', label: 'Overview', icon: <FileText className="w-5 h-5" /> },
     { id: 'analysis', label: 'Analysis', icon: <Brain className="w-5 h-5" /> },
-    { id: 'charts', label: 'Charts', icon: <BarChart2 className="w-5 h-5" /> },
-    { id: 'questions', label: 'Questions', icon: <BookOpen className="w-5 h-5" /> }
+    // { id: 'charts', label: 'Charts', icon: <BarChart2 className="w-5 h-5" /> },
+    // { id: 'questions', label: 'Questions', icon: <BookOpen className="w-5 h-5" /> }
   ];
 
   // Handle close button click
@@ -195,135 +152,79 @@ const LearningReport = ({ onClose, learningData }: LearningReportProps) => {
         </div>
         
         {/* Tab Content */}
-        <div className="mb-6">
-          {/* Overview Tab */}
-          {activeTab === 'overview' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <h3 className="text-xl font-semibold mb-4 text-indigo-400">Video Engagement</h3>
-                <ul className="space-y-3">
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Video Plays:</span>
-                    <span className="font-semibold">{data.videoPlays}</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Watch Duration:</span>
-                    <span className="font-semibold">{data.videoWatchDuration ? data.videoWatchDuration.toFixed(2) : '0.00'} seconds</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Video Pauses:</span>
-                    <span className="font-semibold">{data.videoPauses}</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Timeline Seeks:</span>
-                    <span className="font-semibold">{data.timelineSeeks}</span>
-                  </li>
-                </ul>
-              </div>
-              
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <h3 className="text-xl font-semibold mb-4 text-indigo-400">Feature Usage</h3>
-                <ul className="space-y-3">
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Quiz Interactions:</span>
-                    <span className="font-semibold">{data.quizClicks}</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Notes Interactions:</span>
-                    <span className="font-semibold">{data.notesClicks}</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Summary Interactions:</span>
-                    <span className="font-semibold">{data.summaryClicks}</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Mindmap Interactions:</span>
-                    <span className="font-semibold">{data.mindmapClicks}</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Animation Views:</span>
-                    <span className="font-semibold">{data.animationViews}</span>
-                  </li>
-                </ul>
-              </div>
+        <div className="mb-6 min-h-[200px]">
+          {isLoading && (
+            <div className="flex items-center justify-center h-full">
+              <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+              <span className="ml-2 text-gray-300">Loading analysis...</span>
             </div>
           )}
-          
-          {/* Analysis Tab */}
-          {activeTab === 'analysis' && (
-            <div className="bg-gray-800 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold mb-4 text-indigo-400">Learning Analysis</h3>
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-lg font-medium text-white mb-2">Understanding</h4>
-                  <p className="text-gray-300">{analysis.understanding}</p>
-                </div>
-                <div>
-                  <h4 className="text-lg font-medium text-white mb-2">Confidence</h4>
-                  <p className="text-gray-300">{analysis.confidence}</p>
-                </div>
-                <div>
-                  <h4 className="text-lg font-medium text-white mb-2">Strengths</h4>
-                  <p className="text-gray-300">{analysis.strengths}</p>
-                </div>
-                <div>
-                  <h4 className="text-lg font-medium text-white mb-2">Weaknesses</h4>
-                  <p className="text-gray-300">{analysis.weaknesses}</p>
-                </div>
-                <div>
-                  <h4 className="text-lg font-medium text-white mb-2">Areas for Improvement</h4>
-                  <p className="text-gray-300">{analysis.improvement}</p>
-                </div>
-              </div>
+          {error && (
+            <div className="flex items-center justify-center h-full text-red-500">
+              <X className="w-6 h-6 mr-2" />
+              <span>{error}</span>
             </div>
           )}
-          
-          {/* Charts Tab */}
-          {activeTab === 'charts' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <div className="h-64">
-                  <Pie data={pieChartData} options={pieChartOptions} />
-                </div>
-              </div>
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <div className="h-64">
-                  <Bar data={barChartData} options={barChartOptions} />
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Questions Tab */}
-          {activeTab === 'questions' && (
-            <div className="bg-gray-800 p-6 rounded-lg">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold text-indigo-400">Chatbot Questions</h3>
-                <span className="bg-indigo-600 text-white text-sm px-2 py-1 rounded-full">
-                  Total: {data.chatbotQuestions.length}
-                </span>
-              </div>
-              
-              {data.chatbotQuestions.length > 0 ? (
-                <ul className="space-y-2 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
-                  {data.chatbotQuestions.map((q, index) => (
-                    <li key={index} className="bg-gray-700 p-3 rounded-md">
-                      <div className="flex items-start gap-3">
-                        <span className="bg-indigo-600 text-white text-xs px-2 py-1 rounded-full mt-1">
-                          Q{index + 1}
-                        </span>
-                        <p className="text-gray-200">{q}</p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="text-center py-8 text-gray-400">
-                  <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>No questions have been asked yet.</p>
+          {!isLoading && !error && analyticsData && (
+            <>
+              {/* REMOVE Overview Tab Content */}
+              {/* {activeTab === 'overview' && ( ... )} */}
+
+              {/* Analysis Tab */}
+              {activeTab === 'analysis' && (
+                <div className="space-y-6">
+                   <div className="bg-gray-800 p-4 rounded-lg">
+                     <h3 className="text-xl font-semibold mb-3 text-indigo-400">Understanding Level</h3>
+                     <p className="text-gray-300">{analyticsData.understanding_level || 'Analysis pending...'}</p>
+                   </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="bg-gray-800 p-4 rounded-lg">
+                       <h3 className="text-xl font-semibold mb-3 text-green-500">Strengths</h3>
+                       {analyticsData.strengths && analyticsData.strengths.length > 0 ? (
+                         <ul className="list-disc pl-5 text-gray-300 space-y-2">
+                           {analyticsData.strengths.map((item, index) => <li key={index}>{item}</li>)}
+                         </ul>
+                       ) : (
+                         <p className="text-gray-400 italic">No specific strengths identified yet.</p>
+                       )}
+                     </div>
+                     <div className="bg-gray-800 p-4 rounded-lg">
+                       <h3 className="text-xl font-semibold mb-3 text-yellow-500">Areas for Improvement</h3>
+                       {analyticsData.weaknesses && analyticsData.weaknesses.length > 0 ? (
+                         <ul className="list-disc pl-5 text-gray-300 space-y-2">
+                           {analyticsData.weaknesses.map((item, index) => <li key={index}>{item}</li>)}
+                         </ul>
+                       ) : (
+                         <p className="text-gray-400 italic">Keep up the great work!</p>
+                       )}
+                     </div>
+                   </div>
+                   <div className="bg-gray-800 p-4 rounded-lg">
+                     <h3 className="text-xl font-semibold mb-3 text-blue-500">Recommendations</h3>
+                      {analyticsData.recommendations && analyticsData.recommendations.length > 0 ? (
+                         <ul className="list-disc pl-5 text-gray-300 space-y-2">
+                           {analyticsData.recommendations.map((item, index) => <li key={index}>{item}</li>)}
+                         </ul>
+                       ) : (
+                         <p className="text-gray-400 italic">No specific recommendations at this time.</p>
+                       )}
+                   </div>
+                   {analyticsData.engagement_score && (
+                    <div className="bg-gray-800 p-4 rounded-lg text-center">
+                        <h3 className="text-lg font-semibold mb-2 text-indigo-400">Engagement Score</h3>
+                        <p className="text-4xl font-bold text-white">{analyticsData.engagement_score}</p>
+                        <p className="text-xs text-gray-400 mt-1">Based on interactions across the content</p>
+                    </div>
+                   )}
                 </div>
               )}
-            </div>
+
+              {/* REMOVE Charts Tab Content */}
+              {/* {activeTab === 'charts' && ( ... )} */}
+
+              {/* REMOVE Questions Tab Content */}
+              {/* {activeTab === 'questions' && ( ... )} */}
+            </>
           )}
         </div>
         

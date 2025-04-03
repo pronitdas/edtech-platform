@@ -47,8 +47,8 @@ interface InteractionContextValue extends Omit<InteractionContextState, 'events'
 // Action types for the reducer
 type ActionType = 
   | { type: 'ADD_EVENT'; payload: { eventType: string; contentId?: string; metadata?: Record<string, any> } }
-  | { type: 'SET_EVENTS_PROCESSING' }
-  | { type: 'SET_EVENTS_PERSISTED' }
+  | { type: 'SET_EVENTS_PROCESSING'; payload: { events: InteractionEvent[] } }
+  | { type: 'SET_EVENTS_PERSISTED'; payload: { processedIds: string[] } }
   | { type: 'SET_EVENTS_FAILED'; payload: { events: InteractionEvent[] } }
   | { type: 'SET_SESSION'; payload: { sessionId: string | null; metadata?: Record<string, any> } }
   | { type: 'SET_TRACKING_ENABLED'; payload: boolean }
@@ -98,6 +98,8 @@ const interactionReducer = (state: InteractionContextState, action: ActionType):
         persisted: false,
       };
 
+      console.log(`[InteractionTracker] Adding event: ${action.payload.eventType}`, newEvent);
+
       return {
         ...state,
         events: {
@@ -108,39 +110,49 @@ const interactionReducer = (state: InteractionContextState, action: ActionType):
     }
 
     case 'SET_EVENTS_PROCESSING': {
-      const { pending, processing, failed } = state.events;
-      
-      if (pending.length === 0) {
-        return state;
-      }
+      const { processing, failed } = state.events;
+      const eventsToProcess = action.payload.events;
+      const processedEventIds = new Set(eventsToProcess.map(e => e.id));
+
+      console.log(`[InteractionTracker Reducer] Moving ${eventsToProcess.length} events to processing.`);
 
       return {
         ...state,
         events: {
-          pending: [],
-          processing: [...processing, ...pending],
+          // Remove the specific events being processed from pending
+          pending: state.events.pending.filter(e => !processedEventIds.has(e.id)), 
+          // Add the newly processing events
+          processing: [...processing, ...eventsToProcess], 
           failed,
         },
       };
     }
 
     case 'SET_EVENTS_PERSISTED': {
+      const processedIds = new Set(action.payload.processedIds);
+      console.log(`[InteractionTracker Reducer] Marking ${processedIds.size} events as persisted.`);
       return {
         ...state,
         events: {
           ...state.events,
-          processing: [],
+          // Remove persisted events from processing state
+          processing: state.events.processing.filter(e => !processedIds.has(e.id)),
         },
       };
     }
 
     case 'SET_EVENTS_FAILED': {
+      const failedEvents = action.payload.events;
+      const failedEventIds = new Set(failedEvents.map(e => e.id));
+      console.warn(`[InteractionTracker Reducer] Marking ${failedEvents.length} events as failed.`);
       return {
         ...state,
         events: {
           ...state.events,
-          processing: [],
-          failed: [...state.events.failed, ...action.payload.events],
+          // Remove failed events from processing state
+          processing: state.events.processing.filter(e => !failedEventIds.has(e.id)),
+          // Add failed events to the failed state
+          failed: [...state.events.failed, ...failedEvents],
         },
       };
     }
@@ -209,24 +221,59 @@ export const InteractionTrackerProvider: React.FC<InteractionTrackerProviderProp
 
   // Initialize session when userId changes
   useEffect(() => {
-    if (userId) {
-      // Create a session in state (could also call an API to create a server-side session)
-      dispatch({ 
-        type: 'SET_SESSION', 
-        payload: { 
-          sessionId: generateId(),
-          metadata: { 
-            userId,
-            startedAt: new Date().toISOString() 
-          } 
-        } 
-      });
-      dispatch({ type: 'SET_TRACKING_ENABLED', payload: true });
-    } else {
-      dispatch({ type: 'SET_SESSION', payload: { sessionId: null } });
-      dispatch({ type: 'SET_TRACKING_ENABLED', payload: false });
-    }
-  }, [userId]);
+    let isMounted = true; // Flag to prevent state updates on unmounted component
+
+    const initializeSession = async () => {
+      if (userId && dataService.startUserSession) {
+        console.log(`[InteractionTracker] Attempting to start session for userId: ${userId}`);
+        dispatch({ type: 'SET_TRACKING_ENABLED', payload: false }); // Disable tracking until session is ready
+        dispatch({ type: 'SET_SESSION', payload: { sessionId: null } }); // Clear old session ID
+        
+        try {
+          const sessionResult = await dataService.startUserSession(userId);
+
+          if (isMounted && sessionResult && sessionResult.id) {
+            console.log(`[InteractionTracker] Session started successfully. Session ID: ${sessionResult.id}`);
+            // Store the DB-generated session ID and enable tracking
+            dispatch({ 
+              type: 'SET_SESSION', 
+              payload: { 
+                sessionId: sessionResult.id,
+                metadata: { 
+                  userId,
+                  startedAt: new Date().toISOString() 
+                } 
+              } 
+            });
+            dispatch({ type: 'SET_TRACKING_ENABLED', payload: true });
+          } else if (isMounted) {
+             console.error('[InteractionTracker] Failed to start session or get session ID from service.');
+             // Keep tracking disabled and session null
+             dispatch({ type: 'SET_SESSION', payload: { sessionId: null } });
+             dispatch({ type: 'SET_TRACKING_ENABLED', payload: false });
+          }
+        } catch (error) {
+           console.error('[InteractionTracker] Error during session initialization:', error);
+           if (isMounted) {
+              dispatch({ type: 'SET_SESSION', payload: { sessionId: null } });
+              dispatch({ type: 'SET_TRACKING_ENABLED', payload: false });
+           }
+        }
+      } else {
+        // No userId or service method, disable tracking
+        console.log("[InteractionTracker] No userId or startUserSession method, disabling tracking.");
+        dispatch({ type: 'SET_SESSION', payload: { sessionId: null } });
+        dispatch({ type: 'SET_TRACKING_ENABLED', payload: false });
+      }
+    };
+
+    initializeSession();
+
+    return () => {
+      isMounted = false; // Cleanup function to set flag on unmount
+      // Optionally: Add logic here to end the session via analyticsService if needed
+    };
+  }, [userId, dataService]); // Rerun when userId or dataService changes
 
   // Set up interval for flushing events
   useEffect(() => {
@@ -246,21 +293,51 @@ export const InteractionTrackerProvider: React.FC<InteractionTrackerProviderProp
     state.events.pending.length
   ]);
 
-  // Flush events when reaching batch size
-  useEffect(() => {
-    if (
-      state.config.isTrackingEnabled && 
-      state.session.isActive && 
-      state.events.pending.length >= state.config.batchSize
-    ) {
-      flushEvents();
+  // Flush events to persistence
+  const flushEvents = useCallback(async () => {
+    // Capture pending events *before* any state changes
+    const eventsToProcess = [...state.events.pending]; 
+
+    // Exit if there's nothing to process in the captured array
+    if (eventsToProcess.length === 0) return;
+
+    console.log(`[InteractionTracker] Flushing ${eventsToProcess.length} pending events...`);
+
+    // Dispatch action to move these specific events from pending to processing state
+    dispatch({ type: 'SET_EVENTS_PROCESSING', payload: { events: eventsToProcess } });
+
+    try {
+      // Convert the *captured* events (eventsToProcess) to the format expected by the analytics service
+      const eventsToSend = eventsToProcess.map(event => ({
+        userId,
+        eventType: event.type,
+        contentId: event.contentId || null,
+        timestamp: event.timestamp,
+        sessionId: state.session.id,
+        ...event.metadata,
+      }));
+
+      console.log("[InteractionTracker] Events mapped for sending:", eventsToSend);
+
+      // Persist events in batches using the captured array
+      await Promise.all(
+        eventsToSend.map(eventData => dataService.trackEvent(eventData))
+      );
+
+      console.log(`[InteractionTracker] Successfully persisted ${eventsToProcess.length} events.`);
+      // Mark these specific events as persisted by sending their IDs
+      dispatch({ type: 'SET_EVENTS_PERSISTED', payload: { processedIds: eventsToProcess.map(e => e.id) } });
+
+    } catch (error) {
+      console.error('Failed to persist events:', error);
+      // Mark these specific events (from the captured array) as failed
+      dispatch({ 
+        type: 'SET_EVENTS_FAILED', 
+        payload: { events: eventsToProcess } 
+      });
     }
-  }, [
-    state.config.isTrackingEnabled,
-    state.session.isActive,
-    state.events.pending.length,
-    state.config.batchSize
-  ]);
+    // Ensure dispatch is included in dependencies if reducer relies on external scope
+  }, [dataService, state.events.pending, userId, dispatch]);
 
   // Track an event (internal function)
   const trackEvent = useCallback((eventType: string, contentId?: number, metadata: Record<string, any> = {}) => {
@@ -277,40 +354,6 @@ export const InteractionTrackerProvider: React.FC<InteractionTrackerProviderProp
       },
     });
   }, [userId]);
-
-  // Flush events to persistence
-  const flushEvents = useCallback(async () => {
-    if (state.events.pending.length === 0) return;
-
-    // Mark events as processing
-    dispatch({ type: 'SET_EVENTS_PROCESSING' });
-
-    try {
-      // Convert events to the format expected by the analytics service
-      const eventsToSend = state.events.processing.map(event => ({
-        userId,
-        eventType: event.type,
-        contentId: event.contentId || '',
-        timestamp: event.timestamp,
-        ...event.metadata,
-      }));
-
-      // Persist events in batches
-      await Promise.all(
-        eventsToSend.map(eventData => dataService.trackEvent(eventData))
-      );
-
-      // Mark events as persisted
-      dispatch({ type: 'SET_EVENTS_PERSISTED' });
-    } catch (error) {
-      console.error('Failed to persist events:', error);
-      // Mark events as failed
-      dispatch({ 
-        type: 'SET_EVENTS_FAILED', 
-        payload: { events: state.events.processing } 
-      });
-    }
-  }, [dataService, state.events.pending.length, state.events.processing, userId]);
 
   // Specialized tracking methods (memoized)
   const trackVideoPlay = useCallback(

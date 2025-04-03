@@ -158,4 +158,14 @@ export interface LearningAnalytics {
   strengths: string[] | null;
   weaknesses: string[] | null;
   recommendations: string[] | null;
+}
+
+export interface UserInteraction {
+  content_id: number | null;
+  created_at: string | null;
+  duration: number | null;
+  event_data: Json | null;
+  event_type: string;
+  id: string;
+  session_id: string;
 } 

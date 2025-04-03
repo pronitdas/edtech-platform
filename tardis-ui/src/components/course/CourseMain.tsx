@@ -62,7 +62,8 @@ const CourseContent: React.FC<CourseContentProps> = ({ content, chapter, languag
     isGeneratingContent: isHookGenerating
   } = useChapters();
   
-  const interactionTracker = useInteractionTracker();
+  const { session } = useInteractionTracker();
+  const userId = session?.metadata?.userId;
 
   // Create chaptersMeta array from the current chapter
   const chaptersMeta = useMemo(() => {
@@ -127,10 +128,14 @@ const CourseContent: React.FC<CourseContentProps> = ({ content, chapter, languag
       </div>
 
       {/* Learning Report Modal */}
-      {showReport && (
+      {showReport && userId && chapter?.knowledge_id && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-gray-800 rounded-lg w-full max-w-3xl max-h-[90vh] overflow-auto">
-            <LearningReport onClose={handleCloseReport} /> 
+            <LearningReport 
+              userId={userId}
+              knowledgeId={String(chapter.knowledge_id)}
+              onClose={handleCloseReport} 
+            /> 
           </div>
         </div>
       )}

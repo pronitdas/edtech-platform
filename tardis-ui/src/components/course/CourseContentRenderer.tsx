@@ -11,6 +11,7 @@ import RoleplayComponent from '../RoleplayComponent'; // Import RoleplayComponen
 import { ChapterContent, ChapterV1, QuizQuestion } from '@/types/database'; // Removed RoleplayScenario
 import { ChevronLeft } from 'lucide-react';
 import supabase from '@/services/supabase'; // Import Supabase client
+import { useInteractionTracker } from '@/contexts/InteractionTrackerContext'; // Import the hook
 
 // TODO: Define proper types for timelineMarkers and interactionTracker if needed here
 // import { InteractionTracker } from '@/contexts/InteractionTrackerContext';
@@ -352,6 +353,9 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
   onCloseReport,
   onGenerateContentRequest,
 }) => {
+  const { session } = useInteractionTracker(); // Get session context
+  const userId = session?.metadata?.userId; // Extract userId
+
   // Add debug logging for props
   useEffect(() => {
     console.log('CourseContentRenderer - Props:', {
@@ -457,7 +461,16 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
             <div className="bg-gray-800 rounded-lg w-full max-w-3xl max-h-[90vh] overflow-auto">
-                <LearningReport onClose={onCloseReport} />
+                {userId && chapter?.knowledge_id ? (
+                  <LearningReport 
+                    userId={userId} 
+                    knowledgeId={String(chapter.knowledge_id)}
+                    onClose={onCloseReport} 
+                  />
+                ) : (
+                  // Optional: Show a loading or error state if IDs are missing
+                  <div className="p-6 text-center text-red-500">Required information (User or Knowledge ID) is missing to load the report.</div>
+                )}
             </div>
         </div>
     );

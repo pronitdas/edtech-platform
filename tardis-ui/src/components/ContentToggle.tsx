@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { BookOpen, Video, ArrowLeftRight } from 'lucide-react';
 import VideoPlayer from './VideoPlayer';
 import MarkdownSlideshow from './MarkdownSlideshow';
-import { interactionTracker } from '@/services/interaction-tracking';
+import { useInteractionTracker } from '@/contexts/InteractionTrackerContext';
 
 interface TimelineMarker {
   time: number;
@@ -37,6 +37,13 @@ const ContentToggle = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [activeNoteIndex, setActiveNoteIndex] = useState(0);
 
+  const {
+    trackVideoPlay,
+    trackVideoPause,
+    trackContentView,
+    trackEvent // Internal method for custom events like seek
+  } = useInteractionTracker() as any; // Cast to access internal trackEvent
+
   // Process notes on component mount
   useEffect(() => {
     if (!notes) {
@@ -64,7 +71,7 @@ const ContentToggle = ({
     
     // Track interaction
     if (showVideo) {
-      interactionTracker.trackNotesClick();
+      trackContentView(knowledgeId, { type: "notes_view" });
     }
     
     // Delay state change for animation
@@ -99,15 +106,17 @@ const ContentToggle = ({
 
   // Handle video events for tracking
   const handleVideoPlay = () => {
-    interactionTracker.trackVideoPlay();
+    trackVideoPlay(parseInt(knowledgeId, 10), { chapterId: activeChapterId, time: currentTime });
   };
 
   const handleVideoPause = () => {
-    interactionTracker.trackVideoPause();
+    trackVideoPause(parseInt(knowledgeId, 10), { chapterId: activeChapterId, time: currentTime });
   };
 
   const handleVideoSeek = () => {
-    interactionTracker.trackTimelineSeek();
+    if (trackEvent) {
+      trackEvent('video_seek', parseInt(knowledgeId, 10), { chapterId: activeChapterId, time: currentTime });
+    }
   };
 
   // Handle note navigation

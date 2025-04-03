@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { MessageSquare, X } from 'lucide-react';
 import Chatbot from './ChatBot';
-import { interactionTracker } from '@/services/interaction-tracking';
+import { useInteractionTracker } from '@/contexts/InteractionTrackerContext';
 
 interface ChatbotFloatingButtonProps {
   contentContext: string;
@@ -13,13 +13,16 @@ const ChatbotFloatingButton: React.FC<ChatbotFloatingButtonProps> = ({
   chapterTitle
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const { trackEvent } = useInteractionTracker() as any;
 
   const toggleChatbot = () => {
     setIsOpen(!isOpen);
   };
 
   const handleQuestionAsked = (question: string) => {
-    interactionTracker.trackChatbotQuestion(question);
+    if (trackEvent) {
+      trackEvent('chatbot_query', undefined, { query: question, chapter: chapterTitle });
+    }
   };
 
   return (
