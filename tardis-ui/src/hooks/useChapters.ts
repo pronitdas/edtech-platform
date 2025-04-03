@@ -16,6 +16,10 @@ interface ChaptersState {
   uploadedFiles: ChapterV1[];
   chaptersMeta: EdTechChapter[];
   content: ChapterContent | null;
+  knowledgeData: {
+    video_url: string | null;
+    roleplay: any | null;
+  } | null;
   error: Error | null;
   processingStatus: ProcessingStatus | null;
   isCheckingStatus: boolean;
@@ -34,6 +38,7 @@ export const useChapters = () => {
         uploadedFiles: [],
         chaptersMeta: [],
         content: null,
+        knowledgeData: null,
         error: null,
         processingStatus: null,
         isCheckingStatus: false,
@@ -87,67 +92,66 @@ export const useChapters = () => {
         }
     }, []);
 
+    const fetchKnowledgeData = useCallback(async (knowledgeId: number): Promise<void> => {
+        if (!knowledgeId) return;
+        console.log("Fetching knowledge data for knowledgeId:", knowledgeId);
+        try {
+            const { data, error } = await supabase
+                .from('knowledge')
+                .select('video_url, roleplay')
+                .eq('id', knowledgeId)
+                .single();
+
+            if (error) {
+                throw error;
+            }
+
+            setState(prev => ({
+                ...prev,
+                knowledgeData: data || { video_url: null, roleplay: null }
+            }));
+            console.log("Fetched knowledge data:", data);
+
+        } catch (error) {
+            console.error('Error fetching knowledge data:', error);
+            setState(prev => ({
+                ...prev,
+                knowledgeData: { video_url: null, roleplay: null },
+                error: error instanceof Error ? error : new Error('Unknown error fetching knowledge data')
+            }));
+        }
+    }, []);
+
     const getEdTechContentForChapter = useCallback(async (chapter: ChapterV1, language: string): Promise<ChapterContent | null> => {
         try {
             console.log("Getting EdTech content for chapter:", chapter, "language:", language);
             
-            // Return null if chapter is undefined
             if (!chapter || !chapter.id) {
                 console.error("Invalid chapter provided to getEdTechContentForChapter");
                 return null;
             }
             
-            const content = await getEdTechContent(chapter, language);
-            console.log("Raw EdTech content:", content);
+            const contentResult = await getEdTechContent(chapter, language);
+            console.log("Raw EdTech content result:", contentResult);
             
-            if (content && content.length > 0) {
-                // Fetch roleplay data and video_url from knowledge
-                const { data: knowledgeData, error } = await supabase
-                    .from('knowledge')
-                    .select('roleplay, video_url')
-                    .eq('id', chapter.knowledge_id)
-                    .single();
-                
-                if (error) {
-                    console.error("Error fetching knowledge data:", error);
-                }
-                
-                console.log("Knowledge data:", knowledgeData);
-                
-                const contentData = content[0] as ChapterContent;
-                
-                if (knowledgeData) {
-                    // Use immutability pattern when merging data
-                    const enhancedContent = {
-                        ...contentData,
-                        ...(knowledgeData.roleplay && { roleplay: knowledgeData.roleplay }),
-                        ...(knowledgeData.video_url && { video_url: knowledgeData.video_url })
-                    };
-                    
-                    console.log("Enhanced content with video and roleplay:", enhancedContent);
-                    
-                    setState(prev => ({
-                        ...prev,
-                        content: enhancedContent
-                    }));
-                    
-                    return enhancedContent;
-                } else {
-                    setState(prev => ({
-                        ...prev,
-                        content: contentData
-                    }));
-                    
-                    return contentData;
-                }
+            let chapterContent: ChapterContent | null = null;
+            if (contentResult && contentResult.length > 0) {
+                chapterContent = contentResult[0] as ChapterContent;
             }
-            
-            console.warn("No content returned from getEdTechContent");
-            return null;
+
+            setState(prev => ({
+                ...prev,
+                content: chapterContent
+            }));
+
+            console.log("Set chapter content in state:", chapterContent);
+            return chapterContent;
+
         } catch (error) {
             console.error('Error in getEdTechContentForChapter:', error);
             setState(prev => ({
                 ...prev,
+                content: null,
                 error: error instanceof Error ? error : new Error('Unknown error fetching EdTech content')
             }));
             return null;
@@ -347,16 +351,32 @@ export const useChapters = () => {
         isCheckingStatus, 
         isGeneratingContent,
         generationProgress,
-        lastGenerationError
+        lastGenerationError,
+        knowledgeData
     } = state;
+
+    // Memoized combined content (merges chapter content with knowledge data)
+    const combinedContent = useMemo(() => {
+      if (!content && !knowledgeData) return null;
+      
+      const baseContent = content || {};
+      const knowledge = knowledgeData || { video_url: null, roleplay: null };
+      
+      return {
+        ...baseContent,
+        video_url: baseContent.video_url || knowledge.video_url,
+        roleplay: knowledge.roleplay
+      };
+    }, [content, knowledgeData]);
 
     return {
         uploadedFiles,
         chaptersMeta,
         fetchChapters,
         setContent,
-        content,
+        content: combinedContent,
         fetchChapterMeta,
+        fetchKnowledgeData,
         getEdTechContentForChapter,
         generateMissingContent,
         retryContentGeneration,
@@ -368,6 +388,7 @@ export const useChapters = () => {
         generationProgress,
         lastGenerationError,
         resetGenerationState,
+        knowledgeData,
         error
     };
 };

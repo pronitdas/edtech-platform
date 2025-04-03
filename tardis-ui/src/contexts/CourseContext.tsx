@@ -39,15 +39,13 @@ interface CourseProviderProps {
   content: ChapterContent;
   chapter: ChapterV1;
   language?: string;
-  availableTabs?: CourseState['availableTabs'];
 }
 
 export const CourseProvider: React.FC<CourseProviderProps> = ({ 
   children, 
-  content, 
+  content,
   chapter,
   language = 'English',
-  availableTabs = []
 }) => {
   // Log any missing data for debugging
   useEffect(() => {
@@ -60,15 +58,14 @@ export const CourseProvider: React.FC<CourseProviderProps> = ({
   }, [chapter, content]);
 
   // If content or chapter is missing, don't render children
-  if (!chapter?.id || !content) {
-    console.error('CourseProvider: Required data is missing', { chapter, content });
+  if (!chapter?.id) {
+    console.error('CourseProvider: Required chapter data is missing', { chapter });
     return null;
   }
   
-  console.log('CourseProvider initialized with content:', content);
-  console.log('Video URL:', content.video_url);
-  console.log('Roleplay data:', content.roleplay);
-  console.log('Available tabs from parent:', availableTabs);
+  console.log('CourseProvider rendering with combined content:', content);
+  console.log('Video URL in provider:', content?.video_url);
+  console.log('Roleplay data in provider:', content?.roleplay);
 
   const courseState = useCourseState(content, chapter, language);
   

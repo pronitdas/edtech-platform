@@ -26,12 +26,55 @@ interface Scenario {
     }>;
 }
 
+// Helper function to recursively parse JSON strings
+const recursiveJSONParse = (data: any): any => {
+    if (typeof data !== 'string') {
+        return data;
+    }
+    try {
+        const parsed = JSON.parse(data);
+        if (typeof parsed === 'string') {
+            return recursiveJSONParse(parsed);
+        }
+        return parsed;
+    } catch (e) {
+        console.error('Failed to parse JSON string:', e);
+        return data;
+    }
+};
+
+// Map the incoming data structure to our Scenario format
+const mapToScenario = (rawScenario: any): Scenario | null => {
+    if (!rawScenario || typeof rawScenario !== 'object') {
+        return null;
+    }
+
+    try {
+        // Map the incoming structure to our expected format
+        return {
+            title: rawScenario.title || '',
+            context: rawScenario.description || rawScenario.initialPrompt || rawScenario.context || '',
+            roles: Array.isArray(rawScenario.characters) 
+                ? rawScenario.characters.map((char: any) => ({
+                    name: char.name || '',
+                    description: char.description || ''
+                }))
+                : Array.isArray(rawScenario.roles)
+                    ? rawScenario.roles
+                    : []
+        };
+    } catch (error) {
+        console.error('Error mapping scenario:', error);
+        return null;
+    }
+};
+
 // Placeholder validation/mapping function for quiz data
 const ensureQuizDataFormat = (data: any): QuizQuestion[] => {
   // TODO: Implement proper validation or mapping logic
   if (Array.isArray(data)) {
     // Basic check: are essential properties present?
-    if (data.length === 0 || (data[0] && data[0].question && data[0].options && data[0].correct_option !== undefined)) {
+    if (data.length > 0 || (data[0] && data[0].question && data[0].options && data[0].correct_option !== undefined)) {
        return data as QuizQuestion[]; // Still casting, but after a basic check
     }
   }
@@ -40,15 +83,63 @@ const ensureQuizDataFormat = (data: any): QuizQuestion[] => {
 };
 
 // Placeholder validation/mapping function for roleplay data
-// Now returns the locally defined Scenario[] type
 const ensureRoleplayDataFormat = (data: any): Scenario[] => {
-    // TODO: Implement proper validation or mapping logic
-    if (data && Array.isArray(data.scenarios)) {
-        // Perform deeper checks if necessary (e.g., check properties of each scenario)
-        return data.scenarios as Scenario[]; // Cast to local Scenario type
+    console.log('Raw roleplay data:', data);
+    
+    try {
+        // First, handle potentially multiple levels of JSON string encoding
+        const parsedData = recursiveJSONParse(data);
+        console.log('Parsed roleplay data:', parsedData);
+
+        // Handle different potential data structures
+        let rawScenarios: any[] = [];
+        
+        if (Array.isArray(parsedData)) {
+            rawScenarios = parsedData;
+        } else if (parsedData && typeof parsedData === 'object') {
+            if (Array.isArray(parsedData.scenarios)) {
+                rawScenarios = parsedData.scenarios;
+            } else if (parsedData.title || parsedData.context || parsedData.roles) {
+                rawScenarios = [parsedData];
+            }
+        }
+
+        // Map and validate each scenario
+        const scenarios = rawScenarios
+            .map(mapToScenario)
+            .filter((scenario): scenario is Scenario => {
+                if (!scenario) {
+                    return false;
+                }
+                
+                const isValid = 
+                    typeof scenario.title === 'string' &&
+                    scenario.title.length > 0 &&
+                    typeof scenario.context === 'string' &&
+                    scenario.context.length > 0 &&
+                    Array.isArray(scenario.roles) &&
+                    scenario.roles.length > 0 &&
+                    scenario.roles.every(role =>
+                        role &&
+                        typeof role.name === 'string' &&
+                        role.name.length > 0 &&
+                        typeof role.description === 'string' &&
+                        role.description.length > 0
+                    );
+                
+                if (!isValid) {
+                    console.warn('Invalid scenario structure:', scenario);
+                }
+                
+                return isValid;
+            });
+
+        console.log('Validated roleplay scenarios:', scenarios);
+        return scenarios;
+    } catch (error) {
+        console.error('Error processing roleplay data:', error);
+        return [];
     }
-    console.warn("Invalid roleplay data format received", data);
-    return [];
 };
 
 // --- Updated function to use public URLs instead of signed URLs ---
@@ -119,17 +210,20 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
         roleplay: null as any
       };
       
-      // Special handling for roleplay which can be a string or object
+      // Special handling for roleplay data
       if (content.roleplay) {
-        if (typeof content.roleplay === 'string') {
-          try {
-            parsed.roleplay = JSON.parse(content.roleplay);
-          } catch (e) {
-            console.error('Error parsing roleplay JSON:', e);
-            parsed.roleplay = content.roleplay; // Keep as string if parsing fails
+        try {
+          // Let ensureRoleplayDataFormat handle the parsing and validation
+          const validatedRoleplay = ensureRoleplayDataFormat(content.roleplay);
+          if (validatedRoleplay.length > 0) {
+              parsed.roleplay = validatedRoleplay;
+          } else {
+              console.warn('No valid roleplay scenarios found in:', content.roleplay);
+              parsed.roleplay = null;
           }
-        } else {
-          parsed.roleplay = content.roleplay; // Already an object
+        } catch (e) {
+          console.error('Error processing roleplay data:', e);
+          parsed.roleplay = null;
         }
       }
       
@@ -382,16 +476,54 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
   }
 
   // Roleplay Tab
-  if (activeTab === "roleplay" && roleplay) {
-      const validatedScenarios = ensureRoleplayDataFormat(roleplay);
-      if (validatedScenarios.length > 0) {
-        return (
-            <div className="h-full overflow-y-auto p-4 md:p-6">
-                <RoleplayComponent scenarios={validatedScenarios} />
-            </div>
-        );
-      }
-      // Optionally render message if roleplay data is present but invalid
+  if (activeTab === "roleplay") {
+    if (!roleplay) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg max-w-md">
+            <h2 className="text-xl font-semibold text-gray-200 mb-4">No Roleplay Scenarios Available</h2>
+            <p className="text-gray-400 mb-6">
+              There are no roleplay scenarios available for this chapter yet.
+            </p>
+            <button
+              onClick={onGenerateContentRequest}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors flex items-center justify-center gap-2 shadow-md"
+            >
+              <span>Generate Roleplay Scenarios</span>
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    const validatedScenarios = ensureRoleplayDataFormat(roleplay);
+    if (validatedScenarios.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg max-w-md">
+            <h2 className="text-xl font-semibold text-gray-200 mb-4">Invalid Roleplay Data</h2>
+            <p className="text-gray-400 mb-6">
+              The roleplay scenarios could not be loaded due to invalid data format.
+            </p>
+            <button
+              onClick={onGenerateContentRequest}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors flex items-center justify-center gap-2 shadow-md"
+            >
+              <span>Regenerate Roleplay Scenarios</span>
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="h-full overflow-y-auto p-4 md:p-6">
+        <RoleplayComponent 
+          scenarios={validatedScenarios}
+          onRegenerate={onGenerateContentRequest}
+        />
+      </div>
+    );
   }
 
   // Fallback: Content Not Available

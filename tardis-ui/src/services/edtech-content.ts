@@ -9,90 +9,38 @@ import { OpenAIClient } from "./openAi";
 export const getEdTechContent = async (chapter, language = "English") => {
     console.log("Getting EdTech content for chapter:", chapter.id, "language:", language);
     
-    // First check if content exists in EdTechContent table
+    // Check if content exists in EdTechContent table
     const { data: EdTechContent, error } = await supabase
         .from(`EdTechContent_${language}`)
-        .select('*')
+        .select('*') // Select only fields belonging to EdTechContent
         .eq('chapter_id', chapter.id)
         .eq('knowledge_id', chapter.knowledge_id)
         .limit(1);
     
-    console.log("EdTechContent from DB:", EdTechContent, "Error:", error);
-    
-    // Fetch video_url and roleplay from knowledge table
-    const { data: knowledgeData, error: knowledgeError } = await supabase
-        .from('knowledge')
-        .select('video_url, roleplay')
-        .eq('id', chapter.knowledge_id)
-        .single();
+    console.log(`EdTechContent_${language} from DB:`, EdTechContent, "Error:", error);
         
-    console.log("Knowledge data:", knowledgeData, "Error:", knowledgeError);
-        
-    // If no content is found, create a new entry
+    // If no content is found, create a minimal entry (without knowledge fields like video/roleplay)
     if (!EdTechContent || EdTechContent.length === 0) {
-        console.log("No content found, creating new entry");
+        console.log("No EdTechContent found, creating minimal new entry");
         
-        // Create new content entry with knowledge data
         const { data: newEdtechContent, error: insertError } = await supabase
             .from(`EdTechContent_${language}`)
             .insert([{
                 chapter_id: chapter.id,
                 knowledge_id: chapter.knowledge_id,
-                id: chapter.lines + chapter.id,
-                latex_code: chapter.chapter,
+                id: chapter.lines + chapter.id, // Consider if this ID generation is correct
+                latex_code: chapter.chapter, // Original chapter text might go here?
                 subtopic: chapter.subtopic,
                 chapter: chapter.chaptertitle,
-                video_url: knowledgeData?.video_url || null
-                // Don't include roleplay in EdTechContent table
+                // video_url is now fetched separately if needed, not inserted here by default
             }])
             .select();
             
-        console.log("Inserted new content:", newEdtechContent, "Error:", insertError);
-        
-        // Manually combine the content with knowledge data
-        if (newEdtechContent && newEdtechContent.length > 0) {
-            const combinedContent = {
-                ...newEdtechContent[0],
-                roleplay: knowledgeData?.roleplay || null
-            };
-            
-            return [combinedContent];
-        }
-        
+        console.log("Inserted new minimal EdTechContent:", newEdtechContent, "Error:", insertError);
         return newEdtechContent;
     }
     
-    // If content exists, merge with knowledge data
-    if (EdTechContent && EdTechContent.length > 0 && knowledgeData) {
-        // Only update video_url in the database if needed
-        if (knowledgeData.video_url && !EdTechContent[0].video_url) {
-            const updatedContent = {
-                ...EdTechContent[0],
-                video_url: knowledgeData.video_url
-            };
-            
-            console.log("Updating content with video_url:", updatedContent);
-            
-            // Update the record in the database
-            const { data: updatedEdtechContent, error: updateError } = await supabase
-                .from(`EdTechContent_${language}`)
-                .update({ video_url: knowledgeData.video_url })
-                .eq('id', EdTechContent[0].id)
-                .select();
-                
-            console.log("Updated content:", updatedEdtechContent, "Error:", updateError);
-        }
-        
-        // Manually combine EdTechContent with roleplay from knowledge
-        const combinedContent = {
-            ...EdTechContent[0],
-            roleplay: knowledgeData.roleplay || null
-        };
-        
-        return [combinedContent];
-    }
-    
-    // If we have EdTechContent but no knowledge data, return as is
+    // If content exists, just return it. Merging happens elsewhere.
     return EdTechContent;
 }
 
