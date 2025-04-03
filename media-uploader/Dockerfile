@@ -36,25 +36,20 @@ RUN apt-get update && \
         portaudio19-dev && \
     rm -rf /var/lib/apt/lists/*
 
-
-
 # Set working directory
 WORKDIR /app
 
 # Install Python dependencies
 COPY requirements.txt ./
-RUN pip3 install --default-timeout=1000  --no-cache-dir -r requirements.txt
+RUN pip3 install --default-timeout=1000  --no-cache-dir -r requirements.txt  --ignore-installed blinker
 # Install PyTorch with CUDA support
-RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118  --ignore-installed blinker  
 
 # Pre-download Whisper model to cache
-RUN pip3 install --no-cache-dir openai-whisper && \
+RUN pip3 install --no-cache-dir openai-whisper  --ignore-installed blinker && \
     python3 -c "import whisper; whisper.load_model('base')"
 # Copy application code
 COPY . .
-
-# Pre-load models
-RUN python -c 'from marker.models import load_all_models; load_all_models()'
 
 # Create temporary directory
 RUN mkdir -p /app/temp
