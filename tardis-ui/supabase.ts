@@ -984,27 +984,27 @@ export type Database = {
           content_id: number | null
           created_at: string | null
           duration: number | null
+          event_data: Json | null
+          event_type: string
           id: string
-          interaction_type: string
-          metadata: Json | null
           session_id: string
         }
         Insert: {
           content_id?: number | null
           created_at?: string | null
           duration?: number | null
+          event_data?: Json | null
+          event_type: string
           id?: string
-          interaction_type: string
-          metadata?: Json | null
           session_id: string
         }
         Update: {
           content_id?: number | null
           created_at?: string | null
           duration?: number | null
+          event_data?: Json | null
+          event_type?: string
           id?: string
-          interaction_type?: string
-          metadata?: Json | null
           session_id?: string
         }
         Relationships: [

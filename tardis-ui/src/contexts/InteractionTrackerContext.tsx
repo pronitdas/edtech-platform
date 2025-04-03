@@ -271,9 +271,21 @@ export const InteractionTrackerProvider: React.FC<InteractionTrackerProviderProp
 
     return () => {
       isMounted = false; // Cleanup function to set flag on unmount
-      // Optionally: Add logic here to end the session via analyticsService if needed
     };
-  }, [userId, dataService]); // Rerun when userId or dataService changes
+  }, [userId, dataService]);
+  
+  // Create a separate useEffect for handling session termination
+  useEffect(() => {
+    return () => {
+      // End the session when the component unmounts if it's active
+      if (state.session.id && dataService.endUserSession) {
+        console.log(`[InteractionTracker] Ending session: ${state.session.id}`);
+        dataService.endUserSession(state.session.id).catch((error) => {
+          console.error('[InteractionTracker] Error ending session:', error);
+        });
+      }
+    };
+  }, [state.session.id, dataService]);
 
   // Set up interval for flushing events
   useEffect(() => {
