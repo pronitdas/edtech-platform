@@ -6,7 +6,9 @@ FROM runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04
 
 # Ensure NVIDIA runtime makes GPUs visible
 ENV NVIDIA_VISIBLE_DEVICES=all
-
+ENV SUPABASE_URL=
+ENV SUPABASE_KEY=
+ENV OPENAI_API_KEY=
 # Set working directory
 WORKDIR /app
 
@@ -42,22 +44,21 @@ RUN pip3 install --no-cache-dir --upgrade pip setuptools wheel
 COPY requirements.txt ./
 
 # Install Python dependencies in stages to handle potential conflicts
-RUN pip3 install --no-cache-dir \
-    numpy \
-    torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118  
+# RUN pip3 install --no-cache-dir \
+#     numpy \
+#     torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118  
 
 # Install remaining dependencies
 RUN pip3 install --no-cache-dir -r requirements.txt --ignore-installed blinker
 
-# Pre-download Whisper model to cache
-RUN pip3 install --no-cache-dir openai-whisper --ignore-installed blinker && \
-    python3 -c "import whisper; whisper.load_model('base')"
+# Pre-download Whisper model to cache  pip3 install --no-cache-dir openai-whisper --ignore-installed blinker && \
+RUN python3 -c "import whisper; whisper.load_model('base')"
 
 # Copy application code
 COPY . .
 
 # Pre-load models (uncomment if you have this method)
-# RUN python -c 'from marker.models import load_all_models; load_all_models()'
+RUN python3 -c 'from marker.models import load_all_models; load_all_models()'
 
 # Create temporary directory
 RUN mkdir -p /app/temp
