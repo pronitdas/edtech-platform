@@ -2,6 +2,7 @@ import json
 import logging
 from datetime import datetime
 from typing import Dict, Optional, List, Any, Tuple
+import os
 
 from supabase import create_client, Client
 
@@ -10,8 +11,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Supabase configuration
-SUPABASE_URL = ''
-SUPABASE_KEY = ""  # Should be loaded from environment variables in production
+SUPABASE_URL = os.getenv('SUPABASE_URL', '')
+SUPABASE_KEY = os.getenv('SUPABASE_KEY', '')
 
 
 class DatabaseManager:

@@ -55,7 +55,7 @@ export class EdTechAPI {
   private apiKey?: string;
   private headers: Record<string, string>;
 
-  constructor(baseURL: string = 'http://localhost:8000', apiKey?: string) {
+  constructor(baseURL: string = 'https://qbf0e8btmrrsd4-8000.proxy.runpod.net', apiKey?: string) {
     this.baseURL = baseURL;
     this.apiKey = apiKey;
     this.headers = {

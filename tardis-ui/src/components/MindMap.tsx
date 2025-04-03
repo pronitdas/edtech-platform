@@ -50,44 +50,46 @@ const NODE_STYLES = {
         fontWeight: 'bold',
         boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
         width: 'auto',
-        minWidth: '120px',
+        minWidth: '150px',
     }
 };
 
 // React Flow container styles
 const reactFlowStyles: React.CSSProperties = {
-    width: '100%',
-    height: '100%',
     background: '#1f2937',
 };
 
 const getLayoutedElements = (nodes, edges, direction = 'TB') => {
     const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
-    g.setGraph({ rankdir: direction, ranksep: 80, nodesep: 40 });
+    g.setGraph({ 
+        rankdir: direction, 
+        ranksep: 80,
+        nodesep: 50,
+        marginx: 20,
+        marginy: 20
+    });
 
     edges.forEach((edge) => g.setEdge(edge.source, edge.target));
     nodes.forEach((node) => {
-        const width = 180;
-        const height = 60;
-        g.setNode(node.id, { width, height });
+        g.setNode(node.id, { width: 150, height: 40 });
     });
 
     Dagre.layout(g);
 
     const layoutedNodes = nodes.map((node) => {
-        const position = g.node(node.id);
+        const nodeWithPosition = g.node(node.id);
         return {
             ...node,
             position: {
-                x: position.x - 10,
-                y: position.y - 10,
-            },
+                x: nodeWithPosition.x - 75, // Half the width
+                y: nodeWithPosition.y - 20  // Half the height
+            }
         };
     });
 
     return {
         nodes: layoutedNodes,
-        edges,
+        edges
     };
 };
 
@@ -263,13 +265,12 @@ const MindMapInner = (props) => {
 
     // Fix for the React Flow container size issue
     const rfWrapper: React.CSSProperties = {
-        width: '800px',
-        height: '800px',
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        width: '100%',
+        height: 'calc(100vh - 200px)', // Adjust for header and padding
+        position: 'relative',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center'
     };
 
     if (isLoading) return (
@@ -306,11 +307,15 @@ const MindMapInner = (props) => {
                     fitView
                     fitViewOptions={{ padding: 0.2 }}
                     nodesDraggable={true}
+                    elementsSelectable={true}
+                    zoomOnScroll={true}
+                    panOnScroll={true}
+                    preventScrolling={false}
+                    nodeOrigin={[0.5, 0.5]}
                 >
                     <Background color="#334155" gap={16} />
                     <Controls 
-                        showInteractive={false}
-                        className="bg-gray-700/50 p-1 rounded-md text-white border-none"
+                        className="bg-gray-800 p-2 rounded-lg border border-gray-700 [&>button]:bg-gray-700 [&>button]:border-0 [&>button]:text-white [&>button:hover]:bg-gray-600"
                     />
                     <Panel position="top-right" className="bg-gray-800 p-2 rounded-md shadow space-x-1 flex">
                         <Button
@@ -376,18 +381,22 @@ const MindMapInner = (props) => {
 };
 
 const MindMap = (props) => {
-    // Wrapper with explicit dimensions
-    const wrapperStyle: React.CSSProperties = {
-        width: '100%', 
-        height: '100%', 
-        position: 'relative'
+    const rfWrapper: React.CSSProperties = {
+        width: '100%',
+        height: 'calc(100vh - 200px)', // Adjust for header and padding
+        position: 'relative',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center'
     };
-    
+
     return (
-        <div style={wrapperStyle}>
-            <ReactFlowProvider>
-                <MindMapInner {...props} />
-            </ReactFlowProvider>
+        <div className="w-full h-full flex items-center justify-center p-4">
+            <div style={rfWrapper}>
+                <ReactFlowProvider>
+                    <MindMapInner {...props} />
+                </ReactFlowProvider>
+            </div>
         </div>
     );
 };

@@ -2,9 +2,9 @@ name: Build and Push Docker Image
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "none" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "none" ]
 
 env:
   REGISTRY: ghcr.io
@@ -47,7 +47,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           provenance: false
           sbom: false 
