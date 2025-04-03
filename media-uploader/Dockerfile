@@ -36,7 +36,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip and setuptools
-RUN pip3 install --no-cache-dir --upgrade pip setuptools wheel
+RUN pip3 install --no-cache-dir --upgrade pip setuptools wheel  
 
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt ./
@@ -44,13 +44,13 @@ COPY requirements.txt ./
 # Install Python dependencies in stages to handle potential conflicts
 RUN pip3 install --no-cache-dir \
     numpy \
-    torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+    torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118  
 
 # Install remaining dependencies
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt --ignore-installed blinker
 
 # Pre-download Whisper model to cache
-RUN pip3 install --no-cache-dir openai-whisper && \
+RUN pip3 install --no-cache-dir openai-whisper --ignore-installed blinker && \
     python3 -c "import whisper; whisper.load_model('base')"
 
 # Copy application code
