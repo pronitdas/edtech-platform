@@ -53,74 +53,85 @@ const CourseHeader: React.FC<CourseHeaderProps> = ({
   getMissingContentTypes,
   toggleSidebar,
   handleTabClick,
-  onShowSettings, // Use the new prop name
-  showSettingsButton, // Use the visibility prop
-  onShowReport, // Destructure the new prop
+  onShowSettings,
+  showSettingsButton,
+  onShowReport,
 }) => {
+  console.log('CourseHeader rendered with:', {
+    activeTab,
+    availableTabs,
+    showSettingsButton
+  });
+
   return (
-    <div className="bg-gray-800 border-b border-gray-700 p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <ChevronLeft 
-            className="w-5 h-5 text-gray-400 cursor-pointer hover:text-white transition-colors" 
-            onClick={() => window.history.back()}
-            aria-label="Go back"
-          />
-          <h1 className="text-xl font-semibold text-white truncate" title={chapter.chaptertitle || "Course Content"}>
-            {chapter.chaptertitle || "Course Content"}
-          </h1>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          {activeTab === "video" && (
-            <button
-              onClick={toggleSidebar}
-              className="text-gray-400 hover:text-white focus:outline-none"
-              aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
-            >
-              {sidebarOpen ? "Hide Chapters" : "Show Chapters"}
-            </button>
-          )}
+    <div className="bg-gray-800 border-b border-gray-700">
+      {/* Top Bar */}
+      <div className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ChevronLeft 
+              className="w-5 h-5 text-gray-400 cursor-pointer hover:text-white transition-colors" 
+              onClick={() => window.history.back()}
+              aria-label="Go back"
+            />
+            <h1 className="text-xl font-semibold text-white truncate" title={chapter.chaptertitle}>
+              {chapter.chaptertitle}
+            </h1>
+          </div>
           
-          {/* Settings button controlled by prop */}
-          {showSettingsButton && (
+          <div className="flex items-center gap-3">
+            {activeTab === "video" && (
+              <button
+                onClick={toggleSidebar}
+                className="text-gray-400 hover:text-white focus:outline-none"
+                aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+              >
+                {sidebarOpen ? "Hide Chapters" : "Show Chapters"}
+              </button>
+            )}
+            
+            {showSettingsButton && (
+              <button
+                onClick={onShowSettings}
+                className="text-gray-400 hover:text-white focus:outline-none"
+                aria-label="Content settings"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+            )}
+            
             <button
-              onClick={onShowSettings} // Use the passed handler
+              onClick={onShowReport}
               className="text-gray-400 hover:text-white focus:outline-none"
-              aria-label="Content settings"
+              aria-label="Show learning report"
             >
-              <Settings className="w-5 h-5" />
+              <BarChart2 className="w-5 h-5" />
             </button>
-          )}
-          
-          {/* Report Button */}
-          <button
-            onClick={onShowReport} // Use the passed handler
-            className="text-gray-400 hover:text-white focus:outline-none"
-            aria-label="Show learning report"
-          >
-            <BarChart2 className="w-5 h-5" />
-          </button>
+          </div>
         </div>
       </div>
-      
+
       {/* Tab Navigation */}
-      <div className="flex space-x-1 mt-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
-        {availableTabs.map(tab => {
-          const iconElement = getIconComponent(tab.iconIdentifier);
+      <div className="px-4 flex items-center gap-1 overflow-x-auto">
+        {availableTabs.map((tab) => {
+          console.log('Rendering tab:', tab);
+          const isActive = activeTab === tab.key;
           return (
             <button
               key={tab.key}
               onClick={() => handleTabClick(tab.key)}
-              className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm transition-colors whitespace-nowrap ${
-                activeTab === tab.key
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
-              }`}
-              aria-current={activeTab === tab.key ? 'page' : undefined}
+              className={`
+                px-4 py-2 rounded-t-lg text-sm font-medium whitespace-nowrap
+                ${isActive 
+                  ? 'bg-gray-700 text-white' 
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700/50'}
+              `}
             >
-              {iconElement} {/* Render the icon element */} 
-              <span>{tab.label}</span>
+              <div className="flex items-center gap-2">
+                {/* Render the icon using the iconIdentifier */}
+                {getIconComponent(tab.iconIdentifier)}
+                {tab.label}
+              </div>
             </button>
           );
         })}

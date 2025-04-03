@@ -5,213 +5,170 @@ import VideoTimeline from './VideoTimeline';
 import { TimelineMarker } from './VideoTypes';
 import { useVideoState } from './useVideoState';
 
-interface VideoPlayerProps {
-  src: string;
-  title: string;
-  markers?: TimelineMarker[];
-  onTimeUpdate?: (currentTime: number) => void;
-  onMarkerClick?: (marker: TimelineMarker) => void;
-  onPlay?: () => void;
-  onPause?: () => void;
-  onSeek?: () => void;
-  activeChapterId?: string;
-  className?: string;
+interface ModernVideoPlayerProps {
+    src: string;
+    title: string;
+    chapterId: string;
+    knowledgeId: string;
+    className?: string;
 }
 
 /**
  * Modern video player component with enhanced accessibility and modular architecture
  */
-const ModernVideoPlayer: React.FC<VideoPlayerProps> = ({
-  src,
-  title,
-  markers = [],
-  onTimeUpdate,
-  onMarkerClick,
-  onPlay,
-  onPause,
-  onSeek,
-  activeChapterId,
-  className = ''
+const ModernVideoPlayer: React.FC<ModernVideoPlayerProps> = ({
+    src,
+    title,
+    chapterId,
+    knowledgeId,
+    className = ''
 }) => {
-  // Create refs
-  const videoRef = useRef<VideoRefType>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  
-  // Use custom hook for video state management
-  const [state, actions] = useVideoState(
-    videoRef,
-    containerRef,
-    markers,
-    onPlay,
-    onPause,
-    onSeek
-  );
-  
-  const {
-    isPlaying,
-    currentTime,
-    duration,
-    volume,
-    isMuted,
-    isFullscreen,
-    isSeeking,
-    error,
-    currentChapter
-  } = state;
-  
-  const {
-    togglePlayPause,
-    seek,
-    setVolume,
-    toggleMute,
-    toggleFullscreen,
-    skipTime,
-    setCurrentTime
-  } = actions;
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [volume, setVolume] = useState(1);
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Control visibility of video controls
-  const [showControls, setShowControls] = useState(true);
-  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
 
-  // Update the active chapter when activeChapterId changes from props
-  useEffect(() => {
-    if (activeChapterId && markers) {
-      const marker = markers.find(m => m.id === activeChapterId);
-      if (marker) {
-        seek(marker.time);
-      }
-    }
-  }, [activeChapterId, markers, seek]);
+        const handleTimeUpdate = () => setCurrentTime(video.currentTime);
+        const handleDurationChange = () => setDuration(video.duration);
+        const handlePlay = () => setIsPlaying(true);
+        const handlePause = () => setIsPlaying(false);
+        const handleVolumeChange = () => setVolume(video.volume);
+        const handleFullscreenChange = () => setIsFullscreen(document.fullscreenElement === video);
 
-  // Handle time update from the video
-  const handleTimeUpdate = (time: number) => {
-    setCurrentTime(time);
-    if (onTimeUpdate) {
-      onTimeUpdate(time);
-    }
-  };
+        video.addEventListener('timeupdate', handleTimeUpdate);
+        video.addEventListener('durationchange', handleDurationChange);
+        video.addEventListener('play', handlePlay);
+        video.addEventListener('pause', handlePause);
+        video.addEventListener('volumechange', handleVolumeChange);
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
 
-  // Handle marker click
-  const handleMarkerClick = (marker: TimelineMarker) => {
-    seek(marker.time);
-    if (onMarkerClick) {
-      onMarkerClick(marker);
-    }
-  };
+        return () => {
+            video.removeEventListener('timeupdate', handleTimeUpdate);
+            video.removeEventListener('durationchange', handleDurationChange);
+            video.removeEventListener('play', handlePlay);
+            video.removeEventListener('pause', handlePause);
+            video.removeEventListener('volumechange', handleVolumeChange);
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+        };
+    }, []);
 
-  // Handle seeking start
-  const handleSeekStart = () => {
-    if (isPlaying && videoRef.current) {
-      videoRef.current.pause();
-    }
-  };
-
-  // Handle seeking during drag
-  const handleSeeking = (time: number) => {
-    setCurrentTime(time);
-  };
-
-  // Handle seeking end
-  const handleSeekEnd = (time: number) => {
-    seek(time);
-  };
-
-  // Show/hide controls based on mouse movement
-  const handleMouseMove = () => {
-    setShowControls(true);
-    
-    if (controlsTimeoutRef.current) {
-      clearTimeout(controlsTimeoutRef.current);
-    }
-    
-    controlsTimeoutRef.current = setTimeout(() => {
-      if (isPlaying) {
-        setShowControls(false);
-      }
-    }, 3000);
-  };
-
-  // Clean up timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (controlsTimeoutRef.current) {
-        clearTimeout(controlsTimeoutRef.current);
-      }
+    const togglePlay = () => {
+        if (videoRef.current) {
+            if (isPlaying) {
+                videoRef.current.pause();
+            } else {
+                videoRef.current.play();
+            }
+        }
     };
-  }, []);
 
-  return (
-    <div 
-      ref={containerRef}
-      className={`video-player relative w-full bg-black rounded-lg overflow-hidden ${className}`}
-      onMouseMove={handleMouseMove}
-      onTouchStart={handleMouseMove}
-    >
-      {/* Video Core Component */}
-      <VideoCore
-        ref={videoRef}
-        src={src}
-        title={title}
-        onTimeUpdate={handleTimeUpdate}
-        onMetadataLoaded={(duration) => setCurrentTime(currentTime)} // Just trigger a time update
-        onPlay={onPlay}
-        onPause={onPause}
-        onError={(errorMsg) => console.error(errorMsg)}
-        volume={volume}
-        muted={isMuted}
-        className="w-full"
-      />
-      
-      {/* Error Message */}
-      {error && (
-        <div className="absolute top-0 left-0 right-0 bg-red-600 text-white p-2 text-center">
-          {error}
+    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (videoRef.current) {
+            const time = parseFloat(e.target.value);
+            videoRef.current.currentTime = time;
+        }
+    };
+
+    const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (videoRef.current) {
+            const vol = parseFloat(e.target.value);
+            videoRef.current.volume = vol;
+        }
+    };
+
+    const toggleFullscreen = async () => {
+        if (!videoRef.current) return;
+
+        if (!document.fullscreenElement) {
+            try {
+                await videoRef.current.requestFullscreen();
+            } catch (err) {
+                console.error('Error attempting to enable fullscreen:', err);
+            }
+        } else {
+            await document.exitFullscreen();
+        }
+    };
+
+    const formatTime = (time: number) => {
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    };
+
+    return (
+        <div className={`relative bg-black ${className}`}>
+            <div className="relative aspect-video">
+                <video
+                    ref={videoRef}
+                    className="w-full h-full"
+                    src={src}
+                    title={title}
+                    playsInline
+                >
+                    Your browser does not support the video tag.
+                </video>
+
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between text-white">
+                            <button
+                                onClick={togglePlay}
+                                className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                                aria-label={isPlaying ? 'Pause' : 'Play'}
+                            >
+                                {isPlaying ? 'Pause' : 'Play'}
+                            </button>
+
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="1"
+                                        step="0.1"
+                                        value={volume}
+                                        onChange={handleVolumeChange}
+                                        className="w-20"
+                                    />
+                                </div>
+
+                                <button
+                                    onClick={toggleFullscreen}
+                                    className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                                    aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                                >
+                                    {isFullscreen ? 'Exit' : 'Full'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                            <input
+                                type="range"
+                                min="0"
+                                max={duration || 100}
+                                value={currentTime}
+                                onChange={handleSeek}
+                                className="flex-grow"
+                            />
+                            <div className="text-white text-sm">
+                                {formatTime(currentTime)} / {formatTime(duration)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h2 className="text-white text-lg font-semibold p-4">{title}</h2>
         </div>
-      )}
-      
-      {/* Controls Overlay - conditionally shown */}
-      <div 
-        className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent transition-opacity duration-300 ${
-          showControls ? 'opacity-100' : 'opacity-0'
-        }`}
-      >
-        {/* Timeline with markers */}
-        <VideoTimeline
-          currentTime={currentTime}
-          duration={duration}
-          markers={markers}
-          isSeeking={isSeeking}
-          onSeekStart={handleSeekStart}
-          onSeeking={handleSeeking}
-          onSeekEnd={handleSeekEnd}
-          onMarkerClick={handleMarkerClick}
-          className="mb-1"
-        />
-        
-        {/* Video Controls */}
-        <VideoControls
-          isPlaying={isPlaying}
-          currentTime={currentTime}
-          duration={duration}
-          volume={volume}
-          isMuted={isMuted}
-          isFullscreen={isFullscreen}
-          onPlayPause={togglePlayPause}
-          onSkip={skipTime}
-          onVolumeChange={setVolume}
-          onToggleMute={toggleMute}
-          onToggleFullscreen={toggleFullscreen}
-        />
-      </div>
-      
-      {/* Current Chapter Information - shown if available */}
-      {currentChapter && (
-        <div className="absolute top-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-sm">
-          {currentChapter.label || (currentChapter.chapterTitle ? `Chapter: ${currentChapter.chapterTitle}` : 'Marker')}
-        </div>
-      )}
-    </div>
-  );
+    );
 };
 
 export default ModernVideoPlayer; 

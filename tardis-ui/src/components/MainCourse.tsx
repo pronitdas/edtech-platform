@@ -136,16 +136,55 @@ interface MainCourseProps {
 }
 
 const MainCourse = ({ content: initialContent, language, chapter: initialChapter }: MainCourseProps) => {
+    // Debug logs to track data flow
+    console.log('MainCourse raw props:', {
+        initialContent,
+        language,
+        initialChapter,
+        hasContent: !!initialContent,
+        hasChapter: !!initialChapter,
+        contentType: initialContent ? typeof initialContent : 'undefined',
+        chapterType: initialChapter ? typeof initialChapter : 'undefined'
+    });
 
-    // TODO: Handle loading state for initial chapter/content fetching if necessary
-    // This example assumes initialChapter and initialContent are either loaded or null/undefined
+    // Ensure we have at least an empty object for content
+    const content = initialContent || {};
+    const chapter = initialChapter || {
+        id: 0,
+        chaptertitle: 'Loading...',
+        chapter: '',
+        knowledge_id: 0,
+        created_at: new Date().toISOString(),
+        chapter_type: 'text',
+        context: '',
+        k_id: 0,
+        level: 1,
+        lines: 0,
+        metadata: null,
+        needs_code: false,
+        needs_latex: false,
+        needs_roleplay: false,
+        seeded: false,
+        subtopic: '',
+        timestamp_end: null,
+        timestamp_start: null,
+        topic: null,
+        type: null
+    } satisfies ChapterV1;
+
+    console.log('MainCourse processed data:', {
+        content,
+        chapter,
+        isContentEmpty: Object.keys(content).length === 0,
+        isChapterDefault: chapter.id === 0
+    });
 
     // Use the custom hook for state management
     const {
         activeTab,
         showReport,
         isFullscreenMindmap,
-        isLoading, // Loading state from the hook (e.g., for tab switching simulations)
+        isLoading,
         showSettings,
         generatingTypes,
         isMobileView,
@@ -160,15 +199,23 @@ const MainCourse = ({ content: initialContent, language, chapter: initialChapter
         handleGenerateContent,
         handleGenerateRoleplay,
         handleCloseReport,
-        availableTabs, // These now have iconIdentifiers
+        handleShowReport,
+        availableTabs,
         getMissingContentTypes,
-        isGeneratingContent, // Function checking specific type generation
+        isGeneratingContent,
         getCurrentContentContext,
-        isChapterHookGenerating, // Boolean overall generating flag from useChapters
-    } = useCourseState(initialContent, initialChapter, language);
+        isChapterHookGenerating,
+    } = useCourseState(content, chapter, language || 'en');
 
-    // Early return if essential data isn't loaded
-    if (!initialChapter || !initialContent) {
+    console.log('Course state:', {
+        activeTab,
+        availableTabs,
+        showSettings,
+        content
+    });
+
+    // Show loading state if we don't have real content yet
+    if (!initialContent || !initialChapter) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-900">
                 <Loader size="large" />
@@ -176,17 +223,9 @@ const MainCourse = ({ content: initialContent, language, chapter: initialChapter
         );
     }
 
-    // Now we know initialChapter and initialContent are defined
-    const chapter = initialChapter;
-    const content = initialContent;
-
     return (
-        // Outer container
         <div className="course-viewer bg-gray-900 min-h-screen flex flex-col md:flex-row">
-
-            {/* Header + Main Area Container (Takes full height, relative positioning for children) */} 
             <div className="flex-grow flex flex-col overflow-hidden relative">
-                {/* Header */} 
                 <CourseHeader
                     chapter={chapter}
                     activeTab={activeTab}
@@ -197,12 +236,11 @@ const MainCourse = ({ content: initialContent, language, chapter: initialChapter
                     sidebarOpen={sidebarOpen}
                     showSettingsButton={getMissingContentTypes(content).length > 0}
                     getMissingContentTypes={getMissingContentTypes}
+                    onShowReport={handleShowReport}
                 />
 
-                {/* Content + Sidebar Container (Takes remaining space) */} 
                 <div className="flex-grow flex overflow-hidden">
-                    {/* Content Renderer */} 
-                    <div className={`flex-grow h-full overflow-y-auto transition-all duration-300 ${activeTab === 'video' && sidebarOpen ? 'md:w-3/4' : 'w-full'}"`}>
+                    <div className={`flex-grow h-full overflow-y-auto transition-all duration-300 ${activeTab === 'video' && sidebarOpen ? 'md:w-3/4' : 'w-full'}`}>
                         <CourseContentRenderer
                             activeTab={activeTab}
                             content={content}
@@ -216,42 +254,35 @@ const MainCourse = ({ content: initialContent, language, chapter: initialChapter
                             onCloseReport={handleCloseReport}
                             onGenerateContentRequest={showContentGenerationPanel}
                         />
-                    </div> {/* Closes Content Renderer div */} 
+                    </div>
 
-                    {/* Sidebar (Only for Video Tab) */} 
                     {activeTab === 'video' && (
                         <CourseSidebar isOpen={sidebarOpen} />
                     )}
-                </div> {/* Closes Content + Sidebar div */} 
+                </div>
 
-                {/* Settings Panel (Absolutely positioned within Header + Main Area container) */} 
                 {showSettings && (
                     <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/50 p-4">
-                      <ContentGenerationPanel
-                          chapter={chapter}
-                          language={language}
-                          missingTypes={getMissingContentTypes(content)}
-                          onGenerate={handleGenerateContent}
-                          isGenerating={isChapterHookGenerating}
-                          generatingTypes={generatingTypes}
-                          onClose={hideContentGenerationPanel}
-                      />
-                    </div> // Closes Settings Panel div
+                        <ContentGenerationPanel
+                            chapter={chapter}
+                            language={language || 'en'}
+                            missingTypes={getMissingContentTypes(content)}
+                            onGenerate={handleGenerateContent}
+                            isGenerating={isChapterHookGenerating}
+                            generatingTypes={generatingTypes}
+                            onClose={hideContentGenerationPanel}
+                        />
+                    </div>
                 )}
 
-                {/* Chatbot Button (Absolutely positioned within Header + Main Area container) */} 
                 <div className="absolute bottom-4 left-4 z-30">
                     <ChatbotFloatingButton
                         contentContext={getCurrentContentContext()}
                         chapterTitle={chapter.chaptertitle}
                     />
-                </div> {/* Closes Chatbot Button div */} 
-
-            </div> {/* Closes Header + Main Area div */} 
-
-            {/* Learning Report could be a modal triggered outside the main flow */} 
-
-        </div> // Closes Outer container div
+                </div>
+            </div>
+        </div>
     );
 };
 

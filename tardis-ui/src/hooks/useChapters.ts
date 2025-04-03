@@ -89,14 +89,30 @@ export const useChapters = () => {
 
     const getEdTechContentForChapter = useCallback(async (chapter: ChapterV1, language: string): Promise<ChapterContent | null> => {
         try {
+            console.log("Getting EdTech content for chapter:", chapter, "language:", language);
+            
+            // Return null if chapter is undefined
+            if (!chapter || !chapter.id) {
+                console.error("Invalid chapter provided to getEdTechContentForChapter");
+                return null;
+            }
+            
             const content = await getEdTechContent(chapter, language);
-            if (content.length > 0) {
+            console.log("Raw EdTech content:", content);
+            
+            if (content && content.length > 0) {
                 // Fetch roleplay data and video_url from knowledge
                 const { data: knowledgeData, error } = await supabase
                     .from('knowledge')
                     .select('roleplay, video_url')
                     .eq('id', chapter.knowledge_id)
                     .single();
+                
+                if (error) {
+                    console.error("Error fetching knowledge data:", error);
+                }
+                
+                console.log("Knowledge data:", knowledgeData);
                 
                 const contentData = content[0] as ChapterContent;
                 
@@ -107,6 +123,8 @@ export const useChapters = () => {
                         ...(knowledgeData.roleplay && { roleplay: knowledgeData.roleplay }),
                         ...(knowledgeData.video_url && { video_url: knowledgeData.video_url })
                     };
+                    
+                    console.log("Enhanced content with video and roleplay:", enhancedContent);
                     
                     setState(prev => ({
                         ...prev,
@@ -123,6 +141,8 @@ export const useChapters = () => {
                     return contentData;
                 }
             }
+            
+            console.warn("No content returned from getEdTechContent");
             return null;
         } catch (error) {
             console.error('Error in getEdTechContentForChapter:', error);

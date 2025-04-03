@@ -64,13 +64,13 @@ export const CourseProvider: React.FC<CourseProviderProps> = ({
     console.error('CourseProvider: Required data is missing', { chapter, content });
     return null;
   }
+  
+  console.log('CourseProvider initialized with content:', content);
+  console.log('Video URL:', content.video_url);
+  console.log('Roleplay data:', content.roleplay);
+  console.log('Available tabs from parent:', availableTabs);
 
-  const courseState = useCourseState({ 
-    content, 
-    chapter,
-    language,
-    availableTabs
-  });
+  const courseState = useCourseState(content, chapter, language);
   
   return (
     <CourseContext.Provider value={courseState}>

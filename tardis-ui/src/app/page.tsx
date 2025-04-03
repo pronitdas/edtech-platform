@@ -18,6 +18,7 @@ import { analyticsService } from '@/services/analytics-service';
 import { ChevronLeft, Menu, X } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
+import { ChapterV1 } from '../types/database';
 
 // Enum for application views
 const VIEW_TYPES = {
@@ -85,15 +86,19 @@ function EdtechApp() {
 
   // Handle chapter/topic selection
   const handleChapterClick = useCallback(
-    async (topic) => {
-      console.log("Chapter clicked:", topic); // Debug log
-      if (currentTopic.topic !== topic) {
-        console.log("Loading chapter content for:", topic); // Debug log
-        await getEdTechContentForChapter(topic, language);
-        setCurrentTopic((prev) => ({ ...prev, topic, language }));
-        setCurrentView(VIEW_TYPES.COURSE_CONTENT);
+    async (chapter: ChapterV1) => {
+      console.log("Chapter clicked:", chapter); // Debug log
+      if (currentTopic.topic?.id !== chapter.id) {
+        console.log("Loading chapter content for:", chapter); // Debug log
+        const content = await getEdTechContentForChapter(chapter, language);
+        if (content) {
+          setCurrentTopic((prev) => ({ ...prev, topic: chapter, language }));
+          setCurrentView(VIEW_TYPES.COURSE_CONTENT);
+        } else {
+          console.error("Failed to load chapter content");
+        }
       } else {
-        console.log("Chapter already selected:", topic); // Debug log
+        console.log("Chapter already selected:", chapter); // Debug log
       }
     },  
     [language, currentTopic, getEdTechContentForChapter, setCurrentView]

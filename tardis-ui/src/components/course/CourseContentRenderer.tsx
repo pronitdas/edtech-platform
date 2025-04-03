@@ -51,40 +51,26 @@ const ensureRoleplayDataFormat = (data: any): Scenario[] => {
     return [];
 };
 
-// --- Updated fetchSignedVideoUrl function using Supabase ---
-async function fetchSignedVideoUrl(filePath: string): Promise<string> {
-  console.log(`Requesting Supabase signed URL for: ${filePath}`);
-  // Assuming 'videos' is your storage bucket name
-  const bucketName = 'videos'; 
-  const expiresIn = 3600; // 1 hour in seconds
-
+// --- Updated function to use public URLs instead of signed URLs ---
+async function fetchPublicVideoUrl(filePath: string): Promise<string> {
   try {
-    const { data, error } = await supabase
-      .storage
-      .from(bucketName)
-      .createSignedUrl(filePath, expiresIn);
-
-    if (error) {
-      console.error("Supabase signing error:", error);
-      throw new Error(`Failed to get signed URL: ${error.message}`);
+    console.log("Using direct public URL for:", filePath);
+    
+    if (!filePath) {
+      throw new Error("No video URL provided");
     }
-
-    if (!data?.signedUrl) {
-       console.error("Supabase signing error: No signedUrl in data");
-       throw new Error("Failed to get signed URL: Invalid response from Supabase.");
+    
+    // If already a full URL, return it directly
+    if (filePath.startsWith('http')) {
+      return filePath;
     }
-
-    console.log(`Successfully obtained signed URL.`);
-    return data.signedUrl;
-
+    
+    return null;
   } catch (error) {
-     // Catch any other potential errors during the process
-     console.error("Error in fetchSignedVideoUrl:", error);
-     // Re-throw the error to be caught by the useEffect hook
-     throw error;
+    console.error("Error processing video URL:", error);
+    throw error;
   }
 }
-// --- End Updated fetchSignedVideoUrl function ---
 
 interface CourseContentRendererProps {
   activeTab: string;
@@ -117,30 +103,75 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
   onCloseReport,
   onGenerateContentRequest,
 }) => {
-  const { notes, latex_code, mindmap, quiz = [], summary, og, video_url, roleplay } = content;
+  // Parse content data
+  const parseContent = (content: ChapterContent) => {
+    console.log('Raw content before parsing:', content);
+    try {
+      // Create a base object with all properties, using defaults for missing ones
+      const parsed = {
+        notes: content.notes || '',
+        latex_code: content.latex_code || '',
+        mindmap: content.mindmap || '',
+        quiz: content.quiz || [],
+        summary: content.summary || '',
+        og: content.og || content.chapter || '',
+        video_url: content.video_url || '',
+        roleplay: null as any
+      };
+      
+      // Special handling for roleplay which can be a string or object
+      if (content.roleplay) {
+        if (typeof content.roleplay === 'string') {
+          try {
+            parsed.roleplay = JSON.parse(content.roleplay);
+          } catch (e) {
+            console.error('Error parsing roleplay JSON:', e);
+            parsed.roleplay = content.roleplay; // Keep as string if parsing fails
+          }
+        } else {
+          parsed.roleplay = content.roleplay; // Already an object
+        }
+      }
+      
+      console.log('Parsed content:', parsed);
+      return parsed;
+    } catch (error) {
+      console.error('Error parsing content:', error);
+      return content; // Return original if parsing fails
+    }
+  };
+
+  const parsedContent = parseContent(content);
+  console.log('Parsed content:', parsedContent); // Debug log
+  console.log('Active tab:', activeTab); // Debug log
+
+  const { notes, latex_code, mindmap, quiz, summary, og, video_url, roleplay } = parsedContent;
 
   // State for video URL signing
   const [signedVideoUrl, setSignedVideoUrl] = useState<string | null>(null);
   const [isSigningUrl, setIsSigningUrl] = useState<boolean>(false);
   const [signingError, setSigningError] = useState<string | null>(null);
 
-  // Effect to fetch signed URL when video tab is active
+  // Effect to handle video URL
   useEffect(() => {
     if (activeTab === 'video' && video_url) {
-      let isMounted = true; // Prevent state update on unmounted component
-      const signUrl = async () => {
+      console.log('Setting up video with URL:', video_url);
+      let isMounted = true;
+      
+      const setupVideoUrl = async () => {
         setIsSigningUrl(true);
         setSigningError(null);
-        setSignedVideoUrl(null); // Reset previous URL
+        setSignedVideoUrl(null);
         try {
-          const url = await fetchSignedVideoUrl(video_url);
+          const url = await fetchPublicVideoUrl(video_url);
+          console.log('Ready to use URL:', url);
           if (isMounted) {
             setSignedVideoUrl(url);
           }
         } catch (error) {
-          console.error("Error signing video URL:", error);
+          console.error("Error processing video URL:", error);
           if (isMounted) {
-            setSigningError("Could not load video. Please try again later.");
+            setSigningError(`Could not load video: ${error.message || 'Unknown error'}`);
           }
         } finally {
           if (isMounted) {
@@ -148,18 +179,18 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
           }
         }
       };
-      signUrl();
+      
+      setupVideoUrl();
 
       return () => {
-        isMounted = false; // Cleanup function to set isMounted to false
+        isMounted = false;
       };
     } else {
-       // Reset state if not on video tab or no video_url
-       setSignedVideoUrl(null);
-       setIsSigningUrl(false);
-       setSigningError(null);
+      setSignedVideoUrl(null);
+      setIsSigningUrl(false);
+      setSigningError(null);
     }
-  }, [activeTab, video_url]); // Re-run effect if tab or video_url changes
+  }, [activeTab, video_url]);
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-full"><Loader size="large" /></div>;
@@ -182,18 +213,36 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
 
   // Video Tab
   if (activeTab === "video" && video_url) {
-    // **TODO: Video URL Signing Check** - Logic moved to useEffect
-
     // Show loader while signing
     if (isSigningUrl) {
-       return <div className="flex items-center justify-center h-full"><Loader size="medium" /></div>;
+        return (
+            <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                    <Loader size="medium" />
+                    <p className="mt-4 text-gray-400">Loading video...</p>
+                </div>
+            </div>
+        );
     }
 
     // Show error if signing failed
     if (signingError) {
         return (
-            <div className="flex items-center justify-center h-full p-4 text-center text-red-400">
-                {signingError}
+            <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+                <div className="text-red-400 mb-4">{signingError}</div>
+                <button 
+                    onClick={() => {
+                        setSigningError(null);
+                        setIsSigningUrl(true);
+                        fetchPublicVideoUrl(video_url)
+                            .then(url => setSignedVideoUrl(url))
+                            .catch(err => setSigningError(err.message))
+                            .finally(() => setIsSigningUrl(false));
+                    }}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                >
+                    Retry Loading
+                </button>
             </div>
         );
     }
@@ -201,64 +250,95 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
     // Render player only if signed URL is available
     if (signedVideoUrl) {
         return (
-          // ModernVideoPlayer might handle its own layout internally, adjust as needed
-          // The sidebar state might influence layout here or be passed to ModernVideoPlayer
-          <ModernVideoPlayer
-            src={signedVideoUrl} // Use the state variable
-            title={chapter.chaptertitle}
-            // markers={timelineMarkers} // Pass markers if available
-            // onMarkerClick={onVideoMarkerClick} // Pass handler if needed
-            // Pass other relevant props like chapterId, knowledgeId if needed by ModernVideoPlayer
-          />
+            <div className={`h-full ${sidebarOpen ? 'md:pr-64' : ''}`}>
+                <ModernVideoPlayer
+                    src={signedVideoUrl}
+                    title={chapter.chaptertitle}
+                    chapterId={chapter.id.toString()}
+                    knowledgeId={chapter.knowledge_id.toString()}
+                    className="w-full h-full"
+                />
+            </div>
         );
     }
 
-    // Fallback if signing finishes but URL is somehow still null (shouldn't happen with current placeholder)
-    return <div className="flex items-center justify-center h-full p-4 text-center text-gray-400">Preparing video...</div>;
+    return (
+        <div className="flex items-center justify-center h-full p-4 text-center text-gray-400">
+            <div>
+                <Loader size="small" />
+                <p className="mt-2">Preparing video playback...</p>
+            </div>
+        </div>
+    );
   }
 
   // Original Content Tab (from chapter.chapter)
-  if (activeTab === "og" && chapter?.chapter) {
+  if (activeTab === "og") {
     return (
-      <div className="h-full overflow-y-auto p-4 md:p-6 bg-gray-900 text-white">
-          <div className="prose prose-invert prose-lg max-w-none">
-              <ModernMarkdownSlideshow
-                  content={[chapter.chapter]} // Pass original content
-                  knowledge_id={chapter.knowledge_id.toString()}
-                  // Add any other relevant props if needed
-              />
-          </div>
-      </div>
+        <div className="h-full overflow-y-auto p-4 md:p-6 bg-gray-900 text-white">
+            <div className="prose prose-invert prose-lg max-w-none">
+                {chapter?.chapter ? (
+                    <ModernMarkdownSlideshow
+                        content={[chapter.chapter]}
+                        knowledge_id={chapter.knowledge_id.toString()}
+                    />
+                ) : (
+                    <div className="text-center text-gray-400">
+                        <p>No original content available.</p>
+                    </div>
+                )}
+            </div>
+        </div>
     );
   }
 
   // Notes Tab
-  if (activeTab === "notes" && notes) {
+  if (activeTab === "notes") {
     return (
-      <div className="h-full overflow-y-auto p-4 md:p-6">
-        <ModernMarkdownSlideshow
-          content={[notes]} // Modern component might expect an array
-          knowledge_id={chapter.knowledge_id.toString()}
-          // Pass other relevant props like theme, controls config
-        />
-      </div>
+        <div className="h-full overflow-y-auto p-4 md:p-6">
+            {notes ? (
+                <ModernMarkdownSlideshow
+                    content={Array.isArray(notes) ? notes : [notes]}
+                    knowledge_id={chapter.knowledge_id.toString()}
+                />
+            ) : (
+                <div className="text-center text-gray-400">
+                    <p>Notes are not available for this content.</p>
+                    <button
+                        onClick={onGenerateContentRequest}
+                        className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                    >
+                        Generate Notes
+                    </button>
+                </div>
+            )}
+        </div>
     );
   }
 
   // Summary Tab
-  if (activeTab === "summary" && summary) {
+  if (activeTab === "summary") {
     return (
-      <div className="h-full overflow-y-auto p-4 md:p-6 bg-gray-900 text-white">
-        {/* Consider if a title is needed here or handled by the slideshow */}
-        {/* <h1 className="text-2xl font-bold mb-4">{chapter.chaptertitle} - Summary</h1> */}
-        <div className="prose prose-invert prose-lg max-w-none">
-          <ModernMarkdownSlideshow
-            content={[summary]} // Modern component might expect an array
-            knowledge_id={chapter.knowledge_id.toString()}
-            // Pass other relevant props
-          />
+        <div className="h-full overflow-y-auto p-4 md:p-6 bg-gray-900 text-white">
+            <div className="prose prose-invert prose-lg max-w-none">
+                {summary ? (
+                    <ModernMarkdownSlideshow
+                        content={Array.isArray(summary) ? summary : [summary]}
+                        knowledge_id={chapter.knowledge_id.toString()}
+                    />
+                ) : (
+                    <div className="text-center text-gray-400">
+                        <p>Summary is not available for this content.</p>
+                        <button
+                            onClick={onGenerateContentRequest}
+                            className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                        >
+                            Generate Summary
+                        </button>
+                    </div>
+                )}
+            </div>
         </div>
-      </div>
     );
   }
 
@@ -338,4 +418,4 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
   );
 };
 
-export default CourseContentRenderer; 
+export default CourseContentRenderer;
