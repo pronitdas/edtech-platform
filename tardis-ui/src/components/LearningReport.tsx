@@ -101,10 +101,10 @@ const LearningReport = ({ onClose, learningData }: LearningReportProps) => {
       {
         label: 'Video Engagement',
         data: [
-          data.videoPlays,
-          data.videoPauses,
-          data.timelineSeeks,
-          data.videoWatchDuration.toFixed(2)
+          data.videoPlays || 0,
+          data.videoPauses || 0,
+          data.timelineSeeks || 0,
+          data.videoWatchDuration ? parseFloat(data.videoWatchDuration.toFixed(2)) : 0
         ],
         backgroundColor: 'rgba(99, 102, 241, 0.7)',
         borderColor: 'rgba(99, 102, 241, 1)',
@@ -208,7 +208,7 @@ const LearningReport = ({ onClose, learningData }: LearningReportProps) => {
                   </li>
                   <li className="flex justify-between">
                     <span className="text-gray-300">Watch Duration:</span>
-                    <span className="font-semibold">{data.videoWatchDuration.toFixed(2)} seconds</span>
+                    <span className="font-semibold">{data.videoWatchDuration ? data.videoWatchDuration.toFixed(2) : '0.00'} seconds</span>
                   </li>
                   <li className="flex justify-between">
                     <span className="text-gray-300">Video Pauses:</span>

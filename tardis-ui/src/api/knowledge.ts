@@ -14,7 +14,7 @@ export async function fetchVideoContent(id: number): Promise<VideoMetadata> {
       .single();
       
     if (error) throw error;
-    
+    console.log(data);
     const knowledgeData = data as Knowledge;
     
     // Check if video content

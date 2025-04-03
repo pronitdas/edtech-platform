@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import FileUploader from '@/components/FileUploader';
-import MainCourse from '@/components/MainCourse';
-import Chapters from '@/components/Chapters';
+import CourseMain from '@/components/course/CourseMain';
+import ChapterAdapter from '@/components/ChapterAdapter';
 import Knowledge from '@/components/Knowledge';
 import { useKnowledgeData } from '@/hooks/useKnowledgeData';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -34,7 +34,6 @@ function EdtechApp() {
 
   let userId = null;
   if(user) {
-    console.log(user);
     userId = user.id; // We'll use a fixed ID for now, in a real app this would come from auth
   } else {
     navigate('/login');
@@ -87,13 +86,17 @@ function EdtechApp() {
   // Handle chapter/topic selection
   const handleChapterClick = useCallback(
     async (topic) => {
+      console.log("Chapter clicked:", topic); // Debug log
       if (currentTopic.topic !== topic) {
+        console.log("Loading chapter content for:", topic); // Debug log
         await getEdTechContentForChapter(topic, language);
         setCurrentTopic((prev) => ({ ...prev, topic, language }));
         setCurrentView(VIEW_TYPES.COURSE_CONTENT);
+      } else {
+        console.log("Chapter already selected:", topic); // Debug log
       }
     },  
-    [language, currentTopic]
+    [language, currentTopic, getEdTechContentForChapter, setCurrentView]
   );
 
   // Handle navigation to learning module (video, quiz, etc.)
@@ -177,7 +180,7 @@ function EdtechApp() {
                     <h3 className="text-lg font-semibold mb-2">Chapters</h3>
                   </div>
                   <div className="sidebar-chapters overflow-y-auto">
-                    <Chapters
+                    <ChapterAdapter
                       chaptersMeta={chaptersMeta}
                       onLessonClick={(chapter) => {
                         handleChapterClick(chapter);
@@ -248,10 +251,10 @@ function EdtechApp() {
               {currentView === VIEW_TYPES.COURSE_CONTENT && (
                 <div className="flex h-full flex-col">
                   <div className="flex-grow">
-                    {content ? (
-                      <MainCourse 
-                        language={language} 
+                    {content && currentTopic.topic ? (
+                      <CourseMain
                         content={content}
+                        language={language}
                         chapter={currentTopic.topic}
                       />
                     ) : (
