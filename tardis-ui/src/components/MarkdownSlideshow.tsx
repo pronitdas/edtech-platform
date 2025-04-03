@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MarkdownViewer from "./MarkDownViewer";
 
 // Markdown Slideshow Component
@@ -8,17 +8,38 @@ const MarkdownSlideshow: React.FC<{
     content: string[];
     images?: string[];
     knowledge_id: string;
-}> = ({ content, images = [], knowledge_id }) => {
-    const [currentSlide, setCurrentSlide] = useState(0);
+    currentIndex?: number;
+    onSlideChange?: (index: number) => void;
+}> = ({ content, images = [], knowledge_id, currentIndex, onSlideChange }) => {
+    const [currentSlide, setCurrentSlide] = useState(currentIndex || 0);
     const hasNextSlide = currentSlide < content.length - 1;
     const hasPreviousSlide = currentSlide > 0;
 
+    // Sync with external control
+    useEffect(() => {
+        if (currentIndex !== undefined && currentIndex !== currentSlide) {
+            setCurrentSlide(currentIndex);
+        }
+    }, [currentIndex]);
+
     const nextSlide = () => {
-        if (hasNextSlide) setCurrentSlide((prev) => prev + 1);
+        if (hasNextSlide) {
+            const newIndex = currentSlide + 1;
+            setCurrentSlide(newIndex);
+            if (onSlideChange) {
+                onSlideChange(newIndex);
+            }
+        }
     };
 
     const previousSlide = () => {
-        if (hasPreviousSlide) setCurrentSlide((prev) => prev - 1);
+        if (hasPreviousSlide) {
+            const newIndex = currentSlide - 1;
+            setCurrentSlide(newIndex);
+            if (onSlideChange) {
+                onSlideChange(newIndex);
+            }
+        }
     };
 
     return (

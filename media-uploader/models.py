@@ -73,3 +73,15 @@ class ChapterDataResponse(BaseModel):
     success: bool
     data: Optional[List[Dict[str, Any]]] = None
     error: Optional[str] = None
+
+
+class FileResponse(BaseModel):
+    """Response model for PDF processing."""
+    markdown: str
+    metadata: Dict
+    analysis: Dict
+    image_urls: Dict
+    failed_images: List[str]
+    processed_at: str
+    retry_count: int
+    file_type: str = "document"  # Can be "pdf", "docx", "pptx", "document" (generic) or "video"

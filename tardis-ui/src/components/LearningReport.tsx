@@ -1,110 +1,122 @@
 import { useState, useEffect } from 'react';
-import { interactionTracker } from '@/services/interaction-tracking';
+// import { interactionTracker } from '@/services/interaction-tracking';
+import { analyticsService } from '@/services/analytics-service';
+import { LearningAnalytics } from '@/types/database'; // Import the type
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
-import { Pie, Bar } from 'react-chartjs-2';
-import { X, BarChart2, PieChart, FileText, Award, BookOpen, Brain } from 'lucide-react';
+import { Pie, Bar } from 'react-chartjs-2'; // Keep for now, might remove later
+import { X, BarChart2, PieChart, FileText, Award, BookOpen, Brain, Loader2 } from 'lucide-react';
+import { LearningAnalyticsDashboard } from './analytics/LearningAnalyticsDashboard';
 
 // Register ChartJS components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
+// REMOVE OLD INTERFACE
+/*
+interface InteractionData {
+  videoPlays: number;
+  videoWatchDuration: number;
+  videoPauses: number;
+  timelineSeeks: number;
+  quizClicks: number;
+  notesClicks: number;
+  summaryClicks: number;
+  mindmapClicks: number;
+  animationViews: number;
+  chatbotQuestions: string[];
+  chapterNavigations: { chapterId: string; timestamp: number }[];
+}
+*/
+
 interface LearningReportProps {
-  onClose: () => void;
+  userId: string;
+  knowledgeId: string; // Use knowledgeId for consistency
+  onClose?: () => void;
+  // learningData?: InteractionData; // Remove old prop
 }
 
-const LearningReport = ({ onClose }: LearningReportProps) => {
-  const [data, setData] = useState(interactionTracker.getData());
-  const [analysis, setAnalysis] = useState(interactionTracker.generateAnalysis());
-  const [activeTab, setActiveTab] = useState('overview');
+const LearningReport = ({ userId, knowledgeId, onClose }: LearningReportProps) => {
+  // const [data, setData] = useState<InteractionData>(learningData || interactionTracker.getData());
+  // const [analysis, setAnalysis] = useState(interactionTracker.generateAnalysis());
+  const [analyticsData, setAnalyticsData] = useState<LearningAnalytics | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Prepare data for pie chart
-  const pieChartData = {
-    labels: ['Quiz', 'Notes', 'Summary', 'Mindmap', 'Animation'],
-    datasets: [
-      {
-        data: [
-          data.quizClicks,
-          data.notesClicks,
-          data.summaryClicks,
-          data.mindmapClicks,
-          data.animationViews
-        ],
-        backgroundColor: [
-          'rgba(99, 102, 241, 0.7)',
-          'rgba(16, 185, 129, 0.7)',
-          'rgba(245, 158, 11, 0.7)',
-          'rgba(239, 68, 68, 0.7)',
-          'rgba(139, 92, 246, 0.7)'
-        ],
-        borderColor: [
-          'rgba(99, 102, 241, 1)',
-          'rgba(16, 185, 129, 1)',
-          'rgba(245, 158, 11, 1)',
-          'rgba(239, 68, 68, 1)',
-          'rgba(139, 92, 246, 1)'
-        ],
-        borderWidth: 1
+  const [activeTab, setActiveTab] = useState('analysis'); // Default to analysis now
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      if (!userId || !knowledgeId) {
+        setError("User ID or Knowledge ID is missing.");
+        setIsLoading(false);
+        return;
       }
-    ]
-  };
+      setIsLoading(true);
+      setError(null);
+      try {
+        // TODO: Verify/update analyticsService to return LearningAnalytics structure
+        // Assuming getUserCompletion or a similar function returns the required data.
+        // The current getUserCompletion returns { completion: number, ... }
+        // We might need a new function like getUserLearningAnalytics(userId, knowledgeId)
+        const fetchedData = await analyticsService.getUserCompletion(userId, knowledgeId);
+        
+        // TEMP: Map fetched data to LearningAnalytics - replace with actual data structure later
+        const mappedData: LearningAnalytics = {
+            engagement_score: fetchedData.engagement_score || null,
+            understanding_level: fetchedData.understanding || "Not available",
+            strengths: fetchedData.strengths || [],
+            weaknesses: fetchedData.weaknesses || [],
+            recommendations: fetchedData.recommendations || []
+        }
+        
+        // setAnalyticsData(fetchedData as LearningAnalytics); // Use this once service returns correct type
+        setAnalyticsData(mappedData);
 
-  // Prepare data for bar chart
-  const barChartData = {
-    labels: ['Plays', 'Pauses', 'Timeline Seeks', 'Watch Duration (s)'],
-    datasets: [
-      {
-        label: 'Video Engagement',
-        data: [
-          data.videoPlays,
-          data.videoPauses,
-          data.timelineSeeks,
-          data.videoWatchDuration.toFixed(2)
-        ],
-        backgroundColor: 'rgba(99, 102, 241, 0.7)',
-        borderColor: 'rgba(99, 102, 241, 1)',
-        borderWidth: 1
+      } catch (err) {
+        console.error("Failed to fetch learning analytics:", err);
+        setError("Could not load learning analytics data.");
+        setAnalyticsData(null);
+      } finally {
+        setIsLoading(false);
       }
-    ]
-  };
+    };
 
-  // Chart options
+    fetchAnalytics();
+  }, [userId, knowledgeId]);
+
+  // REMOVE OLD CHART DATA PREPARATION (Pie and Bar)
+  // ... (pieChartData preparation removed)
+  // ... (barChartData preparation removed)
+
+  // REMOVE OLD useEffect for analysis generation
+  /*
+  useEffect(() => {
+    // ... (old analysis generation logic removed)
+  }, [learningData]);
+  */
+
+  // Chart options (Keep for now, might reuse or remove)
   const pieChartOptions = {
-    responsive: true,
-    plugins: {
-      legend: { position: 'bottom' as const },
-      title: { display: true, text: 'Interaction Distribution', color: '#fff', font: { size: 16 } }
-    }
+// ... existing code ...
   };
 
-  const barChartOptions = {
-    responsive: true,
-    scales: { 
-      y: { 
-        beginAtZero: true,
-        ticks: { color: '#fff' },
-        grid: { color: 'rgba(255, 255, 255, 0.1)' }
-      },
-      x: {
-        ticks: { color: '#fff' },
-        grid: { color: 'rgba(255, 255, 255, 0.1)' }
-      }
-    },
-    plugins: {
-      legend: { display: false },
-      title: { display: true, text: 'Video Engagement Metrics', color: '#fff', font: { size: 16 } }
-    }
-  };
-
-  // Define tabs
+  // Define tabs (removing Overview, Charts, Questions)
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: <FileText className="w-5 h-5" /> },
+    // { id: 'overview', label: 'Overview', icon: <FileText className="w-5 h-5" /> },
     { id: 'analysis', label: 'Analysis', icon: <Brain className="w-5 h-5" /> },
-    { id: 'charts', label: 'Charts', icon: <BarChart2 className="w-5 h-5" /> },
-    { id: 'questions', label: 'Questions', icon: <BookOpen className="w-5 h-5" /> }
+    // { id: 'charts', label: 'Charts', icon: <BarChart2 className="w-5 h-5" /> },
+    // { id: 'questions', label: 'Questions', icon: <BookOpen className="w-5 h-5" /> }
   ];
+
+  // Handle close button click
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div className="bg-gray-900 text-white p-6 rounded-lg shadow-2xl max-w-4xl w-full overflow-auto border border-gray-700" style={{ maxHeight: '90vh' }}>
+      <div className="bg-gray-900 text-white p-6 rounded-lg shadow-2xl max-w-5xl w-full overflow-auto border border-gray-700" style={{ maxHeight: '90vh' }}>
         {/* Header */}
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-700">
           <div className="flex items-center gap-3">
@@ -112,7 +124,7 @@ const LearningReport = ({ onClose }: LearningReportProps) => {
             <h2 className="text-3xl font-bold">Learning Report</h2>
           </div>
           <button 
-            onClick={onClose}
+            onClick={handleClose}
             className="text-gray-400 hover:text-white transition-colors"
             aria-label="Close"
           >
@@ -141,142 +153,29 @@ const LearningReport = ({ onClose }: LearningReportProps) => {
         </div>
         
         {/* Tab Content */}
-        <div className="mb-6">
-          {/* Overview Tab */}
-          {activeTab === 'overview' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <h3 className="text-xl font-semibold mb-4 text-indigo-400">Video Engagement</h3>
-                <ul className="space-y-3">
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Video Plays:</span>
-                    <span className="font-semibold">{data.videoPlays}</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Watch Duration:</span>
-                    <span className="font-semibold">{data.videoWatchDuration.toFixed(2)} seconds</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Video Pauses:</span>
-                    <span className="font-semibold">{data.videoPauses}</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Timeline Seeks:</span>
-                    <span className="font-semibold">{data.timelineSeeks}</span>
-                  </li>
-                </ul>
-              </div>
-              
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <h3 className="text-xl font-semibold mb-4 text-indigo-400">Feature Usage</h3>
-                <ul className="space-y-3">
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Quiz Interactions:</span>
-                    <span className="font-semibold">{data.quizClicks}</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Notes Interactions:</span>
-                    <span className="font-semibold">{data.notesClicks}</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Summary Interactions:</span>
-                    <span className="font-semibold">{data.summaryClicks}</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Mindmap Interactions:</span>
-                    <span className="font-semibold">{data.mindmapClicks}</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span className="text-gray-300">Animation Views:</span>
-                    <span className="font-semibold">{data.animationViews}</span>
-                  </li>
-                </ul>
-              </div>
+        <div className="mb-6 min-h-[200px]">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+              <span className="ml-2 text-gray-300">Loading report...</span>
             </div>
-          )}
-          
-          {/* Analysis Tab */}
-          {activeTab === 'analysis' && (
-            <div className="bg-gray-800 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold mb-4 text-indigo-400">Learning Analysis</h3>
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-lg font-medium text-white mb-2">Understanding</h4>
-                  <p className="text-gray-300">{analysis.understanding}</p>
-                </div>
-                <div>
-                  <h4 className="text-lg font-medium text-white mb-2">Confidence</h4>
-                  <p className="text-gray-300">{analysis.confidence}</p>
-                </div>
-                <div>
-                  <h4 className="text-lg font-medium text-white mb-2">Strengths</h4>
-                  <p className="text-gray-300">{analysis.strengths}</p>
-                </div>
-                <div>
-                  <h4 className="text-lg font-medium text-white mb-2">Weaknesses</h4>
-                  <p className="text-gray-300">{analysis.weaknesses}</p>
-                </div>
-                <div>
-                  <h4 className="text-lg font-medium text-white mb-2">Areas for Improvement</h4>
-                  <p className="text-gray-300">{analysis.improvement}</p>
-                </div>
-              </div>
+          ) : error ? (
+            <div className="flex items-center justify-center h-full text-red-500">
+              <X className="w-6 h-6 mr-2" />
+              <span>{error}</span>
             </div>
-          )}
-          
-          {/* Charts Tab */}
-          {activeTab === 'charts' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <div className="h-64">
-                  <Pie data={pieChartData} options={pieChartOptions} />
-                </div>
-              </div>
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <div className="h-64">
-                  <Bar data={barChartData} options={barChartOptions} />
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Questions Tab */}
-          {activeTab === 'questions' && (
-            <div className="bg-gray-800 p-6 rounded-lg">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold text-indigo-400">Chatbot Questions</h3>
-                <span className="bg-indigo-600 text-white text-sm px-2 py-1 rounded-full">
-                  Total: {data.chatbotQuestions.length}
-                </span>
-              </div>
-              
-              {data.chatbotQuestions.length > 0 ? (
-                <ul className="space-y-2 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
-                  {data.chatbotQuestions.map((q, index) => (
-                    <li key={index} className="bg-gray-700 p-3 rounded-md">
-                      <div className="flex items-start gap-3">
-                        <span className="bg-indigo-600 text-white text-xs px-2 py-1 rounded-full mt-1">
-                          Q{index + 1}
-                        </span>
-                        <p className="text-gray-200">{q}</p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="text-center py-8 text-gray-400">
-                  <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>No questions have been asked yet.</p>
-                </div>
-              )}
-            </div>
+          ) : (
+            <LearningAnalyticsDashboard 
+              userId={userId} 
+              knowledgeId={knowledgeId} 
+            />
           )}
         </div>
         
         {/* Footer */}
         <div className="flex justify-end pt-4 border-t border-gray-700">
           <button 
-            onClick={onClose}
+            onClick={handleClose}
             className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-md shadow transition duration-200 ease-in-out"
           >
             Close Report

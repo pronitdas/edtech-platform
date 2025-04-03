@@ -1,116 +1,655 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useReducer, useCallback, useEffect, useMemo } from 'react';
 import { AnalyticsService } from '@/services/analytics-service';
+import { 
+  VideoPlayEvent, 
+  VideoPauseEvent, 
+  VideoCompleteEvent,
+  VideoProgressEvent,
+  QuizStartEvent,
+  QuizQuestionAnswerEvent,
+  QuizSubmitEvent,
+  ContentViewEvent,
+  NavigationEvent,
+  MindMapInteractionEvent
+} from '../types/analytics';
 
-interface InteractionData {
+// Interface definitions
+interface InteractionEvent {
+  id: string;
+  type: string;
+  contentId?: string;
   timestamp: number;
-  [key: string]: any;
+  metadata: Record<string, any>;
+  persisted: boolean;
 }
 
-interface InteractionTrackerContextType {
-  trackVideoPlay: (contentId: number, data: InteractionData) => void;
-  trackVideoPause: (contentId: number, data: InteractionData) => void;
-  trackVideoComplete: (contentId: number, data: InteractionData) => void;
-  trackQuizStart: (quizId: number, data: InteractionData) => void;
-  trackQuizAnswer: (quizId: number, questionId: string, data: InteractionData) => void;
-  trackQuizComplete: (quizId: number, data: InteractionData) => void;
-  trackContentView: (contentId: string, data: InteractionData) => void;
+// Roleplay event schemas
+interface RoleplayStartEvent {
+  knowledgeId: string;
+  moduleId: string;
+  scenarioId: string;
+  scenarioTitle: string;
+  difficulty: string;
+  estimatedDuration: number;
+  studentProfiles: Array<{
+    name: string;
+    personality: string;
+  }>;
 }
 
-const InteractionTrackerContext = createContext<InteractionTrackerContextType | undefined>(undefined);
+interface RoleplayResponseEvent {
+  knowledgeId: string;
+  moduleId: string;
+  scenarioId: string;
+  step: number;
+  studentName: string;
+  studentPersonality: string;
+  question: string;
+  response: string;
+  responseTime: number;
+  feedbackProvided?: string;
+}
 
+interface RoleplayCompleteEvent {
+  knowledgeId: string;
+  moduleId: string;
+  scenarioId: string;
+  totalSteps: number;
+  completedSteps: number;
+  totalScore: number;
+  maxPossibleScore: number;
+  durationSeconds: number;
+  evaluations: Array<{
+    criteriaId: string;
+    criteriaName: string;
+    score: number;
+    maxScore: number;
+    feedback: string;
+  }>;
+}
+
+// New state structure as proposed in the epic
+interface InteractionContextState {
+  session: {
+    id: string | null;
+    isActive: boolean;
+    metadata: Record<string, any>;
+  };
+  events: {
+    pending: InteractionEvent[];
+    processing: InteractionEvent[];
+    failed: InteractionEvent[];
+  };
+  config: {
+    isTrackingEnabled: boolean;
+    batchSize: number;
+    flushInterval: number;
+  };
+}
+
+// Context value interface
+interface InteractionContextValue extends Omit<InteractionContextState, 'events'> {
+  trackVideoPlay: (contentId: number, data: VideoPlayEvent) => void;
+  trackVideoPause: (contentId: number, data: VideoPauseEvent) => void;
+  trackVideoComplete: (contentId: number, data: VideoCompleteEvent) => void;
+  trackVideoProgress: (contentId: number, data: VideoProgressEvent) => void;
+  trackQuizStart: (quizId: number, data: QuizStartEvent) => void;
+  trackQuizAnswer: (quizId: number, questionId: string, data: QuizQuestionAnswerEvent) => void;
+  trackQuizComplete: (quizId: number, data: QuizSubmitEvent) => void;
+  trackContentView: (contentId: string, data: ContentViewEvent) => void;
+  trackNavigation: (data: NavigationEvent) => void;
+  trackMindMapInteraction: (mapId: string, data: MindMapInteractionEvent) => void;
+  trackRoleplayStart: (data: RoleplayStartEvent) => void;
+  trackRoleplayResponse: (data: RoleplayResponseEvent) => void;
+  trackRoleplayComplete: (data: RoleplayCompleteEvent) => void;
+  pendingEventsCount: number;
+  totalEventsCount: number;
+  flushEvents: () => Promise<void>;
+}
+
+// Action types for the reducer
+type ActionType = 
+  | { type: 'ADD_EVENT'; payload: { eventType: string; contentId?: string; metadata?: Record<string, any> } }
+  | { type: 'SET_EVENTS_PROCESSING'; payload: { events: InteractionEvent[] } }
+  | { type: 'SET_EVENTS_PERSISTED'; payload: { processedIds: string[] } }
+  | { type: 'SET_EVENTS_FAILED'; payload: { events: InteractionEvent[] } }
+  | { type: 'SET_SESSION'; payload: { sessionId: string | null; metadata?: Record<string, any> } }
+  | { type: 'SET_TRACKING_ENABLED'; payload: boolean }
+  | { type: 'UPDATE_CONFIG'; payload: Partial<InteractionContextState['config']> };
+
+// Create context
+const InteractionTrackerContext = createContext<InteractionContextValue | undefined>(undefined);
+
+// Initial state
+const initialState: InteractionContextState = {
+  session: {
+    id: null,
+    isActive: false,
+    metadata: {},
+  },
+  events: {
+    pending: [],
+    processing: [],
+    failed: [],
+  },
+  config: {
+    isTrackingEnabled: false,
+    batchSize: 10,
+    flushInterval: 30000, // 30 seconds
+  },
+};
+
+// Generate a unique ID
+const generateId = (): string => {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+};
+
+// Reducer function
+const interactionReducer = (state: InteractionContextState, action: ActionType): InteractionContextState => {
+  switch (action.type) {
+    case 'ADD_EVENT': {
+      if (!state.session.isActive || !state.config.isTrackingEnabled) {
+        return state;
+      }
+
+      const newEvent: InteractionEvent = {
+        id: generateId(),
+        type: action.payload.eventType,
+        contentId: action.payload.contentId,
+        timestamp: Date.now(),
+        metadata: action.payload.metadata || {},
+        persisted: false,
+      };
+
+      console.log(`[InteractionTracker] Adding event: ${action.payload.eventType}`, newEvent);
+
+      return {
+        ...state,
+        events: {
+          ...state.events,
+          pending: [...state.events.pending, newEvent],
+        },
+      };
+    }
+
+    case 'SET_EVENTS_PROCESSING': {
+      const { processing, failed } = state.events;
+      const eventsToProcess = action.payload.events;
+      const processedEventIds = new Set(eventsToProcess.map(e => e.id));
+
+      console.log(`[InteractionTracker Reducer] Moving ${eventsToProcess.length} events to processing.`);
+
+      return {
+        ...state,
+        events: {
+          // Remove the specific events being processed from pending
+          pending: state.events.pending.filter(e => !processedEventIds.has(e.id)), 
+          // Add the newly processing events
+          processing: [...processing, ...eventsToProcess], 
+          failed,
+        },
+      };
+    }
+
+    case 'SET_EVENTS_PERSISTED': {
+      const processedIds = new Set(action.payload.processedIds);
+      console.log(`[InteractionTracker Reducer] Marking ${processedIds.size} events as persisted.`);
+      return {
+        ...state,
+        events: {
+          ...state.events,
+          // Remove persisted events from processing state
+          processing: state.events.processing.filter(e => !processedIds.has(e.id)),
+        },
+      };
+    }
+
+    case 'SET_EVENTS_FAILED': {
+      const failedEvents = action.payload.events;
+      const failedEventIds = new Set(failedEvents.map(e => e.id));
+      console.warn(`[InteractionTracker Reducer] Marking ${failedEvents.length} events as failed.`);
+      return {
+        ...state,
+        events: {
+          ...state.events,
+          // Remove failed events from processing state
+          processing: state.events.processing.filter(e => !failedEventIds.has(e.id)),
+          // Add failed events to the failed state
+          failed: [...state.events.failed, ...failedEvents],
+        },
+      };
+    }
+
+    case 'SET_SESSION': {
+      return {
+        ...state,
+        session: {
+          id: action.payload.sessionId,
+          isActive: action.payload.sessionId !== null,
+          metadata: action.payload.metadata || state.session.metadata,
+        },
+      };
+    }
+
+    case 'SET_TRACKING_ENABLED': {
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          isTrackingEnabled: action.payload,
+        },
+      };
+    }
+
+    case 'UPDATE_CONFIG': {
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          ...action.payload,
+        },
+      };
+    }
+
+    default:
+      return state;
+  }
+};
+
+// Provider component
 interface InteractionTrackerProviderProps {
   children: ReactNode;
   dataService: AnalyticsService;
   userId: string;
+  batchSize?: number;
+  flushInterval?: number;
 }
 
 export const InteractionTrackerProvider: React.FC<InteractionTrackerProviderProps> = ({
   children,
   dataService,
   userId,
+  batchSize = 10,
+  flushInterval = 30000,
 }) => {
-  const trackVideoPlay = (contentId: number, data: InteractionData) => {
-    dataService.trackEvent({
-      userId,
-      eventType: 'video_play',
-      contentId: contentId.toString(),
-      ...data
-    });
-  };
+  const [state, dispatch] = useReducer(interactionReducer, {
+    ...initialState,
+    config: {
+      ...initialState.config,
+      isTrackingEnabled: Boolean(userId),
+      batchSize,
+      flushInterval,
+    },
+  });
 
-  const trackVideoPause = (contentId: number, data: InteractionData) => {
-    dataService.trackEvent({
-      userId,
-      eventType: 'video_pause',
-      contentId: contentId.toString(),
-      ...data
-    });
-  };
+  // Initialize session when userId changes
+  useEffect(() => {
+    let isMounted = true; // Flag to prevent state updates on unmounted component
 
-  const trackVideoComplete = (contentId: number, data: InteractionData) => {
-    dataService.trackEvent({
-      userId,
-      eventType: 'video_complete',
-      contentId: contentId.toString(),
-      ...data
-    });
-  };
+    const initializeSession = async () => {
+      if (userId && dataService.startUserSession) {
+        console.log(`[InteractionTracker] Attempting to start session for userId: ${userId}`);
+        dispatch({ type: 'SET_TRACKING_ENABLED', payload: false }); // Disable tracking until session is ready
+        dispatch({ type: 'SET_SESSION', payload: { sessionId: null } }); // Clear old session ID
+        
+        try {
+          const sessionResult = await dataService.startUserSession(userId);
 
-  const trackQuizStart = (quizId: number, data: InteractionData) => {
-    dataService.trackEvent({
-      userId,
-      eventType: 'quiz_start',
-      contentId: quizId.toString(),
-      ...data
-    });
-  };
+          if (isMounted && sessionResult && sessionResult.id) {
+            console.log(`[InteractionTracker] Session started successfully. Session ID: ${sessionResult.id}`);
+            // Store the DB-generated session ID and enable tracking
+            dispatch({ 
+              type: 'SET_SESSION', 
+              payload: { 
+                sessionId: sessionResult.id,
+                metadata: { 
+                  userId,
+                  startedAt: new Date().toISOString() 
+                } 
+              } 
+            });
+            dispatch({ type: 'SET_TRACKING_ENABLED', payload: true });
+          } else if (isMounted) {
+             console.error('[InteractionTracker] Failed to start session or get session ID from service.');
+             // Keep tracking disabled and session null
+             dispatch({ type: 'SET_SESSION', payload: { sessionId: null } });
+             dispatch({ type: 'SET_TRACKING_ENABLED', payload: false });
+          }
+        } catch (error) {
+           console.error('[InteractionTracker] Error during session initialization:', error);
+           if (isMounted) {
+              dispatch({ type: 'SET_SESSION', payload: { sessionId: null } });
+              dispatch({ type: 'SET_TRACKING_ENABLED', payload: false });
+           }
+        }
+      } else {
+        // No userId or service method, disable tracking
+        console.log("[InteractionTracker] No userId or startUserSession method, disabling tracking.");
+        dispatch({ type: 'SET_SESSION', payload: { sessionId: null } });
+        dispatch({ type: 'SET_TRACKING_ENABLED', payload: false });
+      }
+    };
 
-  const trackQuizAnswer = (quizId: number, questionId: string, data: InteractionData) => {
-    dataService.trackEvent({
-      userId,
-      eventType: 'quiz_answer',
-      contentId: quizId.toString(),
-      questionId,
-      ...data
-    });
-  };
+    initializeSession();
 
-  const trackQuizComplete = (quizId: number, data: InteractionData) => {
-    dataService.trackEvent({
-      userId,
-      eventType: 'quiz_complete',
-      contentId: quizId.toString(),
-      ...data
-    });
-  };
+    return () => {
+      isMounted = false; // Cleanup function to set flag on unmount
+    };
+  }, [userId, dataService]);
+  
+  // Create a separate useEffect for handling session termination
+  useEffect(() => {
+    return () => {
+      // End the session when the component unmounts if it's active
+      if (state.session.id && dataService.endUserSession) {
+        console.log(`[InteractionTracker] Ending session: ${state.session.id}`);
+        dataService.endUserSession(state.session.id).catch((error) => {
+          console.error('[InteractionTracker] Error ending session:', error);
+        });
+      }
+    };
+  }, [state.session.id, dataService]);
 
-  const trackContentView = (contentId: string, data: InteractionData) => {
-    dataService.trackEvent({
-      userId,
-      eventType: 'content_view',
-      contentId,
-      ...data
+  // Set up interval for flushing events
+  useEffect(() => {
+    if (state.config.isTrackingEnabled && state.session.isActive) {
+      const interval = setInterval(() => {
+        if (state.events.pending.length > 0) {
+          flushEvents();
+        }
+      }, state.config.flushInterval);
+      
+      return () => clearInterval(interval);
+    }
+  }, [
+    state.config.isTrackingEnabled,
+    state.session.isActive,
+    state.config.flushInterval,
+    state.events.pending.length
+  ]);
+
+  // Flush events to persistence
+  const flushEvents = useCallback(async () => {
+    // Capture pending events *before* any state changes
+    const eventsToProcess = [...state.events.pending]; 
+
+    // Exit if there's nothing to process in the captured array
+    if (eventsToProcess.length === 0) return;
+
+    console.log(`[InteractionTracker] Flushing ${eventsToProcess.length} pending events...`);
+
+    // Dispatch action to move these specific events from pending to processing state
+    dispatch({ type: 'SET_EVENTS_PROCESSING', payload: { events: eventsToProcess } });
+
+    try {
+      // Convert the *captured* events (eventsToProcess) to the format expected by the analytics service
+      const eventsToSend = eventsToProcess.map(event => ({
+        userId,
+        eventType: event.type,
+        contentId: event.contentId || null,
+        timestamp: event.timestamp,
+        sessionId: state.session.id,
+        ...event.metadata,
+      }));
+
+      console.log("[InteractionTracker] Events mapped for sending:", eventsToSend);
+
+      // Persist events in batches using the captured array
+      await Promise.all(
+        eventsToSend.map(eventData => dataService.trackEvent(eventData))
+      );
+
+      console.log(`[InteractionTracker] Successfully persisted ${eventsToProcess.length} events.`);
+      // Mark these specific events as persisted by sending their IDs
+      dispatch({ type: 'SET_EVENTS_PERSISTED', payload: { processedIds: eventsToProcess.map(e => e.id) } });
+
+    } catch (error) {
+      console.error('Failed to persist events:', error);
+      // Mark these specific events (from the captured array) as failed
+      dispatch({ 
+        type: 'SET_EVENTS_FAILED', 
+        payload: { events: eventsToProcess } 
+      });
+    }
+    // Ensure dispatch is included in dependencies if reducer relies on external scope
+  }, [dataService, state.events.pending, userId, dispatch]);
+
+  // Track an event (internal function)
+  const trackEvent = useCallback((eventType: string, contentId?: number, metadata: Record<string, any> = {}) => {
+    dispatch({
+      type: 'ADD_EVENT',
+      payload: {
+        eventType,
+        contentId: contentId?.toString(),
+        metadata: {
+          ...metadata,
+          timestamp: Date.now(),
+          userId,
+        },
+      },
     });
-  };
+  }, [userId]);
+
+  // Specialized tracking methods (memoized)
+  const trackVideoPlay = useCallback(
+    (contentId: number, data: VideoPlayEvent) => {
+      // Ensure required fields are present
+      if (!data.knowledgeId || !data.moduleId) {
+        console.warn('Missing required fields in trackVideoPlay event data. Required: knowledgeId, moduleId');
+      }
+      
+      trackEvent('video_play', contentId, {
+        ...data,
+        timestamp: data.timestamp || Date.now()
+      });
+    },
+    [trackEvent]
+  );
+
+  const trackVideoPause = useCallback(
+    (contentId: number, data: VideoPauseEvent) => {
+      // Ensure required fields are present
+      if (!data.knowledgeId || !data.moduleId) {
+        console.warn('Missing required fields in trackVideoPause event data. Required: knowledgeId, moduleId');
+      }
+      
+      trackEvent('video_pause', contentId, {
+        ...data,
+        timestamp: data.timestamp || Date.now()
+      });
+    },
+    [trackEvent]
+  );
+
+  const trackVideoComplete = useCallback(
+    (contentId: number, data: VideoCompleteEvent) => {
+      // Ensure required fields are present
+      if (!data.knowledgeId || !data.moduleId) {
+        console.warn('Missing required fields in trackVideoComplete event data. Required: knowledgeId, moduleId');
+      }
+      
+      trackEvent('video_complete', contentId, {
+        ...data,
+        timestamp: data.timestamp || Date.now()
+      });
+    },
+    [trackEvent]
+  );
+
+  const trackVideoProgress = useCallback(
+    (contentId: number, data: VideoProgressEvent) => {
+      // Ensure required fields are present
+      if (!data.knowledgeId || !data.moduleId) {
+        console.warn('Missing required fields in trackVideoProgress event data. Required: knowledgeId, moduleId');
+      }
+      
+      trackEvent('video_progress', contentId, {
+        ...data,
+        timestamp: data.timestamp || Date.now()
+      });
+    },
+    [trackEvent]
+  );
+
+  const trackQuizStart = useCallback(
+    (quizId: number, data: QuizStartEvent) => 
+      trackEvent('quiz_start', quizId, data),
+    [trackEvent]
+  );
+
+  const trackQuizAnswer = useCallback(
+    (quizId: number, questionId: string, data: QuizQuestionAnswerEvent) => 
+      trackEvent('quiz_answer', quizId, { ...data, questionId }),
+    [trackEvent]
+  );
+
+  const trackQuizComplete = useCallback(
+    (quizId: number, data: QuizSubmitEvent) => 
+      trackEvent('quiz_complete', quizId, data),
+    [trackEvent]
+  );
+
+  const trackContentView = useCallback(
+    (contentId: string, data: ContentViewEvent) => 
+      trackEvent('content_view', parseInt(contentId, 10) || 0, data),
+    [trackEvent]
+  );
+
+  // Specialized roleplay tracking methods
+  const trackRoleplayStart = useCallback(
+    (data: RoleplayStartEvent) => {
+      const { knowledgeId, moduleId, scenarioId, ...restData } = data;
+      trackEvent('roleplay_start', parseInt(scenarioId, 10) || 0, {
+        knowledgeId,
+        moduleId,
+        scenarioId,
+        ...restData,
+        interactionType: 'scenario_selection'
+      });
+    },
+    [trackEvent]
+  );
+
+  const trackRoleplayResponse = useCallback(
+    (data: RoleplayResponseEvent) => {
+      const { knowledgeId, moduleId, scenarioId, ...restData } = data;
+      trackEvent('roleplay_response', parseInt(scenarioId, 10) || 0, {
+        knowledgeId,
+        moduleId,
+        scenarioId,
+        ...restData,
+        interactionType: 'teacher_response'
+      });
+    },
+    [trackEvent]
+  );
+
+  const trackRoleplayComplete = useCallback(
+    (data: RoleplayCompleteEvent) => {
+      const { knowledgeId, moduleId, scenarioId, ...restData } = data;
+      trackEvent('roleplay_complete', parseInt(scenarioId, 10) || 0, {
+        knowledgeId,
+        moduleId,
+        scenarioId,
+        ...restData,
+        interactionType: 'completion'
+      });
+    },
+    [trackEvent]
+  );
+
+  // Add new navigation tracking method
+  const trackNavigation = useCallback(
+    (data: NavigationEvent) => {
+      // Ensure required fields are present
+      if (!data.knowledgeId || !data.moduleId) {
+        console.warn('Missing required fields in trackNavigation event data. Required: knowledgeId, moduleId');
+      }
+      
+      trackEvent('navigation', 0, {
+        ...data,
+        timestamp: data.timestamp || Date.now()
+      });
+    },
+    [trackEvent]
+  );
+
+  // Add new mindmap interaction tracking method
+  const trackMindMapInteraction = useCallback(
+    (mapId: string, data: MindMapInteractionEvent) => {
+      // Ensure required fields are present
+      if (!data.knowledgeId || !data.moduleId) {
+        console.warn('Missing required fields in trackMindMapInteraction event data. Required: knowledgeId, moduleId');
+      }
+      
+      trackEvent('mindmap_interaction', parseInt(mapId, 10) || 0, {
+        ...data,
+        timestamp: data.timestamp || Date.now()
+      });
+    },
+    [trackEvent]
+  );
+
+  // Memoized counts
+  const pendingEventsCount = useMemo(() => 
+    state.events.pending.length, [state.events.pending.length]
+  );
+
+  const totalEventsCount = useMemo(
+    () => state.events.pending.length + state.events.processing.length + state.events.failed.length,
+    [state.events.pending.length, state.events.processing.length, state.events.failed.length]
+  );
+
+  // Memoized context value
+  const contextValue = useMemo(() => ({
+    session: state.session,
+    config: state.config,
+    trackVideoPlay,
+    trackVideoPause,
+    trackVideoComplete,
+    trackVideoProgress,
+    trackQuizStart,
+    trackQuizAnswer,
+    trackQuizComplete,
+    trackContentView,
+    trackNavigation,
+    trackMindMapInteraction,
+    trackRoleplayStart,
+    trackRoleplayResponse,
+    trackRoleplayComplete,
+    pendingEventsCount,
+    totalEventsCount,
+    flushEvents,
+  }), [
+    state.session,
+    state.config,
+    trackVideoPlay,
+    trackVideoPause,
+    trackVideoComplete,
+    trackVideoProgress,
+    trackQuizStart,
+    trackQuizAnswer,
+    trackQuizComplete,
+    trackContentView,
+    trackNavigation,
+    trackMindMapInteraction,
+    trackRoleplayStart,
+    trackRoleplayResponse,
+    trackRoleplayComplete,
+    pendingEventsCount,
+    totalEventsCount,
+    flushEvents
+  ]);
 
   return (
-    <InteractionTrackerContext.Provider
-      value={{
-        trackVideoPlay,
-        trackVideoPause,
-        trackVideoComplete,
-        trackQuizStart,
-        trackQuizAnswer,
-        trackQuizComplete,
-        trackContentView
-      }}
-    >
+    <InteractionTrackerContext.Provider value={contextValue}>
       {children}
     </InteractionTrackerContext.Provider>
   );
 };
 
-export const useInteractionTracker = (): InteractionTrackerContextType => {
+// Custom hook with proper error handling
+export const useInteractionTracker = (): InteractionContextValue => {
   const context = useContext(InteractionTrackerContext);
   if (!context) {
     throw new Error('useInteractionTracker must be used within an InteractionTrackerProvider');

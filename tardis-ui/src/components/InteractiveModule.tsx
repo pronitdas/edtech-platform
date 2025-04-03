@@ -1,5 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { interactionTracker } from '@/services/interaction-tracking';
+// import { interactionTracker } from '@/services/interaction-tracking';
+import { useInteractionTracker } from '@/contexts/InteractionTrackerContext';
 import { BookOpen, Code, PenTool, Play } from 'lucide-react';
 
 // Import module components dynamically
@@ -33,18 +34,35 @@ const InteractiveModule = ({
 }: InteractiveModuleProps) => {
   const [selectedModule, setSelectedModule] = useState<Module | null>(null);
   const [showModuleList, setShowModuleList] = useState(true);
+  const { trackEvent } = useInteractionTracker() as any; // Cast to access internal trackEvent
 
   // Handle module selection
   const handleModuleSelect = (module: Module) => {
     setSelectedModule(module);
     setShowModuleList(false);
-    interactionTracker.trackAnimationView();
+    // interactionTracker.trackAnimationView();
+    if (trackEvent) {
+      trackEvent('module_start', undefined, { 
+        moduleTitle: module.title,
+        moduleType: module.type,
+        moduleComponent: module.component
+      });
+    }
   };
 
   // Handle module completion
   const handleModuleComplete = () => {
-    if (selectedModule && onModuleComplete) {
-      onModuleComplete(selectedModule.title);
+    if (selectedModule) {
+      if (onModuleComplete) {
+        onModuleComplete(selectedModule.title);
+      }
+      if (trackEvent) {
+        trackEvent('module_complete', undefined, { 
+          moduleTitle: selectedModule.title,
+          moduleType: selectedModule.type,
+          moduleComponent: selectedModule.component
+        });
+      }
     }
     setShowModuleList(true);
     setSelectedModule(null);

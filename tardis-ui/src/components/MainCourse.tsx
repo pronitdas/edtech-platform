@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import Quiz from '@/components/Quiz';
 import MarkdownSlideshow from '@/components/MarkdownSlideshow';
 import Chatbot from './ChatBot';
@@ -14,9 +14,11 @@ import Loader from './ui/Loader';
 import { ContentGenerationPanel } from './content/ContentGenerationPanel';
 import { useChapters } from '@/hooks/useChapters';
 import { ContentType } from '@/services/edtech-api';
-import { interactionTracker } from '@/services/interaction-tracking';
+import { useInteractionTracker } from '@/contexts/InteractionTrackerContext';
 import { generateRoleplayScenarios } from '@/services/edtech-content';
 import useAuthState from '@/hooks/useAuth';
+import supabase from '@/services/supabase';
+import ChatbotFloatingButton from './ChatbotFloatingButton';
 import { 
   BookOpen, 
   FileText, 
@@ -30,15 +32,14 @@ import {
   Settings,
   RefreshCw
 } from 'lucide-react';
+import { ChapterContent, ChapterV1, QuizQuestion } from '@/types/database';
+import { useCourseState } from '@/hooks/useCourseState';
+import CourseHeader from './course/CourseHeader';
+import CourseSidebar from './course/CourseSidebar';
+import CourseContentRenderer from './course/CourseContentRenderer';
 
 // Import calculators and models
 import { getSpecialComponent } from '@/services/component-mapper';
-
-interface MainCourseProps {
-    content: any;
-    language: string;
-    chapter: any;
-}
 
 // Define animation modules
 const animationModules = [
@@ -93,491 +94,194 @@ const animationModules = [
     }
 ];
 
-const MainCourse = ({ content, language, chapter }: MainCourseProps) => {
-    const { notes, latex_code, mindmap, quiz = [], summary, og, video_url = "k85mRPqvMbE" } = content;
-    const [activeTab, setActiveTab] = useState("notes");
-    const [showReport, setShowReport] = useState(false);
-    const [isFullscreenMindmap, setIsFullscreenMindmap] = useState(false);
-    const [timelineMarkers, setTimelineMarkers] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [showSettings, setShowSettings] = useState(false);
-    const [generatingTypes, setGeneratingTypes] = useState<ContentType[]>([]);
-    const [isMobileView, setIsMobileView] = useState(false);
-    const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [isGeneratingRoleplay, setIsGeneratingRoleplay] = useState(false);
-    const { oAiKey } = useAuthState();
-    
+// Interface for component state to reduce re-renders
+interface CourseState {
+    activeTab: string;
+    showReport: boolean;
+    isFullscreenMindmap: boolean;
+    timelineMarkers: any[];
+    isLoading: boolean;
+    showSettings: boolean;
+    generatingTypes: ContentType[];
+    isMobileView: boolean;
+    sidebarOpen: boolean;
+    isGeneratingRoleplay: boolean;
+    activeChapterId: string | undefined;
+}
+
+// Define a type for the icon map
+type IconMap = { [key: string]: React.ComponentType<{ className?: string }> };
+
+// Map icon identifiers to actual Lucide components
+const iconMap: IconMap = {
+    FileText,
+    BookOpen,
+    PieChart,
+    Brain,
+    Video,
+    BarChart2,
+    // Add other icons if needed by tabs
+};
+
+const getIconComponent = (identifier: string): React.ReactElement | null => {
+    const IconComponent = iconMap[identifier];
+    return IconComponent ? <IconComponent className="w-4 h-4" /> : null;
+};
+
+interface MainCourseProps {
+    // Expect content and chapter to be potentially null/undefined initially
+    content: ChapterContent | null | undefined;
+    language: string;
+    chapter: ChapterV1 | null | undefined;
+}
+
+const MainCourse = ({ content: initialContent, language, chapter: initialChapter }: MainCourseProps) => {
+    // Debug logs to track data flow
+    console.log('MainCourse raw props:', {
+        initialContent,
+        language,
+        initialChapter,
+        hasContent: !!initialContent,
+        hasChapter: !!initialChapter,
+        contentType: initialContent ? typeof initialContent : 'undefined',
+        chapterType: initialChapter ? typeof initialChapter : 'undefined'
+    });
+
+    // Ensure we have at least an empty object for content
+    const content = initialContent || {};
+    const chapter = initialChapter || {
+        id: 0,
+        chaptertitle: 'Loading...',
+        chapter: '',
+        knowledge_id: 0,
+        created_at: new Date().toISOString(),
+        chapter_type: 'text',
+        context: '',
+        k_id: 0,
+        level: 1,
+        lines: 0,
+        metadata: null,
+        needs_code: false,
+        needs_latex: false,
+        needs_roleplay: false,
+        seeded: false,
+        subtopic: '',
+        timestamp_end: null,
+        timestamp_start: null,
+        topic: null,
+        type: null
+    } satisfies ChapterV1;
+
+    console.log('MainCourse processed data:', {
+        content,
+        chapter,
+        isContentEmpty: Object.keys(content).length === 0,
+        isChapterDefault: chapter.id === 0
+    });
+
+    // Use the custom hook for state management
     const {
-        generateMissingContent,
+        activeTab,
+        showReport,
+        isFullscreenMindmap,
+        isLoading,
+        showSettings,
+        generatingTypes,
+        isMobileView,
+        sidebarOpen,
+        isGeneratingRoleplay,
+        handleTabClick,
+        toggleSidebar,
+        handleMindmapBack,
+        toggleMindmapFullscreen,
+        showContentGenerationPanel,
+        hideContentGenerationPanel,
+        handleGenerateContent,
+        handleGenerateRoleplay,
+        handleCloseReport,
+        handleShowReport,
+        availableTabs,
         getMissingContentTypes,
-        isGeneratingContent
-    } = useChapters();
+        isGeneratingContent,
+        getCurrentContentContext,
+        isChapterHookGenerating,
+    } = useCourseState(content, chapter, language || 'en');
 
-    // Add responsive behavior detection
-    useEffect(() => {
-        const handleResize = () => {
-            setIsMobileView(window.innerWidth < 768);
-            if (window.innerWidth < 1024) {
-                setSidebarOpen(false);
-            } else {
-                setSidebarOpen(true);
-            }
-        };
-        
-        // Set initial state
-        handleResize();
-        
-        // Add event listener
-        window.addEventListener('resize', handleResize);
-        
-        // Cleanup
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
+    console.log('Course state:', {
+        activeTab,
+        availableTabs,
+        showSettings,
+        content
+    });
 
-    // Define available tabs
-    const tabs = [
-        {
-            label: "Notes",
-            key: "notes",
-            condition: latex_code || og,
-            content: latex_code || og,
-            icon: <FileText className="w-4 h-4" />
-        },
-        {
-            label: "Assisted Notes",
-            key: "regenNotes",
-            condition: notes,
-            content: notes,
-            icon: <BookOpen className="w-4 h-4" />
-        },
-        {
-            label: "Summary",
-            key: "regenSummary",
-            condition: summary,
-            content: summary,
-            icon: <FileText className="w-4 h-4" />
-        },
-        {
-            label: "Mindmap",
-            key: "mindmap",
-            condition: mindmap,
-            content: mindmap,
-            icon: <Brain className="w-4 h-4" />
-        },
-        {
-            label: "Quiz",
-            key: "quiz",
-            condition: quiz && quiz.length > 0,
-            content: quiz,
-            icon: <PieChart className="w-4 h-4" />
-        },
-        {
-            label: "Roleplay",
-            key: "roleplay",
-            condition: true,
-            content: null,
-            icon: <MessageSquare className="w-4 h-4" />
-        },
-        {
-            label: "Video",
-            key: "video",
-            condition: Boolean(video_url),
-            content: video_url,
-            icon: <Video className="w-4 h-4" />
-        },
-        {
-            label: "Practice",
-            key: "practice",
-            condition: true,
-            content: null,
-            icon: <Play className="w-4 h-4" />
-        },
-        {
-            label: "Report",
-            key: "report",
-            condition: true,
-            content: null,
-            icon: <BarChart2 className="w-4 h-4" />
-        }
-    ];
-
-    // Filter tabs based on available content
-    const availableTabs = tabs.filter(tab => tab.condition);
-
-    // Set default tab if current is not available
-    useEffect(() => {
-        const currentTabExists = availableTabs.some(tab => tab.key === activeTab);
-        if (!currentTabExists && availableTabs.length > 0) {
-            setActiveTab(availableTabs[0].key);
-        }
-    }, [availableTabs, activeTab]);
-
-    // Handle tab click
-    const handleTabClick = (tabKey: string) => {
-        setIsLoading(true);
-        setActiveTab(tabKey);
-        
-        // Track tab interactions
-        switch (tabKey) {
-            case 'quiz':
-                interactionTracker.trackQuizClick();
-                break;
-            case 'notes':
-            case 'regenNotes':
-                interactionTracker.trackNotesClick();
-                break;
-            case 'regenSummary':
-                interactionTracker.trackSummaryClick();
-                break;
-            case 'mindmap':
-                interactionTracker.trackMindmapClick();
-                break;
-            case 'practice':
-                interactionTracker.trackAnimationView();
-                break;
-            case 'report':
-                setShowReport(true);
-                break;
-        }
-
-        // Simulate loading delay
-        setTimeout(() => {
-            setIsLoading(false);
-        }, 300);
-    };
-
-    // Handle mindmap back button
-    const handleMindmapBack = () => {
-        setIsFullscreenMindmap(false);
-    };
-
-    // Get available and missing content types
-    const availableTypes = Object.keys(content || {}).filter(key => 
-        ['notes', 'summary', 'quiz', 'mindmap'].includes(key) && content[key]
-    ) as ContentType[];
-
-    // Handle content generation
-    const handleGenerateContent = async (type: ContentType) => {
-        if (generatingTypes.includes(type)) return;
-        
-        setGeneratingTypes(prev => [...prev, type]);
-        try {
-            await generateMissingContent(chapter, language, [type]);
-        } finally {
-            setGeneratingTypes(prev => prev.filter(t => t !== type));
-        }
-    };
-
-    // Handle roleplay generation
-    const handleGenerateRoleplay = async () => {
-        if (isGeneratingRoleplay || !oAiKey || !content.knowledge_id) return;
-        
-        setIsGeneratingRoleplay(true);
-        try {
-            // Get topic from chapter or content title
-            const topic = content?.chapter || content?.title || '';
-            // Get content from latex_code or original content
-            const contentText = content?.latex_code || content?.og || '';
-            
-            await generateRoleplayScenarios(
-                content.knowledge_id,
-                topic,
-                contentText,
-                oAiKey,
-                language
-            );
-            
-            // Reload chapter data to get the new roleplay scenarios
-            window.location.reload();
-        } catch (error) {
-            console.error('Error generating roleplay scenarios:', error);
-        } finally {
-            setIsGeneratingRoleplay(false);
-        }
-    };
-
-    // Render content based on active tab
-    const renderContent = useCallback(() => {
-        if (isLoading) {
-            return (
-                <div className="flex items-center justify-center h-full">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
-                </div>
-            );
-        }
-
-        const tab = tabs.find(t => t.key === activeTab);
-        if (!tab) return <div>No content available</div>;
-
-        switch (activeTab) {
-            case 'notes':
-            case 'regenNotes':
-            case 'regenSummary':
-                // Check for special components first
-                const specialComponent = getSpecialComponent(tab.content);
-                if (specialComponent) return specialComponent;
-
-                // Process markdown content
-                let mdContent = tab.content;
-                if (!mdContent) {
-                    mdContent = ["Content is being generated..."];
-                } else if (typeof mdContent === 'string') {
-                    mdContent = mdContent.includes("|||||")
-                        ? mdContent.split("|||||")
-                        : [mdContent];
-                }
-
-                // Use ContentToggle for notes with video
-                if (video_url) {
-                    return (
-                        <ContentToggle
-                            videoSrc={video_url}
-                            videoTitle={content.title || "Course Video"}
-                            markers={timelineMarkers}
-                            notes={mdContent}
-                            knowledgeId={content.knowledge_id}
-                        />
-                    );
-                }
-
-                return (
-                    <MarkdownSlideshow
-                        content={mdContent}
-                        knowledge_id={content.knowledge_id}
-                    />
-                );
-
-            case 'mindmap':
-                return (
-                    <EnhancedMindMap 
-                        markdown={mindmap} 
-                        fullScreen={isFullscreenMindmap}
-                        onBack={handleMindmapBack}
-                    />
-                );
-
-            case 'quiz':
-                return quiz && quiz.length > 0
-                    ? <Quiz questions={quiz} />
-                    : <div className="flex flex-col items-center justify-center h-full text-white">
-                        <PieChart className="w-16 h-16 text-gray-600 mb-4" />
-                        <p className="text-xl">No quiz questions available</p>
-                      </div>;
-
-            case 'video':
-                // Only render VideoPlayer if we have a valid video URL
-                if (!video_url) {
-                    return (
-                        <div className="flex flex-col items-center justify-center h-full text-white">
-                            <Video className="w-16 h-16 text-gray-600 mb-4" />
-                            <p className="text-xl">No video available</p>
-                        </div>
-                    );
-                }
-                
-                return (
-                    <VideoPlayer 
-                        src={video_url}
-                        title={content?.title || "Course Video"}
-                        markers={timelineMarkers || []}
-                        onPlay={() => interactionTracker.trackVideoPlay()}
-                        onPause={() => interactionTracker.trackVideoPause()}
-                        onSeek={() => interactionTracker.trackTimelineSeek()}
-                        fallbackImage={content?.thumbnail || "/images/default-video-thumbnail.jpg"}
-                        onError={(e) => {
-                            console.error("Video playback error:", e);
-                        }}
-                    />
-                );
-
-            case 'practice':
-                // Filter modules based on content title if available
-                const filteredModules = content.title 
-                    ? animationModules.filter(m => m.relatedVideos?.includes(content.title))
-                    : animationModules;
-                
-                return (
-                    <InteractiveModule 
-                        modules={filteredModules}
-                        onModuleComplete={(title) => console.log(`Completed module: ${title}`)}
-                    />
-                );
-
-            case 'roleplay':
-                // Check if roleplay data exists
-                if (chapter?.roleplay?.scenarios && chapter.roleplay.scenarios.length > 0) {
-                    return (
-                        <RoleplayComponent 
-                            scenarios={chapter.roleplay.scenarios}
-                            topic={content?.chapter || ''}
-                            language={language || 'English'}
-                            contextualInformation={content?.latex_code?.substring(0, 500) || ''}
-                            showScenarioGeneration={true}
-                            onClose={() => setActiveTab('video')}
-                        />
-                    );
-                } else {
-                    // Show a generator UI if no scenarios exist
-                    return (
-                        <div className="flex flex-col items-center justify-center h-full text-white p-8">
-                            <MessageSquare className="w-16 h-16 text-indigo-400 mb-4" />
-                            <h3 className="text-xl font-semibold text-center mb-3">No Roleplay Scenarios Available</h3>
-                            <p className="text-gray-400 text-center mb-6 max-w-md">
-                                Generate interactive roleplay scenarios to practice and apply concepts from this lesson.
-                            </p>
-                            <button
-                                onClick={handleGenerateRoleplay}
-                                disabled={isGeneratingRoleplay || !oAiKey}
-                                className={`flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors ${isGeneratingRoleplay ? 'opacity-70 cursor-not-allowed' : ''}`}
-                            >
-                                {isGeneratingRoleplay ? (
-                                    <>
-                                        <RefreshCw className="w-5 h-5 animate-spin" />
-                                        Generating Scenarios...
-                                    </>
-                                ) : (
-                                    <>
-                                        <MessageSquare className="w-5 h-5" />
-                                        Generate Roleplay Scenarios
-                                    </>
-                                )}
-                            </button>
-                            {!oAiKey && (
-                                <p className="text-yellow-500 mt-4 text-sm">
-                                    API key required. Please add an OpenAI API key in settings.
-                                </p>
-                            )}
-                        </div>
-                    );
-                }
-
-            default:
-                return (
-                    <div className="flex flex-col items-center justify-center h-full text-white">
-                        <FileText className="w-16 h-16 text-gray-600 mb-4" />
-                        <p className="text-xl">Select a tab to view content</p>
-                    </div>
-                );
-        }
-    }, [activeTab, content, tabs, quiz, mindmap, video_url, isFullscreenMindmap, timelineMarkers, isLoading]);
-
-    // Toggle sidebar for responsive layouts
-    const toggleSidebar = () => {
-        setSidebarOpen(!sidebarOpen);
-    };
+    // Show loading state if we don't have real content yet
+    if (!initialContent || !initialChapter) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-gray-900">
+                <Loader size="large" />
+            </div>
+        );
+    }
 
     return (
-        <div className="flex flex-col h-full bg-gray-900">
-            {/* Header with responsive design */}
-            <div className="sticky top-0 z-10 bg-gray-800 border-b border-gray-700 px-4 py-2">
-                <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-2">
-                        <h1 className="text-xl sm:text-2xl font-bold text-white truncate max-w-[200px] sm:max-w-full">
-                            {content?.chapter || 'Course Content'}
-                        </h1>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <button
-                            onClick={toggleSidebar}
-                            className="p-2 hover:bg-gray-700 rounded-full md:hidden"
-                            title="Toggle Content"
-                        >
-                            <ChevronLeft className={`w-5 h-5 transform transition-transform ${sidebarOpen ? '' : 'rotate-180'}`} />
-                        </button>
-                        <button
-                            onClick={() => setShowSettings(!showSettings)}
-                            className="p-2 hover:bg-gray-700 rounded-full"
-                            title="Content Settings"
-                        >
-                            <Settings className="w-5 h-5" />
-                        </button>
-                    </div>
-                </div>
-                
-                {/* Responsive Tab Navigation */}
-                <div className="mt-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
-                    <div className="flex space-x-1 min-w-max">
-                        {availableTabs.map((tab) => (
-                            <button
-                                key={tab.key}
-                                onClick={() => handleTabClick(tab.key)}
-                                className={`flex items-center gap-1 py-1 px-3 rounded-md text-sm transition-colors ${
-                                    activeTab === tab.key
-                                        ? "bg-indigo-600 text-white"
-                                        : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                                    }`}
-                            >
-                                {tab.icon}
-                                <span className="hidden sm:inline">{tab.label}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            </div>
+        <div className="course-viewer bg-gray-900 min-h-screen flex flex-col md:flex-row">
+            <div className="flex-grow flex flex-col overflow-hidden relative">
+                <CourseHeader
+                    chapter={chapter}
+                    activeTab={activeTab}
+                    availableTabs={availableTabs}
+                    handleTabClick={handleTabClick}
+                    onShowSettings={showContentGenerationPanel}
+                    toggleSidebar={toggleSidebar}
+                    sidebarOpen={sidebarOpen}
+                    showSettingsButton={getMissingContentTypes(content).length > 0}
+                    getMissingContentTypes={getMissingContentTypes}
+                    onShowReport={handleShowReport}
+                />
 
-            {/* Main content area with responsive layout */}
-            <div className="flex flex-1 overflow-hidden">
-                {/* Main content */}
-                <div className={`flex-1 overflow-auto p-3 transition-all`}>
-                    <div className={`h-full flex flex-col ${isMobileView ? 'space-y-4' : 'md:flex-row md:space-x-4'}`}>
-                        {/* Content Area - Responsive sizing */}
-                        <div className={`${isMobileView ? 'w-full h-1/2' : 'w-full md:w-3/4 h-full'} bg-gray-800 rounded-lg overflow-hidden shadow-lg`}>
-                            {renderContent()}
-                        </div>
-                        
-                        {/* Chatbot - Collapses to bottom on mobile */}
-                        <div className={`${isMobileView ? 'w-full h-1/2' : 'w-full md:w-1/4 h-full'} bg-gray-800 rounded-lg overflow-hidden shadow-lg`}>
-                            <div className="bg-indigo-900/20 p-2 text-white font-medium flex justify-between items-center">
-                                <span>TGC Assistant</span>
-                                {isMobileView && (
-                                    <button 
-                                        className="p-1 hover:bg-indigo-800/30 rounded-md"
-                                        onClick={() => setSidebarOpen(!sidebarOpen)}
-                                    >
-                                        <ChevronLeft className={`w-4 h-4 transform transition-transform ${sidebarOpen ? 'rotate-90' : '-rotate-90'}`} />
-                                    </button>
-                                )}
-                            </div>
-                            <div className={`h-[calc(100%-2.5rem)] ${isMobileView && !sidebarOpen ? 'hidden' : 'block'}`}>
-                                <Chatbot 
-                                    language={language} 
-                                    topic={notes || latex_code}
-                                    onQuestionAsked={(question) => interactionTracker.trackChatbotQuestion(question)}
-                                />
-                            </div>
-                        </div>
+                <div className="flex-grow flex overflow-hidden">
+                    <div className={`flex-grow h-full overflow-y-auto transition-all duration-300 ${activeTab === 'video' && sidebarOpen ? 'md:w-3/4' : 'w-full'}`}>
+                        <CourseContentRenderer
+                            activeTab={activeTab}
+                            content={content}
+                            chapter={chapter}
+                            isLoading={isLoading}
+                            showReport={showReport}
+                            isFullscreenMindmap={isFullscreenMindmap}
+                            sidebarOpen={sidebarOpen}
+                            onMindmapBack={handleMindmapBack}
+                            onToggleMindmapFullscreen={toggleMindmapFullscreen}
+                            onCloseReport={handleCloseReport}
+                            onGenerateContentRequest={showContentGenerationPanel}
+                        />
                     </div>
+
+                    {activeTab === 'video' && (
+                        <CourseSidebar isOpen={sidebarOpen} />
+                    )}
                 </div>
 
-                {/* Settings sidebar - Slides in/out */}
                 {showSettings && (
-                    <div className={`bg-gray-800 border-l border-gray-700 overflow-y-auto transition-all duration-300 ${isMobileView ? 'absolute inset-y-0 right-0 z-20 w-[85%] shadow-xl' : 'w-80'}`}>
-                        <div className="flex justify-between items-center p-4 border-b border-gray-700">
-                            <h2 className="text-lg font-medium text-white">Content Settings</h2>
-                            <button 
-                                onClick={() => setShowSettings(false)}
-                                className="p-1 hover:bg-gray-700 rounded-full"
-                            >
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
-                        </div>
+                    <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/50 p-4">
                         <ContentGenerationPanel
-                            availableTypes={availableTypes}
+                            chapter={chapter}
+                            language={language || 'en'}
+                            missingTypes={getMissingContentTypes(content)}
+                            onGenerate={handleGenerateContent}
+                            isGenerating={isChapterHookGenerating}
                             generatingTypes={generatingTypes}
-                            onGenerateContent={handleGenerateContent}
+                            onClose={hideContentGenerationPanel}
                         />
                     </div>
                 )}
-            </div>
 
-            {/* Learning Report Modal */}
-            {showReport && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-gray-800 rounded-lg w-full max-w-3xl max-h-[90vh] overflow-auto">
-                        <LearningReport onClose={() => setShowReport(false)} />
-                    </div>
+                <div className="absolute bottom-4 left-4 z-30">
+                    <ChatbotFloatingButton
+                        contentContext={getCurrentContentContext()}
+                        chapterTitle={chapter.chaptertitle}
+                    />
                 </div>
-            )}
+            </div>
         </div>
     );
 };

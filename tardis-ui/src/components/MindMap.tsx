@@ -53,6 +53,14 @@ const NODE_STYLES = {
         minWidth: '120px',
     }
 };
+
+// React Flow container styles
+const reactFlowStyles: React.CSSProperties = {
+    width: '100%',
+    height: '100%',
+    background: '#1f2937',
+};
+
 const getLayoutedElements = (nodes, edges, direction = 'TB') => {
     const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
     g.setGraph({ rankdir: direction, ranksep: 80, nodesep: 40 });
@@ -248,109 +256,139 @@ const MindMapInner = (props) => {
             setTimeout(() => fitView({ padding: 0.2 }), 100);
         } catch (err) {
             setError('Failed to generate mind map');
-            setIsLoading(false);
             console.error(err);
+            setIsLoading(false);
         }
-    }, [props, fitView, setNodes, setEdges]);
+    }, [props, initialized, fitView, setNodes, setEdges]);
+
+    // Fix for the React Flow container size issue
+    const rfWrapper: React.CSSProperties = {
+        width: '800px',
+        height: '800px',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    };
+
+    if (isLoading) return (
+        <div className="flex items-center justify-center h-full">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+            <span className="ml-3 text-gray-300">Generating mind map...</span>
+        </div>
+    );
+
+    if (error) return (
+        <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+                <div className="text-red-500 mb-2">Error: {error}</div>
+                <Button onClick={() => setInitialized(false)}>Retry</Button>
+            </div>
+        </div>
+    );
 
     return (
-        <Card className="w-full h-full bg-gray-800 p-4 relative">
-            {error && <div className="text-red-500 absolute top-2 left-2 z-10">{error}</div>}
+        <Card className="w-full h-full overflow-hidden">
+            <div style={rfWrapper}>
+                <ReactFlow
+                    nodes={nodes}
+                    edges={edges}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onConnect={onConnect}
+                    onNodeClick={onNodeClick}
+                    proOptions={{ hideAttribution: true }}
+                    style={reactFlowStyles}
+                    minZoom={0.2}
+                    maxZoom={1.5}
+                    defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
+                    fitView
+                    fitViewOptions={{ padding: 0.2 }}
+                    nodesDraggable={true}
+                >
+                    <Background color="#334155" gap={16} />
+                    <Controls 
+                        showInteractive={false}
+                        className="bg-gray-700/50 p-1 rounded-md text-white border-none"
+                    />
+                    <Panel position="top-right" className="bg-gray-800 p-2 rounded-md shadow space-x-1 flex">
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleAddNode}
+                            disabled={!selectedNode}
+                        >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleCopyNode}
+                            disabled={!selectedNode}
+                        >
+                            <Copy className="h-4 w-4 mr-1" />
+                            Copy
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleEditNode}
+                            disabled={!selectedNode}
+                        >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Edit
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={handleDeleteNode}
+                            disabled={!selectedNode}
+                        >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
+                        </Button>
+                    </Panel>
+                </ReactFlow>
+            </div>
 
-            {isLoading ? (
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                </div>
-            ) : error ? (
-                <div className="absolute inset-0 flex items-center justify-center text-red-500">
-                    {error}
-                </div>
-            ) : (
-                <div style={{ width: '100%', height: '100%' }}>
-                    <ReactFlow
-                        nodes={nodes}
-                        edges={edges}
-                        onNodesChange={onNodesChange}
-                        onEdgesChange={onEdgesChange}
-                        onConnect={onConnect}
-                        onNodeClick={onNodeClick}
-                        proOptions={{ hideAttribution: true }}
-                        fitView
-                    >
-                        <Controls />
-                        <Background gap={16} />
-                        <Panel position="top-right" className="flex gap-2">
-                            <Button
-                                onClick={handleAddNode}
-                                variant="secondary"
-                                className="flex items-center gap-2"
-                                disabled={!nodes.length}
-                            >
-                                <Plus className="h-4 w-4" />
-                            </Button>
-                            <Button
-                                onClick={handleCopyNode}
-                                variant="secondary"
-                                className="flex items-center gap-2"
-                                disabled={!selectedNode}
-                            >
-                                <Copy className="h-4 w-4" />
-                            </Button>
-                            <Button
-                                onClick={handleEditNode}
-                                variant="secondary"
-                                className="flex items-center gap-2"
-                                disabled={!selectedNode}
-                            >
-                                <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                                onClick={handleDeleteNode}
-                                variant="destructive"
-                                className="flex items-center gap-2"
-                                disabled={!selectedNode}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        </Panel>
-                    </ReactFlow>
-
-                    <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Edit Node</DialogTitle>
-                            </DialogHeader>
-                            <div className="py-4">
-                                <Input
-                                    value={editLabel}
-                                    onChange={(e) => setEditLabel(e.target.value)}
-                                    placeholder="Enter node label"
-                                    className="w-full"
-                                />
-                            </div>
-                            <DialogFooter>
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setIsEditDialogOpen(false)}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button onClick={handleSaveEdit}>Save</Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-                </div>
-            )}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Node</DialogTitle>
+                    </DialogHeader>
+                    <Input
+                        value={editLabel}
+                        onChange={(e) => setEditLabel(e.target.value)}
+                        placeholder="Node text"
+                    />
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSaveEdit}>Save</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </Card>
     );
 };
 
-// Wrap the component with ReactFlowProvider
 const MindMap = (props) => {
+    // Wrapper with explicit dimensions
+    const wrapperStyle: React.CSSProperties = {
+        width: '100%', 
+        height: '100%', 
+        position: 'relative'
+    };
+    
     return (
-        <ReactFlowProvider>
-            <MindMapInner {...props} />
-        </ReactFlowProvider>
+        <div style={wrapperStyle}>
+            <ReactFlowProvider>
+                <MindMapInner {...props} />
+            </ReactFlowProvider>
+        </div>
     );
 };
 

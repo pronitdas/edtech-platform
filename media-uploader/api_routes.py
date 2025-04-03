@@ -17,6 +17,8 @@ from models import (
 from database import DatabaseManager
 from queue_manager import QueueManager
 from pdf_processor import PDFProcessor
+from docx_processor import DOCXProcessor
+from pptx_processor import PPTXProcessor
 from video_processor import VideoProcessor
 from openai_client import OpenAIClient
 from openai_functions import (
@@ -55,7 +57,10 @@ def health_check():
 def start_processing(
     knowledge_id: int,
     queue_manager: QueueManager = Depends(get_queue_manager),
-    db_manager: DatabaseManager = Depends(get_db_manager)
+    db_manager: DatabaseManager = Depends(get_db_manager),
+    generate_content: bool = Query(False, description="Whether to generate content after processing"),
+    content_types: List[str] = Query(["notes", "summary", "quiz", "mindmap"], description="Types of content to generate"),
+    content_language: str = Query("English", description="Language for content generation")
 ):
     """Start processing a knowledge entry."""
     try:
@@ -65,8 +70,41 @@ def start_processing(
         except Exception as e:
             raise HTTPException(404, "Knowledge not found or already seeded.")
 
+        # Update metadata with content generation flags if requested
+        if generate_content and content_types:
+            # Get current metadata
+            current_metadata = knowledge.get("metadata", "{}")
+            if current_metadata is None:
+                current_metadata = {}
+            elif isinstance(current_metadata, str):
+                try:
+                    current_metadata = json.loads(current_metadata)
+                except:
+                    current_metadata = {}
+
+            # Add content generation parameters
+            current_metadata.update({
+                "auto_generate_content": True,
+                "content_types": content_types,
+                "content_language": content_language
+            })
+            
+            # Update metadata in database
+            db_manager.update_knowledge_metadata(knowledge_id, current_metadata)
+
         # Add to queue
         queue_manager.add_job(knowledge_id)
+
+        # Return response with appropriate message
+        if generate_content and content_types:
+            return {
+                "knowledge_id": knowledge_id,
+                "status": "queued",
+                "message": "Knowledge processing has been queued with subsequent content generation.",
+                "content_generation": True,
+                "content_types": content_types,
+                "content_language": content_language
+            }
 
         return {
             "knowledge_id": knowledge_id,
@@ -277,21 +315,37 @@ async def generate_content(
             "mindmap": generate_mind_map_structure,
         }
         
+        # Validate requested content types
+        invalid_types = [t for t in types if t not in type_generators]
+        if invalid_types:
+            logger.warning(f"Ignoring unsupported content types: {invalid_types}")
+            types = [t for t in types if t in type_generators]
+            
+        if not types:
+            error_msg = "No valid content types specified"
+            logger.error(error_msg)
+            return ContentGenerationResponse(
+                success=False,
+                error=error_msg
+            )
+        
         all_results = []
-        # Process each chapter
-        for chapter in [chapters[0]]:
+        processed_chapters = 0
+        failed_chapters = 0
+        # Process each chapter (all chapters, not just the first one)
+        for chapter in chapters:
             chapter_id = chapter.get("id")
+            logger.info(f"Processing chapter {chapter_id} ({processed_chapters + 1}/{len(chapters)})")
             
             # Generate content for each requested type
             results = {}
+            chapter_success = True
+            
             for content_type in types:
-                if content_type not in type_generators:
-                    logger.warning(f"{content_type} not supported")
-                    continue
-                
                 generator = type_generators[content_type]
                 
                 try:
+                    logger.info(f"Generating {content_type} for chapter {chapter_id}")
                     # Call the appropriate generator function
                     if content_type == "mindmap":
                         generated = await generator(openai_client, chapter.get("chapter", ""), language)
@@ -306,30 +360,58 @@ async def generate_content(
                     logger.info(f"Successfully generated {content_type} content for chapter {chapter_id}")
                 except Exception as e:
                     logger.error(f"Error generating {content_type} for chapter {chapter_id}: {str(e)}")
-                    results[content_type] = f"Error generating {content_type}: {str(e)}"
+                    error_message = f"Error generating {content_type}: {str(e)}"
+                    results[content_type] = error_message
+                    results[f"{content_type}_error"] = str(e)
+                    chapter_success = False
+            
+            # Add generation metadata 
+            results["generation_status"] = "complete" if chapter_success else "partial"
+            results["generated_at"] = datetime.utcnow().isoformat()
+            results["generated_types"] = [t for t in types if t in results and not t.endswith("_error")]
             
             # Update content in the database using the table with language suffix
             table_name = f"EdTechContent_{language}"
             logger.info(f"Updating content in {table_name} for chapter {chapter_id}, knowledge_id {knowledge_id}")
             
-            data = db_manager.supabase.from_(table_name).update(
-                results
-            ).eq('chapter_id', chapter_id).eq('knowledge_id', knowledge_id).execute()
-            
-            # Fetch the updated record separately if needed
-            updated_record = db_manager.supabase.from_(table_name).select("*").eq('chapter_id', chapter_id).eq('knowledge_id', knowledge_id).execute()
-            
-            if hasattr(data, 'error') and data.error:
-                logger.error(f"Error updating content for chapter {chapter_id}: {data.error}")
-                continue
-            
-            logger.info(f"Successfully updated content in {table_name} for chapter {chapter_id}")
-            all_results.extend(updated_record.data if hasattr(updated_record, 'data') and updated_record.data else [])
+            try:
+                data = db_manager.supabase.from_(table_name).update(
+                    results
+                ).eq('chapter_id', chapter_id).eq('knowledge_id', knowledge_id).execute()
+                
+                # Fetch the updated record separately if needed
+                updated_record = db_manager.supabase.from_(table_name).select("*").eq('chapter_id', chapter_id).eq('knowledge_id', knowledge_id).execute()
+                
+                if hasattr(data, 'error') and data.error:
+                    logger.error(f"Error updating content for chapter {chapter_id}: {data.error}")
+                    failed_chapters += 1
+                    continue
+                
+                logger.info(f"Successfully updated content in {table_name} for chapter {chapter_id}")
+                all_results.extend(updated_record.data if hasattr(updated_record, 'data') and updated_record.data else [])
+                processed_chapters += 1
+            except Exception as e:
+                logger.error(f"Database error updating content for chapter {chapter_id}: {str(e)}")
+                failed_chapters += 1
         
-        return ContentGenerationResponse(
-            success=True,
-            data={"chapters": all_results}
-        )
+        # Return appropriate response based on success/failure counts
+        if processed_chapters == 0:
+            return ContentGenerationResponse(
+                success=False,
+                error=f"Failed to generate content for all {len(chapters)} chapters",
+                data={"failed_chapters": failed_chapters, "processed_chapters": processed_chapters}
+            )
+        elif failed_chapters > 0:
+            return ContentGenerationResponse(
+                success=True,
+                data={"chapters": all_results, "failed_chapters": failed_chapters, "processed_chapters": processed_chapters},
+                message=f"Partially successful: {processed_chapters} chapters processed, {failed_chapters} chapters failed"
+            )
+        else:
+            return ContentGenerationResponse(
+                success=True,
+                data={"chapters": all_results}
+            )
         
     except Exception as e:
         logger.error(f"Error generating content: {str(e)}")

@@ -34,8 +34,11 @@ export type ContentGenerationResponse = {
   success: boolean;
   data?: {
     chapters: Record<string, any>[];
+    processed_chapters?: number;
+    failed_chapters?: number;
   };
   error?: string;
+  message?: string;
 };
 
 export type ChapterDataResponse = {

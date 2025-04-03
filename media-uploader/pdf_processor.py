@@ -4,12 +4,21 @@ import io
 import re
 import hashlib
 import statistics
+import os
+import json
+import time
 from typing import Dict, Tuple, List, Any, Optional, Set
 from dataclasses import dataclass
 from collections import defaultdict
+from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import fitz  # PyMuPDF
 from PIL import Image
+from openai import OpenAI
+
+# Import methods from VideoProcessorV2
+from video_processor_v2 import VideoProcessorV2
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -31,6 +40,16 @@ class TextBlock:
 
 class PDFProcessor:
     """Advanced processor for PDF files with adaptive structure detection."""
+    
+    # Default OpenAI API Key - should be loaded from environment in production
+    DEFAULT_OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+    
+    # Default model name
+    DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
+    
+    # Batch processing settings
+    DEFAULT_BATCH_SIZE = 3
+    DEFAULT_MAX_WORKERS = 4
     
     @staticmethod
     def extract_text_blocks(pdf_document: fitz.Document) -> List[TextBlock]:
@@ -682,50 +701,209 @@ class PDFProcessor:
         return result
 
     @staticmethod
-    def process_pdf_text_to_index(pdf_text: str, knowledge_id: int, knowledge_name: str) -> Tuple[Dict, List[Dict]]:
-        """
-        Process PDF text into structured format.
-        
-        1. Parse text into document tree
-        2. Convert tree to textbook structure
-        3. Flatten into chapter records
-        
-        Returns (textbook, chapters)
-        """
-        # Use fallback text-based parsing if we're starting with plain text
-        tree = PDFProcessor.parse_pdf_to_textbook(pdf_text)
-        textbook = PDFProcessor.convert_tree_to_textbook(tree, knowledge_id, knowledge_name)
-        chapters = PDFProcessor.walk_textbook(textbook, knowledge_id)
-        
-        return textbook, chapters
-    
-    @staticmethod
     def prepare_images_for_upload(images: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
         """
-        Prepare extracted images for upload by creating standardized metadata.
+        Prepare extracted images for upload - custom implementation for PDF.
         
         Args:
             images: Dictionary of images extracted from PDF
             
         Returns:
-            Dictionary ready for upload with standardized metadata
+            Dictionary ready for upload with standardized metadata and buffer
         """
         upload_ready = {}
         
         for filename, img_data in images.items():
+            # Extract the base64 encoded data
+            img_base64 = img_data.get("data", "")
+            
+            # Convert base64 to bytes for upload
+            img_bytes = base64.b64decode(img_base64) if img_base64 else b""
+            
+            # Get image format
+            img_format = img_data.get("format", "png")
+            
             # Create standardized metadata
             upload_ready[filename] = {
-                "data": img_data.get("data", ""),  # base64 encoded image data
-                "metadata": {
-                    "filename": filename,
-                    "format": img_data.get("format", "png"),
-                    "width": img_data.get("width", 0),
-                    "height": img_data.get("height", 0),
-                    "page": img_data.get("page", 1),
-                    "mode": img_data.get("mode", ""),
-                    "hash": img_data.get("hash", ""),
-                    "size_bytes": len(base64.b64decode(img_data.get("data", ""))) if img_data.get("data") else 0
-                }
+                "buffer": img_bytes,  # Add the bytes data as buffer
+                "format": img_format,
+                "width": img_data.get("width", 0),
+                "height": img_data.get("height", 0),
+                "alt_text": img_data.get("alt_text", ""),
+                "page": img_data.get("page", 0)
             }
         
         return upload_ready
+    @staticmethod
+    def process_text_to_index(text: str, knowledge_id: int, knowledge_name: str) -> Tuple[Dict, List[Dict]]:
+        """Reuse the PDF text to index processing logic."""
+        from pdf_processor import PDFProcessor
+        return PDFProcessor.process_pdf_text_to_index(text, knowledge_id, knowledge_name)
+    @staticmethod
+    def process_pdf_text_to_index(pdf_text: str, knowledge_id: int, knowledge_name: str, 
+                                 openai_api_key: str = DEFAULT_OPENAI_API_KEY,
+                                 openai_model: str = DEFAULT_OPENAI_MODEL,
+                                 batch_size: int = DEFAULT_BATCH_SIZE,
+                                 max_workers: int = DEFAULT_MAX_WORKERS) -> Tuple[Dict, List[Dict]]:
+        """
+        Process PDF text into structured format using OpenAI API.
+        
+        Utilizes VideoProcessorV2 methods:
+        1. Split the text into manageable chunks
+        2. Process each chunk with OpenAI to generate structured content
+        3. Merge the chunks into a coherent course structure
+        4. Convert the structure to chapters for database insertion
+        
+        Returns (course_structure, chapters)
+        """
+        logger.info(f"Processing PDF text with smart chapter generation for knowledge ID {knowledge_id}")
+        
+        # Initialize OpenAI client
+        client = OpenAI(api_key=openai_api_key)
+        
+        # Step 1: Split text into chunks using VideoProcessorV2
+        chunks = VideoProcessorV2.chunk_text(pdf_text)
+        logger.info(f"Split PDF text into {len(chunks)} chunks")
+        
+        # Step 2: Process chunks in batches using VideoProcessorV2
+        # Define a function that adapts VideoProcessorV2's process_chunk method for PDFs
+        def process_pdf_chunk(chunk, chunk_index, total_chunks, client, model_name):
+            # Use the same schema but adapt the prompt for PDF content
+            try:
+                prompt = f"""
+                Transform this document content into a structured course chapter, adding useful insights or examples where appropriate.
+                
+                DOCUMENT CONTENT:
+                ```
+                {chunk}
+                ```
+                
+                INSTRUCTIONS:
+                1. Create a coherent chapter with a clear title and sections based on the content
+                2. Preserve all original content and examples
+                3. Add appropriate insights, examples, or clarifications where helpful
+                4. Include all numerical examples and data points from the original
+                5. This is part {chunk_index+1} of {total_chunks}, ensure your section flows with others
+                
+                Structure the content with proper headings, key points, and examples. Make it thorough and educational.
+                """
+
+                # Use VideoProcessorV2's process method but with our PDF-specific prompt
+                response = client.chat.completions.create(
+                    model=model_name,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "You are a curriculum development expert specializing in creating educational content from documents.",
+                        },
+                        {"role": "user", "content": prompt},
+                    ],
+                    temperature=0.5,
+                    response_format={"type": "json_schema", "json_schema": VideoProcessorV2.get_chapter_schema()},
+                )
+
+                # Extract the structured content
+                structured_content = json.loads(response.choices[0].message.content)
+
+                # Add chunk metadata
+                structured_content["chunk_index"] = chunk_index
+                structured_content["total_chunks"] = total_chunks
+                
+                # Add PDF-specific metadata
+                structured_content["document_type"] = "pdf"
+
+                return structured_content
+                
+            except Exception as e:
+                logger.error(f"Error processing chunk {chunk_index+1}: {str(e)}")
+                # Return an error structure to maintain consistency
+                return {
+                    "title": f"Error in Chunk {chunk_index+1}",
+                    "sections": [
+                        {
+                            "heading": "Processing Error",
+                            "content": f"An error occurred while processing this chunk: {str(e)}",
+                            "key_points": [],
+                            "examples": [],
+                        }
+                    ],
+                    "chapter_number": chunk_index + 1,
+                    "learning_objectives": ["Resolve processing errors"],
+                    "chunk_index": chunk_index,
+                    "total_chunks": total_chunks,
+                    "error": str(e),
+                    "document_type": "pdf"
+                }
+        
+        # Use VideoProcessorV2's batch processing with our custom function
+        chunk_results = []
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = [
+                executor.submit(
+                    process_pdf_chunk,
+                    chunk,
+                    i,
+                    len(chunks),
+                    client,
+                    openai_model,
+                )
+                for i, chunk in enumerate(chunks)
+            ]
+            
+            # Process results as they complete
+            for i, future in enumerate(as_completed(futures)):
+                try:
+                    result = future.result()
+                    chunk_results.append(result)
+                    logger.info(f"Completed chunk {i+1}/{len(chunks)}")
+                    
+                    # Add a small delay between batches to avoid rate limiting
+                    if (i + 1) % batch_size == 0:
+                        time.sleep(1)
+                except Exception as e:
+                    logger.error(f"Error in future for chunk {i}: {str(e)}")
+                    chunk_results.append({
+                        "title": f"Error in Chunk Processing",
+                        "sections": [
+                            {
+                                "heading": "Processing Error",
+                                "content": f"An error occurred: {str(e)}",
+                                "key_points": [],
+                                "examples": [],
+                            }
+                        ],
+                        "chapter_number": i + 1,
+                        "learning_objectives": [],
+                        "chunk_index": i,
+                        "total_chunks": len(chunks),
+                        "error": str(e),
+                        "document_type": "pdf"
+                    })
+        
+        # Sort results by chunk index to maintain order
+        chunk_results.sort(key=lambda x: x.get("chunk_index", 0))
+        
+        # Step 3: Merge chunks into course structure using VideoProcessorV2
+        course_structure = VideoProcessorV2.merge_structured_chunks(
+            chunk_results=chunk_results,
+            knowledge_name=knowledge_name,
+            client=client,
+            model_name=openai_model,
+        )
+        
+        # Add PDF-specific metadata
+        course_structure["metadata"] = {
+            "markdown": "",
+            "metadata": {
+                "processed_at": datetime.utcnow().isoformat(),
+                "document_type": "pdf"
+            }
+        }
+        
+        # Step 4: Create chapters from structure using VideoProcessorV2
+        chapters = VideoProcessorV2.create_chapters_from_structure(
+            course_structure=course_structure, 
+            knowledge_id=knowledge_id
+        )
+        
+        return course_structure, chapters

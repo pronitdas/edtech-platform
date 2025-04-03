@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import FileUploader from '@/components/FileUploader';
-import MainCourse from '@/components/MainCourse';
-import Chapters from '@/components/Chapters';
+import CourseMain from '@/components/course/CourseMain';
+import ChapterAdapter from '@/components/ChapterAdapter';
 import Knowledge from '@/components/Knowledge';
 import { useKnowledgeData } from '@/hooks/useKnowledgeData';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -18,6 +18,7 @@ import { analyticsService } from '@/services/analytics-service';
 import { ChevronLeft, Menu, X } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { useNavigate } from 'react-router-dom';
+import { ChapterV1 } from '../types/database';
 
 // Enum for application views
 const VIEW_TYPES = {
@@ -34,7 +35,6 @@ function EdtechApp() {
 
   let userId = null;
   if(user) {
-    console.log(user);
     userId = user.id; // We'll use a fixed ID for now, in a real app this would come from auth
   } else {
     navigate('/login');
@@ -52,7 +52,8 @@ function EdtechApp() {
     chaptersMeta,
     fetchChapters,
     fetchChapterMeta,
-    getEdTechContentForChapter
+    getEdTechContentForChapter,
+    fetchKnowledgeData
   } = useChapters();
 
   // Application state
@@ -79,31 +80,87 @@ function EdtechApp() {
   // Handle knowledge domain selection
   const handleKnowledgeClick = async (id) => {
     await fetchChapters(id, language);
-    setCurrentTopic({ ...currentTopic, knowledgeId: id });
+    setCurrentTopic({ ...currentTopic, knowledgeId: id, topic: null });
     await fetchChapterMeta(id, language);
+    await fetchKnowledgeData(id);
     setCurrentView(VIEW_TYPES.CHAPTER_SELECTION);
+    setContent(null);
   };
 
   // Handle chapter/topic selection
   const handleChapterClick = useCallback(
-    async (topic) => {
-      if (currentTopic.topic !== topic) {
-        await getEdTechContentForChapter(topic, language);
-        setCurrentTopic((prev) => ({ ...prev, topic, language }));
-        setCurrentView(VIEW_TYPES.COURSE_CONTENT);
+    async (chapter: ChapterV1) => {
+      console.log("Chapter clicked:", chapter); // Debug log
+      if (currentTopic.topic?.id !== chapter.id) {
+        console.log("Loading chapter content for:", chapter); // Debug log
+        const content = await getEdTechContentForChapter(chapter, language);
+        if (content) {
+          setCurrentTopic((prev) => ({ ...prev, topic: chapter, language }));
+          setCurrentView(VIEW_TYPES.COURSE_CONTENT);
+        } else {
+          console.error("Failed to load chapter content");
+        }
+      } else {
+        console.log("Chapter already selected:", chapter); // Debug log
       }
     },  
-    [language, currentTopic]
+    [language, currentTopic, getEdTechContentForChapter, setCurrentView]
   );
 
   // Handle navigation to learning module (video, quiz, etc.)
   const handleModuleSelect = (moduleType, moduleContent) => {
-    if (moduleType === 'video') {
-      setVideoContent(moduleContent);
-    } else if (moduleType === 'quiz') {
-      setQuizContent(moduleContent);
+    console.log(`handleModuleSelect called with type: ${moduleType}, content:`, moduleContent); // Add logging
+
+    let actualContent = moduleContent;
+
+    // Attempt to extract nested content if moduleContent has keys like 'version' and a dynamic content key
+    // This structure was observed in logs, e.g., { version: "1", "some-key-v1": { ...data... } }
+    if (moduleContent && typeof moduleContent === 'object' && !Array.isArray(moduleContent) && moduleContent.version) {
+        const keys = Object.keys(moduleContent).filter(k => k !== 'version');
+        if (keys.length === 1 && typeof moduleContent[keys[0]] === 'object' && moduleContent[keys[0]] !== null) {
+            console.log(`Extracting nested content under key: ${keys[0]}`);
+            actualContent = moduleContent[keys[0]];
+        } else if (keys.length > 1) {
+             console.warn("Module content has 'version' but multiple other keys, structure unclear:", moduleContent);
+             // Proceeding with original moduleContent, hoping it's the correct flat structure somehow
+             actualContent = moduleContent; 
+        }
+        // If keys.length === 0, actualContent remains moduleContent, which might be just { version: "..." } - error handled below
+    } 
+    
+    // General check for invalid content after potential extraction
+    if (!actualContent || typeof actualContent !== 'object') {
+         console.error(`Invalid or non-object moduleContent received for type ${moduleType} after potential extraction:`, actualContent);
+         // Optionally reset state or show an error to the user
+         // For now, just prevent changing the view
+         // Consider navigating back: setCurrentView(VIEW_TYPES.COURSE_CONTENT);
+         return; 
     }
-    setCurrentView(VIEW_TYPES.LEARNING_MODULE);
+
+    if (moduleType === 'video') {
+      // Basic validation for video content
+      if (actualContent && actualContent.id && actualContent.url) {
+          setVideoContent(actualContent);
+          setCurrentView(VIEW_TYPES.LEARNING_MODULE);
+      } else {
+          console.error("Invalid video content structure:", actualContent);
+          // Handle error - maybe go back or show message
+          // Consider navigating back: setCurrentView(VIEW_TYPES.COURSE_CONTENT);
+      }
+    } else if (moduleType === 'quiz') {
+       // Basic validation for quiz content
+       if (actualContent && actualContent.id && actualContent.title && Array.isArray(actualContent.questions)) {
+           setQuizContent(actualContent);
+           setCurrentView(VIEW_TYPES.LEARNING_MODULE);
+       } else {
+           console.error("Invalid quiz content structure:", actualContent);
+           // Handle error - maybe go back or show message
+           // Consider navigating back: setCurrentView(VIEW_TYPES.COURSE_CONTENT);
+       }
+    } else {
+        console.warn(`Unhandled module type in handleModuleSelect: ${moduleType}`);
+        // Don't change view if type is unknown or content was invalid
+    }
   };
 
   // Handle back button logic
@@ -177,7 +234,7 @@ function EdtechApp() {
                     <h3 className="text-lg font-semibold mb-2">Chapters</h3>
                   </div>
                   <div className="sidebar-chapters overflow-y-auto">
-                    <Chapters
+                    <ChapterAdapter
                       chaptersMeta={chaptersMeta}
                       onLessonClick={(chapter) => {
                         handleChapterClick(chapter);
@@ -191,11 +248,7 @@ function EdtechApp() {
               )}
               
               {/* File uploader - only show in chapter selection view */}
-              {currentView === VIEW_TYPES.CHAPTER_SELECTION && (
-                <div className="p-3 sm:p-4 mt-auto border-t border-gray-700">
-                  <FileUploader />
-                </div>
-              )}
+              
             </aside>
           )}
 
@@ -252,10 +305,10 @@ function EdtechApp() {
               {currentView === VIEW_TYPES.COURSE_CONTENT && (
                 <div className="flex h-full flex-col">
                   <div className="flex-grow">
-                    {content ? (
-                      <MainCourse 
-                        language={language} 
+                    {content && currentTopic.topic ? (
+                      <CourseMain
                         content={content}
+                        language={language}
                         chapter={currentTopic.topic}
                       />
                     ) : (

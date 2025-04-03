@@ -954,3 +954,76 @@ class VideoProcessorV2:
                     chapter["timestamp_end"] = min(video_duration, (i) / (len(chapters)-1) * video_duration) if i < len(chapters)-1 else video_duration
 
         return course_structure, chapters
+
+    @staticmethod
+    def get_chapter_schema():
+        """
+        Return the schema definition for chapter structure.
+        This allows other processors to reuse the same schema.
+        """
+        return {
+            "name": "chapter_schema",
+            "strict": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "sections": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "heading": {"type": "string"},
+                                "content": {"type": "string"},
+                                "key_points": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                },
+                                "examples": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                },
+                            },
+                            "required": [
+                                "heading",
+                                "content",
+                                "key_points",
+                                "examples",
+                            ],
+                            "additionalProperties": False,
+                        },
+                    },
+                    "chapter_number": {"type": "integer"},
+                    "learning_objectives": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    # New enhanced metadata fields
+                    "timestamp_start": {"type": "number"},
+                    "timestamp_end": {"type": "number"},
+                    "order": {"type": "integer"},
+                    "needs_latex": {"type": "boolean"},
+                    "needs_code": {"type": "boolean"},
+                    "needs_roleplay": {"type": "boolean"},
+                    "chapter_type": {
+                        "type": "string",
+                        "enum": ["lecture", "demo", "exercise", "quiz", "discussion"]
+                    },
+                },
+                "required": [
+                    "title",
+                    "sections",
+                    "chapter_number",
+                    "learning_objectives",
+                    "timestamp_start",
+                    "timestamp_end",
+                    "order",
+                    "needs_latex",
+                    "needs_code",
+                    "needs_roleplay",
+                    "chapter_type",
+                    # Not making the new fields required to maintain backward compatibility
+                ],
+                "additionalProperties": False,
+            },
+        }
