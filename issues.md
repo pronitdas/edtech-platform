@@ -78,12 +78,12 @@ Based on `epics/ep-005-component-modernization.md`, this document outlines the d
 - **Report Functionality:** The "Report" tab has been removed. A button in the `CourseHeader` now triggers the display of the `LearningReport` modal via the `handleShowReport` function in `useCourseState`.
 
 **Remaining Linter Issues:**
-- `CourseMain.tsx`: Persistent linter error regarding `onGenerateContent` prop passed to `CourseContentRenderer`. Type definition might be incorrect in `CourseContentRendererProps` or the linter is providing faulty feedback. (Investigate `CourseContentRenderer.tsx` props definition)
+- ✅ `CourseMain.tsx`: Persistent linter error regarding `onGenerateContent` prop passed to `CourseContentRenderer`. Type definition might be incorrect in `CourseContentRendererProps` or the linter is providing faulty feedback. (Investigated `CourseContentRenderer.tsx` props definition) - RESOLVED
 
 **Next Steps:**
-1. Investigate and fix the remaining linter error regarding `CourseContentRendererProps` in `CourseContentRenderer.tsx`.
-2. Implement the `CourseSidebar` component for chapter navigation (if needed based on design).
-3. Complete accessibility improvements (ARIA attributes, keyboard navigation) across all new `Course*` components.
+1. ~~Investigate and fix the remaining linter error regarding `CourseContentRendererProps` in `CourseContentRenderer.tsx`.~~ ✅ RESOLVED
+2. Implement the `CourseSidebar` component for chapter navigation (if needed based on design). - DEFERRED
+3. Complete accessibility improvements (ARIA attributes, keyboard navigation) across all new `Course*` components. - DEFERRED
 4. Add unit tests for the new components (`CourseMain`, `CourseHeader`, `CourseContent`, `CourseContentRenderer`, `useCourseState`).
 5. Verify the behavior of the report button and modal.
 
@@ -194,15 +194,30 @@ All components will follow these accessibility guidelines:
 
 For the next development cycle, we should:
 
-1. Begin integrating the modernized components by:
-   - Import `ModernVideoPlayer` instead of the old `VideoPlayer`
-   - Import `ModernMarkdownSlideshow` instead of the old `MarkdownSlideshow`
+1.  **Integrate Modernized Components:**
+    *   Replace usages of the old `VideoPlayer` with the modernized version from `src/components/video/`.
+    *   Replace usages of the old `MarkdownSlideshow` with the modernized version from `src/components/slideshow/`.
+    *   Update `src/components/course/CourseMain.tsx` and related components (e.g., `CourseContentRenderer.tsx`) to correctly integrate and pass props to the modernized player and slideshow components.
 
-2. Update `MainCourse` component to use these modernized components
+2.  **Complete `MainCourse` Refactoring:**
+    *   ~~Investigate and resolve the linter error concerning `CourseContentRendererProps` in `src/components/course/CourseContentRenderer.tsx`.~~ ✅ RESOLVED
+    *   Implement the `CourseSidebar` component (`src/components/course/CourseSidebar.tsx`) if required by the design specifications. - DEFERRED
+    *   Ensure all components within `src/components/course/` meet accessibility standards (WCAG 2.1 AA, ARIA roles/labels, keyboard navigation, focus management). Address partial implementations noted in `CourseHeader`. - DEFERRED
 
-3. Complete the refactoring of the `MainCourse` component using the same patterns:
-   - Start with extracting the base components
-   - Implement the custom hooks
-   - Integrate with modernized VideoPlayer and MarkdownSlideshow
-   - Add proper typing throughout
-   - Ensure all accessibility requirements are met 
+3.  **Finalize TypeScript Type Safety:**
+    *   Complete the type safety implementation in `MainCourse.tsx` and its related components/hooks (`useCourseState`, `useChapters`). Address issues like quiz data typing and special handling for different content types.
+    *   Verify `Quiz.tsx` uses the correct `QuizQuestion` type from `src/types/database.ts`.
+    *   Eliminate remaining `any` types and unnecessary type assertions across the refactored codebase.
+    *   Ensure all functions have explicit return types defined.
+    *   Ensure proper error handling for JSON parsing in `contentHelpers.ts`.
+
+4.  **Implement Testing Strategy:**
+    *   Add unit tests (e.g., Jest/React Testing Library) for all new and refactored components (`CourseMain`, `CourseHeader`, `CourseContent`, `CourseContentRenderer`, `CourseSidebar` if implemented, `useCourseState`, modernized `VideoPlayer` components, modernized `MarkdownSlideshow` components).
+    *   Write integration tests to verify interactions within the `CourseMain` component structure.
+    *   Implement accessibility tests (e.g., using `jest-axe`) for all relevant components.
+
+5.  **Documentation and Verification:**
+    *   Create documentation outlining the API and usage patterns for the modernized `VideoPlayer`, `MarkdownSlideshow`, and `Course` components.
+    *   Perform a final check for any remaining TypeScript compiler errors.
+    *   Conduct thorough manual testing, including edge cases and different data inputs, to ensure runtime type safety and functional correctness.
+    *   Verify the behavior of the report button and modal functionality in `CourseHeader` and `useCourseState`. 
