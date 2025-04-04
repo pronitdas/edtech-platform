@@ -233,7 +233,7 @@ async def generate_notes(
     """
     logger.info("Generating notes with improved chunking")
     prompt = prompts_config.notes(language)
-    return await generate_chunked_content(openai_client, text, prompt, 500)
+    return await generate_chunked_content(openai_client, text, prompt, 1000)
 
 
 async def generate_summary(
@@ -251,7 +251,7 @@ async def generate_summary(
         Summary as a single coherent string
     """
     prompt = prompts_config.summary(language)
-    return await generate_chunked_content(openai_client, text, prompt, 500)
+    return await generate_chunked_content(openai_client, text, prompt, 1500)
 
 
 async def generate_mind_map_structure(

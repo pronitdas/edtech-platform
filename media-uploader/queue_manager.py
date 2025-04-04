@@ -23,8 +23,8 @@ class QueueManager:
     
     def __init__(self, db_manager: DatabaseManager):
         """Initialize the queue manager."""
-        self.job_queue = Queue()
-        self.content_generation_queue = Queue()  # New queue for content generation
+        self.job_queue = Queue(2)
+        self.content_generation_queue = Queue(10)  # New queue for content generation
         self.processing_thread = None
         self.content_generation_thread = None  # New thread for content generation
         self.is_processing = False

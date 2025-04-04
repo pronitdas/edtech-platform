@@ -307,60 +307,60 @@ class PDFProcessor:
             
             # Extract and convert images
             images = {}
-            for page_num, page in enumerate(pdf_document):
-                # Get images
-                image_list = page.get_images(full=True)
+            # for page_num, page in enumerate(pdf_document):
+            #     # Get images
+            #     image_list = page.get_images(full=True)
                 
-                for img_index, img in enumerate(image_list):
-                    try:
-                        xref = img[0]
-                        base_image = pdf_document.extract_image(xref)
-                        image_bytes = base_image["image"]
+            #     for img_index, img in enumerate(image_list):
+            #         try:
+            #             xref = img[0]
+            #             base_image = pdf_document.extract_image(xref)
+            #             image_bytes = base_image["image"]
                         
-                        # Determine image format
-                        image_format = base_image.get("ext", "").lower()
-                        if not image_format or image_format == "":
-                            image_format = "png"  # Default format
+            #             # Determine image format
+            #             image_format = base_image.get("ext", "").lower()
+            #             if not image_format or image_format == "":
+            #                 image_format = "png"  # Default format
                         
-                        # Create unique image ID using hash of image data for deduplication
-                        image_hash = hashlib.md5(image_bytes).hexdigest()[:10]
-                        image_filename = f"img_{page_num+1}_{img_index+1}_{image_hash}.{image_format}"
+            #             # Create unique image ID using hash of image data for deduplication
+            #             image_hash = hashlib.md5(image_bytes).hexdigest()[:10]
+            #             image_filename = f"img_{page_num+1}_{img_index+1}_{image_hash}.{image_format}"
                         
-                        # Process image with PIL for consistency
-                        try:
-                            pil_image = Image.open(io.BytesIO(image_bytes))
+            #             # Process image with PIL for consistency
+            #             try:
+            #                 pil_image = Image.open(io.BytesIO(image_bytes))
                             
-                            # Check if image is too small (likely an icon or bullet)
-                            if pil_image.width < 20 or pil_image.height < 20:
-                                continue
+            #                 # Check if image is too small (likely an icon or bullet)
+            #                 if pil_image.width < 20 or pil_image.height < 20:
+            #                     continue
                                 
-                            # Convert to base64
-                            buffered = io.BytesIO()
-                            pil_image.save(buffered, format=image_format.upper())
-                            img_b64 = base64.b64encode(buffered.getvalue()).decode()
+            #                 # Convert to base64
+            #                 buffered = io.BytesIO()
+            #                 pil_image.save(buffered, format=image_format.upper())
+            #                 img_b64 = base64.b64encode(buffered.getvalue()).decode()
                             
-                            # Store image with metadata
-                            images[image_filename] = {
-                                "data": img_b64,
-                                "format": image_format,
-                                "width": pil_image.width,
-                                "height": pil_image.height,
-                                "page": page_num + 1,
-                                "mode": pil_image.mode,
-                                "hash": image_hash
-                            }
-                        except Exception as pil_error:
-                            logger.warning(f"Error processing image with PIL: {str(pil_error)}")
-                            # Fallback: store raw image without PIL processing
-                            img_b64 = base64.b64encode(image_bytes).decode()
-                            images[image_filename] = {
-                                "data": img_b64,
-                                "format": image_format,
-                                "page": page_num + 1,
-                                "hash": image_hash
-                            }
-                    except Exception as img_error:
-                        logger.error(f"Error extracting image {img_index} on page {page_num + 1}: {str(img_error)}")
+            #                 # Store image with metadata
+            #                 images[image_filename] = {
+            #                     "data": img_b64,
+            #                     "format": image_format,
+            #                     "width": pil_image.width,
+            #                     "height": pil_image.height,
+            #                     "page": page_num + 1,
+            #                     "mode": pil_image.mode,
+            #                     "hash": image_hash
+            #                 }
+            #             except Exception as pil_error:
+            #                 logger.warning(f"Error processing image with PIL: {str(pil_error)}")
+            #                 # Fallback: store raw image without PIL processing
+            #                 img_b64 = base64.b64encode(image_bytes).decode()
+            #                 images[image_filename] = {
+            #                     "data": img_b64,
+            #                     "format": image_format,
+            #                     "page": page_num + 1,
+            #                     "hash": image_hash
+            #                 }
+            #         except Exception as img_error:
+            #             logger.error(f"Error extracting image {img_index} on page {page_num + 1}: {str(img_error)}")
             
             # Generate flat text representation
             text_content = PDFProcessor.document_to_text(document_structure)

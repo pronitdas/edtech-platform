@@ -58,7 +58,7 @@ def start_processing(
     knowledge_id: int,
     queue_manager: QueueManager = Depends(get_queue_manager),
     db_manager: DatabaseManager = Depends(get_db_manager),
-    generate_content: bool = Query(False, description="Whether to generate content after processing"),
+    generate_content: bool = Query(True, description="Whether to generate content after processing"),
     content_types: List[str] = Query(["notes", "summary", "quiz", "mindmap"], description="Types of content to generate"),
     content_language: str = Query("English", description="Language for content generation")
 ):
