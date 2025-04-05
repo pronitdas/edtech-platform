@@ -171,7 +171,7 @@ async def generate_chunked_content(
                     {"role": "system", "content": prompt},
                     {"role": "user", "content": chunks[0]},
                 ],
-                model="gpt-4o-mini",
+                model="microsoft_-_phi-3-mini-128k-instruct",
                 max_tokens=max_tokens,
             )
             return result
@@ -202,7 +202,7 @@ async def generate_chunked_content(
                     {"role": "system", "content": context_prompt},
                     {"role": "user", "content": chunk_context + chunk},
                 ],
-                model="gpt-4o-mini",
+                model="microsoft_-_phi-3-mini-128k-instruct",
                 max_tokens=max_tokens,
             )
             
@@ -288,7 +288,7 @@ async def generate_mind_map_structure(
         # For mind maps, we'll use a direct call instead of chunking to ensure proper JSON structure
         result = await openai_client.chat_completion(
             [{"role": "system", "content": prompt}, {"role": "user", "content": text}],
-            model="gpt-4o-mini",  # Use the same model as other generators
+            model="microsoft_-_phi-3-mini-128k-instruct",  # Use the same model as other generators
             max_tokens=4096,
             json_schema={
                 "name": "mindmap_schema",
@@ -441,7 +441,7 @@ async def generate_questions(
         # For quizzes, we'll use a direct call instead of chunking to ensure proper JSON structure
         result = await openai_client.chat_completion(
             [{"role": "system", "content": prompt}, {"role": "user", "content": text}],
-            model="gpt-4o-mini",  # Use the same model as other generators
+            model="microsoft_-_phi-3-mini-128k-instruct",  # Use the same model as other generators
             max_tokens=4096,
             json_schema=json_schema,
         )
