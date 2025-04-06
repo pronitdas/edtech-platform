@@ -318,4 +318,32 @@ function useReportGenerator() {
   };
 
   return { generateReport, scheduleReport };
-} 
+}
+
+## Integration with EP-006 (Analytics Integration)
+
+### 3.2 Data Visualization
+- Implement charts and graphs for key metrics (completion, engagement, scores).
+- Use libraries like Chart.js or Nivo for visualizations.
+- Ensure visualizations are responsive and accessible.
+- **Visualize Cognitive Load Metrics:**
+  - Display trends in interaction patterns (e.g., avg time per problem, error rates) over time or across topics.
+  - Allow correlation of cognitive load indicators with performance metrics.
+  - Potentially implement alerts or highlights for patterns indicating sustained struggle (requires defining thresholds).
+
+### 3.3 Custom Reporting & Filtering
+- Data export functionality (CSV, potentially PDF).
+
+## 4. Success Criteria
+- Dashboard displays accurate, real-time (or near real-time) learning analytics.
+- Visualizations effectively communicate student progress and engagement.
+- **Cognitive load indicators are visualized and can be correlated with performance data.**
+- Teachers/admins can generate custom reports based on various filters.
+- Data can be exported in standard formats.
+
+## 5. Dependencies & Related Epics
+- **EP-006 (Analytics Integration):** Provides the raw data for the dashboard.
+- **EP-001 (Test Framework):** For testing dashboard components and data accuracy.
+- **EP-003 (Responsive Design):** Dashboard must be responsive.
+- **EP-010 (Accessibility):** Visualizations and controls must be accessible.
+- **EP-011 (Student Practice Module):** Provides key data points for cognitive load visualization. 

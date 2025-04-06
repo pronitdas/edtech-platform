@@ -109,24 +109,78 @@
    - jest-axe implementation
    - WCAG 2.1 AA compliance verification
 
-## Next Steps Priority List
+## 5. Student Practice Module (EP-011) Status
+
+### 🚧 Pending
+1. **Slope Drawing Component React Conversion**
+   - `SlopeDrawing.tsx` structure
+   - `GraphCanvas.tsx` implementation (p5.js integration)
+   - `ConceptExplanation.tsx` (KaTeX)
+   - `PracticeProblem.tsx` (basic generation)
+   - `CustomProblemSolver.tsx` (input handling)
+   - `StatsDisplay.tsx` (Chart.js setup)
+   - `WordProblem.tsx` (display logic)
+   - `AnimatedSolution.tsx` (SVG setup)
+   - Hook implementation (`useGraphManagement`, `useProblemGeneration`, etc.)
+   - State management setup
+   - CSS conversion
+   - Animation implementation
+   - Interface integration
+
+2. **Word Problem System**
+   - Dynamic generation logic
+   - SVG visualization generation
+   - Animation playback controls
+   - Difficulty progression
+   - History tracking
+
+3. **Cognitive Load Integration**
+   - Interaction pattern tracking
+   - Fatigue detection heuristics
+   - Integration with analytics/feedback systems
+
+4. **AI Integration**
+   - AI provider abstraction layer (`useAIProvider`)
+   - Multi-provider support (runtime selection)
+   - Secure key management
+   - Fallback mechanisms
+   - AI hints/feedback implementation in components
+
+5. **Module Core Components**
+   - `PracticeSession.tsx` implementation
+   - `FeedbackSystem.tsx` consolidation
+   - `ProgressTracking.tsx` implementation
+   - Engagement mechanics integration
+
+6. **Testing**
+   - Unit tests for hooks and utils
+   - Component tests (React Testing Library)
+   - Integration tests (interactions, AI)
+   - E2E tests (Playwright, if applicable)
+
+## 6. Next Steps Priority List (Updated)
 
 ### High Priority
 1. Complete MainCourse component accessibility improvements
 2. Implement remaining type safety fixes
-3. Add unit tests for new components
+3. **Start implementation of EP-011: Student Practice Module (Slope Tool Conversion)**
+4. Add unit tests for modernized UI components (VideoPlayer, Slideshow)
 
 ### Medium Priority
-1. Implement CourseSidebar (if needed)
-2. Complete documentation for all components
-3. Add integration tests
+1. **Continue EP-011: Word Problems & Animations**
+2. **Continue EP-011: AI Provider Abstraction**
+3. Implement CourseSidebar (if needed)
+4. Complete documentation for modernized UI components
+5. Add integration tests for CourseMain
+6. **Start testing for EP-011 components**
 
 ### Low Priority
-1. Add Storybook stories
-2. Enhance error handling
-3. Performance optimization
+1. **Complete EP-011: Cognitive Load, Full Testing**
+2. Add Storybook stories
+3. Enhance error handling globally
+4. Performance optimization across modules
 
-## Migration Status
+## 7. Migration Status (Updated)
 
 ### ✅ Completed Migrations
 1. Analytics System
@@ -145,8 +199,10 @@
    - Accessibility improvements
    - Type safety enhancements
    - Testing implementation
+2. **Student Practice Module (EP-011)**
+   - Initial component setup (pending)
 
-## Documentation Status
+## 8. Documentation Status (Updated)
 
 ### ✅ Completed
 1. Analytics tracking documentation
@@ -155,12 +211,13 @@
 4. Event schema documentation
 
 ### 🚧 Pending
-1. Component API documentation
-2. Testing guidelines
+1. Component API documentation (including EP-011 components)
+2. Testing guidelines (updated for EP-011 requirements)
 3. Accessibility standards documentation
 4. Performance optimization guide
+5. **EP-011: Student Practice Module documentation**
 
-## Known Issues
+## 9. Known Issues (Updated)
 
 1. **Type Safety**
    - Quiz data type mismatches in MainCourse
@@ -171,25 +228,34 @@
    - Incomplete ARIA attributes in some components
    - Keyboard navigation needs improvement
    - Focus management requires enhancement
+   - **Need to ensure accessibility of EP-011 canvas/interactive elements**
 
 3. **Testing**
    - Limited test coverage for new components
    - Missing integration tests
    - Incomplete accessibility testing
+   - **No tests yet for EP-011**
 
-## Next Sprint Focus
+4. **Performance**
+   - **Potential performance concerns with EP-011 canvas/animations**
+
+## 10. Next Sprint Focus (Updated)
 
 1. **Week 1-2**
-   - Complete MainCourse accessibility improvements
-   - Fix type safety issues
-   - Start unit test implementation
+   - Complete MainCourse accessibility/type safety
+   - **EP-011: Start Slope Tool React Conversion (`SlopeDrawing.tsx`, `GraphCanvas.tsx`)**
+   - Start unit tests for MainCourse
 
 2. **Week 3-4**
-   - Implement remaining component tests
-   - Complete documentation
-   - Begin integration testing
+   - **EP-011: Continue Slope Tool components (`ConceptExplanation`, `PracticeProblem`)**
+   - **EP-011: Implement core hooks (`useGraphManagement`, `useProblemGeneration`)**
+   - Implement remaining modernized component tests
+   - Complete documentation for MainCourse
 
 3. **Week 5-6**
-   - Performance optimization
+   - **EP-011: Start Word Problem / Animation / AI Abstraction**
+   - Begin integration testing for MainCourse
+   - **EP-011: Start component tests**
+   - Performance optimization kickoff
    - Error handling improvements
-   - Final accessibility compliance checks 
+   - Final accessibility compliance checks for Phase 1 components 

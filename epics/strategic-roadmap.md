@@ -64,9 +64,22 @@
 - Media management
 - Content validation
 
-## Phase 2: Growth Enablers (Weeks 7-12)
+## Phase 1.5: Core Interactivity (Weeks 7-9)
 
-### Epic 6: Gamification Features (EP-006)
+### Epic 6: Student Practice Module (EP-011)
+**Description**: Implement interactive learning tools (starting with slope), AI assistance, and cognitive load management.
+**Value Proposition**: Boost engagement and understanding with interactive practice and AI feedback.
+**Key Deliverables**:
+- React conversion of slope tool (`SlopeDrawing.tsx` et al.)
+- Interactive graph component (`GraphCanvas.tsx`)
+- Word problem generation and SVG animation (`WordProblem.tsx`, `AnimatedSolution.tsx`)
+- AI provider abstraction and integration (`useAIProvider`)
+- Basic cognitive load metric tracking (integration with EP-007)
+- Initial test suite for components and hooks
+
+## Phase 2: Growth Enablers (Weeks 10-15)
+
+### Epic 7: Gamification Features (EP-006)
 **Description**: Add engagement-driving mechanics.
 **Value Proposition**: Increase user engagement and retention.
 **Key Deliverables**:
@@ -77,7 +90,7 @@
 - Reward mechanics
 - Notifications
 
-### Epic 7: Analytics Dashboard (EP-007)
+### Epic 8: Analytics Dashboard (EP-007)
 **Description**: Create comprehensive analytics system.
 **Value Proposition**: Data-driven decision making.
 **Key Deliverables**:
@@ -88,7 +101,7 @@
 - User insights
 - Performance metrics
 
-### Epic 8: Data Export Integration (EP-008)
+### Epic 9: Data Export Integration (EP-008)
 **Description**: Enable seamless data exchange.
 **Value Proposition**: System interoperability and data access.
 **Key Deliverables**:
@@ -99,7 +112,7 @@
 - Documentation
 - Security controls
 
-### Epic 9: Offline Access (EP-009)
+### Epic 10: Offline Access (EP-009)
 **Description**: Enable offline content access.
 **Value Proposition**: Learning anywhere, anytime.
 **Key Deliverables**:
@@ -110,7 +123,7 @@
 - Storage management
 - Progress tracking
 
-### Epic 10: Accessibility Compliance (EP-010)
+### Epic 11: Accessibility Compliance (EP-010)
 **Description**: Ensure WCAG 2.1 AA compliance.
 **Value Proposition**: Universal access and legal compliance.
 **Key Deliverables**:
@@ -189,11 +202,16 @@
 4. Week 4-5: Performance
 5. Week 5-6: Content Management
 
-### Phase 2: Growth (Weeks 7-12)
-1. Week 7-8: Analytics & Gamification
-2. Week 8-9: Data Export
-3. Week 9-10: Offline Access
-4. Week 10-12: Accessibility
+### Phase 1.5: Core Interactivity (Weeks 7-9)
+1. Week 7: Slope Tool React Conversion & Graph Canvas
+2. Week 8: Word Problems, Animations, AI Abstraction
+3. Week 9: Cognitive Load Integration & Testing
+
+### Phase 2: Growth (Weeks 10-15)
+1. Week 10-11: Analytics Dashboard & Gamification
+2. Week 11-12: Data Export
+3. Week 12-13: Offline Access
+4. Week 14-15: Accessibility & Final Polish
 
 ## Success Criteria
 
