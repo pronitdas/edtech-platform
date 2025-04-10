@@ -98,6 +98,38 @@ export interface QuizQuestion {
   points?: number;
 }
 
+// Define the structure for interactive content
+export interface InteractiveContent {
+  type: string; // e.g., "slope-drawer", "equation-solver", etc.
+  config?: Json; // Configuration specific to the interactive component
+  problems?: Array<{
+    id: string;
+    question: string;
+    difficulty: 'easy' | 'medium' | 'hard';
+    hints?: string[];
+    solution?: string;
+    data?: Json; // Component-specific data needed for the problem
+  }>;
+  wordProblems?: Array<{
+    id: string;
+    text: string;
+    difficulty: 'easy' | 'medium' | 'hard';
+    context?: string;
+    illustration?: string; // SVG data or URL
+    solution?: string;
+  }>;
+  conceptExplanations?: Array<{
+    id: string;
+    title: string;
+    content: string;
+    examples?: Array<{
+      id: string;
+      description: string;
+      illustration?: string;
+    }>;
+  }>;
+}
+
 export interface ChapterContent {
   id?: number;
   chapter?: string;
@@ -130,6 +162,7 @@ export interface ChapterContent {
   mindmap?: string;
   og?: string;
   title?: string;
+  interactive?: InteractiveContent; // Added field for interactive content
 }
 
 export interface EdTechChapter {

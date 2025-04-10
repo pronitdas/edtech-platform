@@ -12,6 +12,7 @@ import { ChapterContent, ChapterV1, QuizQuestion } from '@/types/database'; // R
 import { ChevronLeft } from 'lucide-react';
 import supabase from '@/services/supabase'; // Import Supabase client
 import { useInteractionTracker } from '@/contexts/InteractionTrackerContext'; // Import the hook
+import { SlopeDrawingPlaceholder, InteractiveComponentTypes } from '../interactive'; // Import interactive components
 
 // TODO: Define proper types for timelineMarkers and interactionTracker if needed here
 // import { InteractionTracker } from '@/contexts/InteractionTrackerContext';
@@ -822,11 +823,63 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
         <RoleplayComponent 
           scenarios={validatedScenarios as any} 
           onRegenerate={onGenerateContentRequest}
-          // TODO: Provide a valid OpenAI API key, potentially from environment variables or context
-          // Pass missing props
+          openaiApiKey={process.env.OPENAI_API_KEY || ''} 
           userId={userId || 'anonymous'} 
           language={language} 
         />
+      </div>
+    );
+  }
+
+  // Interactive Tab - Add new tab for slope drawing and other interactive components
+  if (activeTab === "interactive") {
+    // Check if interactive content exists
+    if (!content.interactive) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg max-w-md">
+            <h2 className="text-xl font-semibold text-gray-200 mb-4">No Interactive Content Available</h2>
+            <p className="text-gray-400 mb-6">
+              There is no interactive content available for this chapter yet.
+            </p>
+            <button
+              onClick={onGenerateContentRequest}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors flex items-center justify-center gap-2 shadow-md"
+            >
+              <span>Generate Interactive Content</span>
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // Check interactive content type
+    if (content.interactive.type === InteractiveComponentTypes.SLOPE_DRAWER) {
+      return (
+        <div className="h-full overflow-y-auto p-4 md:p-6">
+          <SlopeDrawingPlaceholder 
+            interactiveContent={content.interactive}
+            userId={userId || 'anonymous'}
+            knowledgeId={chapter.knowledge_id?.toString()}
+            language={language}
+            onUpdateProgress={(progress) => {
+              console.log('Progress updated:', progress);
+              // Here you would implement logic to update user progress
+            }}
+          />
+        </div>
+      );
+    }
+    
+    // For other interactive types or invalid types
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+        <div className="bg-gray-800 p-6 rounded-lg shadow-lg max-w-md">
+          <h2 className="text-xl font-semibold text-gray-200 mb-4">Unsupported Interactive Content</h2>
+          <p className="text-gray-400 mb-6">
+            The interactive content type "{content.interactive.type}" is not supported yet.
+          </p>
+        </div>
       </div>
     );
   }
