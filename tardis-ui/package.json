@@ -30,7 +30,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "deno": "^2.2.2",
-    "dompurify": "^3.2.4",
+    "dompurify": "^3.2.5",
     "framer-motion": "^11.11.17",
     "jspdf": "^2.5.2",
     "jszip": "^3.10.1",
