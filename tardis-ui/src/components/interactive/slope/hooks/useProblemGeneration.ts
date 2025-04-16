@@ -1,20 +1,34 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { ProblemData } from '../components/PracticeProblem';
+
+export interface ProblemData {
+  id: string;
+  question: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  hints: string[];
+  solution?: { slope: number; yIntercept: number } | string;
+  targetPoints?: { x: number; y: number }[];
+  startPoints?: { x: number; y: number }[];
+  expectedSlope?: number | null;
+  expectedIntercept?: number | null;
+}
 
 type ProblemDifficulty = 'easy' | 'medium' | 'hard';
+type SolutionResult = 'correct' | 'incorrect';
 
 interface ProblemGenerationConfig {
   initialDifficulty?: ProblemDifficulty;
   initialProblems?: ProblemData[];
   predefinedProblems?: ProblemData[];
+  maxHistoryLength?: number;
 }
 
 export function useProblemGeneration({
   initialDifficulty = 'easy',
   initialProblems = [],
-  predefinedProblems = []
+  predefinedProblems = [],
+  maxHistoryLength = 10
 }: ProblemGenerationConfig = {}) {
   // State
   const [problems, setProblems] = useState<ProblemData[]>(initialProblems.length > 0 ? initialProblems : predefinedProblems);
@@ -27,6 +41,12 @@ export function useProblemGeneration({
     incorrect: 0,
     attempted: 0,
     streakCount: 0,
+    history: [] as SolutionResult[],
+    difficultyStats: {
+      easy: { attempted: 0, correct: 0 },
+      medium: { attempted: 0, correct: 0 },
+      hard: { attempted: 0, correct: 0 },
+    }
   });
 
   // Get current problem
@@ -155,11 +175,26 @@ Step 4: The equation of the line is ${equationText}`;
       
       // Update stats
       setStats(prev => {
+        // Add to history, keeping only maxHistoryLength records
+        const newHistory: SolutionResult[] = [...prev.history, isAnswerCorrect ? 'correct' : 'incorrect'];
+        if (newHistory.length > maxHistoryLength) {
+          newHistory.shift(); // Remove oldest entry
+        }
+        
+        // Update difficulty stats
+        const difficultyStats = { ...prev.difficultyStats };
+        difficultyStats[currentProblem.difficulty].attempted += 1;
+        if (isAnswerCorrect) {
+          difficultyStats[currentProblem.difficulty].correct += 1;
+        }
+        
         const newStats = {
           attempted: prev.attempted + 1,
           correct: isAnswerCorrect ? prev.correct + 1 : prev.correct,
           incorrect: isAnswerCorrect ? prev.incorrect : prev.incorrect + 1,
-          streakCount: isAnswerCorrect ? prev.streakCount + 1 : 0
+          streakCount: isAnswerCorrect ? prev.streakCount + 1 : 0,
+          history: newHistory,
+          difficultyStats
         };
         return newStats;
       });
@@ -174,17 +209,32 @@ Step 4: The equation of the line is ${equationText}`;
     
     // Update stats
     setStats(prev => {
+      // Add to history, keeping only maxHistoryLength records
+      const newHistory: SolutionResult[] = [...prev.history, isAnswerCorrect ? 'correct' : 'incorrect'];
+      if (newHistory.length > maxHistoryLength) {
+        newHistory.shift(); // Remove oldest entry
+      }
+      
+      // Update difficulty stats
+      const difficultyStats = { ...prev.difficultyStats };
+      difficultyStats[currentProblem.difficulty].attempted += 1;
+      if (isAnswerCorrect) {
+        difficultyStats[currentProblem.difficulty].correct += 1;
+      }
+      
       const newStats = {
         attempted: prev.attempted + 1,
         correct: isAnswerCorrect ? prev.correct + 1 : prev.correct,
         incorrect: isAnswerCorrect ? prev.incorrect : prev.incorrect + 1,
-        streakCount: isAnswerCorrect ? prev.streakCount + 1 : 0
+        streakCount: isAnswerCorrect ? prev.streakCount + 1 : 0,
+        history: newHistory,
+        difficultyStats
       };
       return newStats;
     });
     
     return isAnswerCorrect;
-  }, [currentProblem]);
+  }, [currentProblem, maxHistoryLength]);
 
   // Toggle solution visibility
   const toggleSolution = useCallback(() => {
@@ -196,6 +246,22 @@ Step 4: The equation of the line is ${equationText}`;
     generateProblem();
   }, [generateProblem]);
 
+  // Reset stats to initial values
+  const resetStats = useCallback(() => {
+    setStats({
+      correct: 0,
+      incorrect: 0,
+      attempted: 0,
+      streakCount: 0,
+      history: [],
+      difficultyStats: {
+        easy: { attempted: 0, correct: 0 },
+        medium: { attempted: 0, correct: 0 },
+        hard: { attempted: 0, correct: 0 },
+      }
+    });
+  }, []);
+
   // Change the difficulty and generate a new problem
   const changeDifficulty = useCallback((newDifficulty: ProblemDifficulty) => {
     setDifficulty(newDifficulty);
@@ -204,6 +270,32 @@ Step 4: The equation of the line is ${equationText}`;
       setTimeout(() => generateProblem(), 0);
     }
   }, [difficulty, generateProblem]);
+
+  // Handle adaptive difficulty based on performance
+  useEffect(() => {
+    const adaptDifficulty = () => {
+      // Only adapt if we have enough data (at least 5 problems)
+      if (stats.attempted < 5) return;
+      
+      const successRate = stats.correct / stats.attempted;
+      
+      // Adjust difficulty based on success rate
+      if (successRate > 0.8 && difficulty !== 'hard') {
+        // If success rate is high, increase difficulty
+        const newDifficulty = difficulty === 'easy' ? 'medium' : 'hard';
+        setDifficulty(newDifficulty);
+      } else if (successRate < 0.4 && difficulty !== 'easy') {
+        // If success rate is low, decrease difficulty
+        const newDifficulty = difficulty === 'hard' ? 'medium' : 'easy';
+        setDifficulty(newDifficulty);
+      }
+    };
+    
+    // Check for difficulty adaptation after every 5 problems
+    if (stats.attempted > 0 && stats.attempted % 5 === 0) {
+      adaptDifficulty();
+    }
+  }, [stats.attempted, stats.correct, difficulty]);
 
   // Generate initial problem when component mounts if no problems exist
   useEffect(() => {
@@ -227,6 +319,7 @@ Step 4: The equation of the line is ${equationText}`;
     generateProblem,
     checkSolution,
     toggleSolution,
-    nextProblem
+    nextProblem,
+    resetStats
   };
 } 

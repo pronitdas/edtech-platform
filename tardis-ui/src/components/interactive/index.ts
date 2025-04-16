@@ -2,7 +2,7 @@
 // As we implement each component, we'll add it to the exports
 
 // Core Components - Comment out until they're fully implemented
-// export { default as SlopeDrawing } from './slope/SlopeDrawing';
+export { default as SlopeDrawing } from './slope/SlopeDrawing';
 
 // This will allow convenient imports like:
 // import { SlopeDrawing } from '@/components/interactive';
@@ -14,5 +14,5 @@ export const InteractiveComponentTypes = {
   GRAPH_PLOTTER: 'graph-plotter',
 };
 
-// Temporary exports for integration testing
-export { default as SlopeDrawingPlaceholder } from './slope/SlopeDrawing'; 
+// Remove the placeholder export since we're using the real component now
+// export { default as SlopeDrawingPlaceholder } from './slope/SlopeDrawing'; 

@@ -67,3 +67,18 @@ next-env.d.ts
 
 # Local Netlify folder
 .netlify
+.scannerwork/.sonar_lock
+.scannerwork/report-task.txt
+media-uploader/old/index.ts
+media-uploader/old/openAi.ts
+media-uploader/old/openAiFns.ts
+media-uploader/old/promptsConfig.ts
+media-uploader/src/api/edtech-api.ts
+next-work/interface_32.html
+next-work/interface31.html
+next-work/slope_19i.html
+next-work/slope_draw_7.html
+next-work/Student_slope_1.html
+next-work/Student_slope_4.html
+next-work/Roleplay/index.html
+next-work/Roleplay/interface8.html

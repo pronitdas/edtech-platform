@@ -29,7 +29,8 @@ const BASE_TABS: TabConfig[] = [
     { label: "Summary", key: "summary", iconIdentifier: "BookOpen" },
     { label: "Quiz", key: "quiz", iconIdentifier: "PieChart" },
     { label: "Mindmap", key: "mindmap", iconIdentifier: "Brain" },
-    { label: "Roleplay", key: "roleplay", iconIdentifier: "MessageSquare" }
+    { label: "Roleplay", key: "roleplay", iconIdentifier: "MessageSquare" },
+    { label: "Practice", key: "interactive", iconIdentifier: "PenTool" }
 ];
 
 // Helper function to check if a tab should be available
@@ -81,6 +82,11 @@ const isTabAvailable = (tabType: string, content: any) => {
           typeof contentValue === 'object' ? Object.keys(contentValue).length > 0 : 
           false
         );
+        break;
+      case 'interactive':
+        contentValue = content.interactive;
+        // Always show the interactive tab, regardless of whether content exists
+        result = true;
         break;
       default:
         result = false;

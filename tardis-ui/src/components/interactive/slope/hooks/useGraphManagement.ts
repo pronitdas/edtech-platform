@@ -9,6 +9,8 @@ interface GraphConfig {
   canvasWidth?: number;
   canvasHeight?: number;
   scaleFactor?: number;
+  minZoom?: number;
+  maxZoom?: number;
 }
 
 export function useGraphManagement({
@@ -17,16 +19,23 @@ export function useGraphManagement({
   canvasWidth = 800,
   canvasHeight = 600,
   scaleFactor = 40,
+  minZoom = 0.1,
+  maxZoom = 5
 }: GraphConfig = {}) {
   // State for graph view and points
   const [points, setPoints] = useState<Point[]>([]);
   const [zoom, setZoom] = useState(initialZoom);
   const [offset, setOffset] = useState(initialOffset);
 
+  // Apply zoom limits
+  const setZoomWithLimits = useCallback((newZoom: number) => {
+    setZoom(Math.max(minZoom, Math.min(maxZoom, newZoom)));
+  }, [minZoom, maxZoom]);
+
   // Reset the view to center the points
   const resetView = useCallback(() => {
     if (points.length === 0) {
-      setZoom(initialZoom);
+      setZoomWithLimits(initialZoom);
       setOffset(initialOffset);
       return;
     }
@@ -56,15 +65,15 @@ export function useGraphManagement({
     
     const zoomX = (canvasWidth / scaleFactor) / (rangeX * margin);
     const zoomY = (canvasHeight / scaleFactor) / (rangeY * margin);
-    const newZoom = Math.min(zoomX, zoomY, 2); // Limit max zoom
+    const newZoom = Math.min(zoomX, zoomY, maxZoom); // Limit max zoom
     
     // Center the points in the canvas
-    setZoom(newZoom);
+    setZoomWithLimits(newZoom);
     setOffset({
-      x: -centerX * scaleFactor * newZoom,
-      y: centerY * scaleFactor * newZoom,
+      x: -centerX * scaleFactor * newZoom + canvasWidth / 2,
+      y: centerY * scaleFactor * newZoom + canvasHeight / 2
     });
-  }, [points, initialZoom, initialOffset, canvasWidth, canvasHeight, scaleFactor]);
+  }, [points, initialZoom, initialOffset, canvasWidth, canvasHeight, scaleFactor, setZoomWithLimits, maxZoom]);
 
   // Clear all points
   const clearPoints = useCallback(() => {
@@ -75,14 +84,14 @@ export function useGraphManagement({
   const setPointsFromCoordinates = useCallback((coordinates: { x: number; y: number }[]) => {
     setPoints(coordinates.map(coord => ({ x: coord.x, y: coord.y })));
     
-    // Automatically reset view when points are updated
-    setTimeout(() => resetView(), 50);
-  }, [resetView]);
+    // Don't automatically reset view to avoid infinite update loops
+    // The component should handle this with useEffect
+  }, []);
 
   // Calculate slope between two points
   const calculateSlope = useCallback((p1: Point, p2: Point): number | null => {
     const dx = p2.x - p1.x;
-    if (dx === 0) return null; // Undefined slope (vertical line)
+    if (Math.abs(dx) < 0.0001) return null; // Undefined slope (vertical line)
     return (p2.y - p1.y) / dx;
   }, []);
 
@@ -94,38 +103,71 @@ export function useGraphManagement({
 
   // Generate equation string
   const generateEquation = useCallback((slope: number | null, yIntercept: number | null): string => {
-    if (slope === null) return "x = " + points[0].x.toFixed(2); // Vertical line
+    if (slope === null) {
+      if (points.length > 0) {
+        return "x = " + points[0].x.toFixed(2); // Vertical line
+      }
+      return ""; // No equation available
+    }
     
     const m = slope.toFixed(2);
     const b = yIntercept || 0;
     
-    if (b === 0) return `y = ${m}x`;
+    if (Math.abs(b) < 0.01) return `y = ${m}x`;
     if (b > 0) return `y = ${m}x + ${b.toFixed(2)}`;
     return `y = ${m}x - ${Math.abs(b).toFixed(2)}`;
   }, [points]);
 
   // Map functions between canvas and world coordinates
-  const mapPointToCanvas = useCallback((point: Point): Point => {
+  const mapPointToCanvas = useCallback((worldPoint: Point): Point => {
     const effectiveScale = scaleFactor * zoom;
-    const cx = canvasWidth / 2 + offset.x;
-    const cy = canvasHeight / 2 + offset.y;
+    const cx = canvasWidth / 2;
+    const cy = canvasHeight / 2;
     
     return {
-      x: cx + point.x * effectiveScale,
-      y: cy - point.y * effectiveScale,
+      x: worldPoint.x * effectiveScale + cx + offset.x,
+      y: cy - worldPoint.y * effectiveScale + offset.y
     };
   }, [zoom, offset, scaleFactor, canvasWidth, canvasHeight]);
 
   const mapCanvasToPoint = useCallback((canvasPoint: Point): Point => {
     const effectiveScale = scaleFactor * zoom;
-    const cx = canvasWidth / 2 + offset.x;
-    const cy = canvasHeight / 2 + offset.y;
+    const cx = canvasWidth / 2;
+    const cy = canvasHeight / 2;
     
     return {
-      x: (canvasPoint.x - cx) / effectiveScale,
-      y: (cy - canvasPoint.y) / effectiveScale,
+      x: (canvasPoint.x - cx - offset.x) / effectiveScale,
+      y: (cy - canvasPoint.y + offset.y) / effectiveScale
     };
   }, [zoom, offset, scaleFactor, canvasWidth, canvasHeight]);
+
+  // Zoom to a specific point on the canvas
+  const zoomToPoint = useCallback((canvasPoint: Point, newZoom: number) => {
+    // Get world coordinates of the point before zoom
+    const worldPoint = mapCanvasToPoint(canvasPoint);
+    
+    // Apply new zoom
+    const limitedZoom = Math.max(minZoom, Math.min(maxZoom, newZoom));
+    
+    // Calculate new offset to keep the point under the mouse
+    const effectiveScaleAfter = scaleFactor * limitedZoom;
+    const cx = canvasWidth / 2;
+    const cy = canvasHeight / 2;
+    
+    const newOffsetX = -(worldPoint.x * effectiveScaleAfter) + (canvasPoint.x - cx);
+    const newOffsetY = (worldPoint.y * effectiveScaleAfter) + (canvasPoint.y - cy);
+    
+    setZoom(limitedZoom);
+    setOffset({ x: newOffsetX, y: newOffsetY });
+  }, [mapCanvasToPoint, minZoom, maxZoom, scaleFactor, canvasWidth, canvasHeight]);
+
+  // Pan the view by a delta amount
+  const panView = useCallback((deltaX: number, deltaY: number) => {
+    setOffset(prev => ({
+      x: prev.x + deltaX,
+      y: prev.y + deltaY
+    }));
+  }, []);
 
   // Calculate line data if two points exist
   const lineData = useMemo(() => {
@@ -152,7 +194,7 @@ export function useGraphManagement({
     points,
     setPoints,
     zoom,
-    setZoom,
+    setZoom: setZoomWithLimits,
     offset,
     setOffset,
     resetView,
@@ -163,6 +205,8 @@ export function useGraphManagement({
     generateEquation,
     mapPointToCanvas,
     mapCanvasToPoint,
+    zoomToPoint,
+    panView,
     lineData,
     canvasWidth,
     canvasHeight,
