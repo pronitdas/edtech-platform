@@ -35,12 +35,19 @@ This directory contains refactoring epics for the EdTech platform based on the a
    - Content templates
    - Version control
 
-### Phase 1.5: Core Interactivity (New)
-6. **[Student Practice Module](student-practice-module.md)** (EP-011) - Implement interactive learning tools (starting with slope), AI assistance, and cognitive load management.
-   - Interactive visualizations (p5.js, SVG animations)
-   - Adaptive problem generation
-   - AI-driven feedback and hints
-   - Cognitive load tracking integration
+### Phase 1.5: Core Interactivity
+- **EP-011: Student Practice Module** 🟡
+  - Interactive problem solving tools
+  - Progress tracking and analytics
+  - Cognitive load management
+  - Word problem visualization
+
+- **EP-012: Slope Drawing Tool UI/UX Polish** 🟡
+  - Modern, responsive layout
+  - Enhanced tool interactions
+  - Accessibility implementation
+  - Performance optimization
+  - Visual polish and professionalization
 
 ### Phase 2: Growth Enablers
 7. **[Data Export Integration](data-export-integration.md)** (EP-008) - Enable seamless data exchange
@@ -214,4 +221,13 @@ These epics address issues identified in:
 - `tardis-ui/.issues/001-feature-add-unit-tests-for-interactiontracker.md`
 - `tardis-ui/.issues/003-refactor-optimize-state-management-in-interactiontrackercontext.md`
 - `tardis-ui/.issues/007-feature-real-time-learning-analytics-dashboard.md`
-- `tardis-ui/.issues/009-ui-component-library-modernization.md` 
+- `tardis-ui/.issues/009-ui-component-library-modernization.md`
+
+## Epic Dependencies
+
+```mermaid
+graph TD
+    EP011[EP-011: Student Practice Module] --> EP012[EP-012: Slope Drawing Tool Polish]
+    EP003[EP-003: Responsive Design] --> EP012
+    EP010[EP-010: Accessibility] --> EP012
+    EP004[EP-004: Performance Optimization] --> EP012 

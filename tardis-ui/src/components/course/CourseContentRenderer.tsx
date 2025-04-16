@@ -12,7 +12,7 @@ import { ChapterContent, ChapterV1, QuizQuestion } from '@/types/database'; // R
 import { ChevronLeft } from 'lucide-react';
 import supabase from '@/services/supabase'; // Import Supabase client
 import { useInteractionTracker } from '@/contexts/InteractionTrackerContext'; // Import the hook
-import { SlopeDrawingPlaceholder, InteractiveComponentTypes } from '../interactive'; // Import interactive components
+import { SlopeDrawing, InteractiveComponentTypes } from '../interactive'; // Import interactive components
 
 // TODO: Define proper types for timelineMarkers and interactionTracker if needed here
 // import { InteractionTracker } from '@/contexts/InteractionTrackerContext';
@@ -833,53 +833,64 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
 
   // Interactive Tab - Add new tab for slope drawing and other interactive components
   if (activeTab === "interactive") {
-    // Check if interactive content exists
-    if (!content.interactive) {
-      return (
-        <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-          <div className="bg-gray-800 p-6 rounded-lg shadow-lg max-w-md">
-            <h2 className="text-xl font-semibold text-gray-200 mb-4">No Interactive Content Available</h2>
-            <p className="text-gray-400 mb-6">
-              There is no interactive content available for this chapter yet.
-            </p>
-            <button
-              onClick={onGenerateContentRequest}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors flex items-center justify-center gap-2 shadow-md"
-            >
-              <span>Generate Interactive Content</span>
-            </button>
-          </div>
-        </div>
-      );
-    }
+    // Create mock default interactive content if none exists
+    const mockInteractiveContent = {
+      type: "slope-drawer",
+      problems: [
+        {
+          id: "p1",
+          question: "Draw a line with slope 2 and y-intercept 3",
+          difficulty: "easy" as "easy",
+          hints: ["Remember slope is rise over run", "Try plotting (0,3) first"],
+          solution: "y = 2x + 3",
+          data: { slope: 2, yIntercept: 3 }
+        },
+        {
+          id: "p2",
+          question: "Draw a line with slope -1 and y-intercept 5",
+          difficulty: "medium" as "medium",
+          hints: ["Negative slope means the line goes down as x increases", "Try plotting (0,5) first"],
+          solution: "y = -1x + 5",
+          data: { slope: -1, yIntercept: 5 }
+        },
+        {
+          id: "p3",
+          question: "Draw a vertical line at x = 4",
+          difficulty: "hard" as "hard",
+          hints: ["Vertical lines have undefined slope", "All points on the line have the same x-value"],
+          solution: "Vertical line: x = 4"
+        }
+      ],
+      conceptExplanations: [
+        {
+          id: "c1",
+          title: "Understanding Slope",
+          content: "Slope measures the steepness of a line. It is calculated as the ratio of vertical change (rise) to horizontal change (run).",
+          examples: [
+            {
+              id: "e1",
+              description: "A line with slope 2 rises 2 units for every 1 unit it runs horizontally."
+            }
+          ]
+        }
+      ]
+    };
 
-    // Check interactive content type
-    if (content.interactive.type === InteractiveComponentTypes.SLOPE_DRAWER) {
-      return (
-        <div className="h-full overflow-y-auto p-4 md:p-6">
-          <SlopeDrawingPlaceholder 
-            interactiveContent={content.interactive}
-            userId={userId || 'anonymous'}
-            knowledgeId={chapter.knowledge_id?.toString()}
-            language={language}
-            onUpdateProgress={(progress) => {
-              console.log('Progress updated:', progress);
-              // Here you would implement logic to update user progress
-            }}
-          />
-        </div>
-      );
-    }
-    
-    // For other interactive types or invalid types
+    // Use existing interactive content if available, otherwise use mock data
+    const interactiveContent = content?.interactive || mockInteractiveContent;
+
     return (
-      <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-        <div className="bg-gray-800 p-6 rounded-lg shadow-lg max-w-md">
-          <h2 className="text-xl font-semibold text-gray-200 mb-4">Unsupported Interactive Content</h2>
-          <p className="text-gray-400 mb-6">
-            The interactive content type "{content.interactive.type}" is not supported yet.
-          </p>
-        </div>
+      <div className="h-full overflow-y-auto p-4 md:p-6">
+        <SlopeDrawing 
+          interactiveContent={interactiveContent}
+          userId={userId || 'anonymous'}
+          knowledgeId={chapter.knowledge_id?.toString()}
+          language={language}
+          onUpdateProgress={(progress) => {
+            console.log('Progress updated:', progress);
+            // Here you would implement logic to update user progress
+          }}
+        />
       </div>
     );
   }
