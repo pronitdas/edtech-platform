@@ -106,26 +106,26 @@ const SlopeDrawing: React.FC<SlopeDrawingProps> = ({
     canvasHeight: dimensions.height,
   });
 
+  // Track if initial points have been set to avoid double-initialization
+  const hasInitialized = useRef(false);
+
   // Initialize with default points once when the component mounts
   useEffect(() => {
-    if (points.length === 0) {
-      // Create default points for demonstration
+    if (!hasInitialized.current && points.length === 0) {
       setPointsFromCoordinates([
         { x: -4, y: -7 },
         { x: 2, y: 5 }
       ]);
+      hasInitialized.current = true;
     }
   }, [points.length, setPointsFromCoordinates]);
   
   // Reset view whenever points change
   useEffect(() => {
-    // Only reset if we have points to work with
     if (points.length > 0) {
-      // Add a small delay to ensure DOM updates have completed
       const timer = setTimeout(() => {
         resetView();
       }, 100);
-      
       return () => clearTimeout(timer);
     }
   }, [points, resetView]);
@@ -234,24 +234,21 @@ const SlopeDrawing: React.FC<SlopeDrawingProps> = ({
   useEffect(() => {
     if (activeMode === 'practice' && currentProblem) {
       clearPoints();
-      
-      // If the problem has target points, we'll show them for demonstration
       if (currentProblem.targetPoints && currentProblem.targetPoints.length > 0) {
-        // For some problems we might want to start with certain points
         if (currentProblem.startPoints && currentProblem.startPoints.length > 0) {
           setPointsFromCoordinates(currentProblem.startPoints);
         }
       }
     } else if (activeMode === 'concept' && selectedConceptId) {
-      // For concept mode, get demo points from selected concept
       const concept = extendedContent.conceptExplanations?.find(c => c.id === selectedConceptId);
       if (concept?.demoPoints && concept.demoPoints.length > 0) {
         setPointsFromCoordinates(concept.demoPoints);
       } else {
-        // Default demo points if none specified for the concept
         setPointsFromCoordinates([{ x: -4, y: -7 }, { x: 2, y: 5 }]);
       }
     }
+    // Reset hasInitialized when mode/concept changes
+    hasInitialized.current = true;
   }, [activeMode, currentProblem, selectedConceptId, clearPoints, setPointsFromCoordinates, extendedContent.conceptExplanations]);
 
   // Handle concept selection

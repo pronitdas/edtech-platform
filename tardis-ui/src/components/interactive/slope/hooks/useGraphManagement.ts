@@ -71,7 +71,7 @@ export function useGraphManagement({
     setZoomWithLimits(newZoom);
     setOffset({
       x: -centerX * scaleFactor * newZoom + canvasWidth / 2,
-      y: centerY * scaleFactor * newZoom + canvasHeight / 2
+      y: -centerY * scaleFactor * newZoom + canvasHeight / 2
     });
   }, [points, initialZoom, initialOffset, canvasWidth, canvasHeight, scaleFactor, setZoomWithLimits, maxZoom]);
 
