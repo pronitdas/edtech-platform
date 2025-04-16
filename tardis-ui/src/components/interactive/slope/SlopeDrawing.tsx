@@ -500,6 +500,7 @@ const SlopeDrawing: React.FC<SlopeDrawingProps> = ({
               editMode={activeMode !== 'concept' || !selectedConcept?.demoPoints}
               highlightSolution={activeMode === 'practice' && isCorrect === true}
               drawingTool={drawingTool}
+              onDrawingToolChange={setDrawingTool}
             />
           </div>
 

@@ -9,6 +9,16 @@ export interface Point {
   y: number;
 }
 
+export interface CustomShape {
+  type: 'rectangle' | 'ellipse' | 'circle' | 'triangle' | 'rhombus';
+  center: Point;
+  width: number;
+  height: number;
+  fill: string;
+  stroke: string;
+  strokeWeight: number;
+}
+
 export interface GraphCanvasProps {
   width: number;
   height: number;
@@ -23,6 +33,7 @@ export interface GraphCanvasProps {
   highlightSolution?: boolean;
   editMode?: boolean;
   drawingTool: DrawingTool;
+  onDrawingToolChange?: (tool: DrawingTool) => void;
 }
 
 const GraphCanvas: React.FC<GraphCanvasProps> = ({
@@ -39,6 +50,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
   highlightSolution = false,
   editMode = false,
   drawingTool,
+  onDrawingToolChange,
 }) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const sketchRef = useRef<p5>();
@@ -54,7 +66,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
   // State for all drawable items and undo/redo
   const [customPoints, setCustomPoints] = useState<Point[]>([]);
   const [customLines, setCustomLines] = useState<{ start: Point; end: Point; style: 'solid' | 'dotted' }[]>([]);
-  const [shapes, setShapes] = useState<any[]>([]); // To be typed
+  const [shapes, setShapes] = useState<CustomShape[]>([]);
   const [texts, setTexts] = useState<any[]>([]); // To be typed
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [undoStack, setUndoStack] = useState<any[]>([]);
@@ -535,65 +547,87 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
       };
 
       // --- Drawing logic for all custom items ---
-      const drawCustomItems = (p: p5) => {
-        // Draw custom points
-        customPoints.forEach((pt, idx) => {
-          const canvasPt = mapPointToCanvas(pt);
-          p.fill(selectedItem?.type === 'point' && selectedItem?.index === idx ? 'yellow' : 'orange');
-          p.noStroke();
-          p.circle(canvasPt.x, canvasPt.y, 10);
-          p.fill(255);
-          p.textSize(12);
-          p.textAlign(p.LEFT, p.BOTTOM);
-          p.text(`(${pt.x.toFixed(1)}, ${pt.y.toFixed(1)})`, canvasPt.x + 10, canvasPt.y - 5);
-        });
-        // Draw custom lines
-        customLines.forEach((line, idx) => {
-          const start = mapPointToCanvas(line.start);
-          const end = mapPointToCanvas(line.end);
-          p.stroke(selectedItem?.type === 'line' && selectedItem?.index === idx ? 'yellow' : 'cyan');
-          p.strokeWeight(2);
-          if (line.style === 'dotted') {
-            const dash = 8, gap = 8;
-            const distTotal = p.dist(start.x, start.y, end.x, end.y);
-            const steps = Math.floor(distTotal / (dash + gap));
-            for (let i = 0; i < steps; i++) {
-              const t1 = i / steps, t2 = (i + 0.5) / steps;
-              const x1 = p.lerp(start.x, end.x, t1), y1 = p.lerp(start.y, end.y, t1);
-              const x2 = p.lerp(start.x, end.x, t2), y2 = p.lerp(start.y, end.y, t2);
-              p.line(x1, y1, x2, y2);
-            }
-          } else {
-            p.line(start.x, start.y, end.x, end.y);
-          }
-        });
-        // Draw shapes (rectangles for now)
-        shapes.forEach((sh, idx) => {
-          const center = mapPointToCanvas(sh.center);
-          const w = sh.width * scaleFactor * zoom;
-          const h = sh.height * scaleFactor * zoom;
-          p.stroke(selectedItem?.type === 'shape' && selectedItem?.index === idx ? 'yellow' : 'lime');
-          p.strokeWeight(2);
-          p.fill(sh.fill || 'rgba(0,255,0,0.2)');
-          p.rectMode(p.CENTER);
-          p.rect(center.x, center.y, w, h);
-        });
-        // Draw texts
-        texts.forEach((txt, idx) => {
-          const pos = mapPointToCanvas(txt.pos);
-          p.noStroke();
-          p.fill(selectedItem?.type === 'text' && selectedItem?.index === idx ? 'yellow' : 'white');
-          p.textSize(txt.size || 16);
-          p.textAlign(p.LEFT, p.TOP);
-          p.text(txt.content, pos.x, pos.y);
-        });
-      };
+      // const drawCustomItems = (p: p5) => {
+      //   // Draw custom points
+      //   customPoints.forEach((pt, idx) => {
+      //     const canvasPt = mapPointToCanvas(pt);
+      //     p.fill(selectedItem?.type === 'point' && selectedItem?.index === idx ? 'yellow' : 'orange');
+      //     p.noStroke();
+      //     p.circle(canvasPt.x, canvasPt.y, 10);
+      //     p.fill(255);
+      //     p.textSize(12);
+      //     p.textAlign(p.LEFT, p.BOTTOM);
+      //     p.text(`(${pt.x.toFixed(1)}, ${pt.y.toFixed(1)})`, canvasPt.x + 10, canvasPt.y - 5);
+      //   });
+      //   // Draw custom lines
+      //   customLines.forEach((line, idx) => {
+      //     const start = mapPointToCanvas(line.start);
+      //     const end = mapPointToCanvas(line.end);
+      //     p.stroke(selectedItem?.type === 'line' && selectedItem?.index === idx ? 'yellow' : 'cyan');
+      //     p.strokeWeight(2);
+      //     if (line.style === 'dotted') {
+      //       const dash = 8, gap = 8;
+      //       const distTotal = p.dist(start.x, start.y, end.x, end.y);
+      //       const steps = Math.floor(distTotal / (dash + gap));
+      //       for (let i = 0; i < steps; i++) {
+      //         const t1 = i / steps, t2 = (i + 0.5) / steps;
+      //         const x1 = p.lerp(start.x, end.x, t1), y1 = p.lerp(start.y, end.y, t1);
+      //         const x2 = p.lerp(start.x, end.x, t2), y2 = p.lerp(start.y, end.y, t2);
+      //         p.line(x1, y1, x2, y2);
+      //       }
+      //     } else {
+      //       p.line(start.x, start.y, end.x, end.y);
+      //     }
+      //   });
+      //   // Draw shapes (rectangles for now)
+      //   shapes.forEach((sh, idx) => {
+      //     const center = mapPointToCanvas(sh.center);
+      //     const w = sh.width * scaleFactor * zoom;
+      //     const h = sh.height * scaleFactor * zoom;
+      //     p.stroke(selectedItem?.type === 'shape' && selectedItem?.index === idx ? 'yellow' : 'lime');
+      //     p.strokeWeight(2);
+      //     p.fill(sh.fill || 'rgba(0,255,0,0.2)');
+      //     p.rectMode(p.CENTER);
+      //     p.rect(center.x, center.y, w, h);
+      //   });
+      //   // Draw texts
+      //   texts.forEach((txt, idx) => {
+      //     const pos = mapPointToCanvas(txt.pos);
+      //     p.noStroke();
+      //     p.fill(selectedItem?.type === 'text' && selectedItem?.index === idx ? 'yellow' : 'white');
+      //     p.textSize(txt.size || 16);
+      //     p.textAlign(p.LEFT, p.TOP);
+      //     p.text(txt.content, pos.x, pos.y);
+      //   });
+      // };
 
       // --- Mouse event handlers ---
-      let dragStart = null;
-      let dragItem = null;
-      let lineStart = null;
-      let shapeStart = null;
+      let dragStart: any = null;
+      let dragItem: any = null;
+      let lineStart: Point | null = null;
+      let shapeStart: Point | null = null;
+      let textStart: Point | null = null;
+      let previewLine: { start: Point; end: Point; style: 'solid' | 'dotted' } | null = null;
+      let previewShape: CustomShape | null = null;
+
+      const saveState = () => {
+        setUndoStack((stack) => [
+          {
+            customPoints: [...customPoints],
+            customLines: [...customLines],
+            shapes: [...shapes],
+            texts: [...texts],
+          },
+          ...stack.slice(0, 49),
+        ]);
+        setRedoStack([]);
+      };
+      const restoreState = (state: any) => {
+        setCustomPoints(state.customPoints);
+        setCustomLines(state.customLines);
+        setShapes(state.shapes);
+        setTexts(state.texts);
+      };
 
       const handleMousePressed = (p: p5) => {
         const mouseWorld = mapCanvasToPoint({ x: p.mouseX, y: p.mouseY });
@@ -636,51 +670,279 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
                 p.mouseX > c.x - w / 2 && p.mouseX < c.x + w / 2 &&
                 p.mouseY > c.y - h / 2 && p.mouseY < c.y + h / 2
               ) {
-          case 'move':
-            // TODO: Select and start dragging item
+                setSelectedItem({ type: 'shape', index: i });
+                dragStart = { ...sh.center };
+                dragItem = { type: 'shape', index: i };
+                return;
+              }
+            }
+            // Try to select text
+            for (let i = 0; i < texts.length; i++) {
+              const txt = texts[i];
+              const pos = mapPointToCanvas(txt.pos);
+              // Approximate bounding box
+              if (
+                p.mouseX > pos.x && p.mouseX < pos.x + 100 &&
+                p.mouseY > pos.y && p.mouseY < pos.y + 30
+              ) {
+                setSelectedItem({ type: 'text', index: i });
+                dragStart = { ...txt.pos };
+                dragItem = { type: 'text', index: i };
+                return;
+              }
+            }
+            setSelectedItem(null);
             break;
+          }
           case 'solidLine':
-          case 'dottedLine':
-            // TODO: Start drawing a line
+          case 'dottedLine': {
+            if (!lineStart) {
+              lineStart = mouseWorld;
+              previewLine = null;
+            } else {
+              setCustomLines([...customLines, { start: lineStart, end: mouseWorld, style: drawingTool === 'solidLine' ? 'solid' : 'dotted' }]);
+              saveState();
+              lineStart = null;
+              previewLine = null;
+              if (onDrawingToolChange) onDrawingToolChange('move');
+            }
             break;
-          case 'point':
-            // TODO: Add a point
+          }
+          case 'point': {
+            setCustomPoints([...customPoints, mouseWorld]);
+            saveState();
+            if (onDrawingToolChange) onDrawingToolChange('move');
             break;
-          case 'text':
-            // TODO: Add text (prompt for content)
+          }
+          case 'text': {
+            const content = window.prompt('Enter text:', '');
+            if (content) {
+              setTexts([
+                ...texts,
+                {
+                  pos: mouseWorld,
+                  content,
+                  size: 16,
+                  color: '#fff',
+                  fontFamily: 'Arial',
+                  rotation: 0,
+                  isMath: false,
+                },
+              ]);
+              saveState();
+            }
+            if (onDrawingToolChange) onDrawingToolChange('move');
             break;
-          case 'shape':
-            // TODO: Start drawing a shape
+          }
+          case 'shape': {
+            if (!shapeStart) {
+              shapeStart = mouseWorld;
+              previewShape = null;
+            } else {
+              const width = Math.abs(mouseWorld.x - shapeStart.x);
+              const height = Math.abs(mouseWorld.y - shapeStart.y);
+              const center = {
+                x: (mouseWorld.x + shapeStart.x) / 2,
+                y: (mouseWorld.y + shapeStart.y) / 2,
+              };
+              setShapes([
+                ...shapes,
+                {
+                  type: 'rectangle',
+                  center,
+                  width: width || 1,
+                  height: height || 1,
+                  fill: 'rgba(0,255,0,0.2)',
+                  stroke: '#0f0',
+                  strokeWeight: 2,
+                },
+              ]);
+              saveState();
+              shapeStart = null;
+              previewShape = null;
+              if (onDrawingToolChange) onDrawingToolChange('move');
+            }
             break;
-          case 'pan':
-            // TODO: Start panning
+          }
+          case 'pan': {
+            // Handled by main drag logic
             break;
-          case 'zoomIn':
-            // TODO: Zoom in at cursor
+          }
+          case 'zoomIn': {
+            if (onZoomChange) onZoomChange(Math.min(zoom + 0.1, 3));
+            if (onDrawingToolChange) onDrawingToolChange('move');
             break;
-          case 'zoomOut':
-            // TODO: Zoom out at cursor
+          }
+          case 'zoomOut': {
+            if (onZoomChange) onZoomChange(Math.max(zoom - 0.1, 0.5));
+            if (onDrawingToolChange) onDrawingToolChange('move');
             break;
-          case 'undo':
-            // TODO: Undo
+          }
+          case 'undo': {
+            if (undoStack.length > 0) {
+              setRedoStack([{
+                customPoints: [...customPoints],
+                customLines: [...customLines],
+                shapes: [...shapes],
+                texts: [...texts],
+              }, ...redoStack]);
+              const prev = undoStack[0];
+              restoreState(prev);
+              setUndoStack(undoStack.slice(1));
+            }
+            if (onDrawingToolChange) onDrawingToolChange('move');
             break;
-          case 'redo':
-            // TODO: Redo
+          }
+          case 'redo': {
+            if (redoStack.length > 0) {
+              setUndoStack([{
+                customPoints: [...customPoints],
+                customLines: [...customLines],
+                shapes: [...shapes],
+                texts: [...texts],
+              }, ...undoStack]);
+              const next = redoStack[0];
+              restoreState(next);
+              setRedoStack(redoStack.slice(1));
+            }
+            if (onDrawingToolChange) onDrawingToolChange('move');
             break;
-          case 'clear':
-            // TODO: Clear all custom items
+          }
+          case 'clear': {
+            setCustomPoints([]);
+            setCustomLines([]);
+            setShapes([]);
+            setTexts([]);
+            saveState();
+            if (onDrawingToolChange) onDrawingToolChange('move');
             break;
-          case 'reset':
-            // TODO: Reset all to initial state
+          }
+          case 'reset': {
+            setCustomPoints([]);
+            setCustomLines([]);
+            setShapes([]);
+            setTexts([]);
+            saveState();
+            if (onDrawingToolChange) onDrawingToolChange('move');
             break;
+          }
           default:
             break;
         }
       };
 
-      // --- Drawing logic (scaffold) ---
+      // Mouse drag and release handlers (move items)
+      p.mouseDragged = () => {
+        if (dragItem) {
+          const mouseWorld = mapCanvasToPoint({ x: p.mouseX, y: p.mouseY });
+          if (dragItem.type === 'point') {
+            const newPts = [...customPoints];
+            newPts[dragItem.index] = mouseWorld;
+            setCustomPoints(newPts);
+          } else if (dragItem.type === 'line') {
+            const newLines = [...customLines];
+            if (dragItem.endpoint === 'start') newLines[dragItem.index].start = mouseWorld;
+            else newLines[dragItem.index].end = mouseWorld;
+            setCustomLines(newLines);
+          } else if (dragItem.type === 'shape') {
+            const newShapes = [...shapes];
+            newShapes[dragItem.index].center = mouseWorld;
+            setShapes(newShapes);
+          } else if (dragItem.type === 'text') {
+            const newTexts = [...texts];
+            newTexts[dragItem.index].pos = mouseWorld;
+            setTexts(newTexts);
+          }
+        }
+      };
+      p.mouseReleased = () => {
+        if (dragItem) {
+          saveState();
+          dragItem = null;
+        }
+        lineStart = null;
+        shapeStart = null;
+        previewLine = null;
+        previewShape = null;
+      };
+
+      // Draw custom items (points, lines, shapes, texts)
       const drawCustomItems = (p: p5) => {
-        // TODO: Draw customPoints, customLines, shapes, texts
+        // Points
+        customPoints.forEach((pt, idx) => {
+          const canvasPt = mapPointToCanvas(pt);
+          p.fill(selectedItem?.type === 'point' && selectedItem?.index === idx ? 'yellow' : 'orange');
+          p.noStroke();
+          p.circle(canvasPt.x, canvasPt.y, 10);
+          p.fill(255);
+          p.textSize(12);
+          p.textAlign(p.LEFT, p.BOTTOM);
+          p.text(`(${pt.x.toFixed(1)}, ${pt.y.toFixed(1)})`, canvasPt.x + 10, canvasPt.y - 5);
+        });
+        // Lines
+        customLines.forEach((line, idx) => {
+          const start = mapPointToCanvas(line.start);
+          const end = mapPointToCanvas(line.end);
+          p.stroke(selectedItem?.type === 'line' && selectedItem?.index === idx ? 'yellow' : 'cyan');
+          p.strokeWeight(2);
+          if (line.style === 'dotted') {
+            const dash = 8, gap = 8;
+            const distTotal = p.dist(start.x, start.y, end.x, end.y);
+            const steps = Math.floor(distTotal / (dash + gap));
+            for (let i = 0; i < steps; i++) {
+              const t1 = i / steps, t2 = (i + 0.5) / steps;
+              const x1 = p.lerp(start.x, end.x, t1), y1 = p.lerp(start.y, end.y, t1);
+              const x2 = p.lerp(start.x, end.x, t2), y2 = p.lerp(start.y, end.y, t2);
+              p.line(x1, y1, x2, y2);
+            }
+          } else {
+            p.line(start.x, start.y, end.x, end.y);
+          }
+        });
+        // Shapes
+        shapes.forEach((sh, idx) => {
+          const center = mapPointToCanvas(sh.center);
+          const w = sh.width * scaleFactor * zoom;
+          const h = sh.height * scaleFactor * zoom;
+          p.stroke(selectedItem?.type === 'shape' && selectedItem?.index === idx ? 'yellow' : sh.stroke);
+          p.strokeWeight(sh.strokeWeight);
+          p.fill(sh.fill);
+          switch (sh.type) {
+            case 'rectangle':
+              p.rectMode(p.CENTER);
+              p.rect(center.x, center.y, w, h);
+              break;
+            case 'ellipse':
+              p.ellipseMode(p.CENTER);
+              p.ellipse(center.x, center.y, w, h);
+              break;
+            case 'circle':
+              p.ellipseMode(p.CENTER);
+              p.ellipse(center.x, center.y, Math.min(w, h), Math.min(w, h));
+              break;
+            case 'triangle':
+              p.triangle(center.x - w / 2, center.y + h / 2, center.x + w / 2, center.y + h / 2, center.x, center.y - h / 2);
+              break;
+            case 'rhombus':
+              p.quad(center.x, center.y - h / 2, center.x + w / 2, center.y, center.x, center.y + h / 2, center.x - w / 2, center.y);
+              break;
+            default:
+              break;
+          }
+        });
+        // Texts
+        texts.forEach((txt, idx) => {
+          const pos = mapPointToCanvas(txt.pos);
+          p.push();
+          p.translate(pos.x, pos.y);
+          p.rotate((txt.rotation * Math.PI) / 180);
+          p.noStroke();
+          p.fill(selectedItem?.type === 'text' && selectedItem?.index === idx ? 'yellow' : txt.color);
+          p.textSize(txt.size || 16);
+          p.textAlign(p.LEFT, p.TOP);
+          p.text(txt.content, 0, 0);
+          p.pop();
+        });
       };
     };
 
@@ -704,7 +966,8 @@ const GraphCanvas: React.FC<GraphCanvasProps> = ({
     mapCanvasToPoint, 
     highlightSolution, 
     editMode,
-    drawingTool
+    drawingTool,
+    onDrawingToolChange
   ]);
 
   return (
