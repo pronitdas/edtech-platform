@@ -12,6 +12,7 @@ import { ChapterContent, ChapterV1, QuizQuestion } from '@/types/database'; // R
 import { ChevronLeft } from 'lucide-react';
 import supabase from '@/services/supabase'; // Import Supabase client
 import { useInteractionTracker } from '@/contexts/InteractionTrackerContext'; // Import the hook
+import { SlopeDrawing, InteractiveComponentTypes } from '../interactive'; // Import interactive components
 
 // TODO: Define proper types for timelineMarkers and interactionTracker if needed here
 // import { InteractionTracker } from '@/contexts/InteractionTrackerContext';
@@ -822,10 +823,73 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
         <RoleplayComponent 
           scenarios={validatedScenarios as any} 
           onRegenerate={onGenerateContentRequest}
-          // TODO: Provide a valid OpenAI API key, potentially from environment variables or context
-          // Pass missing props
+          openaiApiKey={process.env.OPENAI_API_KEY || ''} 
           userId={userId || 'anonymous'} 
           language={language} 
+        />
+      </div>
+    );
+  }
+
+  // Interactive Tab - Add new tab for slope drawing and other interactive components
+  if (activeTab === "interactive") {
+    // Create mock default interactive content if none exists
+    const mockInteractiveContent = {
+      type: "slope-drawer",
+      problems: [
+        {
+          id: "p1",
+          question: "Draw a line with slope 2 and y-intercept 3",
+          difficulty: "easy" as "easy",
+          hints: ["Remember slope is rise over run", "Try plotting (0,3) first"],
+          solution: "y = 2x + 3",
+          data: { slope: 2, yIntercept: 3 }
+        },
+        {
+          id: "p2",
+          question: "Draw a line with slope -1 and y-intercept 5",
+          difficulty: "medium" as "medium",
+          hints: ["Negative slope means the line goes down as x increases", "Try plotting (0,5) first"],
+          solution: "y = -1x + 5",
+          data: { slope: -1, yIntercept: 5 }
+        },
+        {
+          id: "p3",
+          question: "Draw a vertical line at x = 4",
+          difficulty: "hard" as "hard",
+          hints: ["Vertical lines have undefined slope", "All points on the line have the same x-value"],
+          solution: "Vertical line: x = 4"
+        }
+      ],
+      conceptExplanations: [
+        {
+          id: "c1",
+          title: "Understanding Slope",
+          content: "Slope measures the steepness of a line. It is calculated as the ratio of vertical change (rise) to horizontal change (run).",
+          examples: [
+            {
+              id: "e1",
+              description: "A line with slope 2 rises 2 units for every 1 unit it runs horizontally."
+            }
+          ]
+        }
+      ]
+    };
+
+    // Use existing interactive content if available, otherwise use mock data
+    const interactiveContent = content?.interactive || mockInteractiveContent;
+
+    return (
+      <div className="h-full overflow-y-auto p-4 md:p-6">
+        <SlopeDrawing 
+          interactiveContent={interactiveContent}
+          userId={userId || 'anonymous'}
+          knowledgeId={chapter.knowledge_id?.toString()}
+          language={language}
+          onUpdateProgress={(progress) => {
+            console.log('Progress updated:', progress);
+            // Here you would implement logic to update user progress
+          }}
         />
       </div>
     );

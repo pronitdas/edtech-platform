@@ -23,7 +23,7 @@ class OpenAIClient:
     
     def __init__(self, api_key: str):
         """Initialize the OpenAI client with the API key."""
-        self.client = openai.OpenAI(api_key=api_key)
+        self.client = openai.OpenAI(api_key=api_key, base_url="http://192.168.1.12:1234/v1")
     
     async def chat_completion(
         self, 
@@ -58,7 +58,7 @@ class OpenAIClient:
                 }
             
             response = self.client.chat.completions.create(**params)
-            
+            print(response)
             if response.choices and response.choices[0].message.content:
                 return response.choices[0].message.content.strip()
             

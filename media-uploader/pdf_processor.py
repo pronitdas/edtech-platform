@@ -16,6 +16,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import fitz  # PyMuPDF
 from PIL import Image
 from openai import OpenAI
+from vllm import LLM, SamplingParams
+from docling_core.types.doc import DoclingDocument
+from docling_core.types.doc.document import DocTagsDocument
 
 # Import methods from VideoProcessorV2
 from video_processor_v2 import VideoProcessorV2
@@ -25,6 +28,16 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 @dataclass
+class ImageBlock:
+    """Represents an image block with its properties."""
+    image_id: str
+    page_num: int
+    bbox: tuple
+    caption: Optional[str] = None
+    confidence: float = 1.0
+    related_text: Optional[str] = None
+
+@dataclass
 class TextBlock:
     """Represents a block of text with its properties."""
     text: str
@@ -32,64 +45,212 @@ class TextBlock:
     font_name: str
     is_bold: bool
     is_italic: bool
-    color: int
-    bbox: Tuple[float, float, float, float]
+    color: tuple
+    bbox: tuple
     page_num: int
-    block_type: str = "normal"  # Can be: title, heading, paragraph, list_item, table, etc.
-    level: int = 0
+    block_type: str
+    level: int
+    confidence: float = 1.0
+    related_images: List[str] = None  # List of related image IDs
+    column: int = 0  # For multi-column layout
+    is_table: bool = False
+    table_data: Optional[Dict] = None
+
+class ModelBasedTextExtractor:
+    def __init__(self, model_path="ds4sd/SmolDocling-256M-preview"):
+        try:
+            # Initialize LLM with more robust configuration
+            self.llm = LLM(
+                model=model_path,
+                limit_mm_per_prompt={"image": 1},
+                dtype="bfloat16",  # Use bfloat16 for better memory efficiency
+                enforce_eager=True,  # Force eager execution for better error handling
+                trust_remote_code=True,  # Required for some model components
+                max_model_len=8192,  # Match with max_seq_len
+            )
+            
+            self.sampling_params = SamplingParams(
+                temperature=0.0,
+                max_tokens=4096,  # Reduced for better stability
+                best_of=1,  # Return only the best result
+            )
+            
+            self.prompt_template = "Convert page to Docling."
+            logger.info("Successfully initialized ModelBasedTextExtractor")
+            
+        except Exception as e:
+            logger.error(f"Failed to initialize ModelBasedTextExtractor: {str(e)}")
+            raise RuntimeError(f"Model initialization failed: {str(e)}")
+
+    def extract_text_blocks(self, pdf_document: fitz.Document) -> List[TextBlock]:
+        """Extract text blocks using DocTags/Docling model."""
+        all_blocks = []
+        
+        try:
+            for page_num, page in enumerate(pdf_document):
+                try:
+                    # Convert PDF page to PIL Image with error handling
+                    pix = page.get_pixmap()
+                    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                    
+                    # Process through model with timeout and retry logic
+                    max_retries = 3
+                    for attempt in range(max_retries):
+                        try:
+                            llm_input = {
+                                "prompt": f"<|im_start|>User:<image>{self.prompt_template}<end_of_utterance>\nAssistant:",
+                                "multi_modal_data": {"image": img}
+                            }
+                            
+                            output = self.llm.generate([llm_input], sampling_params=self.sampling_params)[0]
+                            doctags = output.outputs[0].text
+                            
+                            # Convert to Docling Document
+                            doctags_doc = DocTagsDocument.from_doctags_and_image_pairs([doctags], [img])
+                            doc = DoclingDocument(name=f"Page_{page_num}")
+                            doc.load_from_doctags(doctags_doc)
+                            
+                            # Create a temporary file for markdown output
+                            temp_dir = os.path.join(os.getcwd(), "temp")
+                            os.makedirs(temp_dir, exist_ok=True)
+                            temp_path = os.path.join(temp_dir, f"page_{page_num}.md")
+                            
+                            # Save markdown content
+                            doc.save_as_markdown(temp_path)
+                            
+                            # Read the markdown content
+                            with open(temp_path, 'r', encoding='utf-8') as f:
+                                markdown_content = f.read()
+                            
+                            # Clean up temp file
+                            try:
+                                os.remove(temp_path)
+                            except:
+                                pass  # Ignore cleanup errors
+                            
+                            # Process markdown content into blocks
+                            lines = markdown_content.splitlines()
+                            current_block = None
+                            
+                            for line in lines:
+                                line = line.strip()
+                                if not line:
+                                    continue
+                                
+                                # Check for headings
+                                if line.startswith('#'):
+                                    # Count heading level
+                                    level = 0
+                                    while line.startswith('#'):
+                                        level += 1
+                                        line = line[1:]
+                                    text = line.strip()
+                                    
+                                    block = TextBlock(
+                                        text=text,
+                                        font_size=14.0 + (6.0 - level),  # Larger font for higher level headings
+                                        font_name="default",
+                                        is_bold=True,
+                                        is_italic=False,
+                                        color=(0, 0, 0),
+                                        bbox=(0, 0, 0, 0),
+                                        page_num=page_num,
+                                        block_type="heading",
+                                        level=level,
+                                        confidence=1.0
+                                    )
+                                    all_blocks.append(block)
+                                    current_block = None
+                                    
+                                # Check for list items
+                                elif line.startswith(('- ', '* ', '+ ')):
+                                    text = line[2:].strip()
+                                    block = TextBlock(
+                                        text=text,
+                                        font_size=12.0,
+                                        font_name="default",
+                                        is_bold=False,
+                                        is_italic=False,
+                                        color=(0, 0, 0),
+                                        bbox=(0, 0, 0, 0),
+                                        page_num=page_num,
+                                        block_type="list_item",
+                                        level=1,
+                                        confidence=1.0
+                                    )
+                                    all_blocks.append(block)
+                                    current_block = None
+                                    
+                                # Regular paragraph text
+                                else:
+                                    if current_block is None:
+                                        current_block = TextBlock(
+                                            text=line,
+                                            font_size=12.0,
+                                            font_name="default",
+                                            is_bold=False,
+                                            is_italic=False,
+                                            color=(0, 0, 0),
+                                            bbox=(0, 0, 0, 0),
+                                            page_num=page_num,
+                                            block_type="paragraph",
+                                            level=0,
+                                            confidence=1.0
+                                        )
+                                        all_blocks.append(current_block)
+                                    else:
+                                        current_block.text += " " + line
+                            
+                            break  # Success, exit retry loop
+                            
+                        except Exception as retry_error:
+                            if attempt == max_retries - 1:  # Last attempt
+                                logger.error(f"Failed to process page {page_num} after {max_retries} attempts: {str(retry_error)}")
+                                raise
+                            else:
+                                logger.warning(f"Attempt {attempt + 1} failed for page {page_num}, retrying...")
+                                time.sleep(1)  # Wait before retry
+                    
+                except Exception as page_error:
+                    logger.error(f"Error processing page {page_num}: {str(page_error)}")
+                    # Continue with next page instead of failing completely
+                    continue
+            
+            # Clean up temp directory
+            try:
+                os.rmdir(temp_dir)
+            except:
+                pass  # Ignore cleanup errors
+            
+            return all_blocks
+            
+        except Exception as e:
+            logger.error(f"Fatal error in extract_text_blocks: {str(e)}")
+            raise
+
+# Legacy function maintained for backward compatibility
+def extract_text_blocks(pdf_document: fitz.Document) -> List[TextBlock]:
+    """Legacy wrapper for backward compatibility"""
+    try:
+        extractor = ModelBasedTextExtractor()
+        return extractor.extract_text_blocks(pdf_document)
+    except Exception as e:
+        logger.error(f"Error in legacy extract_text_blocks: {str(e)}")
+        # Return empty list as fallback
+        return []
 
 class PDFProcessor:
     """Advanced processor for PDF files with adaptive structure detection."""
     
     # Default OpenAI API Key - should be loaded from environment in production
-    DEFAULT_OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+    DEFAULT_OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "sk-proj-1234567890")
     
     # Default model name
-    DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
+    DEFAULT_OPENAI_MODEL = "microsoft_-_phi-3-mini-128k-instruct"
     
     # Batch processing settings
     DEFAULT_BATCH_SIZE = 3
     DEFAULT_MAX_WORKERS = 4
-    
-    @staticmethod
-    def extract_text_blocks(pdf_document: fitz.Document) -> List[TextBlock]:
-        """Extract text blocks with rich formatting information from the entire document."""
-        all_blocks = []
-        
-        for page_num, page in enumerate(pdf_document):
-            # Get detailed text with spans to preserve formatting
-            text_dict = page.get_text("dict")
-            
-            for block in text_dict.get("blocks", []):
-                for line in block.get("lines", []):
-                    for span in line.get("spans", []):
-                        text = span.get("text", "").strip()
-                        if not text:
-                            continue
-                            
-                        # Extract all formatting information
-                        font_size = span.get("size", 0)
-                        font_name = span.get("font", "")
-                        flags = span.get("flags", 0)
-                        is_bold = bool(flags & 16)  # Font flag for bold is 2^4 (16)
-                        is_italic = bool(flags & 1)  # Font flag for italic is 2^0 (1)
-                        color = span.get("color", 0)
-                        bbox = span.get("bbox", (0, 0, 0, 0))
-                        
-                        all_blocks.append(TextBlock(
-                            text=text,
-                            font_size=font_size,
-                            font_name=font_name,
-                            is_bold=is_bold,
-                            is_italic=is_italic,
-                            color=color,
-                            bbox=bbox,
-                            page_num=page_num,
-                            block_type="normal",
-                            level=0
-                        ))
-        
-        return all_blocks
     
     @staticmethod
     def analyze_document_structure(blocks: List[TextBlock]) -> List[TextBlock]:
@@ -297,7 +458,7 @@ class PDFProcessor:
             }
             
             # Extract rich text blocks with formatting
-            text_blocks = PDFProcessor.extract_text_blocks(pdf_document)
+            text_blocks = extract_text_blocks(pdf_document)
             
             # Analyze document structure
             classified_blocks = PDFProcessor.analyze_document_structure(text_blocks)
@@ -307,60 +468,54 @@ class PDFProcessor:
             
             # Extract and convert images
             images = {}
-            for page_num, page in enumerate(pdf_document):
-                # Get images
-                image_list = page.get_images(full=True)
-                
-                for img_index, img in enumerate(image_list):
+            for block in text_blocks:
+                if block.block_type == "image":
+                    image_id = block.image_id
+                    image_data = block.image_data
+                    image_format = block.format
+                    image_width = block.width
+                    image_height = block.height
+                    image_caption = block.caption
+                    
+                    # Create unique image ID using hash of image data for deduplication
+                    image_hash = hashlib.md5(image_data).hexdigest()[:10]
+                    image_filename = f"img_{block.page_num+1}_{image_hash}.{image_format}"
+                    
+                    # Process image with PIL for consistency
                     try:
-                        xref = img[0]
-                        base_image = pdf_document.extract_image(xref)
-                        image_bytes = base_image["image"]
+                        pil_image = Image.open(io.BytesIO(image_data))
                         
-                        # Determine image format
-                        image_format = base_image.get("ext", "").lower()
-                        if not image_format or image_format == "":
-                            image_format = "png"  # Default format
+                        # Check if image is too small (likely an icon or bullet)
+                        if pil_image.width < 20 or pil_image.height < 20:
+                            continue
                         
-                        # Create unique image ID using hash of image data for deduplication
-                        image_hash = hashlib.md5(image_bytes).hexdigest()[:10]
-                        image_filename = f"img_{page_num+1}_{img_index+1}_{image_hash}.{image_format}"
+                        # Convert to base64
+                        buffered = io.BytesIO()
+                        pil_image.save(buffered, format=image_format.upper())
+                        img_b64 = base64.b64encode(buffered.getvalue()).decode()
                         
-                        # Process image with PIL for consistency
-                        try:
-                            pil_image = Image.open(io.BytesIO(image_bytes))
-                            
-                            # Check if image is too small (likely an icon or bullet)
-                            if pil_image.width < 20 or pil_image.height < 20:
-                                continue
-                                
-                            # Convert to base64
-                            buffered = io.BytesIO()
-                            pil_image.save(buffered, format=image_format.upper())
-                            img_b64 = base64.b64encode(buffered.getvalue()).decode()
-                            
-                            # Store image with metadata
-                            images[image_filename] = {
-                                "data": img_b64,
-                                "format": image_format,
-                                "width": pil_image.width,
-                                "height": pil_image.height,
-                                "page": page_num + 1,
-                                "mode": pil_image.mode,
-                                "hash": image_hash
-                            }
-                        except Exception as pil_error:
-                            logger.warning(f"Error processing image with PIL: {str(pil_error)}")
-                            # Fallback: store raw image without PIL processing
-                            img_b64 = base64.b64encode(image_bytes).decode()
-                            images[image_filename] = {
-                                "data": img_b64,
-                                "format": image_format,
-                                "page": page_num + 1,
-                                "hash": image_hash
-                            }
-                    except Exception as img_error:
-                        logger.error(f"Error extracting image {img_index} on page {page_num + 1}: {str(img_error)}")
+                        # Store image with metadata
+                        images[image_filename] = {
+                            "data": img_b64,
+                            "format": image_format,
+                            "width": pil_image.width,
+                            "height": pil_image.height,
+                            "page": block.page_num + 1,
+                            "mode": pil_image.mode,
+                            "hash": image_hash,
+                            "caption": image_caption
+                        }
+                    except Exception as pil_error:
+                        logger.warning(f"Error processing image with PIL: {str(pil_error)}")
+                        # Fallback: store raw image without PIL processing
+                        img_b64 = base64.b64encode(image_data).decode()
+                        images[image_filename] = {
+                            "data": img_b64,
+                            "format": image_format,
+                            "page": block.page_num + 1,
+                            "hash": image_hash,
+                            "caption": image_caption
+                        }
             
             # Generate flat text representation
             text_content = PDFProcessor.document_to_text(document_structure)
@@ -430,16 +585,16 @@ class PDFProcessor:
             logger.error(f"Enhanced PDF processing failed: {str(e)}")
             
             # Fallback to basic text extraction
-            try:
-                pdf_document = fitz.open(stream=file_data, filetype="pdf")
-                text_content = ""
-                for page in pdf_document:
-                    text_content += page.get_text() + "\n\n"
+            # try:
+            #     pdf_document = fitz.open(stream=file_data, filetype="pdf")
+            #     text_content = ""
+            #     for page in pdf_document:
+            #         text_content += page.get_text() + "\n\n"
                 
-                return text_content, {}, {"format": "PDF", "pages": len(pdf_document)}
-            except Exception as fallback_error:
-                logger.error(f"Basic PDF fallback failed: {str(fallback_error)}")
-                raise
+            #     return text_content, {}, {"format": "PDF", "pages": len(pdf_document)}
+        except Exception as fallback_error:
+            logger.error(f"Basic PDF fallback failed: {str(fallback_error)}")
+            raise
     
     @staticmethod
     def parse_pdf_to_textbook(pdf_text: str) -> Dict:
@@ -703,34 +858,16 @@ class PDFProcessor:
     @staticmethod
     def prepare_images_for_upload(images: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
         """
-        Prepare extracted images for upload - custom implementation for PDF.
-        
-        Args:
-            images: Dictionary of images extracted from PDF
-            
-        Returns:
-            Dictionary ready for upload with standardized metadata and buffer
+        Prepare extracted images for upload using DocTags information.
         """
         upload_ready = {}
         
-        for filename, img_data in images.items():
-            # Extract the base64 encoded data
-            img_base64 = img_data.get("data", "")
-            
-            # Convert base64 to bytes for upload
-            img_bytes = base64.b64decode(img_base64) if img_base64 else b""
-            
-            # Get image format
-            img_format = img_data.get("format", "png")
-            
-            # Create standardized metadata
-            upload_ready[filename] = {
-                "buffer": img_bytes,  # Add the bytes data as buffer
-                "format": img_format,
-                "width": img_data.get("width", 0),
-                "height": img_data.get("height", 0),
-                "alt_text": img_data.get("alt_text", ""),
-                "page": img_data.get("page", 0)
+        for image_id, img_data in images.items():
+            upload_ready[image_id] = {
+                "bbox": img_data.get("bbox", (0, 0, 0, 0)),
+                "caption": img_data.get("caption", ""),
+                "page": img_data.get("page_num", 0),
+                "confidence": img_data.get("confidence", 1.0)
             }
         
         return upload_ready
@@ -759,7 +896,7 @@ class PDFProcessor:
         logger.info(f"Processing PDF text with smart chapter generation for knowledge ID {knowledge_id}")
         
         # Initialize OpenAI client
-        client = OpenAI(api_key=openai_api_key)
+        client = OpenAI(api_key=openai_api_key, base_url="http://192.168.1.12:1234/v1")
         
         # Step 1: Split text into chunks using VideoProcessorV2
         chunks = VideoProcessorV2.chunk_text(pdf_text)

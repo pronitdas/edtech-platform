@@ -35,48 +35,62 @@ This directory contains refactoring epics for the EdTech platform based on the a
    - Content templates
    - Version control
 
+### Phase 1.5: Core Interactivity
+- **EP-011: Student Practice Module** 🟡
+  - Interactive problem solving tools
+  - Progress tracking and analytics
+  - Cognitive load management
+  - Word problem visualization
+
+- **EP-012: Slope Drawing Tool UI/UX Polish** 🟡
+  - Modern, responsive layout
+  - Enhanced tool interactions
+  - Accessibility implementation
+  - Performance optimization
+  - Visual polish and professionalization
+
 ### Phase 2: Growth Enablers
-6. **[Data Export Integration](data-export-integration.md)** (EP-008) - Enable seamless data exchange
+7. **[Data Export Integration](data-export-integration.md)** (EP-008) - Enable seamless data exchange
    - Multiple format support
    - Automated exports
    - API integration
 
-7. **[Offline Access](offline-access.md)** (EP-009) - Allow content access without internet
+8. **[Offline Access](offline-access.md)** (EP-009) - Allow content access without internet
    - PWA implementation
    - Content caching
    - Sync engine
 
-8. **[Gamification Features](gamification-features.md)** (EP-006) - Add engagement-driving mechanics
+9. **[Gamification Features](gamification-features.md)** (EP-006) - Add engagement-driving mechanics
    - Achievement system
    - Progress tracking
    - Social features
 
-9. **[Accessibility Compliance](accessibility-compliance.md)** (EP-010) - Ensure WCAG 2.1 AA compliance
-   - Screen reader support
-   - Keyboard navigation
-   - ARIA implementation
+10. **[Accessibility Compliance](accessibility-compliance.md)** (EP-010) - Ensure WCAG 2.1 AA compliance
+    - Screen reader support
+    - Keyboard navigation
+    - ARIA implementation
 
-10. **[Analytics Dashboard](analytics-dashboard.md)** (EP-007) - Create comprehensive analytics
+11. **[Analytics Dashboard](analytics-dashboard.md)** (EP-007) - Create comprehensive analytics
     - Real-time tracking
     - Custom reports
     - Data visualization
 
 ### Media Uploader Service Refactoring
-11. **[Media Uploader Refactoring](media-uploader-refactoring.md)** - Improve code quality and maintainability
-12. **[Media Uploader Scaling](media-uploader-scaling.md)** - Scale for higher performance
-13. **[Microservices Architecture](ep-101-microservices-architecture.md)** - Break down monolithic structure
-14. **[Enhanced Media Processing](enhanced-media-processing.md)** - Optimize media processing
-15. **[Resilient Storage System](resilient-storage-system.md)** - Implement tiered storage
-16. **[Monitoring and Observability](monitoring-observability.md)** - Create metrics and logging
+12. **[Media Uploader Refactoring](media-uploader-refactoring.md)** - Improve code quality and maintainability
+13. **[Media Uploader Scaling](media-uploader-scaling.md)** - Scale for higher performance
+14. **[Microservices Architecture](ep-101-microservices-architecture.md)** - Break down monolithic structure
+15. **[Enhanced Media Processing](enhanced-media-processing.md)** - Optimize media processing
+16. **[Resilient Storage System](resilient-storage-system.md)** - Implement tiered storage
+17. **[Monitoring and Observability](monitoring-observability.md)** - Create metrics and logging
 
 ### Content Enhancement
-17. **[Advanced Content Editor](advanced-content-editor.md)** - Build rich text editor
-18. **[EdTech Content Generation](edtech-content-generation.md)** - Enhance content generation
-19. **[Core Quiz Engine](core-quiz-engine.md)** - Create adaptive assessment engine
-20. **[Content Generation Workflow](ep-004-content-generation-workflow.md)** - Improve generation process
+18. **[Advanced Content Editor](advanced-content-editor.md)** - Build rich text editor
+19. **[EdTech Content Generation](edtech-content-generation.md)** - Enhance content generation
+20. **[Core Quiz Engine](core-quiz-engine.md)** - Create adaptive assessment engine
+21. **[Content Generation Workflow](ep-004-content-generation-workflow.md)** - Improve generation process
 
 ### Analytics and Integration
-21. **[Analytics Integration](ep-006-analytics-integration.md)** - Integrate learning analytics
+22. **[Analytics Integration](ep-006-analytics-integration.md)** - Integrate learning analytics
 
 ## Implementation Guidelines
 
@@ -137,13 +151,23 @@ This directory contains refactoring epics for the EdTech platform based on the a
 3. Responsive Design (EP-003)
 4. Core Performance (EP-004)
 5. Content Management (EP-005)
+6. Student Practice Module (EP-011) - Core interactive elements
 
 ### Growth Phase (6-10 weeks)
-6. Analytics Dashboard (EP-007)
-7. Gamification Features (EP-006)
-8. Data Export Integration (EP-008)
-9. Offline Access (EP-009)
-10. Accessibility Compliance (EP-010)
+7. Analytics Dashboard (EP-007)
+8. Gamification Features (EP-006)
+9. Data Export Integration (EP-008)
+10. Offline Access (EP-009)
+11. Accessibility Compliance (EP-010)
+12. Advanced Content Editor
+13. Event-Driven Architecture
+
+### Long-Term Vision
+14. AI Integration Framework
+15. Interactive Component Library
+16. AI-Generated Component System
+17. Component Generation Framework
+18. Content Intelligence System
 
 ## Related Documents
 - [Strategic Roadmap](strategic-roadmap.md)
@@ -155,29 +179,34 @@ This directory contains refactoring epics for the EdTech platform based on the a
 - Media Uploader epics have internal dependencies
 - Content Enhancement epics build on Core Performance Optimization
 - Analytics Integration depends on Data Export Integration
+- Student Practice Module (EP-011) depends on Test Framework (EP-001), Performance (EP-004), Analytics (EP-007), and potentially others.
 
 ## Priority Order
 
 ### Short-Term Priorities (Aligned with Strategic Roadmap)
-1. Test Framework Setup (Aligns with Epic 1 in Strategic Roadmap)
-2. Interactive Quiz Platform (Aligns with Epic 2 in Strategic Roadmap)
-3. Responsive Design Implementation (Aligns with Epic 3 in Strategic Roadmap)
-4. Core Performance Optimization (Aligns with Epic 4 in Strategic Roadmap)
-5. Content Management Enhancements (Aligns with Epic 5 in Strategic Roadmap)
+1. Test Framework Setup (EP-001)
+2. Interactive Quiz Platform (EP-002)
+3. Responsive Design Implementation (EP-003)
+4. Core Performance Optimization (EP-004)
+5. Content Management Enhancements (EP-005)
+6. Student Practice Module (EP-011) - Core interactive elements
 
 ### Mid-Term Development
-6. Data Export and Integration
-7. Microservices Architecture
-8. Content Template System
-9. Advanced Content Editor
-10. Event-Driven Architecture
+7. Data Export and Integration (EP-008)
+8. Microservices Architecture
+9. Gamification Features (EP-006) - Moved slightly later to accommodate EP-011
+10. Offline Access (EP-009)
+11. Accessibility Compliance (EP-010)
+12. Analytics Dashboard (EP-007) - Dashboard follows core analytics integration needed for EP-011
+13. Advanced Content Editor
+14. Event-Driven Architecture
 
 ### Long-Term Vision
-11. AI Integration Framework
-12. Interactive Component Library
-13. AI-Generated Component System
-14. Component Generation Framework
-15. Content Intelligence System
+15. AI Integration Framework
+16. Interactive Component Library
+17. AI-Generated Component System
+18. Component Generation Framework
+19. Content Intelligence System
 
 ## Related Documents
 - **[Strategic Roadmap](strategic-roadmap.md)** - Immediate value focus with phased implementation
@@ -192,4 +221,13 @@ These epics address issues identified in:
 - `tardis-ui/.issues/001-feature-add-unit-tests-for-interactiontracker.md`
 - `tardis-ui/.issues/003-refactor-optimize-state-management-in-interactiontrackercontext.md`
 - `tardis-ui/.issues/007-feature-real-time-learning-analytics-dashboard.md`
-- `tardis-ui/.issues/009-ui-component-library-modernization.md` 
+- `tardis-ui/.issues/009-ui-component-library-modernization.md`
+
+## Epic Dependencies
+
+```mermaid
+graph TD
+    EP011[EP-011: Student Practice Module] --> EP012[EP-012: Slope Drawing Tool Polish]
+    EP003[EP-003: Responsive Design] --> EP012
+    EP010[EP-010: Accessibility] --> EP012
+    EP004[EP-004: Performance Optimization] --> EP012 

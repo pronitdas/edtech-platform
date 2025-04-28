@@ -1,0 +1,23 @@
+# Files to be deleted
+
+## Documentation
+/issues_old.md
+/tardis-ui/.issues/roadmap-to-production.md
+
+## Legacy Components
+/src/components/MainCourse.tsx  # Replaced by course/* components
+/src/components/VideoPlayer.tsx  # Replaced by video/* components
+/src/components/MarkdownSlideshow.tsx  # Replaced by slideshow/* components
+
+## Unused Utilities
+# Add any deprecated utility files here
+
+## Obsolete Configuration
+# Add any outdated config files here
+
+## Test Files for Removed Components
+# Add any test files for removed components
+
+## Temporary Files
+*.temp
+*.tmp 

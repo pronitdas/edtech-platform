@@ -57,8 +57,8 @@ RUN python3 -c "import whisper; whisper.load_model('base')"
 # Copy application code
 COPY . .
 
-# Pre-load models (uncomment if you have this method)
-RUN python3 -c 'from marker.models import load_all_models; load_all_models()'
+# Pre-load models
+# RUN python -c 'from marker.models import load_all_models; load_all_models()'
 
 # Create temporary directory
 RUN mkdir -p /app/temp

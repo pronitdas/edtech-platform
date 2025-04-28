@@ -24,6 +24,8 @@ from openai_client import OpenAIClient
 from openai_functions import (
     generate_notes, generate_summary, generate_questions, generate_mind_map_structure
 )
+from knowledge_graph import graph_service
+from knowledge_graph_sync import sync_service
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -58,7 +60,7 @@ def start_processing(
     knowledge_id: int,
     queue_manager: QueueManager = Depends(get_queue_manager),
     db_manager: DatabaseManager = Depends(get_db_manager),
-    generate_content: bool = Query(False, description="Whether to generate content after processing"),
+    generate_content: bool = Query(True, description="Whether to generate content after processing"),
     content_types: List[str] = Query(["notes", "summary", "quiz", "mindmap"], description="Types of content to generate"),
     content_language: str = Query("English", description="Language for content generation")
 ):
@@ -547,3 +549,222 @@ async def test_video_process(
     except Exception as e:
         logger.error(f"Error in test video processing: {str(e)}")
         raise HTTPException(500, f"Error processing video: {str(e)}")
+
+# Knowledge Graph endpoints
+@router.post("/knowledge-graph/{knowledge_id}/sync")
+async def sync_knowledge_graph(
+    knowledge_id: int,
+    background_tasks: BackgroundTasks
+):
+    """
+    Synchronize a knowledge entry to the Neo4j knowledge graph.
+    
+    Args:
+        knowledge_id: The ID of the knowledge entry to synchronize
+        background_tasks: Background tasks manager
+        
+    Returns:
+        JSON response with sync status
+    """
+    try:
+        # Start synchronization in the background
+        background_tasks.add_task(sync_service.sync_knowledge, knowledge_id)
+        
+        return {
+            "knowledge_id": knowledge_id,
+            "status": "syncing",
+            "message": "Knowledge graph synchronization started in the background."
+        }
+    except Exception as e:
+        logger.error(f"Error starting knowledge graph sync: {str(e)}")
+        raise HTTPException(500, f"Error starting knowledge graph sync: {str(e)}")
+
+@router.post("/knowledge-graph/sync-all")
+async def sync_all_knowledge_graphs(
+    background_tasks: BackgroundTasks
+):
+    """
+    Synchronize all knowledge entries to the Neo4j knowledge graph.
+    
+    Args:
+        background_tasks: Background tasks manager
+        
+    Returns:
+        JSON response with sync status
+    """
+    try:
+        # Start synchronization in the background
+        background_tasks.add_task(sync_service.sync_all_knowledge)
+        
+        return {
+            "status": "syncing",
+            "message": "Knowledge graph synchronization for all knowledge entries started in the background."
+        }
+    except Exception as e:
+        logger.error(f"Error starting all knowledge graphs sync: {str(e)}")
+        raise HTTPException(500, f"Error starting all knowledge graphs sync: {str(e)}")
+
+@router.get("/knowledge-graph/{knowledge_id}")
+async def get_knowledge_graph(
+    knowledge_id: int
+):
+    """
+    Get the knowledge graph for a specific knowledge entry.
+    
+    Args:
+        knowledge_id: The ID of the knowledge entry
+        
+    Returns:
+        The knowledge graph data
+    """
+    try:
+        # Get knowledge graph from Neo4j
+        graph_data = graph_service.get_knowledge_graph(knowledge_id)
+        
+        return {
+            "knowledge_id": knowledge_id,
+            "graph": graph_data.dict()
+        }
+    except Exception as e:
+        logger.error(f"Error getting knowledge graph: {str(e)}")
+        raise HTTPException(500, f"Error getting knowledge graph: {str(e)}")
+
+@router.get("/knowledge-graph/{knowledge_id}/concepts")
+async def get_knowledge_concepts(
+    knowledge_id: int
+):
+    """
+    Get all concepts in a knowledge entry.
+    
+    Args:
+        knowledge_id: The ID of the knowledge entry
+        
+    Returns:
+        List of concepts with their relationships
+    """
+    try:
+        # Find the knowledge node
+        knowledge_query = """
+        MATCH (k:Knowledge {knowledge_id: $knowledge_id})
+        RETURN k
+        """
+        
+        knowledge_result = graph_service.execute_query(knowledge_query, {"knowledge_id": knowledge_id})
+        knowledge_record = knowledge_result.single()
+        
+        if not knowledge_record:
+            raise HTTPException(404, f"Knowledge ID {knowledge_id} not found in graph database")
+        
+        knowledge_node_id = knowledge_record["k"]["id"]
+        
+        # Get all concepts taught by this knowledge entity
+        concepts_query = """
+        MATCH (k:Knowledge {id: $knowledge_node_id})-[:TEACHES_CONCEPT]->(c:Concept)
+        RETURN c.id as id, c.name as name, count{(c)<-[:CONTAINS_CONCEPT]-()} as chapter_count
+        ORDER BY chapter_count DESC
+        """
+        
+        concepts_result = graph_service.execute_query(concepts_query, {"knowledge_node_id": knowledge_node_id})
+        concepts = [{"id": record["id"], "name": record["name"], "occurrence_count": record["chapter_count"]} 
+                   for record in concepts_result]
+        
+        # Get relationships between concepts
+        relationships_query = """
+        MATCH (k:Knowledge {id: $knowledge_node_id})-[:TEACHES_CONCEPT]->(c1:Concept)
+        MATCH (c1)-[r:RELATED_TO]-(c2:Concept)
+        WHERE (k)-[:TEACHES_CONCEPT]->(c2)
+        RETURN c1.id as source, c2.id as target, r.weight as weight
+        """
+        
+        relationships_result = graph_service.execute_query(relationships_query, {"knowledge_node_id": knowledge_node_id})
+        relationships = [{"source": record["source"], "target": record["target"], "weight": record["weight"]} 
+                        for record in relationships_result]
+        
+        return {
+            "knowledge_id": knowledge_id,
+            "concepts": concepts,
+            "relationships": relationships
+        }
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        logger.error(f"Error getting knowledge concepts: {str(e)}")
+        raise HTTPException(500, f"Error getting knowledge concepts: {str(e)}")
+
+@router.get("/knowledge-graph/schema")
+async def get_graph_schema():
+    """
+    Create and return the knowledge graph schema.
+    
+    Returns:
+        Schema information including node labels, relationship types, and constraints
+    """
+    try:
+        # Ensure schema constraints exist
+        graph_service.create_schema_constraints()
+        
+        # Get schema information
+        labels_query = "CALL db.labels()"
+        relationship_types_query = "CALL db.relationshipTypes()"
+        constraints_query = "SHOW CONSTRAINTS"
+        
+        labels_result = graph_service.execute_query(labels_query)
+        relationship_types_result = graph_service.execute_query(relationship_types_query)
+        constraints_result = graph_service.execute_query(constraints_query)
+        
+        labels = [record["label"] for record in labels_result]
+        relationship_types = [record["relationshipType"] for record in relationship_types_result]
+        constraints = []
+        
+        # Constraints format varies by Neo4j version, handle possible formats
+        try:
+            constraints = [record["description"] for record in constraints_result]
+        except:
+            try:
+                constraints = [f"{record['name']}: {record['description']}" for record in constraints_result]
+            except:
+                constraints = ["Unable to parse constraints format"]
+        
+        return {
+            "node_labels": labels,
+            "relationship_types": relationship_types,
+            "constraints": constraints,
+            "schema_status": "active"
+        }
+    except Exception as e:
+        logger.error(f"Error getting graph schema: {str(e)}")
+        raise HTTPException(500, f"Error getting graph schema: {str(e)}")
+
+@router.delete("/knowledge-graph/{knowledge_id}")
+async def delete_knowledge_from_graph(
+    knowledge_id: int
+):
+    """
+    Delete a knowledge entry and all its related nodes from the graph.
+    
+    Args:
+        knowledge_id: The ID of the knowledge entry to delete
+        
+    Returns:
+        JSON response with delete status
+    """
+    try:
+        # Delete the knowledge subgraph
+        delete_query = """
+        MATCH (k:Knowledge {knowledge_id: $knowledge_id})
+        OPTIONAL MATCH (k)-[r1]-(n1)
+        OPTIONAL MATCH (n1)-[r2]-(n2) 
+        WHERE n2 <> k AND (k)-[:TEACHES_CONCEPT]->(n2) OR (k)-[:HAS_CHAPTER]->(n1)-[:CONTAINS_CONCEPT]->(n2)
+        DETACH DELETE k, r1, n1, r2, n2
+        """
+        
+        graph_service.execute_query(delete_query, {"knowledge_id": knowledge_id})
+        
+        return {
+            "knowledge_id": knowledge_id,
+            "status": "deleted",
+            "message": f"Knowledge ID {knowledge_id} and all related nodes deleted from graph"
+        }
+    except Exception as e:
+        logger.error(f"Error deleting knowledge from graph: {str(e)}")
+        raise HTTPException(500, f"Error deleting knowledge from graph: {str(e)}")

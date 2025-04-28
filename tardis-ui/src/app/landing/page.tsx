@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react';
 import { Button } from '../../components/ui/button';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const LandingPage = () => {
+  const navigate = useNavigate();
+
   useEffect(() => {
     // Smooth scroll to section when clicking navigation links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -122,7 +124,7 @@ const LandingPage = () => {
       <nav className="fixed w-full bg-white/80 backdrop-blur-md z-50 shadow-sm">
         <div className="container mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
-            <div className="text-3xl font-bold text-blue-600">EduPlatform</div>
+            <div className="text-3xl font-bold text-blue-600">Ai Study Tools</div>
             <div className="hidden md:flex space-x-8 items-center">
               <a href="#features" className="text-gray-700 hover:text-blue-600 transition-colors">Features</a>
               <a href="#testimonials" className="text-gray-700 hover:text-blue-600 transition-colors">Testimonials</a>
@@ -502,7 +504,7 @@ const LandingPage = () => {
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-8">
             <div>
-              <h3 className="text-2xl font-bold mb-4">EduPlatform</h3>
+              <h3 className="text-2xl font-bold mb-4">Ai Study Tools</h3>
               <p className="text-gray-400 mb-4">
                 Transforming the way people learn with AI-powered, interactive, and 
                 personalized content.
@@ -510,7 +512,7 @@ const LandingPage = () => {
               <div className="flex space-x-4">
                 <a href="#" className="text-gray-400 hover:text-white transition-colors">
                   <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
+                    <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12s4.477 10 10 10 10-4.477 10-10z" />
                   </svg>
                 </a>
                 <a href="#" className="text-gray-400 hover:text-white transition-colors">
@@ -555,7 +557,7 @@ const LandingPage = () => {
           </div>
           <div className="border-t border-gray-800 pt-8 text-center">
             <p className="text-gray-400">
-              &copy; {new Date().getFullYear()} EduPlatform. All rights reserved.
+              &copy; {new Date().getFullYear()} Ai Study Tools. All rights reserved.
             </p>
           </div>
         </div>

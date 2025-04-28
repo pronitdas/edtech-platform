@@ -23,8 +23,8 @@ class QueueManager:
     
     def __init__(self, db_manager: DatabaseManager):
         """Initialize the queue manager."""
-        self.job_queue = Queue()
-        self.content_generation_queue = Queue()  # New queue for content generation
+        self.job_queue = Queue(2)
+        self.content_generation_queue = Queue(10)  # New queue for content generation
         self.processing_thread = None
         self.content_generation_thread = None  # New thread for content generation
         self.is_processing = False
@@ -206,7 +206,7 @@ class QueueManager:
             from openai_functions import generate_notes, generate_summary, generate_questions, generate_mind_map_structure
             
             # Get OpenAI client
-            openai_client = OpenAIClient(api_key=os.environ.get("OPENAI_API_KEY", ""))
+            openai_client = OpenAIClient(api_key=os.environ.get("OPENAI_API_KEY", ""), base_url="http://192.168.1.12:1234/v1")
             
             # Get chapter data from the database
             chapters = self.db_manager.get_chapter_data(knowledge_id)
