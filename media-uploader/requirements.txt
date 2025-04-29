@@ -135,7 +135,7 @@ pytils==0.4.1
 pytz==2025.1
 pyxnat==1.6.3
 PyYAML==6.0.2
-pyzmq==26.2.1
+pyzmq==26.4.0
 RapidFuzz==3.12.1
 rdflib==6.3.2
 realtime==2.3.0
