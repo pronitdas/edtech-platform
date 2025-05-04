@@ -14,7 +14,7 @@ Our educational platform currently lacks a cohesive design system and comprehens
 ✅ 2. Set up Storybook for component development and documentation
 🔄 3. Refactor core UI components to use the new design system
 🔄 4. Implement visual and accessibility testing for UI components
-⏳ 5. Begin restructuring the SlopeDrawing component as outlined in design.md
+🔄 5. Begin restructuring the SlopeDrawing component as outlined in design.md
 
 ## Sprint Backlog
 
@@ -98,38 +98,54 @@ Our educational platform currently lacks a cohesive design system and comprehens
 ⏳ Document usage
 
 #### Cognitive Load Indicator
-⏳ Create CognitiveLoadIndicator component
-⏳ Create stories for different load states
-⏳ Write component tests
-⏳ Document usage
+✅ Create CognitiveLoadIndicator component
+✅ Create stories for different load states
+✅ Write component tests
+✅ Document usage
 
 #### Practice Stats Component
-⏳ Create PracticeStats component
-⏳ Create stories for different stats scenarios
-⏳ Write component tests
-⏳ Document usage
+✅ Create PracticeStats component
+✅ Create stories for different stats scenarios
+✅ Write component tests
+✅ Document usage
 
 ### SlopeDrawing Refactor (Days 11-14)
 
 #### SlopeDrawing Component Structure
-⏳ Create folder structure for SlopeDrawing as outlined in design.md
-⏳ Break down current SlopeDrawing.tsx into smaller components
-⏳ Create stub files for all needed components
-⏳ Update imports and references
+✅ Create folder structure for SlopeDrawing as outlined in design.md
+✅ Break down current SlopeDrawing.tsx into smaller components
+✅ Create stub files for all needed components
+✅ Update imports and references
 
 #### SlopeDrawing Sub-Components
-⏳ Refactor GraphCanvas component
-⏳ Refactor ConceptExplorer component
-⏳ Refactor PracticeProblem component
-⏳ Refactor CustomProblemSolver component
-⏳ Create stories for each sub-component
-⏳ Write component tests for each sub-component
+✅ Create DrawingToolbar stories with variants:
+  - ✅ Default state
+  - ✅ With selected tool
+✅ Create ModeSelector stories with variants:
+  - ✅ Default concept mode
+  - ✅ Practice mode with medium load
+  - ✅ Word problem mode with high load
+✅ Create BottomControls stories with variants:
+  - ✅ No line data
+  - ✅ With line data
+  - ✅ Undefined slope case
+✅ Create main SlopeDrawing stories:
+  - ✅ Default setup
+  - ✅ With OpenAI integration
+🔄 Create stories for remaining components:
+  - ⏳ GraphCanvas
+  - ⏳ ConceptExplanation
+  - ⏳ PracticeProblem
+  - ⏳ CustomProblemSolver
+  - ⏳ WordProblem
+  - ⏳ AnimatedSolution
+  - ⏳ StatsDisplay
 
 #### SlopeDrawing Integration
-⏳ Integrate refactored components back into main SlopeDrawing
-⏳ Create integration tests
-⏳ Create stories for different SlopeDrawing states
-⏳ Add accessibility tests
+🔄 Integrate refactored components back into main SlopeDrawing
+🔄 Create integration tests
+✅ Create stories for different SlopeDrawing states
+🔄 Add accessibility tests
 
 ## Technical Considerations
 
@@ -158,9 +174,9 @@ Our educational platform currently lacks a cohesive design system and comprehens
 ## Definition of Done
 ✅ All specified components are refactored to use the new design system
 ✅ Storybook is set up and contains stories for all refactored components
-✅ Each component has passing unit tests
+🔄 Each component has passing unit tests
 ⏳ Each component has visual regression tests
-✅ Each component has accessibility tests
+🔄 Each component has accessibility tests
 ✅ Documentation is complete for all components
 ⏳ Pull request approved and merged
 
@@ -189,4 +205,4 @@ Our educational platform currently lacks a cohesive design system and comprehens
 ⏳ Visual regression testing is set up and passing
 🔄 Accessibility testing is integrated and passing
 ✅ Design tokens are implemented in Tailwind configuration
-⏳ SlopeDrawing component is restructured according to the plan 
+🔄 SlopeDrawing component is restructured according to the plan 
