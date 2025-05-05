@@ -4,7 +4,11 @@ interface OpenAIMessage {
     content: string;
 }
 
-export class OpenAIClient { // Renamed class
+export interface OpenAIClient {
+    generateResponse: (prompt: string) => Promise<string>;
+}
+
+export class OpenAIService implements OpenAIClient {
     private apiKey?: string; // Made apiKey optional
 
     constructor(apiKey?: string) { // Made apiKey optional
@@ -50,5 +54,10 @@ export class OpenAIClient { // Renamed class
             // Return a more specific error message
             return `Error fetching data: ${error instanceof Error ? error.message : String(error)}`;
         }
+    }
+
+    async generateResponse(prompt: string): Promise<string> {
+        // Implementation details
+        throw new Error('Not implemented');
     }
 }

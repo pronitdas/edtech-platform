@@ -10,24 +10,63 @@ const SelectGroup = SelectPrimitive.Group
 
 const SelectValue = SelectPrimitive.Value
 
+interface SelectTriggerProps
+  extends React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger> {
+  error?: boolean;
+  errorMessage?: string;
+  helperText?: string;
+}
+
 const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
->(({ className, children, ...props }, ref) => (
-  <SelectPrimitive.Trigger
-    ref={ref}
-    className={cn(
-      "flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
-      className
-    )}
-    {...props}
-  >
-    {children}
-    <SelectPrimitive.Icon asChild>
-      <ChevronDown className="h-4 w-4 opacity-50" />
-    </SelectPrimitive.Icon>
-  </SelectPrimitive.Trigger>
-))
+  SelectTriggerProps
+>(({ className, children, error, errorMessage, helperText, ...props }, ref) => {
+  const id = React.useId();
+  const errorId = `${id}-error`;
+  const helperId = `${id}-helper`;
+
+  return (
+    <div>
+      <SelectPrimitive.Trigger
+        ref={ref}
+        className={cn(
+          "flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background",
+          "placeholder:text-slate-500 dark:placeholder:text-slate-400",
+          "focus:outline-none focus:ring-1",
+          "disabled:cursor-not-allowed disabled:opacity-50",
+          "[&>span]:line-clamp-1",
+          error
+            ? "border-error-500 focus:ring-error-500 dark:border-error-400 dark:focus:ring-error-400"
+            : "border-slate-200 focus:ring-slate-950 dark:border-slate-800 dark:focus:ring-slate-300",
+          className
+        )}
+        {...props}
+        aria-invalid={error}
+        aria-errormessage={error ? errorId : undefined}
+        aria-describedby={helperText ? helperId : undefined}
+      >
+        {children}
+        <SelectPrimitive.Icon asChild>
+          <ChevronDown className="h-4 w-4 opacity-50" />
+        </SelectPrimitive.Icon>
+      </SelectPrimitive.Trigger>
+      {(helperText || errorMessage) && (
+        <div className="mt-1.5 text-sm">
+          {error && errorMessage && (
+            <p id={errorId} className="text-error-500 dark:text-error-400">
+              {errorMessage}
+            </p>
+          )}
+          {!error && helperText && (
+            <p id={helperId} className="text-slate-500 dark:text-slate-400">
+              {helperText}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+})
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName
 
 const SelectScrollUpButton = React.forwardRef<
@@ -62,8 +101,7 @@ const SelectScrollDownButton = React.forwardRef<
     <ChevronDown className="h-4 w-4" />
   </SelectPrimitive.ScrollDownButton>
 ))
-SelectScrollDownButton.displayName =
-  SelectPrimitive.ScrollDownButton.displayName
+SelectScrollDownButton.displayName = SelectPrimitive.ScrollDownButton.displayName
 
 const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
