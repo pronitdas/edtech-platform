@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Concept } from '@/types/learning';
-import { Point, Offset, LineData } from '@/types/geometry';
+import { Point, Offset, LineData, Line } from '@/types/geometry'; // Imported Line
 import {
   ToolMode,
   DrawingTool,
@@ -35,6 +35,17 @@ interface SlopeDrawingContextValue {
   lineData?: LineData;
   canvasWidth: number;
   canvasHeight: number;
+  customPoints: Point[]; // Added missing prop
+  customLines: Line[]; // Added missing prop
+  shapes: any[]; // Added missing prop (using any for now, refine later if needed)
+  texts: any[]; // Added missing prop (using any for now, refine later if needed)
+  selectedItem: string | null; // Added missing prop
+  setSelectedItem: (id: string | null) => void; // Added missing prop
+  undoStack: any[];
+  setUndoStack: (stack: any[]) => void;
+  redoStack: any[];
+  setRedoStack: (stack: any[]) => void;
+
 
   // Drawing tool state
   drawingTool: DrawingTool;
@@ -89,12 +100,6 @@ interface SlopeDrawingContextValue {
   language: string;
   onUpdateProgress?: (progress: number) => void;
   openaiClient?: OpenAIClient;
-
-  // Additional state
-  undoStack: any[];
-  redoStack: any[];
-  setUndoStack: (stack: any[]) => void;
-  setRedoStack: (stack: any[]) => void;
 }
 
 interface SlopeDrawingProviderProps {
@@ -129,6 +134,11 @@ export const SlopeDrawingProvider: React.FC<SlopeDrawingProviderProps> = ({
   const [animationSpeed, setAnimationSpeed] = useState<'slow' | 'normal' | 'fast'>('normal');
   const [undoStack, setUndoStack] = useState<any[]>([]);
   const [redoStack, setRedoStack] = useState<any[]>([]);
+  const [customPoints, setCustomPoints] = useState<Point[]>([]); // Added missing state
+  const [customLines, setCustomLines] = useState<Line[]>([]); // Added missing state
+  const [shapes, setShapes] = useState<any[]>([]); // Added missing state
+  const [texts, setTexts] = useState<any[]>([]); // Added missing state
+  const [selectedItem, setSelectedItem] = useState<string | null>(null); // Added missing state
 
   // Cognitive load tracking
   const { cognitiveState, recordError, recordHesitation, resetTracking } = useCognitiveLoad(60);
@@ -207,6 +217,22 @@ export const SlopeDrawingProvider: React.FC<SlopeDrawingProviderProps> = ({
     lineData,
     canvasWidth,
     canvasHeight,
+    customPoints, // Added missing prop
+    customLines, // Added missing prop
+    shapes, // Added missing prop
+    texts, // Added missing prop
+    selectedItem, // Added missing prop
+    setSelectedItem, // Added missing prop
+    undoStack,
+    setUndoStack,
+    redoStack,
+    setRedoStack,
+    customPoints, // Added missing prop
+    customLines, // Added missing prop
+    shapes, // Added missing prop
+    texts, // Added missing prop
+    selectedItem, // Added missing prop
+    setSelectedItem, // Added missing prop
     drawingTool,
     setDrawingTool,
     concepts: interactiveContent.concepts || [],
@@ -230,11 +256,11 @@ export const SlopeDrawingProvider: React.FC<SlopeDrawingProviderProps> = ({
         medium: { attempted: 0, correct: 0 },
         hard: { attempted: 0, correct: 0 },
       },
-    } as any,
+    } as any, // TODO: Fix this type assertion
     setCurrentProblemId,
     setDifficulty,
     generateProblem,
-    checkSolution: (lineData: any) => false,
+    checkSolution: (lineData: any) => false, // TODO: Implement proper checkSolution
     toggleSolution,
     nextProblem,
     showAnimation,
@@ -253,10 +279,6 @@ export const SlopeDrawingProvider: React.FC<SlopeDrawingProviderProps> = ({
     language,
     onUpdateProgress,
     openaiClient,
-    undoStack,
-    redoStack,
-    setUndoStack,
-    setRedoStack,
   };
 
   return (

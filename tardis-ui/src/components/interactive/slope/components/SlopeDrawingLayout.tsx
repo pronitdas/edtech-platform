@@ -34,6 +34,16 @@ const SlopeDrawingLayout: React.FC = () => {
     mapPointToCanvas,
     mapCanvasToPoint,
     lineData,
+    customPoints, // Added missing prop
+    customLines, // Added missing prop
+    shapes, // Added missing prop
+    texts, // Added missing prop
+    selectedItem, // Added missing prop
+    setSelectedItem, // Added missing prop
+    undoStack, // Added missing prop
+    setUndoStack, // Added missing prop
+    redoStack, // Added missing prop
+    setRedoStack, // Added missing prop
 
     // Drawing tool state
     drawingTool,
@@ -114,6 +124,76 @@ const SlopeDrawingLayout: React.FC = () => {
     };
   }, [setDimensions]);
 
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Prevent default behavior for certain keys to avoid interference
+      if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+        event.preventDefault();
+      }
+
+      // Handle tool selection shortcuts
+      switch (event.key.toLowerCase()) {
+        case 'p': // Point tool
+          setDrawingTool('point');
+          break;
+        case 'l': // Line tool (assuming solid line)
+          setDrawingTool('solidLine');
+          break;
+        case 'e': // Erase tool (assuming clear)
+          setDrawingTool('clear');
+          break;
+        // Existing shortcuts
+        case 'r':
+          setDrawingTool('reset');
+          break;
+        case 'm':
+          setDrawingTool('move');
+          break;
+        case 's':
+          setDrawingTool('solidLine');
+          break;
+        case 't':
+          setDrawingTool('text');
+          break;
+        case 'c':
+          setDrawingTool('clear');
+          break;
+        case 'a': // 'a' for pan, as 'p' is for point
+          setDrawingTool('pan');
+          break;
+        case '+':
+          setDrawingTool('zoomIn');
+          break;
+        case '-':
+          setDrawingTool('zoomOut');
+          break;
+      }
+
+      // Handle Undo/Redo shortcuts (Ctrl+Z/Cmd+Z, Ctrl+Y/Cmd+Y)
+      if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
+        setDrawingTool('undo');
+        event.preventDefault(); // Prevent browser undo
+      } else if ((event.ctrlKey || event.metaKey) && event.key === 'y') {
+        setDrawingTool('redo');
+        event.preventDefault(); // Prevent browser redo
+      }
+
+      // Handle Clear canvas shortcut (Delete or Backspace)
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        setDrawingTool('clear');
+        event.preventDefault(); // Prevent browser back navigation
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [setDrawingTool]); // Depend on setDrawingTool to ensure the latest function is used
+
+
   // Handle submitting an answer for practice problems
   const handleSubmitAnswer = () => {
     if (lineData) {
@@ -172,6 +252,16 @@ const SlopeDrawingLayout: React.FC = () => {
               highlightSolution={activeMode === 'practice' && isCorrect === true}
               drawingTool={drawingTool}
               onDrawingToolChange={setDrawingTool}
+              customPoints={customPoints} // Added missing prop
+              customLines={customLines} // Added missing prop
+              shapes={shapes} // Added missing prop
+              texts={texts} // Added missing prop
+              selectedItem={selectedItem} // Added missing prop
+              setSelectedItem={setSelectedItem} // Added missing prop
+              undoStack={undoStack} // Added missing prop
+              setUndoStack={setUndoStack} // Added missing prop
+              redoStack={redoStack} // Added missing prop
+              setRedoStack={setRedoStack} // Added missing prop
               slopeConfig={{
                 equation: lineData?.equation || '',
                 xRange: [-10, 10], // Assuming default range
