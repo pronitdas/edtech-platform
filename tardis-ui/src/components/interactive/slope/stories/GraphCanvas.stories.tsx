@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import GraphCanvas from '../components/GraphCanvas';
+import GraphCanvas from '../../../../components/GraphCanvas';
 
 const meta = {
   title: 'Slope/GraphCanvas',
@@ -18,7 +18,7 @@ const meta = {
 } satisfies Meta<typeof GraphCanvas>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<typeof GraphCanvas>;
 
 // Helper function to simulate point mapping
 const mockMapPointToCanvas = (point: { x: number; y: number }) => ({
@@ -44,6 +44,13 @@ const baseProps = {
   editMode: true,
   drawingTool: 'move' as const,
   onDrawingToolChange: (tool: string) => console.log('Tool changed:', tool),
+  drawingMode: 'slope' as const, // Default mode for these stories
+  slopeConfig: { // Add a basic slopeConfig
+    equation: 'y = mx + b',
+    xRange: [-10, 10] as [number, number],
+    yRange: [-10, 10] as [number, number],
+    stepSize: 0.1,
+  },
 };
 
 export const EmptyGraph: Story = {
@@ -51,6 +58,19 @@ export const EmptyGraph: Story = {
     ...baseProps,
     points: [],
     onPointsChange: (points) => console.log('Points changed:', points),
+  },
+};
+
+export const GenericGraph: Story = {
+  args: {
+    width: 600,
+    height: 400,
+    zoom: 1,
+    offset: { x: 0, y: 0 },
+    onZoomChange: (zoom: number) => console.log('Zoom changed:', zoom),
+    onOffsetChange: (offset: { x: number; y: number }) => console.log('Offset changed:', offset),
+    drawingMode: 'generic' as const,
+    // Generic mode might not need point mapping or drawing tools props
   },
 };
 

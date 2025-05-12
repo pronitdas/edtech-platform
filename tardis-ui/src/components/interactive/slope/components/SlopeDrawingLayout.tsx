@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { useSlopeDrawing } from '../contexts/SlopeDrawingContext';
-import GraphCanvas from './GraphCanvas';
+import GraphCanvas from '../../../../components/GraphCanvas';
 import ConceptExplanation from './ConceptExplanation';
 import PracticeProblem from './PracticeProblem';
 import CustomProblemSolver from './CustomProblemSolver';
@@ -20,7 +20,7 @@ const SlopeDrawingLayout: React.FC = () => {
     // Mode state
     activeMode,
     setActiveMode,
-    
+
     // Graph management
     points,
     setPoints,
@@ -34,17 +34,27 @@ const SlopeDrawingLayout: React.FC = () => {
     mapPointToCanvas,
     mapCanvasToPoint,
     lineData,
-    
+    customPoints,
+    customLines,
+    shapes,
+    texts,
+    selectedItem,
+    setSelectedItem,
+    undoStack,
+    setUndoStack,
+    redoStack,
+    setRedoStack,
+
     // Drawing tool state
     drawingTool,
     setDrawingTool,
-    
+
     // Concept mode
     concepts,
     selectedConceptId,
     setSelectedConceptId,
     selectedConcept,
-    
+
     // Practice problem mode
     problems,
     currentProblemId,
@@ -53,29 +63,28 @@ const SlopeDrawingLayout: React.FC = () => {
     isCorrect,
     showSolution,
     stats,
-    setCurrentProblemId,
-    setDifficulty,
     generateProblem,
     checkSolution,
     toggleSolution,
     nextProblem,
-    
+    changeDifficulty, // Destructure changeDifficulty
+
     // Animation state
     showAnimation,
     setShowAnimation,
     animationSpeed,
     setAnimationSpeed,
-    
+
     // Cognitive load
     cognitiveState,
     recordError,
     recordHesitation,
     resetTracking,
-    
+
     // Canvas dimensions
     dimensions,
     setDimensions,
-    
+
     // Props passed to the SlopeDrawing component
     language,
     openaiClient,
@@ -90,7 +99,7 @@ const SlopeDrawingLayout: React.FC = () => {
 
     const updateDimensions = () => {
       if (!containerRef.current) return;
-      
+
       const canvas = containerRef.current.querySelector('.canvas-container');
       if (canvas) {
         setDimensions({
@@ -113,6 +122,76 @@ const SlopeDrawingLayout: React.FC = () => {
       }
     };
   }, [setDimensions]);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Prevent default behavior for certain keys to avoid interference
+      if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+        event.preventDefault();
+      }
+
+      // Handle tool selection shortcuts
+      switch (event.key.toLowerCase()) {
+        case 'p': // Point tool
+          setDrawingTool('point');
+          break;
+        case 'l': // Line tool (assuming solid line)
+          setDrawingTool('solidLine');
+          break;
+        case 'e': // Erase tool (assuming clear)
+          setDrawingTool('clear');
+          break;
+        // Existing shortcuts
+        case 'r':
+          setDrawingTool('reset');
+          break;
+        case 'm':
+          setDrawingTool('move');
+          break;
+        case 's':
+          setDrawingTool('solidLine');
+          break;
+        case 't':
+          setDrawingTool('text');
+          break;
+        case 'c':
+          setDrawingTool('clear');
+          break;
+        case 'a': // 'a' for pan, as 'p' is for point
+          setDrawingTool('pan');
+          break;
+        case '+':
+          setDrawingTool('zoomIn');
+          break;
+        case '-':
+          setDrawingTool('zoomOut');
+          break;
+      }
+
+      // Handle Undo/Redo shortcuts (Ctrl+Z/Cmd+Z, Ctrl+Y/Cmd+Y)
+      if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
+        setDrawingTool('undo');
+        event.preventDefault(); // Prevent browser undo
+      } else if ((event.ctrlKey || event.metaKey) && event.key === 'y') {
+        setDrawingTool('redo');
+        event.preventDefault(); // Prevent browser redo
+      }
+
+      // Handle Clear canvas shortcut (Delete or Backspace)
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        setDrawingTool('clear');
+        event.preventDefault(); // Prevent browser back navigation
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [setDrawingTool]); // Depend on setDrawingTool to ensure the latest function is used
+
 
   // Handle submitting an answer for practice problems
   const handleSubmitAnswer = () => {
@@ -137,7 +216,7 @@ const SlopeDrawingLayout: React.FC = () => {
   return (
     <div ref={containerRef} className="w-full h-full flex flex-col overflow-hidden">
       {/* Tool mode selector */}
-      <ModeSelector 
+      <ModeSelector
         activeMode={activeMode}
         onModeChange={setActiveMode}
         cognitiveState={cognitiveState}
@@ -151,12 +230,13 @@ const SlopeDrawingLayout: React.FC = () => {
           drawingTool={drawingTool}
           setDrawingTool={setDrawingTool}
         />
-        
+
         {/* Main Graph/Canvas Area */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Graph Canvas */}
           <div className="flex-1 canvas-container relative overflow-hidden bg-gray-900" style={{ minHeight: '60vh' }}>
             <GraphCanvas
+              drawingMode="slope"
               width={dimensions.width}
               height={dimensions.height}
               points={points}
@@ -171,6 +251,22 @@ const SlopeDrawingLayout: React.FC = () => {
               highlightSolution={activeMode === 'practice' && isCorrect === true}
               drawingTool={drawingTool}
               onDrawingToolChange={setDrawingTool}
+              customPoints={customPoints}
+              customLines={customLines}
+              shapes={shapes}
+              texts={texts}
+              selectedItem={selectedItem}
+              setSelectedItem={setSelectedItem}
+              undoStack={undoStack}
+              setUndoStack={setUndoStack}
+              redoStack={redoStack}
+              setRedoStack={setRedoStack}
+              slopeConfig={{
+                equation: lineData?.equation || '',
+                xRange: [-10, 10], // Assuming default range
+                yRange: [-10, 10], // Assuming default range
+                stepSize: 0.1, // Assuming default step size
+              }}
             />
           </div>
 
@@ -190,7 +286,7 @@ const SlopeDrawingLayout: React.FC = () => {
             </div>
           )}
         </div>
-        
+
         {/* Right Panel (mode specific) - Fixed width with scrolling */}
         <div className="w-96 overflow-y-auto border-l border-gray-700 flex-shrink-0">
           {/* Concept Explanation Mode */}
@@ -202,7 +298,7 @@ const SlopeDrawingLayout: React.FC = () => {
               lineData={lineData}
             />
           )}
-          
+
           {/* Practice Problem Mode */}
           {activeMode === 'practice' && (
             <>
@@ -210,28 +306,25 @@ const SlopeDrawingLayout: React.FC = () => {
                 problems={problems}
                 currentProblemId={currentProblemId}
                 difficulty={difficulty}
-                setDifficulty={setDifficulty}
-                onSelectProblem={setCurrentProblemId}
+                setDifficulty={changeDifficulty} // Pass changeDifficulty
+                onSelectProblem={(problemId) => {
+                  // Logic to select problem - might need to be added to context or here
+                  console.log("Select problem:", problemId);
+                }}
                 onGenerateNewProblem={generateProblem}
                 lineData={lineData}
                 onSubmitAnswer={handleSubmitAnswer}
                 isCorrect={isCorrect}
                 showSolution={showSolution}
-                onToggleSolution={() => {
-                  toggleSolution();
-                  handleSolutionReveal();
-                }}
+                onToggleSolution={handleSolutionReveal}
                 onNextProblem={nextProblem}
                 stats={stats}
                 onHintRequest={handleHintRequest}
               />
-              <div className="mt-4">
-                <StatsDisplay stats={stats} showDetails={true} />
-              </div>
             </>
           )}
-          
-          {/* Custom Problem Mode */}
+
+          {/* Custom Problem Solver Mode */}
           {activeMode === 'custom' && (
             <CustomProblemSolver
               lineData={lineData}
@@ -240,7 +333,7 @@ const SlopeDrawingLayout: React.FC = () => {
               language={language}
             />
           )}
-          
+
           {/* Word Problem Mode */}
           {activeMode === 'word' && (
             <WordProblem
@@ -248,21 +341,21 @@ const SlopeDrawingLayout: React.FC = () => {
               onPointsChange={setPointsFromCoordinates}
               openaiClient={openaiClient}
               language={language}
-              difficulty={difficulty}
+              difficulty={difficulty} // Pass difficulty to word problem generator
             />
           )}
         </div>
       </div>
-      
-      {/* Bottom Controls Area */}
+
+      {/* Bottom Controls */}
       <BottomControls
         lineData={lineData}
         resetView={resetView}
         clearPoints={clearPoints}
-        onShowAnimation={() => setShowAnimation(true)}
+        onShowAnimation={() => setShowAnimation(true)} // Pass setShowAnimation to trigger animation
       />
     </div>
   );
 };
 
-export default SlopeDrawingLayout; 
+export default SlopeDrawingLayout;

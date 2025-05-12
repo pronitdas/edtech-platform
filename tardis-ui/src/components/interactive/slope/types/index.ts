@@ -30,51 +30,34 @@ export interface SlopeDrawingProps {
 }
 
 // Extend the InteractiveContent type to include concept explanations with demo points
+import { Problem } from '@/types/interactive';
+
 export interface ExtendedInteractiveContent extends InteractiveContent {
-  conceptExplanations?: Concept[];
+  concepts?: import("@/types/learning").Concept[];
+  problems?: Problem[];
 }
+
+import { Point } from '@/types/geometry';
 
 // Point interface
-export interface Point {
-  x: number;
-  y: number;
-}
-
-// Line data interface
-export interface LineData {
-  slope: number | null;
-  equation: string;
-  intercept?: number;
-  point1?: Point;
-  point2?: Point;
-}
 
 // Concept interface
-export interface Concept {
-  id: string;
-  title: string;
-  content: string;
-  formula?: string;
-  demoPoints?: Point[];
-  illustration?: string;
-  examples?: ConceptExample[];
-}
-
-export interface ConceptExample {
-  id: string;
-  description: string;
-  formula?: string;
-}
 
 // Problem related types
-export interface Problem {
-  id: string;
-  question: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-  hints: string[];
-  solution: string | { slope: number; yIntercept: number };
-  targetPoints?: Point[];
-  startPoints?: Point[];
+
+export type ProblemDifficulty = 'easy' | 'medium' | 'hard';
+
+export interface LearningContext {
+  topic: string; // e.g., 'slope', 'y-intercept'
+  stats: ProblemGenerationStats; // User's performance stats
+  // Add other relevant context like recent problem types, time spent, etc.
+}
+
+export interface ProblemGenerationConfig {
+  initialDifficulty?: ProblemDifficulty;
+  initialProblems?: Problem[];
+  predefinedProblems?: Problem[];
+  maxHistoryLength?: number;
 }
 
 // Type for the useProblemGeneration hook's stats
@@ -91,11 +74,24 @@ export interface ProblemGenerationStats {
   };
 }
 
+import { LineData } from '@/types/geometry';
+
 export interface SolutionResult {
   problemId: string;
   isCorrect: boolean;
   timeSpent: number;
   difficulty: 'easy' | 'medium' | 'hard';
+  userAttempt?: LineData; // Add userAttempt to store the line data
+}
+
+export interface ProblemHistoryEntry {
+  type: 'problem_generated' | 'problem_attempted';
+  timestamp: string;
+  problemId: string;
+  userAttempt?: LineData;
+  isCorrect?: boolean;
+  difficulty: ProblemDifficulty;
+  // Add other relevant info like categories, time spent if available
 }
 
 // Stats for the UI display
@@ -121,9 +117,6 @@ export interface GraphManagementState {
   points: Point[];
   zoom: number;
   offset: Offset;
-  lineData?: LineData;
-  canvasWidth: number;
-  canvasHeight: number;
 }
 
 export interface GraphManagementActions {
@@ -135,4 +128,4 @@ export interface GraphManagementActions {
   setPointsFromCoordinates: (coordinates: Point[]) => void;
   mapPointToCanvas: (point: Point) => { x: number; y: number };
   mapCanvasToPoint: (canvasPoint: { x: number; y: number }) => Point;
-} 
+}
