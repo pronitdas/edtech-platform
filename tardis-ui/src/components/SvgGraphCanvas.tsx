@@ -28,25 +28,23 @@ interface TooltipState {
 }
 
 // Memoized shape component
-const ShapeElement = memo<{
-    shape: Shape;
-    index: number;
-    onMouseEnter: (e: React.MouseEvent<SVGElement>, index: number) => void;
-    onTouchStart: (e: React.TouchEvent<SVGElement>, index: number) => void;
+interface ElementHandlers {
+    onMouseEnter: (e: React.MouseEvent<SVGElement>, type: string, index: number) => void;
+    onTouchStart: (e: React.TouchEvent<SVGElement>, type: string, index: number) => void;
     onMouseLeave: () => void;
     onClick: (index: number) => void;
-}>(({ shape, index, onMouseEnter, onTouchStart, onMouseLeave, onClick }) => {
-    const handleMouseEnter = useCallback((e: React.MouseEvent<SVGElement>) => {
-        onMouseEnter(e, index);
-    }, [onMouseEnter, index]);
+}
 
-    const handleTouchStart = useCallback((e: React.TouchEvent<SVGElement>) => {
-        onTouchStart(e, index);
-    }, [onTouchStart, index]);
+type ElementProps<T> = {
+    item: T;
+    index: number;
+    onMouseEnter: (e: React.MouseEvent<SVGElement>, type: string, index: number) => void;
+    onTouchStart: (e: React.TouchEvent<SVGElement>, type: string, index: number) => void;
+    onMouseLeave: () => void;
+    onClick: (index: number) => void;
+};
 
-    const handleClick = useCallback(() => {
-        onClick(index);
-    }, [onClick, index]);
+const ShapeElement = memo<ElementProps<Shape>>(({ item: shape, index, onMouseEnter, onTouchStart, onMouseLeave, onClick }) => {
 
     if (shape.type === 'rectangle' && shape.topLeft && shape.bottomRight) {
         return (
@@ -61,15 +59,10 @@ const ShapeElement = memo<{
                 fill={shape.fill || "rgba(200, 200, 200, 0.5)"}
                 stroke={shape.stroke || "gray"}
                 strokeWidth={shape.strokeWidth || 1}
-                onMouseEnter={handleMouseEnter}
-                onTouchStart={handleTouchStart}
-                onMouseLeave={onMouseLeave}
-                onClick={handleClick}
-                onTouchEnd={(e) => {
-                    e.preventDefault();
-                    handleClick();
-                    onMouseLeave();
-                }}
+                onMouseEnter={(e) => onMouseEnter(e, 'Shape', index)}
+                onTouchStart={(e) => onTouchStart(e, 'Shape', index)}
+                onMouseLeave={handleMouseLeave}
+                onClick={() => onElementClick?.('shape', index, shape)}
                 style={{
                     cursor: 'pointer',
                     touchAction: 'none'
@@ -90,15 +83,10 @@ const ShapeElement = memo<{
                 fill={shape.fill || "rgba(200, 200, 200, 0.5)"}
                 stroke={shape.stroke || "gray"}
                 strokeWidth={shape.strokeWidth || 1}
-                onMouseEnter={handleMouseEnter}
-                onTouchStart={handleTouchStart}
+                onMouseEnter={(e) => onMouseEnter(e, 'Shape', index)}
+                onTouchStart={(e) => onTouchStart(e, 'Shape', index)}
                 onMouseLeave={onMouseLeave}
-                onClick={handleClick}
-                onTouchEnd={(e) => {
-                    e.preventDefault();
-                    handleClick();
-                    onMouseLeave();
-                }}
+                onClick={() => onClick(index)}
                 style={{
                     cursor: 'pointer',
                     touchAction: 'none'
@@ -111,25 +99,7 @@ const ShapeElement = memo<{
 });
 
 // Memoized line component
-const LineElement = memo<{
-    line: Line;
-    index: number;
-    onMouseEnter: (e: React.MouseEvent<SVGElement>, index: number) => void;
-    onTouchStart: (e: React.TouchEvent<SVGElement>, index: number) => void;
-    onMouseLeave: () => void;
-    onClick: (index: number) => void;
-}>(({ line, index, onMouseEnter, onTouchStart, onMouseLeave, onClick }) => {
-    const handleMouseEnter = useCallback((e: React.MouseEvent<SVGElement>) => {
-        onMouseEnter(e, index);
-    }, [onMouseEnter, index]);
-
-    const handleTouchStart = useCallback((e: React.TouchEvent<SVGElement>) => {
-        onTouchStart(e, index);
-    }, [onTouchStart, index]);
-
-    const handleClick = useCallback(() => {
-        onClick(index);
-    }, [onClick, index]);
+const LineElement = memo<ElementProps<Line>>(({ item: line, index, onMouseEnter, onTouchStart, onMouseLeave, onClick }) => {
 
     return (
         <motion.line
@@ -143,15 +113,10 @@ const LineElement = memo<{
             stroke={line.color || "blue"}
             strokeWidth={line.strokeWidth || 2}
             vectorEffect="non-scaling-stroke"
-            onMouseEnter={handleMouseEnter}
-            onTouchStart={handleTouchStart}
+            onMouseEnter={(e) => onMouseEnter(e, 'Line', index)}
+            onTouchStart={(e) => onTouchStart(e, 'Line', index)}
             onMouseLeave={onMouseLeave}
-            onClick={handleClick}
-            onTouchEnd={(e) => {
-                e.preventDefault();
-                handleClick();
-                onMouseLeave();
-            }}
+            onClick={() => onClick(index)}
             style={{
                 cursor: 'pointer',
                 touchAction: 'none'
@@ -161,25 +126,7 @@ const LineElement = memo<{
 });
 
 // Memoized point component
-const PointElement = memo<{
-    point: Point;
-    index: number;
-    onMouseEnter: (e: React.MouseEvent<SVGElement>, index: number) => void;
-    onTouchStart: (e: React.TouchEvent<SVGElement>, index: number) => void;
-    onMouseLeave: () => void;
-    onClick: (index: number) => void;
-}>(({ point, index, onMouseEnter, onTouchStart, onMouseLeave, onClick }) => {
-    const handleMouseEnter = useCallback((e: React.MouseEvent<SVGElement>) => {
-        onMouseEnter(e, index);
-    }, [onMouseEnter, index]);
-
-    const handleTouchStart = useCallback((e: React.TouchEvent<SVGElement>) => {
-        onTouchStart(e, index);
-    }, [onTouchStart, index]);
-
-    const handleClick = useCallback(() => {
-        onClick(index);
-    }, [onClick, index]);
+const PointElement = memo<ElementProps<Point>>(({ item: point, index, onMouseEnter, onTouchStart, onMouseLeave, onClick }) => {
 
     return (
         <motion.circle
@@ -192,15 +139,10 @@ const PointElement = memo<{
             fill="red"
             stroke="white"
             strokeWidth={1}
-            onMouseEnter={handleMouseEnter}
+            onMouseEnter={(e) => onMouseEnter(e, 'Point', index)}
+            onTouchStart={(e) => onTouchStart(e, 'Point', index)}
             onMouseLeave={onMouseLeave}
-            onClick={handleClick}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={(e) => {
-                e.preventDefault();
-                handleClick();
-                onMouseLeave();
-            }}
+            onClick={() => onClick(index)}
             style={{
                 cursor: 'pointer',
                 touchAction: 'none'
@@ -210,25 +152,7 @@ const PointElement = memo<{
 });
 
 // Memoized text component
-const TextElement = memo<{
-    text: Text;
-    index: number;
-    onMouseEnter: (e: React.MouseEvent<SVGElement>, index: number) => void;
-    onTouchStart: (e: React.TouchEvent<SVGElement>, index: number) => void;
-    onMouseLeave: () => void;
-    onClick: (index: number) => void;
-}>(({ text, index, onMouseEnter, onTouchStart, onMouseLeave, onClick }) => {
-    const handleMouseEnter = useCallback((e: React.MouseEvent<SVGElement>) => {
-        onMouseEnter(e, index);
-    }, [onMouseEnter, index]);
-
-    const handleTouchStart = useCallback((e: React.TouchEvent<SVGElement>) => {
-        onTouchStart(e, index);
-    }, [onTouchStart, index]);
-
-    const handleClick = useCallback(() => {
-        onClick(index);
-    }, [onClick, index]);
+const TextElement = memo<ElementProps<Text>>(({ item: text, index, onMouseEnter, onTouchStart, onMouseLeave, onClick }) => {
 
     return (
         <motion.text
@@ -242,15 +166,10 @@ const TextElement = memo<{
             fontSize={text.fontSize || "14px"}
             textAnchor="middle"
             dominantBaseline="middle"
-            onMouseEnter={handleMouseEnter}
+            onMouseEnter={(e) => onMouseEnter(e, 'Text', index)}
+            onTouchStart={(e) => onTouchStart(e, 'Text', index)}
             onMouseLeave={onMouseLeave}
-            onClick={handleClick}
-            onTouchStart={handleTouchStart}
-            onTouchEnd={(e) => {
-                e.preventDefault();
-                handleClick();
-                onMouseLeave();
-            }}
+            onClick={() => onClick(index)}
             style={{
                 cursor: 'pointer',
                 touchAction: 'none'
@@ -301,7 +220,18 @@ const SvgGraphCanvas: React.FC<SvgGraphCanvasProps> = ({
     });
     const [tooltipState, setTooltipState] = useState<TooltipState>(tooltipRef.current);
 
-    // Throttle tooltip updates to reduce performance impact
+    // Mobile detection and styles
+    const isMobile = useMemo(() => window.matchMedia('(max-width: 768px)').matches, []);
+    const styles = useMemo(() => ({
+        background: 'white',
+        ...(isMobile ? {
+            '--touch-target-size': '44px',
+            '--tooltip-offset': '20px',
+            strokeWidth: '3px'
+        } as React.CSSProperties : {})
+    }), [isMobile]);
+
+    // Tooltip management
     const updateTooltip = useCallback(
         throttle((newState: TooltipState) => {
             tooltipRef.current = newState;
@@ -309,6 +239,50 @@ const SvgGraphCanvas: React.FC<SvgGraphCanvasProps> = ({
         }, 50),
         []
     );
+
+    // Base event handlers
+    const handleInteraction = useCallback((
+        event: React.MouseEvent<SVGElement> | React.TouchEvent<SVGElement>,
+        type: string,
+        index: number,
+        item: any
+    ) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        const pos = 'touches' in event ? handleTouch(event, rect) : handleMouse(rect);
+        updateTooltip({
+            visible: true,
+            content: `${type} ${index + 1}`,
+            x: pos.x,
+            y: pos.y
+        });
+    }, [updateTooltip]);
+
+    const handleMouseLeave = useCallback(() => {
+        updateTooltip({ ...tooltipRef.current, visible: false });
+    }, [updateTooltip]);
+
+    // Create handlers for an element
+    // Event handlers factory
+    const createElementHandlers = useCallback((type: string, index: number, item: any): ElementHandlers => ({
+        onMouseEnter: (e) => handleInteraction(type, index, e),
+        onTouchStart: (e) => handleInteraction(type, index, e),
+        onMouseLeave: handleMouseLeave,
+        onClick: () => onElementClick?.(type, index, item)
+    }), [handleInteraction, handleMouseLeave, onElementClick]);
+
+    // Create element-specific handlers
+    const createElementHandlers = (type: string, index: number, item: any): ElementEventHandlers => ({
+        onMouseEnter: (e) => handleMouseEnter(e, type, index),
+        onTouchStart: (e) => handleTouchStart(e, type, index),
+        onMouseLeave: handleMouseLeave,
+        onClick: () => onElementClick?.(type.toLowerCase(), index, item)
+    });
+
+    // Memoized handlers for each element type
+    const shapeHandlers = useMemo(() => createHandlers('Shape'), []);
+    const lineHandlers = useMemo(() => createHandlers('Line'), []);
+    const pointHandlers = useMemo(() => createHandlers('Point'), []);
+    const textHandlers = useMemo(() => createHandlers('Text'), []);
 
     // Handler for mouse tooltips
     const handleElementMouse = useCallback((e: React.MouseEvent<SVGElement>, type: string, idx: number): void => {
@@ -357,11 +331,15 @@ const SvgGraphCanvas: React.FC<SvgGraphCanvasProps> = ({
         });
     }, [drawingStrategy, points, lines, shapes, texts, config, zoom, offset]);
 
-    // CSS styles for mobile optimization
-    const mobileStyles = {
-        '--touch-target-size': '44px',
-        '--tooltip-offset': '20px',
-    } as React.CSSProperties;
+    // Mobile-optimized styles
+    const styles = useMemo(() => ({
+        background: 'white',
+        ...(isMobile ? {
+            '--touch-target-size': '44px',
+            '--tooltip-offset': '20px',
+            strokeWidth: '3px'
+        } as React.CSSProperties : {})
+    }), [isMobile]);
 
     // Handler for touch event tooltips
     const handleTooltipTouch = useCallback((e: React.TouchEvent<SVGElement>, type: string, idx: number, data: any) => {
@@ -387,189 +365,183 @@ const SvgGraphCanvas: React.FC<SvgGraphCanvasProps> = ({
         });
     }, [updateTooltip]);
 
+    // Memoized element rendering
+    const renderContent = useMemo(() => (
+        <>
+            {shapes.map((shape, i) => (
+                <ShapeElement
+                    key={`shape-${i}`}
+                    shape={shape}
+                    index={i}
+                    {...createElementHandlers('Shape', i, shape)}
+                />
+            ))}
+
+            {lines.map((line, i) => (
+                <LineElement
+                    key={`line-${i}`}
+                    line={line}
+                    index={i}
+                    {...createElementHandlers('Line', i, line)}
+                />
+            ))}
+
+            {points.map((point, i) => (
+                <PointElement
+                    key={`point-${i}`}
+                    point={point}
+                    index={i}
+                    {...createElementHandlers('Point', i, point)}
+                />
+            ))}
+
+            {texts.map((text, i) => (
+                <TextElement
+                    key={`text-${i}`}
+                    text={text}
+                    index={i}
+                    {...createElementHandlers('Text', i, text)}
+                />
+            ))}
+        </>
+    ), [shapes, lines, points, texts, createElementHandlers]);
+
+    // Render main SVG component
     return (
         <motion.svg
             width={width}
             height={height}
             viewBox={viewBox}
-            style={{
-                background: 'white',
-                ...(window.matchMedia('(max-width: 768px)').matches ? mobileStyles : {})
-            }}
+            style={styles}
             preserveAspectRatio="xMidYMid meet"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             onTouchStart={(e) => e.preventDefault()}
         >
             <motion.g transform={`translate(${width / 2},${height / 2})`}>
-                {shapes.map((shape, index) => (
-                    <ShapeElement
-                        key={`shape-${index}`}
-                        shape={shape}
-                        index={index}
-                        onMouseEnter={(e, idx) => handleElementMouse(e, shape.type, idx)}
-                        onTouchStart={(e, idx) => handleElementTouch(e, shape.type, idx)}
-                        onMouseLeave={handleMouseLeave}
-                        onClick={(idx) => onElementClick?.('shape', idx, shape)}
-                    />
-                ))}
+                <motion.g transform={`translate(${width / 2},${height / 2})`}>
+                    {renderContent()}
 
-                {lines.map((line, index) => (
-                    <LineElement
-                        key={`line-${index}`}
-                        line={line}
-                        index={index}
-                        onMouseEnter={(e, idx) => handleElementMouse(e, 'Line', idx)}
-                        onTouchStart={(e, idx) => handleElementTouch(e, 'Line', idx)}
-                        onMouseLeave={handleMouseLeave}
-                        onClick={(idx) => onElementClick?.('line', idx, line)}
-                    />
-                ))}
+                    {lines.map((line, index) => (
+                        <LineElement
+                            key={`line-${index}`}
+                            line={line}
+                            index={index}
+                            onMouseEnter={(e, idx) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const pos = handleMouse(rect);
+                                updateTooltip({
+                                    visible: true,
+                                    content: `Line ${idx + 1}`,
+                                    x: pos.x,
+                                    y: pos.y
+                                });
+                            }}
+                            onTouchStart={(e, idx) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const pos = handleTouch(e, rect);
+                                updateTooltip({
+                                    visible: true,
+                                    content: `Line ${idx + 1}`,
+                                    x: pos.x,
+                                    y: pos.y
+                                });
+                            }}
+                            onMouseLeave={handleMouseLeave}
+                            onClick={(idx) => onElementClick?.('line', idx, line)}
+                        />
+                    ))}
 
-                {points.map((point, index) => (
-                    <PointElement
-                        key={`point-${index}`}
-                        point={point}
-                        index={index}
-                        onMouseEnter={(e, idx) => handleElementMouse(e, 'Point', idx)}
-                        onTouchStart={(e, idx) => handleElementTouch(e, 'Point', idx)}
-                        onMouseLeave={handleMouseLeave}
-                        onClick={(idx) => onElementClick?.('point', idx, point)}
-                    />
-                ))}
+                    {points.map((point, index) => (
+                        <PointElement
+                            key={`point-${index}`}
+                            point={point}
+                            index={index}
+                            onMouseEnter={(e, idx) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const pos = handleMouse(rect);
+                                updateTooltip({
+                                    visible: true,
+                                    content: `Point ${idx + 1}`,
+                                    x: pos.x,
+                                    y: pos.y
+                                });
+                            }}
+                            onTouchStart={(e, idx) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const pos = handleTouch(e, rect);
+                                updateTooltip({
+                                    visible: true,
+                                    content: `Point ${idx + 1}`,
+                                    x: pos.x,
+                                    y: pos.y
+                                });
+                            }}
+                            onMouseLeave={handleMouseLeave}
+                            onClick={(idx) => onElementClick?.('point', idx, point)}
+                        />
+                    ))}
 
-                {texts.map((text, index) => (
-                    <TextElement
-                        key={`text-${index}`}
-                        text={text}
-                        index={index}
-                        onMouseEnter={(e, idx) => handleElementMouse(e, 'Text', idx)}
-                        onTouchStart={(e, idx) => handleElementTouch(e, 'Text', idx)}
-                        onMouseLeave={handleMouseLeave}
-                        onClick={(idx) => onElementClick?.('text', idx, text)}
-                    />
-                ))}
+                    {texts.map((text, index) => (
+                        <TextElement
+                            key={`text-${index}`}
+                            text={text}
+                            index={index}
+                            onMouseEnter={(e, idx) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const pos = handleMouse(rect);
+                                updateTooltip({
+                                    visible: true,
+                                    content: `Text ${idx + 1}`,
+                                    x: pos.x,
+                                    y: pos.y
+                                });
+                            }}
+                            onTouchStart={(e, idx) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const pos = handleTouch(e, rect);
+                                updateTooltip({
+                                    visible: true,
+                                    content: `Text ${idx + 1}`,
+                                    x: pos.x,
+                                    y: pos.y
+                                });
+                            }}
+                            onMouseLeave={handleMouseLeave}
+                            onClick={(idx) => onElementClick?.('text', idx, text)}
+                        />
+                    ))}
+                </motion.g>
+                <ShapeElement
+                    key={`shape-${index}`}
+                    shape={shape}
+                    index={index}
+                    onMouseEnter={(e, idx) => {
+                        const touchOrMouseEvent = e.touches ? e.touches[0] : e;
+                        const rect = (e.currentTarget as SVGElement).getBoundingClientRect();
+                        const isMobile = window.matchMedia('(max-width: 768px)').matches;
+                        const scaleFactor = isMobile ? 1.5 : 1;
 
-                {lines.map((line, index) => (
-                    <LineElement
-                        key={`line-${index}`}
-                        line={line}
-                        index={index}
-                        onMouseEnter={(e, idx) => {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const pos = handleMouse(rect);
-                            updateTooltip({
-                                visible: true,
-                                content: `Line ${idx + 1}`,
-                                x: pos.x,
-                                y: pos.y
-                            });
-                        }}
-                        onTouchStart={(e, idx) => {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const pos = handleTouch(e, rect);
-                            updateTooltip({
-                                visible: true,
-                                content: `Line ${idx + 1}`,
-                                x: pos.x,
-                                y: pos.y
-                            });
-                        }}
-                        onMouseLeave={handleMouseLeave}
-                        onClick={(idx) => onElementClick?.('line', idx, line)}
-                    />
-                ))}
+                        let tooltipX = rect.left + (rect.width * scaleFactor) / 2;
+                        let tooltipY = rect.top - (isMobile ? 44 : 0);
 
-                {points.map((point, index) => (
-                    <PointElement
-                        key={`point-${index}`}
-                        point={point}
-                        index={index}
-                        onMouseEnter={(e, idx) => {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const pos = handleMouse(rect);
-                            updateTooltip({
-                                visible: true,
-                                content: `Point ${idx + 1}`,
-                                x: pos.x,
-                                y: pos.y
-                            });
-                        }}
-                        onTouchStart={(e, idx) => {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const pos = handleTouch(e, rect);
-                            updateTooltip({
-                                visible: true,
-                                content: `Point ${idx + 1}`,
-                                x: pos.x,
-                                y: pos.y
-                            });
-                        }}
-                        onMouseLeave={handleMouseLeave}
-                        onClick={(idx) => onElementClick?.('point', idx, point)}
-                    />
-                ))}
+                        // Adjust position for touch events
+                        if ('touches' in e) {
+                            const touch = e.touches[0];
+                            tooltipX = touch.clientX;
+                            tooltipY = touch.clientY - (isMobile ? 60 : 40);
+                        }
 
-                {texts.map((text, index) => (
-                    <TextElement
-                        key={`text-${index}`}
-                        text={text}
-                        index={index}
-                        onMouseEnter={(e, idx) => {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const pos = handleMouse(rect);
-                            updateTooltip({
-                                visible: true,
-                                content: `Text ${idx + 1}`,
-                                x: pos.x,
-                                y: pos.y
-                            });
-                        }}
-                        onTouchStart={(e, idx) => {
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            const pos = handleTouch(e, rect);
-                            updateTooltip({
-                                visible: true,
-                                content: `Text ${idx + 1}`,
-                                x: pos.x,
-                                y: pos.y
-                            });
-                        }}
-                        onMouseLeave={handleMouseLeave}
-                        onClick={(idx) => onElementClick?.('text', idx, text)}
-                    />
-                ))}
-            </motion.g>
-                    <ShapeElement
-                        key={`shape-${index}`}
-                        shape={shape}
-                        index={index}
-                        onMouseEnter={(e, idx) => {
-                            const touchOrMouseEvent = e.touches ? e.touches[0] : e;
-                            const rect = (e.currentTarget as SVGElement).getBoundingClientRect();
-                            const isMobile = window.matchMedia('(max-width: 768px)').matches;
-                            const scaleFactor = isMobile ? 1.5 : 1;
-
-                            let tooltipX = rect.left + (rect.width * scaleFactor) / 2;
-                            let tooltipY = rect.top - (isMobile ? 44 : 0);
-
-                            // Adjust position for touch events
-                            if ('touches' in e) {
-                                const touch = e.touches[0];
-                                tooltipX = touch.clientX;
-                                tooltipY = touch.clientY - (isMobile ? 60 : 40);
-                            }
-
-                            updateTooltip({
-                                visible: true,
-                                content: `${shape.type} ${idx + 1}`,
-                                x: tooltipX,
-                                y: tooltipY
-                            });
-                        }}
-                        onMouseLeave={handleMouseLeave}
-                        onClick={(idx) => onElementClick?.('shape', idx, shape)}
-                    />
+                        updateTooltip({
+                            visible: true,
+                            content: `${shape.type} ${idx + 1}`,
+                            x: tooltipX,
+                            y: tooltipY
+                        });
+                    }}
+                    onMouseLeave={handleMouseLeave}
+                    onClick={(idx) => onElementClick?.('shape', idx, shape)}
+                />
                 ))}
 
                 {lines.map((line, index) => (
