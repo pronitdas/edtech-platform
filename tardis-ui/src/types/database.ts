@@ -107,8 +107,10 @@ export interface InteractiveContent {
     question: string;
     difficulty: 'easy' | 'medium' | 'hard';
     hints?: string[];
-    solution?: string;
+    solution?: string | { slope: number; yIntercept: number };
     data?: Json; // Component-specific data needed for the problem
+    targetPoints?: { x: number; y: number }[];
+    startPoints?: { x: number; y: number }[];
   }>;
   wordProblems?: Array<{
     id: string;

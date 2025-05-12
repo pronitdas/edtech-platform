@@ -20,7 +20,7 @@ const SlopeDrawingLayout: React.FC = () => {
     // Mode state
     activeMode,
     setActiveMode,
-    
+
     // Graph management
     points,
     setPoints,
@@ -34,17 +34,17 @@ const SlopeDrawingLayout: React.FC = () => {
     mapPointToCanvas,
     mapCanvasToPoint,
     lineData,
-    
+
     // Drawing tool state
     drawingTool,
     setDrawingTool,
-    
+
     // Concept mode
     concepts,
     selectedConceptId,
     setSelectedConceptId,
     selectedConcept,
-    
+
     // Practice problem mode
     problems,
     currentProblemId,
@@ -59,23 +59,23 @@ const SlopeDrawingLayout: React.FC = () => {
     checkSolution,
     toggleSolution,
     nextProblem,
-    
+
     // Animation state
     showAnimation,
     setShowAnimation,
     animationSpeed,
     setAnimationSpeed,
-    
+
     // Cognitive load
     cognitiveState,
     recordError,
     recordHesitation,
     resetTracking,
-    
+
     // Canvas dimensions
     dimensions,
     setDimensions,
-    
+
     // Props passed to the SlopeDrawing component
     language,
     openaiClient,
@@ -90,7 +90,7 @@ const SlopeDrawingLayout: React.FC = () => {
 
     const updateDimensions = () => {
       if (!containerRef.current) return;
-      
+
       const canvas = containerRef.current.querySelector('.canvas-container');
       if (canvas) {
         setDimensions({
@@ -137,7 +137,7 @@ const SlopeDrawingLayout: React.FC = () => {
   return (
     <div ref={containerRef} className="w-full h-full flex flex-col overflow-hidden">
       {/* Tool mode selector */}
-      <ModeSelector 
+      <ModeSelector
         activeMode={activeMode}
         onModeChange={setActiveMode}
         cognitiveState={cognitiveState}
@@ -151,12 +151,13 @@ const SlopeDrawingLayout: React.FC = () => {
           drawingTool={drawingTool}
           setDrawingTool={setDrawingTool}
         />
-        
+
         {/* Main Graph/Canvas Area */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Graph Canvas */}
           <div className="flex-1 canvas-container relative overflow-hidden bg-gray-900" style={{ minHeight: '60vh' }}>
             <GraphCanvas
+              drawingMode="interactiveMath"
               width={dimensions.width}
               height={dimensions.height}
               points={points}
@@ -171,6 +172,12 @@ const SlopeDrawingLayout: React.FC = () => {
               highlightSolution={activeMode === 'practice' && isCorrect === true}
               drawingTool={drawingTool}
               onDrawingToolChange={setDrawingTool}
+              interactiveMathConfig={{
+                equation: 'x', // TODO: Replace with actual equation from context
+                xRange: [-10, 10], // TODO: Replace with actual xRange from context
+                yRange: [-10, 10], // TODO: Replace with actual yRange from context
+                stepSize: 0.1,
+              }}
             />
           </div>
 
@@ -190,7 +197,7 @@ const SlopeDrawingLayout: React.FC = () => {
             </div>
           )}
         </div>
-        
+
         {/* Right Panel (mode specific) - Fixed width with scrolling */}
         <div className="w-96 overflow-y-auto border-l border-gray-700 flex-shrink-0">
           {/* Concept Explanation Mode */}
@@ -202,7 +209,7 @@ const SlopeDrawingLayout: React.FC = () => {
               lineData={lineData}
             />
           )}
-          
+
           {/* Practice Problem Mode */}
           {activeMode === 'practice' && (
             <>
@@ -230,7 +237,7 @@ const SlopeDrawingLayout: React.FC = () => {
               </div>
             </>
           )}
-          
+
           {/* Custom Problem Mode */}
           {activeMode === 'custom' && (
             <CustomProblemSolver
@@ -240,7 +247,7 @@ const SlopeDrawingLayout: React.FC = () => {
               language={language}
             />
           )}
-          
+
           {/* Word Problem Mode */}
           {activeMode === 'word' && (
             <WordProblem
@@ -253,7 +260,7 @@ const SlopeDrawingLayout: React.FC = () => {
           )}
         </div>
       </div>
-      
+
       {/* Bottom Controls Area */}
       <BottomControls
         lineData={lineData}

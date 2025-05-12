@@ -2,8 +2,9 @@
  * @jest-environment jsdom
  */
 import React from 'react';
-import { render, unmountComponentAtNode } from '@testing-library/react';
-import { act } from 'react-dom/test-utils';
+import { render } from '@testing-library/react';
+import { unmountComponentAtNode } from 'react-dom';
+import { act } from 'react';
 import GraphCanvas from './GraphCanvas';
 
 // Mock p5.js
@@ -40,7 +41,26 @@ describe('GraphCanvas Component', () => {
 
     it('should initialize p5 sketch on mount', () => {
         act(() => {
-            render(<GraphCanvas sketch={() => { }} />, container);
+            render(<GraphCanvas
+                drawingMode="generic"
+                p5Setup={() => { }}
+                p5Drawing={() => { }}
+                interactiveMathConfig={{ equation: 'x', xRange: [0, 10], yRange: [0, 10], stepSize: 0.1 }}
+                width={400}
+                height={200}
+                points={[]}
+                onPointsChange={() => { }}
+                zoom={1}
+                offset={{ x: 0, y: 0 }}
+                onZoomChange={() => { }}
+                onOffsetChange={() => { }}
+                mapPointToCanvas={() => ({ x: 0, y: 0 })}
+                mapCanvasToPoint={() => ({ x: 0, y: 0 })}
+                highlightSolution={false}
+                editMode={false}
+                drawingTool={null}
+                onDrawingToolChange={() => { }}
+            />, container);
         });
         expect(p5).toHaveBeenCalledTimes(1);
     });
@@ -49,11 +69,30 @@ describe('GraphCanvas Component', () => {
         const mockP5Instance = new p5();
 
         act(() => {
-            render(<GraphCanvas sketch={() => { }} />, container);
+            render(<GraphCanvas
+                drawingMode="generic"
+                p5Setup={() => { }}
+                p5Drawing={() => { }}
+                interactiveMathConfig={{ equation: 'x', xRange: [0, 10], yRange: [0, 10], stepSize: 0.1 }}
+                width={400}
+                height={200}
+                points={[]}
+                onPointsChange={() => { }}
+                zoom={1}
+                offset={{ x: 0, y: 0 }}
+                onZoomChange={() => { }}
+                onOffsetChange={() => { }}
+                mapPointToCanvas={() => ({ x: 0, y: 0 })}
+                mapCanvasToPoint={() => ({ x: 0, y: 0 })}
+                highlightSolution={false}
+                editMode={false}
+                drawingTool={null}
+                onDrawingToolChange={() => { }}
+            />, container);
         });
 
         act(() => {
-            unmountComponentAtNode(container!);
+            unmountComponentAtNode(container);
         });
 
         expect(mockP5Instance.remove).toHaveBeenCalledTimes(0); // TODO: Fix this test

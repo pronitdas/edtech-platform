@@ -1,44 +1,20 @@
+import { Problem } from '@/types/interactive';
 'use client';
 
 import React, { useState } from 'react';
+import { LineData } from '@/types/geometry';
 
 // Define LineData interface to match what's returned from useGraphManagement
-interface LineData {
-  slope: number | null;
-  yIntercept: number | null;
-  equation: string;
-  point1: { x: number; y: number };
-  point2: { x: number; y: number };
-  rise: number;
-  run: number;
-}
 
-interface ProblemData {
-  id: string;
-  question: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-  hints: string[];
-  solution?: { slope: number; yIntercept: number } | string;
-  targetPoints?: { x: number; y: number }[];
-  startPoints?: { x: number; y: number }[];
-}
 
 export interface PracticeProblemProps {
-  problems: ProblemData[];
+  problems: Problem[];
   currentProblemId: string | null;
   difficulty: 'easy' | 'medium' | 'hard';
   setDifficulty: (difficulty: 'easy' | 'medium' | 'hard') => void;
   onSelectProblem: (problemId: string) => void;
   onGenerateNewProblem: () => void;
-  lineData?: {
-    slope: number | null;
-    yIntercept: number | null;
-    equation: string;
-    point1: { x: number; y: number };
-    point2: { x: number; y: number };
-    rise: number;
-    run: number;
-  } | null;
+  lineData?: import("@/types/geometry").LineData | null;
   onSubmitAnswer: () => void;
   isCorrect: boolean | null;
   showSolution: boolean;
@@ -77,17 +53,17 @@ const PracticeProblem: React.FC<PracticeProblemProps> = ({
 }) => {
   const [showHint, setShowHint] = useState(false);
   const [hintIndex, setHintIndex] = useState<number>(-1);
-  
+
   // Get current problem
   const currentProblem = problems.find(p => p.id === currentProblemId) || null;
-  
+
   // Filter problems by difficulty
   const filteredProblems = problems.filter(p => p.difficulty === difficulty);
-  
+
   const handleSubmit = () => {
     onSubmitAnswer();
   };
-  
+
   // Handle showing hints with cognitive load tracking
   const handleShowHint = () => {
     setShowHint(!showHint);
@@ -96,7 +72,7 @@ const PracticeProblem: React.FC<PracticeProblemProps> = ({
       onHintRequest();
     }
   };
-  
+
   return (
     <div className="bg-gray-800 p-4 rounded-md flex flex-col h-full">
       {/* Fixed top controls */}
@@ -109,31 +85,28 @@ const PracticeProblem: React.FC<PracticeProblemProps> = ({
           <div className="flex space-x-2">
             <button
               onClick={() => setDifficulty('easy')}
-              className={`px-3 py-1 rounded-md text-sm ${
-                difficulty === 'easy' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-200'
-              }`}
+              className={`px-3 py-1 rounded-md text-sm ${difficulty === 'easy' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-200'
+                }`}
             >
               Easy
             </button>
             <button
               onClick={() => setDifficulty('medium')}
-              className={`px-3 py-1 rounded-md text-sm ${
-                difficulty === 'medium' ? 'bg-yellow-600 text-white' : 'bg-gray-700 text-gray-200'
-              }`}
+              className={`px-3 py-1 rounded-md text-sm ${difficulty === 'medium' ? 'bg-yellow-600 text-white' : 'bg-gray-700 text-gray-200'
+                }`}
             >
               Medium
             </button>
             <button
               onClick={() => setDifficulty('hard')}
-              className={`px-3 py-1 rounded-md text-sm ${
-                difficulty === 'hard' ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-200'
-              }`}
+              className={`px-3 py-1 rounded-md text-sm ${difficulty === 'hard' ? 'bg-red-600 text-white' : 'bg-gray-700 text-gray-200'
+                }`}
             >
               Hard
             </button>
           </div>
         </div>
-        
+
         {/* Problem selector */}
         <div className="mb-4">
           <div className="flex justify-between items-center mb-2">
@@ -162,7 +135,7 @@ const PracticeProblem: React.FC<PracticeProblemProps> = ({
           </select>
         </div>
       </div>
-      
+
       {/* Scrollable content area */}
       <div className="flex-1 overflow-y-auto pr-1">
         {/* Current problem display */}
@@ -172,7 +145,7 @@ const PracticeProblem: React.FC<PracticeProblemProps> = ({
               <h3 className="text-md font-medium text-white mb-2">Problem</h3>
               <p className="text-gray-300 whitespace-pre-line">{currentProblem.question}</p>
             </div>
-            
+
             {/* Hints section */}
             <div className="mb-4">
               <button
@@ -181,14 +154,14 @@ const PracticeProblem: React.FC<PracticeProblemProps> = ({
               >
                 {showHint ? 'Hide Hint' : 'Show Hint'}
               </button>
-              
+
               {showHint && (
                 <div className="mt-2 p-3 bg-gray-900 rounded-md border-l-4 border-purple-500">
                   <p className="text-gray-300">{currentProblem.hints[0]}</p>
                 </div>
               )}
             </div>
-            
+
             {/* User answer section */}
             <div className="mb-4">
               <h3 className="text-md font-medium text-white mb-2">Your Answer</h3>
@@ -210,19 +183,18 @@ const PracticeProblem: React.FC<PracticeProblemProps> = ({
                 </div>
               )}
             </div>
-            
+
             {/* Controls */}
             <div className="flex space-x-2 mb-4">
               <button
                 onClick={handleSubmit}
                 disabled={!lineData}
-                className={`px-4 py-2 rounded-md text-white ${
-                  !lineData ? 'bg-gray-600 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-                }`}
+                className={`px-4 py-2 rounded-md text-white ${!lineData ? 'bg-gray-600 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
               >
                 Submit Answer
               </button>
-              
+
               <button
                 onClick={onToggleSolution}
                 className="px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600"
@@ -230,18 +202,17 @@ const PracticeProblem: React.FC<PracticeProblemProps> = ({
                 {showSolution ? 'Hide Solution' : 'Show Solution'}
               </button>
             </div>
-            
+
             {/* Feedback */}
             {isCorrect !== null && (
-              <div className={`p-3 rounded-md mb-4 ${
-                isCorrect ? 'bg-green-900 border-l-4 border-green-500' : 'bg-red-900 border-l-4 border-red-500'
-              }`}>
+              <div className={`p-3 rounded-md mb-4 ${isCorrect ? 'bg-green-900 border-l-4 border-green-500' : 'bg-red-900 border-l-4 border-red-500'
+                }`}>
                 <p className="text-white font-medium">
                   {isCorrect ? 'Correct! Well done!' : 'Incorrect. Try again!'}
                 </p>
               </div>
             )}
-            
+
             {/* Solution */}
             {showSolution && (
               <div className="mt-2 p-3 bg-gray-900 rounded-md">
@@ -261,7 +232,7 @@ const PracticeProblem: React.FC<PracticeProblemProps> = ({
                 </div>
               </div>
             )}
-            
+
             {/* Next problem button (only shown when current problem is solved correctly) */}
             {isCorrect && (
               <button
@@ -280,7 +251,7 @@ const PracticeProblem: React.FC<PracticeProblemProps> = ({
           </div>
         )}
       </div>
-      
+
       {/* Fixed stats display at bottom */}
       <div className="mt-4 p-3 bg-gray-900 rounded-md grid grid-cols-4 gap-2 text-center flex-shrink-0">
         <div>

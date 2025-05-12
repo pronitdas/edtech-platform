@@ -1,26 +1,15 @@
-'use client';
+import { Problem } from '@/types/interactive';
 
 import { useState, useCallback, useEffect } from 'react';
 
-export interface ProblemData {
-  id: string;
-  question: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-  hints: string[];
-  solution?: { slope: number; yIntercept: number } | string;
-  targetPoints?: { x: number; y: number }[];
-  startPoints?: { x: number; y: number }[];
-  expectedSlope?: number | null;
-  expectedIntercept?: number | null;
-}
 
 type ProblemDifficulty = 'easy' | 'medium' | 'hard';
 type SolutionResult = 'correct' | 'incorrect';
 
 interface ProblemGenerationConfig {
   initialDifficulty?: ProblemDifficulty;
-  initialProblems?: ProblemData[];
-  predefinedProblems?: ProblemData[];
+  initialProblems?: Problem[];
+  predefinedProblems?: Problem[];
   maxHistoryLength?: number;
 }
 
@@ -31,7 +20,7 @@ export function useProblemGeneration({
   maxHistoryLength = 10
 }: ProblemGenerationConfig = {}) {
   // State
-  const [problems, setProblems] = useState<ProblemData[]>(initialProblems.length > 0 ? initialProblems : predefinedProblems);
+  const [problems, setProblems] = useState<Problem[]>(initialProblems.length > 0 ? initialProblems : predefinedProblems);
   const [currentProblemId, setCurrentProblemId] = useState<string | null>(null);
   const [difficulty, setDifficulty] = useState<ProblemDifficulty>(initialDifficulty);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
@@ -57,7 +46,7 @@ export function useProblemGeneration({
     // Generate random points based on difficulty
     const generatePoints = (diff: ProblemDifficulty) => {
       let range, offset;
-      
+
       switch (diff) {
         case 'easy':
           range = 10;
@@ -72,35 +61,35 @@ export function useProblemGeneration({
           offset = -10;
           break;
       }
-      
+
       // Generate distinct x values
       let x1 = Math.floor(Math.random() * range + offset);
       let x2 = x1;
       while (x2 === x1) {
         x2 = Math.floor(Math.random() * range + offset);
       }
-      
+
       // Generate y values
       const y1 = Math.floor(Math.random() * range + offset);
       const y2 = Math.floor(Math.random() * range + offset);
-      
+
       return { x1, y1, x2, y2 };
     };
-    
+
     // Generate problem ID
     const problemId = `gen-${Date.now()}`;
-    
+
     // Generate problem points
     const { x1, y1, x2, y2 } = generatePoints(difficulty);
-    
+
     // Calculate expected slope
     const expectedSlope = x2 === x1 ? null : (y2 - y1) / (x2 - x1);
-    
+
     // Calculate expected y-intercept
     const expectedIntercept = expectedSlope !== null ? y1 - expectedSlope * x1 : null;
-    
+
     // Create problem data
-    const newProblem: ProblemData = {
+    const newProblem: Problem = {
       id: problemId,
       difficulty,
       question: `Find the slope of the line passing through (${x1}, ${y1}) and (${x2}, ${y2}).`,
@@ -114,17 +103,17 @@ export function useProblemGeneration({
       targetPoints: [{ x: x1, y: y1 }, { x: x2, y: y2 }],
       solution: createSolutionText(x1, y1, x2, y2, expectedSlope)
     };
-    
+
     // Add the new problem to the problems array
     setProblems(prev => [...prev, newProblem]);
-    
+
     // Set it as the current problem
     setCurrentProblemId(problemId);
-    
+
     // Reset states
     setIsCorrect(null);
     setShowSolution(false);
-    
+
     return newProblem;
   }, [difficulty]);
 
@@ -135,14 +124,14 @@ export function useProblemGeneration({
       
 For vertical lines, we write the equation as x = ${x1}.`;
     }
-    
+
     const rise = y2 - y1;
     const run = x2 - x1;
-    
-    const slopeText = slope === Math.round(slope) 
+
+    const slopeText = slope === Math.round(slope)
       ? `${slope}`
       : `${rise}/${run} = ${slope.toFixed(2)}`;
-    
+
     let equationText = '';
     if (slope === 0) {
       equationText = `y = ${y1}`;
@@ -151,7 +140,7 @@ For vertical lines, we write the equation as x = ${x1}.`;
       const bText = b === 0 ? '' : b > 0 ? ` + ${b}` : ` - ${Math.abs(b)}`;
       equationText = `y = ${slopeText}x${bText}`;
     }
-    
+
     return `Step 1: Identify the two points: (${x1}, ${y1}) and (${x2}, ${y2})
       
 Step 2: Calculate the slope using the formula: slope = (y₂ - y₁) / (x₂ - x₁)
@@ -167,12 +156,12 @@ Step 4: The equation of the line is ${equationText}`;
   // Check answer against expected solution
   const checkSolution = useCallback((lineData: { slope: number | null; point1: any; point2: any }) => {
     if (!currentProblem || !lineData) return;
-    
+
     // If expected slope is null (vertical line), check if user's slope is also null/undefined
     if (currentProblem.expectedSlope === null) {
       const isAnswerCorrect = lineData.slope === null;
       setIsCorrect(isAnswerCorrect);
-      
+
       // Update stats
       setStats(prev => {
         // Add to history, keeping only maxHistoryLength records
@@ -180,14 +169,14 @@ Step 4: The equation of the line is ${equationText}`;
         if (newHistory.length > maxHistoryLength) {
           newHistory.shift(); // Remove oldest entry
         }
-        
+
         // Update difficulty stats
         const difficultyStats = { ...prev.difficultyStats };
         difficultyStats[currentProblem.difficulty].attempted += 1;
         if (isAnswerCorrect) {
           difficultyStats[currentProblem.difficulty].correct += 1;
         }
-        
+
         const newStats = {
           attempted: prev.attempted + 1,
           correct: isAnswerCorrect ? prev.correct + 1 : prev.correct,
@@ -198,15 +187,15 @@ Step 4: The equation of the line is ${equationText}`;
         };
         return newStats;
       });
-      
+
       return isAnswerCorrect;
     }
-    
+
     // For regular slopes, check within a tolerance
     const tolerance = 0.01;
     const isAnswerCorrect = Math.abs((lineData.slope || 0) - (currentProblem.expectedSlope || 0)) < tolerance;
     setIsCorrect(isAnswerCorrect);
-    
+
     // Update stats
     setStats(prev => {
       // Add to history, keeping only maxHistoryLength records
@@ -214,14 +203,14 @@ Step 4: The equation of the line is ${equationText}`;
       if (newHistory.length > maxHistoryLength) {
         newHistory.shift(); // Remove oldest entry
       }
-      
+
       // Update difficulty stats
       const difficultyStats = { ...prev.difficultyStats };
       difficultyStats[currentProblem.difficulty].attempted += 1;
       if (isAnswerCorrect) {
         difficultyStats[currentProblem.difficulty].correct += 1;
       }
-      
+
       const newStats = {
         attempted: prev.attempted + 1,
         correct: isAnswerCorrect ? prev.correct + 1 : prev.correct,
@@ -232,7 +221,7 @@ Step 4: The equation of the line is ${equationText}`;
       };
       return newStats;
     });
-    
+
     return isAnswerCorrect;
   }, [currentProblem, maxHistoryLength]);
 
@@ -276,9 +265,9 @@ Step 4: The equation of the line is ${equationText}`;
     const adaptDifficulty = () => {
       // Only adapt if we have enough data (at least 5 problems)
       if (stats.attempted < 5) return;
-      
+
       const successRate = stats.correct / stats.attempted;
-      
+
       // Adjust difficulty based on success rate
       if (successRate > 0.8 && difficulty !== 'hard') {
         // If success rate is high, increase difficulty
@@ -290,7 +279,7 @@ Step 4: The equation of the line is ${equationText}`;
         setDifficulty(newDifficulty);
       }
     };
-    
+
     // Check for difficulty adaptation after every 5 problems
     if (stats.attempted > 0 && stats.attempted % 5 === 0) {
       adaptDifficulty();
