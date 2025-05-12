@@ -2,12 +2,14 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Concept } from '@/types/learning';
 import { Point, Offset, LineData, Line } from '@/types/geometry'; // Imported Line
 import {
-  ToolMode,
-  DrawingTool,
   ExtendedInteractiveContent,
   ProblemStats,
   ProblemGenerationStats,
-  SolutionResult
+  SolutionResult,
+  LearningContext, // Import LearningContext
+  ToolMode, // Import ToolMode
+  DrawingTool, // Import DrawingTool
+  ProblemHistoryEntry
 } from '../types';
 import { Problem } from '@/types/interactive';
 import { useGraphManagement } from '../hooks/useGraphManagement';
@@ -64,13 +66,13 @@ interface SlopeDrawingContextValue {
   difficulty: 'easy' | 'medium' | 'hard';
   isCorrect: boolean | null;
   showSolution: boolean;
-  stats: ProblemGenerationStats;
-  setCurrentProblemId: (id: string | null) => void;
-  setDifficulty: (difficulty: 'easy' | 'medium' | 'hard') => void;
+  stats: ProblemGenerationStats; // Stats are now managed in the provider
+  setStats: React.Dispatch<React.SetStateAction<ProblemGenerationStats>>; // Add setStats to context value
   generateProblem: () => void;
   checkSolution: (lineData: LineData) => boolean;
   toggleSolution: () => void;
   nextProblem: () => void;
+  changeDifficulty: (difficulty: 'easy' | 'medium' | 'hard') => void; // Add changeDifficulty
 
   // Animation state
   showAnimation: boolean;
@@ -100,6 +102,9 @@ interface SlopeDrawingContextValue {
   language: string;
   onUpdateProgress?: (progress: number) => void;
   openaiClient?: OpenAIClient;
+
+  // Problem history
+  problemHistory: ProblemHistoryEntry[];
 }
 
 interface SlopeDrawingProviderProps {
@@ -139,6 +144,7 @@ export const SlopeDrawingProvider: React.FC<SlopeDrawingProviderProps> = ({
   const [shapes, setShapes] = useState<any[]>([]); // Added missing state
   const [texts, setTexts] = useState<any[]>([]); // Added missing state
   const [selectedItem, setSelectedItem] = useState<string | null>(null); // Added missing state
+  const [problemHistory, setProblemHistory] = useState<ProblemHistoryEntry[]>([]); // State for problem history
 
   // Cognitive load tracking
   const { cognitiveState, recordError, recordHesitation, resetTracking } = useCognitiveLoad(60);
@@ -160,6 +166,20 @@ export const SlopeDrawingProvider: React.FC<SlopeDrawingProviderProps> = ({
     canvasHeight,
   } = useGraphManagement();
 
+  // Manage stats state in the provider
+  const [stats, setStats] = useState<ProblemGenerationStats>({
+    correct: 0,
+    incorrect: 0,
+    attempted: 0,
+    streakCount: 0,
+    history: [],
+    difficultyStats: {
+      easy: { attempted: 0, correct: 0 },
+      medium: { attempted: 0, correct: 0 },
+      hard: { attempted: 0, correct: 0 },
+    }
+  });
+
   const {
     problems,
     currentProblemId,
@@ -167,13 +187,11 @@ export const SlopeDrawingProvider: React.FC<SlopeDrawingProviderProps> = ({
     difficulty,
     isCorrect,
     showSolution,
-    stats,
-    setCurrentProblemId,
-    setDifficulty,
     generateProblem,
     checkSolution,
     toggleSolution,
     nextProblem,
+    changeDifficulty, // Destructure changeDifficulty
   } = useProblemGeneration({
     predefinedProblems: interactiveContent.problems
       ? interactiveContent.problems.map(p => {
@@ -191,7 +209,13 @@ export const SlopeDrawingProvider: React.FC<SlopeDrawingProviderProps> = ({
           startPoints: startPoints,
         }
       })
-      : []
+      : [],
+    learningContext: { // Pass learning context
+      topic: 'slope', // Hardcoded topic for now
+      stats: stats, // Pass stats from provider state
+    },
+    setStats: setStats, // Pass setStats to the hook
+    setProblemHistory: setProblemHistory // Pass setProblemHistory to the hook
   });
 
   // Get the selected concept
@@ -227,12 +251,6 @@ export const SlopeDrawingProvider: React.FC<SlopeDrawingProviderProps> = ({
     setUndoStack,
     redoStack,
     setRedoStack,
-    customPoints, // Added missing prop
-    customLines, // Added missing prop
-    shapes, // Added missing prop
-    texts, // Added missing prop
-    selectedItem, // Added missing prop
-    setSelectedItem, // Added missing prop
     drawingTool,
     setDrawingTool,
     concepts: interactiveContent.concepts || [],
@@ -245,24 +263,13 @@ export const SlopeDrawingProvider: React.FC<SlopeDrawingProviderProps> = ({
     difficulty,
     isCorrect,
     showSolution,
-    stats: {
-      correct: 0,
-      incorrect: 0,
-      attempted: 0,
-      streakCount: 0,
-      history: [],
-      difficultyStats: {
-        easy: { attempted: 0, correct: 0 },
-        medium: { attempted: 0, correct: 0 },
-        hard: { attempted: 0, correct: 0 },
-      },
-    } as any, // TODO: Fix this type assertion
-    setCurrentProblemId,
-    setDifficulty,
+    stats, // Use stats from provider state
+    setStats, // Provide setStats in context
     generateProblem,
     checkSolution: (lineData: any) => false, // TODO: Implement proper checkSolution
     toggleSolution,
     nextProblem,
+    changeDifficulty, // Provide changeDifficulty in context
     showAnimation,
     setShowAnimation,
     animationSpeed,
@@ -279,6 +286,7 @@ export const SlopeDrawingProvider: React.FC<SlopeDrawingProviderProps> = ({
     language,
     onUpdateProgress,
     openaiClient,
+    problemHistory, // Add problemHistory to context value
   };
 
   return (
@@ -288,11 +296,10 @@ export const SlopeDrawingProvider: React.FC<SlopeDrawingProviderProps> = ({
   );
 };
 
-// Hook to use the context
 export const useSlopeDrawing = () => {
   const context = useContext(SlopeDrawingContext);
-  if (!context) {
-    throw new Error("useSlopeDrawing must be used within a SlopeDrawingProvider");
+  if (context === undefined) {
+    throw new Error('useSlopeDrawing must be used within a SlopeDrawingProvider');
   }
   return context;
 };

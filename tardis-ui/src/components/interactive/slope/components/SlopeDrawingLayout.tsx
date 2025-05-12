@@ -34,16 +34,16 @@ const SlopeDrawingLayout: React.FC = () => {
     mapPointToCanvas,
     mapCanvasToPoint,
     lineData,
-    customPoints, // Added missing prop
-    customLines, // Added missing prop
-    shapes, // Added missing prop
-    texts, // Added missing prop
-    selectedItem, // Added missing prop
-    setSelectedItem, // Added missing prop
-    undoStack, // Added missing prop
-    setUndoStack, // Added missing prop
-    redoStack, // Added missing prop
-    setRedoStack, // Added missing prop
+    customPoints,
+    customLines,
+    shapes,
+    texts,
+    selectedItem,
+    setSelectedItem,
+    undoStack,
+    setUndoStack,
+    redoStack,
+    setRedoStack,
 
     // Drawing tool state
     drawingTool,
@@ -63,12 +63,11 @@ const SlopeDrawingLayout: React.FC = () => {
     isCorrect,
     showSolution,
     stats,
-    setCurrentProblemId,
-    setDifficulty,
     generateProblem,
     checkSolution,
     toggleSolution,
     nextProblem,
+    changeDifficulty, // Destructure changeDifficulty
 
     // Animation state
     showAnimation,
@@ -252,16 +251,16 @@ const SlopeDrawingLayout: React.FC = () => {
               highlightSolution={activeMode === 'practice' && isCorrect === true}
               drawingTool={drawingTool}
               onDrawingToolChange={setDrawingTool}
-              customPoints={customPoints} // Added missing prop
-              customLines={customLines} // Added missing prop
-              shapes={shapes} // Added missing prop
-              texts={texts} // Added missing prop
-              selectedItem={selectedItem} // Added missing prop
-              setSelectedItem={setSelectedItem} // Added missing prop
-              undoStack={undoStack} // Added missing prop
-              setUndoStack={setUndoStack} // Added missing prop
-              redoStack={redoStack} // Added missing prop
-              setRedoStack={setRedoStack} // Added missing prop
+              customPoints={customPoints}
+              customLines={customLines}
+              shapes={shapes}
+              texts={texts}
+              selectedItem={selectedItem}
+              setSelectedItem={setSelectedItem}
+              undoStack={undoStack}
+              setUndoStack={setUndoStack}
+              redoStack={redoStack}
+              setRedoStack={setRedoStack}
               slopeConfig={{
                 equation: lineData?.equation || '',
                 xRange: [-10, 10], // Assuming default range
@@ -307,28 +306,25 @@ const SlopeDrawingLayout: React.FC = () => {
                 problems={problems}
                 currentProblemId={currentProblemId}
                 difficulty={difficulty}
-                setDifficulty={setDifficulty}
-                onSelectProblem={setCurrentProblemId}
+                setDifficulty={changeDifficulty} // Pass changeDifficulty
+                onSelectProblem={(problemId) => {
+                  // Logic to select problem - might need to be added to context or here
+                  console.log("Select problem:", problemId);
+                }}
                 onGenerateNewProblem={generateProblem}
                 lineData={lineData}
                 onSubmitAnswer={handleSubmitAnswer}
                 isCorrect={isCorrect}
                 showSolution={showSolution}
-                onToggleSolution={() => {
-                  toggleSolution();
-                  handleSolutionReveal();
-                }}
+                onToggleSolution={handleSolutionReveal}
                 onNextProblem={nextProblem}
                 stats={stats}
                 onHintRequest={handleHintRequest}
               />
-              <div className="mt-4">
-                <StatsDisplay stats={stats} showDetails={true} />
-              </div>
             </>
           )}
 
-          {/* Custom Problem Mode */}
+          {/* Custom Problem Solver Mode */}
           {activeMode === 'custom' && (
             <CustomProblemSolver
               lineData={lineData}
@@ -345,21 +341,21 @@ const SlopeDrawingLayout: React.FC = () => {
               onPointsChange={setPointsFromCoordinates}
               openaiClient={openaiClient}
               language={language}
-              difficulty={difficulty}
+              difficulty={difficulty} // Pass difficulty to word problem generator
             />
           )}
         </div>
       </div>
 
-      {/* Bottom Controls Area */}
+      {/* Bottom Controls */}
       <BottomControls
         lineData={lineData}
         resetView={resetView}
         clearPoints={clearPoints}
-        onShowAnimation={() => setShowAnimation(true)}
+        onShowAnimation={() => setShowAnimation(true)} // Pass setShowAnimation to trigger animation
       />
     </div>
   );
 };
 
-export default SlopeDrawingLayout; 
+export default SlopeDrawingLayout;

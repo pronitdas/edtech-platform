@@ -1,5 +1,6 @@
 import p5 from 'p5';
-import { DrawingStrategy, InteractiveMathConfig } from '../../../types/graph'; // Assuming DrawingStrategy and InteractiveMathConfig are defined here
+import { DrawingStrategy, InteractiveMathConfig, InteractiveElement } from '../../../types/graph';
+import { Point } from '@/types/geometry';
 
 interface GenericDrawingStrategyConfig {
     p5Setup?: (p: p5) => void;
@@ -58,5 +59,38 @@ export class GenericDrawingStrategy implements DrawingStrategy {
             }
             p.endShape();
         }
+    }
+
+    findElementAtPoint(point: Point): InteractiveElement | null {
+        if (this.drawingMode === 'interactiveMath' && this.interactiveMathConfig) {
+            const { equation, xRange, yRange, stepSize } = this.interactiveMathConfig;
+
+            // Check if point is near the graph line
+            const evaluateEquation = (x: number) => {
+                try {
+                    return eval(equation);
+                } catch (error) {
+                    return null;
+                }
+            };
+
+            // Calculate y value for the given x coordinate
+            const yAtPoint = evaluateEquation(point.x);
+
+            if (yAtPoint !== null) {
+                // Check if point is within threshold distance of the line
+                const threshold = 0.1; // Adjust this value based on desired sensitivity
+                if (Math.abs(yAtPoint - point.y) <= threshold) {
+                    return {
+                        type: 'graph-point',
+                        index: 0,
+                        data: { x: point.x, y: yAtPoint, equation }
+                    };
+                }
+            }
+        }
+
+        // For generic mode, we don't have interactive elements by default
+        return null;
     }
 }

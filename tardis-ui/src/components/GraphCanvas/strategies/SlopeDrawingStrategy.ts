@@ -1,7 +1,7 @@
 import p5 from 'p5';
-import { DrawingStrategy } from '../../../types/graph';
-import { Point, Line, Shape, Text } from '../../../types/geometry'; // Assuming these types are in geometry.ts
-import { DrawingTool, Offset } from '../../interactive/slope/types'; // Assuming these types are in slope/types/index.ts
+import { DrawingStrategy, InteractiveElement } from '../../../types/graph';
+import { Point, Line, Shape, Text } from '../../../types/geometry';
+import { DrawingTool, Offset } from '../../interactive/slope/types';
 
 interface SlopeDrawingStrategyConfig {
     points: Point[];
@@ -161,5 +161,136 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
 
         // Add logic for highlightSolution, editMode, drawingTool if needed for visual feedback
         // For example, drawing a temporary line while in 'solidLine' drawingTool mode
+    }
+
+    findElementAtPoint(point: Point): InteractiveElement | null {
+        const hitTestDistance = 10; // Distance in pixels for hit testing
+
+        // Convert point to canvas coordinates for hit testing
+        const targetPoint = this.mapPointToCanvas(point);
+
+        // Check custom points first
+        for (let i = 0; i < this.customPoints.length; i++) {
+            const canvasPoint = this.mapPointToCanvas(this.customPoints[i]);
+            const distance = Math.sqrt(
+                Math.pow(canvasPoint.x - targetPoint.x, 2) +
+                Math.pow(canvasPoint.y - targetPoint.y, 2)
+            );
+            if (distance <= hitTestDistance) {
+                return {
+                    type: 'custom-point',
+                    index: i,
+                    data: this.customPoints[i]
+                };
+            }
+        }
+
+        // Check main points
+        for (let i = 0; i < this.points.length; i++) {
+            const canvasPoint = this.mapPointToCanvas(this.points[i]);
+            const distance = Math.sqrt(
+                Math.pow(canvasPoint.x - targetPoint.x, 2) +
+                Math.pow(canvasPoint.y - targetPoint.y, 2)
+            );
+            if (distance <= hitTestDistance) {
+                return {
+                    type: 'point',
+                    index: i,
+                    data: this.points[i]
+                };
+            }
+        }
+
+        // Check lines (check if point is near line segment)
+        for (let i = 0; i < this.customLines.length; i++) {
+            const line = this.customLines[i];
+            const start = this.mapPointToCanvas(line.start);
+            const end = this.mapPointToCanvas(line.end);
+
+            // Distance from point to line segment
+            const distance = this.pointToLineDistance(
+                targetPoint,
+                start,
+                end
+            );
+
+            if (distance <= hitTestDistance) {
+                return {
+                    type: 'line',
+                    index: i,
+                    data: line
+                };
+            }
+        }
+
+        // Check shapes
+        for (let i = 0; i < this.shapes.length; i++) {
+            const shape = this.shapes[i];
+            if (shape.type === 'rectangle' && shape.topLeft && shape.bottomRight) {
+                const topLeft = this.mapPointToCanvas(shape.topLeft);
+                const bottomRight = this.mapPointToCanvas(shape.bottomRight);
+
+                if (targetPoint.x >= topLeft.x && targetPoint.x <= bottomRight.x &&
+                    targetPoint.y >= topLeft.y && targetPoint.y <= bottomRight.y) {
+                    return {
+                        type: 'shape',
+                        index: i,
+                        data: shape
+                    };
+                }
+            }
+        }
+
+        // Check texts
+        for (let i = 0; i < this.texts.length; i++) {
+            const textItem = this.texts[i];
+            const textPoint = this.mapPointToCanvas(textItem.position);
+            const distance = Math.sqrt(
+                Math.pow(textPoint.x - targetPoint.x, 2) +
+                Math.pow(textPoint.y - targetPoint.y, 2)
+            );
+            if (distance <= hitTestDistance * 2) { // Larger hit area for text
+                return {
+                    type: 'text',
+                    index: i,
+                    data: textItem
+                };
+            }
+        }
+
+        return null;
+    }
+
+    private pointToLineDistance(point: Point, lineStart: Point, lineEnd: Point): number {
+        const A = point.x - lineStart.x;
+        const B = point.y - lineStart.y;
+        const C = lineEnd.x - lineStart.x;
+        const D = lineEnd.y - lineStart.y;
+
+        const dot = A * C + B * D;
+        const lenSq = C * C + D * D;
+        let param = -1;
+
+        if (lenSq !== 0) {
+            param = dot / lenSq;
+        }
+
+        let xx, yy;
+
+        if (param < 0) {
+            xx = lineStart.x;
+            yy = lineStart.y;
+        } else if (param > 1) {
+            xx = lineEnd.x;
+            yy = lineEnd.y;
+        } else {
+            xx = lineStart.x + param * C;
+            yy = lineStart.y + param * D;
+        }
+
+        const dx = point.x - xx;
+        const dy = point.y - yy;
+
+        return Math.sqrt(dx * dx + dy * dy);
     }
 }

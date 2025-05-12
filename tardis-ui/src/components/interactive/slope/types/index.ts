@@ -45,6 +45,21 @@ import { Point } from '@/types/geometry';
 
 // Problem related types
 
+export type ProblemDifficulty = 'easy' | 'medium' | 'hard';
+
+export interface LearningContext {
+  topic: string; // e.g., 'slope', 'y-intercept'
+  stats: ProblemGenerationStats; // User's performance stats
+  // Add other relevant context like recent problem types, time spent, etc.
+}
+
+export interface ProblemGenerationConfig {
+  initialDifficulty?: ProblemDifficulty;
+  initialProblems?: Problem[];
+  predefinedProblems?: Problem[];
+  maxHistoryLength?: number;
+}
+
 // Type for the useProblemGeneration hook's stats
 export interface ProblemGenerationStats {
   correct: number;
@@ -59,11 +74,24 @@ export interface ProblemGenerationStats {
   };
 }
 
+import { LineData } from '@/types/geometry';
+
 export interface SolutionResult {
   problemId: string;
   isCorrect: boolean;
   timeSpent: number;
   difficulty: 'easy' | 'medium' | 'hard';
+  userAttempt?: LineData; // Add userAttempt to store the line data
+}
+
+export interface ProblemHistoryEntry {
+  type: 'problem_generated' | 'problem_attempted';
+  timestamp: string;
+  problemId: string;
+  userAttempt?: LineData;
+  isCorrect?: boolean;
+  difficulty: ProblemDifficulty;
+  // Add other relevant info like categories, time spent if available
 }
 
 // Stats for the UI display

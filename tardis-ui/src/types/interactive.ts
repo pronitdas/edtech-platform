@@ -10,4 +10,5 @@ export interface Problem {
     startPoints?: Point[];
     expectedSlope?: number | null;
     expectedIntercept?: number | null;
+    categories?: string[];
 }

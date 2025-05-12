@@ -1,3 +1,5 @@
+import { MotionValue } from 'framer-motion';
+
 export interface Point {
     x: number;
     y: number;
@@ -8,19 +10,12 @@ export interface Offset {
     y: number;
 }
 
-export interface CustomShape {
-    points: Point[];
-    fillColor: string;
-    strokeColor: string;
-    strokeWidth: number;
-}
-
 export interface LineData {
-    slope: number | null;
-    yIntercept: number | null;
+    point1: Point;
+    point2: Point;
+    slope: number;
+    yIntercept: number;
     equation: string;
-    point1: { x: number; y: number };
-    point2: { x: number; y: number };
     rise: number;
     run: number;
 }
@@ -28,17 +23,31 @@ export interface LineData {
 export interface Line {
     start: Point;
     end: Point;
+    strokeWidth?: number;
+    color?: string;
+    opacity?: number | MotionValue<number>;
+    animationDelay?: number;
 }
 
 export interface Shape {
-    type: 'rectangle'; // Add other types as needed
-    topLeft: Point;
-    bottomRight: Point;
-    // Add other properties like color, stroke, etc. if needed
+    type: 'rectangle' | 'circle';
+    topLeft?: Point;
+    bottomRight?: Point;
+    center?: Point;
+    radius?: number;
+    fill?: string;
+    stroke?: string;
+    strokeWidth?: number;
+    opacity?: number | MotionValue<number>;
+    animationDelay?: number;
 }
 
 export interface Text {
     text: string;
     position: Point;
-    // Add other properties like font, size, color, etc. if needed
+    fontSize?: string;
+    fontFamily?: string;
+    color?: string;
+    opacity?: number | MotionValue<number>;
+    animationDelay?: number;
 }
