@@ -30,7 +30,12 @@ export interface StatsDisplayProps {
     incorrect: number;
     attempted: number;
     streakCount: number;
-    history?: Array<'correct' | 'incorrect'>;
+    history?: Array<import("../types").SolutionResult>;
+    difficultyStats?: {
+      easy: { attempted: number; correct: number };
+      medium: { attempted: number; correct: number };
+      hard: { attempted: number; correct: number };
+    };
   };
   showDetails?: boolean;
 }
@@ -41,11 +46,11 @@ const StatsDisplay: React.FC<StatsDisplayProps> = ({
 }) => {
   // For client-side rendering of charts
   const [isClient, setIsClient] = useState(false);
-  
+
   useEffect(() => {
     setIsClient(true);
   }, []);
-  
+
   // Calculate accuracy percentage
   const accuracyPercentage = stats.attempted > 0
     ? Math.round((stats.correct / stats.attempted) * 100)
@@ -92,12 +97,12 @@ const StatsDisplay: React.FC<StatsDisplayProps> = ({
     datasets: [
       {
         label: 'Performance',
-        data: stats.history ? stats.history.map(result => result === 'correct' ? 1 : 0) : [],
-        backgroundColor: stats.history ? stats.history.map(result => 
-          result === 'correct' ? 'rgba(75, 192, 192, 0.6)' : 'rgba(255, 99, 132, 0.6)'
+        data: stats.history ? stats.history.map(result => result.isCorrect ? 1 : 0) : [],
+        backgroundColor: stats.history ? stats.history.map(result =>
+          result.isCorrect ? 'rgba(75, 192, 192, 0.6)' : 'rgba(255, 99, 132, 0.6)'
         ) : [],
-        borderColor: stats.history ? stats.history.map(result => 
-          result === 'correct' ? 'rgba(75, 192, 192, 1)' : 'rgba(255, 99, 132, 1)'
+        borderColor: stats.history ? stats.history.map(result =>
+          result.isCorrect ? 'rgba(75, 192, 192, 1)' : 'rgba(255, 99, 132, 1)'
         ) : [],
         borderWidth: 1,
       },
@@ -135,7 +140,7 @@ const StatsDisplay: React.FC<StatsDisplayProps> = ({
       },
       tooltip: {
         callbacks: {
-          label: function(context: any) {
+          label: function (context: any) {
             return context.raw === 1 ? 'Correct' : 'Incorrect';
           }
         },
@@ -178,7 +183,7 @@ const StatsDisplay: React.FC<StatsDisplayProps> = ({
               <span className="text-gray-300">{accuracyPercentage}%</span>
             </div>
             <div className="h-2 bg-gray-600 rounded-full overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-blue-500 rounded-full transition-all duration-300"
                 style={{ width: `${accuracyPercentage}%` }}
               />

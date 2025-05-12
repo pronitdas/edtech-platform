@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { Point } from '../components/GraphCanvas';
+import { Point } from '../../../../types/geometry';
 
 interface GraphConfig {
   initialZoom?: number;
@@ -62,11 +62,11 @@ export function useGraphManagement({
     const rangeX = Math.max(1, maxX - minX);
     const rangeY = Math.max(1, maxY - minY);
     const margin = 1.5; // Extra margin around points
-    
+
     const zoomX = (canvasWidth / scaleFactor) / (rangeX * margin);
     const zoomY = (canvasHeight / scaleFactor) / (rangeY * margin);
     const newZoom = Math.min(zoomX, zoomY, maxZoom); // Limit max zoom
-    
+
     // Center the points in the canvas
     setZoomWithLimits(newZoom);
     setOffset({
@@ -83,7 +83,7 @@ export function useGraphManagement({
   // Set points to specific coordinates
   const setPointsFromCoordinates = useCallback((coordinates: { x: number; y: number }[]) => {
     setPoints(coordinates.map(coord => ({ x: coord.x, y: coord.y })));
-    
+
     // Don't automatically reset view to avoid infinite update loops
     // The component should handle this with useEffect
   }, []);
@@ -109,10 +109,10 @@ export function useGraphManagement({
       }
       return ""; // No equation available
     }
-    
+
     const m = slope.toFixed(2);
     const b = yIntercept || 0;
-    
+
     if (Math.abs(b) < 0.01) return `y = ${m}x`;
     if (b > 0) return `y = ${m}x + ${b.toFixed(2)}`;
     return `y = ${m}x - ${Math.abs(b).toFixed(2)}`;
@@ -123,7 +123,7 @@ export function useGraphManagement({
     const effectiveScale = scaleFactor * zoom;
     const cx = canvasWidth / 2;
     const cy = canvasHeight / 2;
-    
+
     return {
       x: worldPoint.x * effectiveScale + cx + offset.x,
       y: cy - worldPoint.y * effectiveScale + offset.y
@@ -134,7 +134,7 @@ export function useGraphManagement({
     const effectiveScale = scaleFactor * zoom;
     const cx = canvasWidth / 2;
     const cy = canvasHeight / 2;
-    
+
     return {
       x: (canvasPoint.x - cx - offset.x) / effectiveScale,
       y: (cy - canvasPoint.y + offset.y) / effectiveScale
@@ -145,18 +145,18 @@ export function useGraphManagement({
   const zoomToPoint = useCallback((canvasPoint: Point, newZoom: number) => {
     // Get world coordinates of the point before zoom
     const worldPoint = mapCanvasToPoint(canvasPoint);
-    
+
     // Apply new zoom
     const limitedZoom = Math.max(minZoom, Math.min(maxZoom, newZoom));
-    
+
     // Calculate new offset to keep the point under the mouse
     const effectiveScaleAfter = scaleFactor * limitedZoom;
     const cx = canvasWidth / 2;
     const cy = canvasHeight / 2;
-    
+
     const newOffsetX = -(worldPoint.x * effectiveScaleAfter) + (canvasPoint.x - cx);
     const newOffsetY = (worldPoint.y * effectiveScaleAfter) + (canvasPoint.y - cy);
-    
+
     setZoom(limitedZoom);
     setOffset({ x: newOffsetX, y: newOffsetY });
   }, [mapCanvasToPoint, minZoom, maxZoom, scaleFactor, canvasWidth, canvasHeight]);
@@ -172,13 +172,13 @@ export function useGraphManagement({
   // Calculate line data if two points exist
   const lineData = useMemo(() => {
     if (points.length < 2) return null;
-    
+
     const p1 = points[0];
     const p2 = points[1];
     const slope = calculateSlope(p1, p2);
     const yIntercept = calculateYIntercept(p1, slope);
     const equation = generateEquation(slope, yIntercept);
-    
+
     return {
       slope,
       yIntercept,

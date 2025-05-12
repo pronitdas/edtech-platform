@@ -24,3 +24,21 @@ export interface LineData {
     rise: number;
     run: number;
 }
+
+export interface Line {
+    start: Point;
+    end: Point;
+}
+
+export interface Shape {
+    type: 'rectangle'; // Add other types as needed
+    topLeft: Point;
+    bottomRight: Point;
+    // Add other properties like color, stroke, etc. if needed
+}
+
+export interface Text {
+    text: string;
+    position: Point;
+    // Add other properties like font, size, color, etc. if needed
+}

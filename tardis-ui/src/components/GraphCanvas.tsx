@@ -1,118 +1,154 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import p5 from 'p5';
-import { Point, Offset, CustomShape } from '@/types/geometry';
+import { Point, Offset, CustomShape, Line, Shape, Text } from '@/types/geometry';
+import { DrawingStrategy, InteractiveMathConfig } from '@/types/graph';
+import { DrawingTool } from '@/components/interactive/slope/types';
+import CoreGraphCanvas from './GraphCanvas/CoreGraphCanvas';
+import { GenericDrawingStrategy } from './GraphCanvas/strategies/GenericDrawingStrategy';
+import { SlopeDrawingStrategy } from './GraphCanvas/strategies/SlopeDrawingStrategy';
 
-
-
-interface GraphCanvasProps {
-    drawingMode: 'generic' | 'interactiveMath';
+// Define props specific to GenericDrawingStrategy
+interface GenericDrawingProps {
+    drawingMode: 'generic';
     p5Setup: (p: p5) => void;
     p5Drawing: (p: p5) => void;
-    interactiveMathConfig: {
-        equation: string;
-        xRange: [number, number];
-        yRange: [number, number];
-        stepSize: number;
-    };
+    // Add other generic specific props if any
+}
+
+// Define props specific to SlopeDrawingStrategy
+interface SlopeDrawingProps {
+    drawingMode: 'slope';
+    slopeConfig: InteractiveMathConfig; // Used by GraphCanvas to select strategy
+    points: Point[];
+    onPointsChange: (points: Point[]) => void; // Still needed in GraphCanvasProps
+    highlightSolution: boolean;
+    editMode: boolean;
+    drawingTool: DrawingTool;
+    onDrawingToolChange: (tool: DrawingTool) => void; // Still needed in GraphCanvasProps
+    customPoints: Point[];
+    customLines: Line[]; // Assuming lines are defined by two points
+    shapes: Shape[];
+    texts: Text[];
+    selectedItem: string | null; // Still needed in GraphCanvasProps
+    setSelectedItem: (id: string | null) => void; // Still needed in GraphCanvasProps
+    undoStack: any[]; // Still needed in GraphCanvasProps
+    setUndoStack: (stack: any[]) => void; // Still needed in GraphCanvasProps
+    redoStack: any[]; // Still needed in GraphCanvasProps
+    setRedoStack: (stack: any[]) => void; // Still needed in GraphCanvasProps
+}
+
+// Define common props for CoreGraphCanvas
+interface CoreGraphCanvasCommonProps {
     width: number;
     height: number;
-    points: Point[];
-    onPointsChange: (points: Point[]) => void;
     zoom: number;
     offset: Offset;
     onZoomChange: (zoom: number) => void;
     onOffsetChange: (offset: Offset) => void;
     mapPointToCanvas: (point: Point) => Point;
-    mapCanvasToPoint: (point: Point) => Point;
-    highlightSolution: boolean;
-    editMode: boolean;
-    drawingTool: any;
-    onDrawingToolChange: (tool: any) => void;
+    mapCanvasToPoint: (canvasPoint: { x: number; y: number }) => Point;
 }
 
-const GraphCanvas: React.FC<GraphCanvasProps> = ({
-    drawingMode,
-    p5Setup,
-    p5Drawing,
-    interactiveMathConfig,
-    width,
-    height,
-    points,
-    onPointsChange,
-    zoom,
-    offset,
-    onZoomChange,
-    onOffsetChange,
-    mapPointToCanvas,
-    mapCanvasToPoint,
-    highlightSolution,
-    editMode,
-    drawingTool,
-    onDrawingToolChange,
-}) => {
-    const canvasRef = useRef<HTMLDivElement>(null);
+// Combine all props into a single type for GraphCanvas
+type GraphCanvasProps = CoreGraphCanvasCommonProps & (GenericDrawingProps | SlopeDrawingProps);
 
-    useEffect(() => {
-        let p5Instance: p5;
+const GraphCanvas: React.FC<GraphCanvasProps> = (props) => {
+    const {
+        drawingMode,
+        width,
+        height,
+        zoom,
+        offset,
+        onZoomChange,
+        onOffsetChange,
+        mapPointToCanvas,
+        mapCanvasToPoint,
+        ...strategyProps // Collect strategy-specific props
+    } = props;
 
-        if (canvasRef.current) {
-            const sketch = (p: p5) => {
-                p.setup = () => {
-                    p.createCanvas(width, height);
-                    if (drawingMode === 'generic') {
-                        p5Setup(p);
-                    }
-                };
-
-                p.draw = () => {
-                    if (drawingMode === 'generic') {
-                        p5Drawing(p);
-                    } else if (drawingMode === 'interactiveMath') {
-                        const { equation, xRange, yRange, stepSize } = interactiveMathConfig;
-
-                        // Function to evaluate the equation
-                        const evaluateEquation = (x: number) => {
-                            try {
-                                // Use eval() to evaluate the equation (be cautious with user input!)
-                                // TODO: Sanitize user input to prevent security vulnerabilities before using eval()
-                                const y = eval(equation);
-                                return y;
-                            } catch (error) {
-                                console.error('Error evaluating equation:', error);
-                                return null;
-                            }
-                        };
-
-                        // Map x and y values to canvas coordinates
-                        const mapToCanvasX = (x: number) => p.map(x, xRange[0], xRange[1], 0, width);
-                        const mapToCanvasY = (y: number) => p.map(y, yRange[0], yRange[1], height, 0);
-
-                        // Draw the graph
-                        p.beginShape();
-                        for (let x = xRange[0]; x <= xRange[1]; x += stepSize) {
-                            const y = evaluateEquation(x);
-                            if (y !== null) {
-                                const canvasX = mapToCanvasX(x);
-                                const canvasY = mapToCanvasY(y);
-                                p.vertex(canvasX, canvasY);
-                            }
-                        }
-                        p.endShape();
-                    }
-                };
-            };
-
-            p5Instance = new p5(sketch, canvasRef.current);
-        }
-
-        return () => {
-            if (p5Instance) {
-                p5Instance.remove();
-            }
+    const drawingStrategy = useMemo<DrawingStrategy | null>(() => {
+        const commonProps = {
+            width,
+            height,
+            zoom,
+            offset,
+            mapPointToCanvas,
+            mapCanvasToPoint,
         };
-    }, [drawingMode, p5Setup, p5Drawing, width, height]);
 
-    return <div ref={canvasRef} style={{ width: width, height: height }} />;
+        if (drawingMode === 'generic') {
+            const genericProps = strategyProps as GenericDrawingProps;
+            return new GenericDrawingStrategy({
+                ...commonProps,
+                drawingMode: 'generic', // Added drawingMode
+                p5Setup: genericProps.p5Setup,
+                p5Drawing: genericProps.p5Drawing,
+            });
+        } else if (drawingMode === 'slope') {
+            const slopeProps = strategyProps as SlopeDrawingProps;
+            return new SlopeDrawingStrategy({
+                points: slopeProps.points,
+                customPoints: slopeProps.customPoints,
+                customLines: slopeProps.customLines,
+                shapes: slopeProps.shapes,
+                texts: slopeProps.texts,
+                mapPointToCanvas: commonProps.mapPointToCanvas, // Use commonProps
+                mapCanvasToPoint: commonProps.mapCanvasToPoint, // Use commonProps
+                zoom: commonProps.zoom, // Use commonProps
+                offset: commonProps.offset, // Use commonProps
+                highlightSolution: slopeProps.highlightSolution,
+                editMode: slopeProps.editMode,
+                drawingTool: slopeProps.drawingTool,
+            });
+        }
+        return null; // Should not happen if drawingMode is one of the specified types
+    }, [
+        drawingMode,
+        width,
+        height,
+        zoom,
+        offset,
+        mapPointToCanvas,
+        mapCanvasToPoint,
+        // Include all strategy-specific props in the dependency array
+        (strategyProps as GenericDrawingProps).p5Setup,
+        (strategyProps as GenericDrawingProps).p5Drawing,
+        (strategyProps as SlopeDrawingProps).slopeConfig, // Keep in dependency array as it's a prop
+        (strategyProps as SlopeDrawingProps).points,
+        (strategyProps as SlopeDrawingProps).onPointsChange,
+        (strategyProps as SlopeDrawingProps).highlightSolution,
+        (strategyProps as SlopeDrawingProps).editMode,
+        (strategyProps as SlopeDrawingProps).drawingTool,
+        (strategyProps as SlopeDrawingProps).onDrawingToolChange,
+        (strategyProps as SlopeDrawingProps).customPoints,
+        (strategyProps as SlopeDrawingProps).customLines,
+        (strategyProps as SlopeDrawingProps).shapes,
+        (strategyProps as SlopeDrawingProps).texts,
+        (strategyProps as SlopeDrawingProps).selectedItem,
+        (strategyProps as SlopeDrawingProps).setSelectedItem,
+        (strategyProps as SlopeDrawingProps).undoStack,
+        (strategyProps as SlopeDrawingProps).setUndoStack,
+        (strategyProps as SlopeDrawingProps).redoStack,
+        (strategyProps as SlopeDrawingProps).setRedoStack,
+    ]);
+
+    if (!drawingStrategy) {
+        return <div>Error: Invalid drawing mode</div>; // Or handle error appropriately
+    }
+
+    return (
+        <CoreGraphCanvas
+            width={width}
+            height={height}
+            zoom={zoom}
+            offset={offset}
+            onZoomChange={onZoomChange}
+            onOffsetChange={onOffsetChange}
+            mapPointToCanvas={mapPointToCanvas}
+            mapCanvasToPoint={mapCanvasToPoint}
+            drawingStrategy={drawingStrategy}
+        />
+    );
 };
 
 export default GraphCanvas;

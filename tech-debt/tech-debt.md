@@ -11,41 +11,73 @@
   - Refactor to create a single, flexible, and extensible `GraphCanvas` component that can support both generic and interactive use cases via props or composition.
   - Ensure visual and layout consistency across all usages.
   - Remove the redundant implementation after migration.
+- **Audit Findings:**
+    - **Usages of [`tardis-ui/src/components/GraphCanvas.tsx`](tardis-ui/src/components/GraphCanvas.tsx):**
+        - Imported and used in:
+            - [`tardis-ui/src/components/GraphCanvas.stories.tsx`](tardis-ui/src/components/GraphCanvas.stories.tsx)
+            - [`tardis-ui/src/components/GraphCanvas.test.tsx`](tardis-ui/src/components/GraphCanvas.test.tsx)
+    - **Usages of [`tardis-ui/src/components/interactive/slope/components/GraphCanvas.tsx`](tardis-ui/src/components/interactive/slope/components/GraphCanvas.tsx):**
+        - Imported and used in:
+            - [`tardis-ui/src/components/interactive/slope/stories/GraphCanvas.stories.tsx`](tardis-ui/src/components/interactive/slope/stories/GraphCanvas.stories.tsx)
+            - [`tardis-ui/src/components/interactive/slope/components/SlopeDrawingLayout.tsx`](tardis-ui/src/components/interactive/slope/components/SlopeDrawingLayout.tsx)
 
-## Duplicate Interface Definitions (Technical Debt)
+# Architectural Proposal: GraphCanvas Refactor
 
-// The following interfaces are defined in multiple places, leading to maintenance and type safety issues. These should be deduplicated and moved to a shared types module.
+## Problem Statement
+There are two separate `GraphCanvas.tsx` files (`tardis-ui/src/components/GraphCanvas.tsx` and `tardis-ui/src/components/interactive/slope/components/GraphCanvas.tsx`). This leads to code duplication, maintenance overhead, and potential for inconsistent behavior or bug fixes.
 
-- **Point**
-  - `tardis-ui/src/components/interactive/slope/types/index.ts`
-  - `tardis-ui/src/components/interactive/slope/components/GraphCanvas.tsx`
-  - `tardis-ui/src/components/GraphCanvas.tsx`
-  // Comment: Core geometric type. Should be defined once in a shared types file and imported everywhere.
+## Proposed Solutions
+### Solution 1: Unified `GraphCanvas` with Props
+Create a single `GraphCanvas` component that accepts props to configure its behavior and appearance for different use cases (generic vs. interactive slope). Use conditional rendering or different internal logic based on these props. This approach keeps the component simple but can become complex if the differences between use cases are significant.
 
-- **CustomShape**
-  - `tardis-ui/src/components/GraphCanvas.tsx`
-  - `tardis-ui/src/components/interactive/slope/components/GraphCanvas.tsx`
-  // Comment: Used for drawing shapes. Should be unified and shared.
+### Solution 2: `GraphCanvas` with Composition and Strategy Pattern
+Create a core `GraphCanvas` component that handles basic canvas functionality. Use composition (e.g., children props) to add specific features for different use cases. Employ the Strategy pattern to encapsulate different drawing or interaction behaviors. This approach promotes modularity and extensibility but might introduce more abstraction.
 
-- **Offset**
-  - `tardis-ui/src/components/interactive/slope/types/index.ts`
-  - `tardis-ui/src/components/GraphCanvas.tsx`
-  // Comment: Used for canvas panning/offset. Should be defined once and reused.
+### Trade-offs
+| Criteria | Solution 1 (Unified with Props) | Solution 2 (Composition/Strategy) |
+|----------|---------------------------------|-----------------------------------|
+| Maintainability | Medium | High |
+| Simplicity | High | Medium |
+| Modularity | Medium | High |
+| Testability | Medium | High |
+| Scalability | Medium | High |
 
+## UML Diagram
+```mermaid
+classDiagram
+    class GraphCanvas {
+        -props: any
+        +render(): React.ReactNode
+    }
 
-- **LineData**
-  - `tardis-ui/src/components/interactive/slope/types/index.ts`
-  - `tardis-ui/src/components/interactive/slope/components/PracticeProblem.tsx`
-  // Comment: Represents a line in geometry. Should be defined once and reused.
+    class CoreGraphCanvas {
+      - canvasRef: RefObject<HTMLCanvasElement>
+      + draw(strategy: DrawingStrategy): void
+    }
 
-- **Concept**
-  - `tardis-ui/src/components/interactive/slope/types/index.ts`
-  - `tardis-ui/src/components/interactive/slope/components/ConceptExplanation.tsx`
-  // Comment: Represents a math/learning concept. Should be unified for consistency.
+    interface DrawingStrategy {
+      +drawOnCanvas(canvas: HTMLCanvasElement): void
+    }
 
-- **ProblemData**
-  - `tardis-ui/src/components/interactive/slope/components/PracticeProblem.tsx`
-  - `tardis-ui/src/components/interactive/slope/hooks/useProblemGeneration.ts`
-  // Comment: Represents problem data for exercises. Should be deduplicated and shared.
+    class GenericDrawingStrategy implements DrawingStrategy {
+      +drawOnCanvas(canvas: HTMLCanvasElement): void
+    }
 
-// Action: Audit all usages, consolidate each interface into a single source of truth, and update imports throughout the codebase.
+    class SlopeDrawingStrategy implements DrawingStrategy {
+      +drawOnCanvas(canvas: HTMLCanvasElement): void
+    }
+
+    CoreGraphCanvas "1" *--  "1" DrawingStrategy : uses
+    DrawingStrategy <|.. GenericDrawingStrategy : implements
+    DrawingStrategy <|.. SlopeDrawingStrategy : implements
+
+    GraphCanvas --> CoreGraphCanvas : uses
+```
+
+## Architecture Decision Record
+- Context: Two `GraphCanvas` implementations lead to code duplication, maintenance issues, and potential inconsistencies.
+- Decision: Adopt Solution 2 (Composition and Strategy Pattern) to create a flexible and extensible `GraphCanvas` component.
+- Consequences: Increased initial complexity but improved long-term maintainability, scalability, and testability.
+
+## Recommended Solution
+Solution 2 (Composition and Strategy Pattern) is the recommended solution because it promotes modularity, extensibility, and testability, which are crucial for long-term maintainability and scalability of the `GraphCanvas` component.

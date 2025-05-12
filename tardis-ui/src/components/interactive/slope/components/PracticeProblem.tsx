@@ -25,7 +25,7 @@ export interface PracticeProblemProps {
     incorrect: number;
     attempted: number;
     streakCount: number;
-    history?: Array<'correct' | 'incorrect'>;
+    history?: Array<import("../types").SolutionResult>;
     difficultyStats?: {
       easy: { attempted: number; correct: number };
       medium: { attempted: number; correct: number };

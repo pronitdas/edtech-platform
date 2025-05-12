@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { useSlopeDrawing } from '../contexts/SlopeDrawingContext';
-import GraphCanvas from './GraphCanvas';
+import GraphCanvas from '../../../../components/GraphCanvas';
 import ConceptExplanation from './ConceptExplanation';
 import PracticeProblem from './PracticeProblem';
 import CustomProblemSolver from './CustomProblemSolver';
@@ -157,7 +157,7 @@ const SlopeDrawingLayout: React.FC = () => {
           {/* Graph Canvas */}
           <div className="flex-1 canvas-container relative overflow-hidden bg-gray-900" style={{ minHeight: '60vh' }}>
             <GraphCanvas
-              drawingMode="interactiveMath"
+              drawingMode="slope"
               width={dimensions.width}
               height={dimensions.height}
               points={points}
@@ -172,11 +172,11 @@ const SlopeDrawingLayout: React.FC = () => {
               highlightSolution={activeMode === 'practice' && isCorrect === true}
               drawingTool={drawingTool}
               onDrawingToolChange={setDrawingTool}
-              interactiveMathConfig={{
-                equation: 'x', // TODO: Replace with actual equation from context
-                xRange: [-10, 10], // TODO: Replace with actual xRange from context
-                yRange: [-10, 10], // TODO: Replace with actual yRange from context
-                stepSize: 0.1,
+              slopeConfig={{
+                equation: lineData?.equation || '',
+                xRange: [-10, 10], // Assuming default range
+                yRange: [-10, 10], // Assuming default range
+                stepSize: 0.1, // Assuming default step size
               }}
             />
           </div>
