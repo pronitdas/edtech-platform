@@ -6,6 +6,7 @@ module.exports = {
     moduleNameMapper: {
         '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
         'ws': '<rootDir>/src/stories/mocks.tsx',
+        '^@/(.*)$': '<rootDir>/src/$1',
     },
     transformIgnorePatterns: [
         '/node_modules/',
@@ -15,4 +16,5 @@ module.exports = {
     moduleDirectories: ['node_modules', '<rootDir>'],
     clearMocks: true,
     resetMocks: true,
+    setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
 };
