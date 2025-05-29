@@ -1,0 +1,21 @@
+# Core dependencies
+transformers>=4.36.0
+torch>=2.0.0
+accelerate>=0.23.0
+bitsandbytes>=0.41.0
+protobuf>=4.23.0
+pydantic>=2.0.0
+sentencepiece>=0.1.99
+einops>=0.6.1
+fastapi>=0.100.0
+uvicorn>=0.23.0
+httpx>=0.24.1
+structlog>=23.1.0
+prometheus-client>=0.17.0
+
+# Optional dependencies for optimization
+flash-attn>=2.3.0; platform_system != "Windows"
+xformers>=0.0.20; platform_system != "Windows"
+
+# For serving and health checks
+requests>=2.31.0 

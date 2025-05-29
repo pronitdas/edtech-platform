@@ -1,0 +1,145 @@
+version: '3.8'
+
+services:
+  # API Gateway service
+  llm-gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - API_KEY=${API_KEY}
+      - MAX_CONCURRENT_REQUESTS=${MAX_CONCURRENT_REQUESTS}
+      - REQUEST_TIMEOUT=${REQUEST_TIMEOUT}
+      - DEFAULT_MODEL=${DEFAULT_MODEL}
+      - MODEL_SERVERS=llama-7b:http://llama-7b:8000,phi-3:http://phi-3:8000,mistral-7b:http://mistral-7b:8000
+    depends_on:
+      - llama-7b
+      - phi-3
+      - mistral-7b
+    networks:
+      - llm-network
+    restart: unless-stopped
+    volumes:
+      - ./gateway/config:/app/config
+
+  # Llama 3 8B model service
+  llama-7b:
+    build:
+      context: ./model-server
+      dockerfile: Dockerfile
+    environment:
+      - MODEL_ID=meta-llama/Llama-2-7b-hf
+      - MODEL_NAME=llama-7b
+      - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
+      - USE_FLASH_ATTENTION=false
+      - MAX_CONCURRENT_REQUESTS=1
+      - MAX_TOTAL_TOKENS=4096
+      - DEVICE=cuda
+      - PRECISION=float16
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - llm-network
+    restart: unless-stopped
+
+  # Phi-3 (mini) model service
+  phi-3:
+    build:
+      context: ./model-server
+      dockerfile: Dockerfile
+    environment:
+      - MODEL_ID=microsoft/phi-3-mini-4k-instruct
+      - MODEL_NAME=phi-3
+      - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
+      - USE_FLASH_ATTENTION=false
+      - MAX_CONCURRENT_REQUESTS=1
+      - MAX_TOTAL_TOKENS=4096
+      - DEVICE=cuda
+      - PRECISION=float16
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - llm-network
+    restart: unless-stopped
+
+  # Mistral 7B model service
+  mistral-7b:
+    build:
+      context: ./model-server
+      dockerfile: Dockerfile
+    environment:
+      - MODEL_ID=mistralai/Mistral-7B-Instruct-v0.2
+      - MODEL_NAME=mistral-7b
+      - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
+      - USE_FLASH_ATTENTION=false
+      - MAX_CONCURRENT_REQUESTS=1
+      - MAX_TOTAL_TOKENS=4096
+      - DEVICE=cuda
+      - PRECISION=float16
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - llm-network
+    restart: unless-stopped
+
+  # Monitoring with Prometheus
+  prometheus:
+    image: prom/prometheus:v2.44.0
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    networks:
+      - llm-network
+    restart: unless-stopped
+
+  # Visualization with Grafana
+  grafana:
+    image: grafana/grafana:9.4.7
+    container_name: grafana
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3000:3000"
+    networks:
+      - llm-network
+    restart: unless-stopped
+
+networks:
+  llm-network:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+  grafana_data: 

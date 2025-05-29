@@ -1,0 +1,44 @@
+{
+  "models": {
+    "llama-7b": {
+      "name": "Llama 3 8B Instruct",
+      "model_id": "meta-llama/Llama-3-8b-Instruct",
+      "context_length": 4096,
+      "max_tokens": 4096,
+      "fallback": "mistral-7b",
+      "priority": 1
+    },
+    "phi-3": {
+      "name": "Phi-3 Mini 4K Instruct",
+      "model_id": "microsoft/phi-3-mini-4k-instruct",
+      "context_length": 4096,
+      "max_tokens": 4096,
+      "fallback": "mistral-7b",
+      "priority": 2
+    },
+    "mistral-7b": {
+      "name": "Mistral 7B Instruct v0.2",
+      "model_id": "mistralai/Mistral-7B-Instruct-v0.2",
+      "context_length": 4096,
+      "max_tokens": 4096,
+      "fallback": null,
+      "priority": 3
+    }
+  },
+  "default_model": "llama-7b",
+  "routing_strategies": [
+    {
+      "name": "priority",
+      "description": "Route to highest priority model available"
+    },
+    {
+      "name": "load_balance",
+      "description": "Distribute requests across available models"
+    },
+    {
+      "name": "context_length",
+      "description": "Route based on input context length"
+    }
+  ],
+  "default_routing_strategy": "priority"
+} 
