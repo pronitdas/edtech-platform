@@ -5,9 +5,9 @@ services:
   kratos:
     image: oryd/kratos:v1.0
     depends_on:
-      - kratos-postgres
+      - postgres
     environment:
-      - DSN=postgres://kratos:${KRATOS_DB_PASSWORD}@kratos-postgres:5432/kratos?sslmode=require
+      - DSN=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/kratos?sslmode=require
       - SERVE_PUBLIC_BASE_URL=${KRATOS_PUBLIC_URL}
       - SERVE_ADMIN_BASE_URL=${KRATOS_ADMIN_URL}
       - LOG_LEVEL=info
@@ -34,31 +34,7 @@ services:
       retries: 3
       start_period: 40s
 
-  # Dedicated PostgreSQL for Kratos (Production)
-  kratos-postgres:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: kratos
-      POSTGRES_PASSWORD: ${KRATOS_DB_PASSWORD}
-      POSTGRES_DB: kratos
-      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
-    volumes:
-      - kratos_postgres_data:/var/lib/postgresql/data
-      - ./backups/kratos:/backups
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '1.0'
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kratos"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-  # PostgreSQL Database (Production)
+  # PostgreSQL Database (Production) - Single instance for all databases
   postgres:
     image: postgres:16
     environment:
@@ -72,6 +48,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./backups/postgres:/backups
       - ./scripts/postgres-backup.sh:/usr/local/bin/backup.sh:ro
+      - ./scripts/init-db-prod.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     restart: unless-stopped
     deploy:
       resources:
@@ -223,12 +200,6 @@ volumes:
       type: none
       o: bind
       device: ${DATA_DIR}/neo4j/plugins
-  kratos_postgres_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${DATA_DIR}/kratos
   minio_data:
     driver: local
     driver_opts:

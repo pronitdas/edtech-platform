@@ -5,13 +5,15 @@ services:
   kratos:
     image: oryd/kratos:v1.0
     depends_on:
-      - kratos-postgres
+      postgres:
+        condition: service_healthy
     environment:
-      - DSN=postgres://kratos:secret@kratos-postgres:5432/kratos?sslmode=disable
+      - DSN=postgres://postgres:postgres@postgres:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
       - SERVE_PUBLIC_BASE_URL=http://127.0.0.1:4433/
       - SERVE_ADMIN_BASE_URL=http://127.0.0.1:4434/
       - LOG_LEVEL=trace
       - SECRETS_DEFAULT=youReallyNeedToChangeThis
+      - DB_TIMEOUT=30s
     ports:
       - "4433:4433" # public
       - "4434:4434" # admin
@@ -25,27 +27,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
-  # Dedicated PostgreSQL for Kratos
-  kratos-postgres:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: kratos
-      POSTGRES_PASSWORD: secret
-      POSTGRES_DB: kratos
-    volumes:
-      - kratos_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kratos"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # PostgreSQL Database
+  # PostgreSQL Database (Single instance for all databases)
   # Default Credentials:
   # - Username: postgres
   # - Password: postgres
-  # - Database: development
+  # - Databases: development, kratos
   # - Port: 5432
   postgres:
     image: postgres:16
@@ -57,11 +45,13 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db-enhanced.sh:/docker-entrypoint-initdb.d/01-init-db-enhanced.sh
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d development && pg_isready -U postgres -d kratos"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 40s
 
   # Neo4j Graph Database
   # Default Credentials:
@@ -120,5 +110,4 @@ volumes:
   neo4j_logs:
   neo4j_import:
   neo4j_plugins:
-  kratos_postgres_data:
   minio_data:

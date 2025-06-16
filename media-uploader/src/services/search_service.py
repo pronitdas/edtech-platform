@@ -1,6 +1,7 @@
 from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func, text
+from sqlalchemy.exc import SQLAlchemyError
 import re
 
 from models import Knowledge, Chapter
@@ -19,24 +20,35 @@ class SearchService:
     ) -> Dict[str, Any]:
         """Search across knowledge entries and chapters using full-text search."""
         
-        # Clean and prepare search query
-        clean_query = self._clean_search_query(query)
-        
-        if not clean_query:
-            return {"items": [], "total": 0}
-        
         try:
-            # Use PostgreSQL full-text search if available
-            results = await self._postgres_full_text_search(
-                clean_query, user_id, filters, limit, offset
-            )
-        except Exception:
-            # Fallback to basic text search
-            results = await self._basic_text_search(
-                clean_query, user_id, filters, limit, offset
-            )
-        
-        return results
+            # Clean and prepare search query
+            clean_query = self._clean_search_query(query)
+            
+            if not clean_query:
+                return {"items": [], "total": 0}
+
+            try:
+                # Use PostgreSQL full-text search if available
+                results = await self._postgres_full_text_search(
+                    clean_query, user_id, filters, limit, offset
+                )
+            except Exception:
+                # Rollback any failed transaction
+                self.db.rollback()
+                # Fallback to basic text search
+                results = await self._basic_text_search(
+                    clean_query, user_id, filters, limit, offset
+                )
+            
+            return results
+        except SQLAlchemyError as e:
+            # Rollback the transaction on any SQLAlchemy error
+            self.db.rollback()
+            raise e
+        except Exception as e:
+            # Rollback on any other error
+            self.db.rollback()
+            raise e
 
     async def _postgres_full_text_search(
         self,
@@ -170,7 +182,12 @@ class SearchService:
         # Apply additional filters
         knowledge_query = self._apply_filters(knowledge_query, filters, Knowledge)
         
-        knowledge_results = knowledge_query.offset(offset).limit(limit).all()
+        try:
+            knowledge_results = knowledge_query.offset(offset).limit(limit).all()
+        except SQLAlchemyError:
+            # If there's a transaction error, rollback and retry
+            self.db.rollback()
+            knowledge_results = knowledge_query.offset(offset).limit(limit).all()
         
         for k in knowledge_results:
             results.append({
@@ -198,7 +215,12 @@ class SearchService:
             if chapter_conditions:
                 chapter_query = chapter_query.filter(and_(*chapter_conditions))
             
-            chapter_results = chapter_query.limit(remaining_limit).all()
+            try:
+                chapter_results = chapter_query.limit(remaining_limit).all()
+            except SQLAlchemyError:
+                # If there's a transaction error, rollback and retry
+                self.db.rollback()
+                chapter_results = chapter_query.limit(remaining_limit).all()
             
             for c in chapter_results:
                 knowledge = self.db.query(Knowledge).filter(Knowledge.id == c.knowledge_id).first()

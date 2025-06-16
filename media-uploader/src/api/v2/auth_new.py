@@ -4,11 +4,11 @@ from database import get_db
 from src.services.auth_service import AuthService
 from src.models.v2_models import RegisterRequest, LoginRequest, TokenResponse
 
-router = APIRouter()
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/register", response_model=TokenResponse)
 async def register(request: RegisterRequest, db: Session = Depends(get_db)):
-    """Register a new user with simple auth"""
+    """Register a new user via Kratos"""
     auth_service = AuthService(db)
     result = await auth_service.register(request.email, request.password, request.name)
     
@@ -19,7 +19,7 @@ async def register(request: RegisterRequest, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=TokenResponse)
 async def login(request: LoginRequest, db: Session = Depends(get_db)):
-    """Login user with simple auth"""
+    """Login user via Kratos"""
     auth_service = AuthService(db)
     result = await auth_service.login(request.email, request.password)
     
@@ -34,9 +34,8 @@ async def logout():
     return {"message": "Logged out successfully"}
 
 @router.get("/profile")
-async def get_profile(authorization: str = Header(None), db: Session = Depends(get_db)):
+async def get_profile(current_user: dict = Depends(get_current_user)):
     """Get current user profile"""
-    current_user = await get_current_user(authorization, db)
     return {
         "id": current_user["id"],
         "email": current_user["email"],

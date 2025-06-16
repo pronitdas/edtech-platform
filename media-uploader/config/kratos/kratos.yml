@@ -1,6 +1,6 @@
 version: v1.0.0
 
-dsn: postgres://kratos:secret@kratos-postgres:5432/kratos?sslmode=disable
+dsn: postgres://postgres:postgres@postgres:5432/kratos?sslmode=disable
 
 serve:
   public:

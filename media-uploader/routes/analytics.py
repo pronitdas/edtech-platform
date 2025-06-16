@@ -1,7 +1,7 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, Path, Query
 from sqlalchemy.orm import Session
-from database import DatabaseManager
+from database import DatabaseManager, get_db as get_database_session
 from models import ContentAnalytics, EngagementMetrics, PerformanceStats, User
 from routes.auth import get_current_user
 
@@ -12,7 +12,7 @@ router = APIRouter(
 )
 
 def get_db():
-    return DatabaseManager().get_session()
+    return get_database_session()
 
 @router.get(
     "/dashboard",

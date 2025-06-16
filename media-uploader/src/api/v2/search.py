@@ -19,13 +19,14 @@ async def search(
     current_user: User = Depends(get_current_user)
 ):
     """Search across knowledge entries and chapters using full-text search."""
+    import json
+    
     try:
         search_service = SearchService(db)
         
         # Parse filters if provided
         parsed_filters = None
         if filters:
-            import json
             parsed_filters = json.loads(filters)
         
         results = await search_service.search(

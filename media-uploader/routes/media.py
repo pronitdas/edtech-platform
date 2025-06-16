@@ -3,7 +3,7 @@ import uuid
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
 from sqlalchemy.orm import Session
-from database import DatabaseManager
+from database import DatabaseManager, get_db as get_database_session
 from models import Media, User
 from routes.auth import get_current_user
 from storage import storage
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/media", tags=["media"])
 
 def get_db():
-    return DatabaseManager().get_session()
+    return get_database_session()
 
 @router.post("/upload")
 async def upload_file(

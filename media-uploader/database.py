@@ -21,6 +21,15 @@ DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localho
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+# Dependency function for FastAPI
+def get_db():
+    """Dependency function to get database session for FastAPI routes."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 class DatabaseManager:
     """Manager for database operations."""
     

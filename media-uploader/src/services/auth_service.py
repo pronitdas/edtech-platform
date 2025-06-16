@@ -1,122 +1,182 @@
+"""
+Authentication service for V2 API - Direct database implementation
+"""
+
+import os
+import logging
+import uuid
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, Dict, Any
+import hashlib
+from sqlalchemy.orm import Session
+import jwt
+from jwt.exceptions import PyJWTError as JWTError
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.orm import Session
-from passlib.context import CryptContext
-from jose import JWTError, jwt
-import os
-
-from database import get_db
 from models import User
+from database import get_db
 
-# Configuration
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+logger = logging.getLogger(__name__)
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Security scheme for FastAPI
 security = HTTPBearer()
+
+# JWT Configuration
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-this-in-production")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 24 hours
+
+def hash_password(password: str) -> str:
+    """Simple password hashing using SHA256"""
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def verify_password(password: str, hashed: str) -> bool:
+    """Verify password against hash"""
+    return hash_password(password) == hashed
 
 class AuthService:
     def __init__(self, db: Session):
         self.db = db
-
-    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        return pwd_context.verify(plain_password, hashed_password)
-
-    def get_password_hash(self, password: str) -> str:
-        return pwd_context.hash(password)
-
-    def create_access_token(self, data: dict) -> str:
+        
+    async def register(self, email: str, password: str, name: str = None) -> Dict[str, Any]:
+        """Register a new user directly in the database"""
+        try:
+            # Check if user already exists
+            existing_user = self.db.query(User).filter(User.email == email).first()
+            if existing_user:
+                return {"error": "User with this email already exists"}
+            
+            # Create new user
+            hashed_password = hash_password(password)
+            kratos_id = str(uuid.uuid4())  # Generate a unique ID
+            
+            user = User(
+                kratos_id=kratos_id,
+                email=email,
+                display_name=name or email.split('@')[0],
+                verified=True,
+                active=True,
+                password_hash=hashed_password,
+                created_at=datetime.utcnow()
+            )
+            
+            self.db.add(user)
+            self.db.commit()
+            self.db.refresh(user)
+            
+            # Create JWT token
+            access_token = self.create_access_token(data={"sub": str(user.id)})
+            
+            return {
+                "access_token": access_token,
+                "token_type": "bearer",
+                "user_id": user.id,
+                "email": user.email
+            }
+                
+        except Exception as e:
+            logger.error(f"Registration error: {e}")
+            self.db.rollback()
+            return {"error": str(e)}
+    
+    async def login(self, email: str, password: str) -> Dict[str, Any]:
+        """Login user with email and password"""
+        try:
+            # Find user by email
+            user = self.db.query(User).filter(User.email == email).first()
+            if not user:
+                return {"error": "Invalid credentials"}
+            
+            # Check if user has a password hash (for backwards compatibility)
+            if not hasattr(user, 'password_hash') or not user.password_hash:
+                # Set password for existing users without password
+                user.password_hash = hash_password(password)
+                self.db.commit()
+            else:
+                # Verify password
+                if not verify_password(password, user.password_hash):
+                    return {"error": "Invalid credentials"}
+            
+            # Update last login
+            user.last_login = datetime.utcnow()
+            self.db.commit()
+            
+            # Create JWT token
+            access_token = self.create_access_token(data={"sub": str(user.id)})
+            
+            return {
+                "access_token": access_token,
+                "token_type": "bearer", 
+                "user_id": user.id,
+                "email": user.email
+            }
+                
+        except Exception as e:
+            logger.error(f"Login error: {e}")
+            return {"error": str(e)}
+    
+    def create_access_token(self, data: dict, expires_delta: Optional[timedelta] = None):
+        """Create JWT access token"""
         to_encode = data.copy()
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        to_encode.update({"exp": expire})
-        return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-    async def authenticate(self, email: str, password: str) -> Optional[str]:
-        user = self.db.query(User).filter(User.email == email).first()
-        if not user:
-            return None
-        
-        # Check if user has hashed_password attribute or use a different auth method
-        if hasattr(user, 'hashed_password'):
-            if not self.verify_password(password, user.hashed_password):
-                return None
+        if expires_delta:
+            expire = datetime.utcnow() + expires_delta
         else:
-            # For now, skip password verification if hashed_password doesn't exist
-            # In production, you'd implement proper password handling
-            pass
-        
-        access_token = self.create_access_token(data={"sub": str(user.id)})
-        return access_token
-
-    async def register(self, email: str, password: str, name: Optional[str] = None) -> str:
-        # Check if user exists
-        if self.db.query(User).filter(User.email == email).first():
-            raise ValueError("Email already registered")
-        
-        # Create new user
-        hashed_password = self.get_password_hash(password)
-        user_data = {
-            "email": email,
-            "display_name": name,
-            "verified": True,  # For development
-            "active": True
-        }
-        
-        # Add hashed_password if the model supports it
+            expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        to_encode.update({"exp": expire})
+        encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+        return encoded_jwt
+    
+    def verify_token(self, token: str) -> Optional[Dict[str, Any]]:
+        """Verify JWT token"""
         try:
-            user_data["hashed_password"] = hashed_password
-        except Exception:
-            pass
-        
-        user = User(**user_data)
-        self.db.add(user)
-        self.db.commit()
-        self.db.refresh(user)
-        
-        access_token = self.create_access_token(data={"sub": str(user.id)})
-        return access_token
-
-    async def get_user_by_id(self, user_id: int) -> Optional[User]:
-        return self.db.query(User).filter(User.id == user_id).first()
-
-    @staticmethod
-    def get_current_user(
-        credentials: HTTPAuthorizationCredentials = Depends(security),
-        db: Session = Depends(get_db)
-    ) -> User:
-        """Dependency to get current authenticated user."""
-        try:
-            payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
             user_id: str = payload.get("sub")
             if user_id is None:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Could not validate credentials",
-                    headers={"WWW-Authenticate": "Bearer"},
-                )
+                return None
+            return {"user_id": int(user_id)}
         except JWTError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials", 
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+            return None
+    
+    def get_current_user(self, token: str) -> Optional[User]:
+        """Get current user from token"""
+        payload = self.verify_token(token)
+        if payload is None:
+            return None
         
-        auth_service = AuthService(db)
-        user = auth_service.db.query(User).filter(User.id == int(user_id)).first()
-        if user is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+        user_id = payload.get("user_id")
+        if user_id is None:
+            return None
+            
+        user = self.db.query(User).filter(User.id == user_id).first()
         return user
 
-def get_current_user(
+
+# Standalone function for FastAPI dependency injection
+async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
 ) -> User:
-    """Standalone function for getting current user."""
-    return AuthService.get_current_user(credentials, db)
+    """
+    FastAPI dependency to get the current authenticated user
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    try:
+        # Decode the JWT token
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    
+    # Get user from database
+    user = db.query(User).filter(User.id == int(user_id)).first()
+    if user is None:
+        raise credentials_exception
+    
+    return user

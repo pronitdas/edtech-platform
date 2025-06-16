@@ -7,7 +7,7 @@ import json
 from database import get_db
 from src.models.v2_models import KnowledgeUploadRequest, KnowledgeResponse, KnowledgeListResponse
 from src.services.knowledge_service import KnowledgeService
-from src.services.auth_service import AuthService
+from src.services.auth_service import get_current_user
 from src.services.websocket_manager import websocket_manager
 from models import User
 
@@ -15,20 +15,31 @@ router = APIRouter()
 
 @router.post("/", response_model=dict)
 async def upload_knowledge(
-    files: List[UploadFile] = File(...),
+    file: UploadFile = File(None),
+    files: List[UploadFile] = File(None),
     auto_process: bool = True,
     generate_content: bool = True,
     content_types: str = "summary,notes,quiz,mindmap",
     content_language: str = "English",
-    current_user: User = Depends(AuthService.get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     knowledge_service = KnowledgeService(db)
     content_types_list = content_types.split(",")
     
+    # Handle both single file and multiple files
+    upload_files = []
+    if file:
+        upload_files.append(file)
+    if files:
+        upload_files.extend(files)
+    
+    if not upload_files:
+        raise HTTPException(status_code=400, detail="No files provided")
+    
     try:
         knowledge_id, ws_channel = await knowledge_service.upload_files(
-            files=files,
+            files=upload_files,
             user_id=current_user.id,
             auto_process=auto_process,
             generate_content=generate_content,
@@ -49,7 +60,7 @@ async def list_knowledge(
     skip: int = 0,
     limit: int = 100,
     status: Optional[str] = None,
-    current_user: User = Depends(AuthService.get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     knowledge_service = KnowledgeService(db)
@@ -64,7 +75,7 @@ async def list_knowledge(
 @router.get("/{knowledge_id}", response_model=KnowledgeResponse)
 async def get_knowledge(
     knowledge_id: int,
-    current_user: User = Depends(AuthService.get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     knowledge_service = KnowledgeService(db)
@@ -76,7 +87,7 @@ async def get_knowledge(
 @router.delete("/{knowledge_id}")
 async def delete_knowledge(
     knowledge_id: int,
-    current_user: User = Depends(AuthService.get_current_user),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     knowledge_service = KnowledgeService(db)

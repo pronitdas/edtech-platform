@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, Header, Request
 
 from sqlalchemy.orm import Session
 
-from database import DatabaseManager
+from database import DatabaseManager, get_db as get_database_session
 from models import User
 
 router = APIRouter(
@@ -39,7 +39,8 @@ if not JWT_SECRET:
 
 
 def get_db():
-    return DatabaseManager().get_session()
+    """Get database session for auth routes."""
+    return get_database_session()
 
 async def get_kratos_client():
     async with httpx.AsyncClient() as client:

@@ -80,6 +80,7 @@ class User(Base):
     kratos_id = Column(String(36), unique=True, nullable=False, index=True)  # UUID from Kratos
     email = Column(String, unique=True, nullable=False, index=True)
     display_name = Column(String(100))
+    password_hash = Column(String(256))  # For direct password authentication
     roles = Column(JSON, default=list, nullable=False)
     verified = Column(Boolean, default=False, nullable=False)
     active = Column(Boolean, default=True, nullable=False)

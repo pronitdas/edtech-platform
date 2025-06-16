@@ -225,4 +225,17 @@ class MinIOStorage:
             return None
 
 # Global storage instance
-storage = MinIOStorage() 
+storage = MinIOStorage()
+
+# Convenience functions for V2 API compatibility
+def upload_file_to_storage(file_data: BinaryIO, object_name: str, content_type: str = None) -> bool:
+    """Upload file to storage using the global storage instance."""
+    return storage.upload_file(file_data, object_name, content_type)
+
+def get_file_from_storage(object_name: str) -> Optional[bytes]:
+    """Download file from storage using the global storage instance."""
+    return storage.download_file(object_name)
+
+def delete_file_from_storage(object_name: str) -> bool:
+    """Delete file from storage using the global storage instance."""
+    return storage.delete_file(object_name)
