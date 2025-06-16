@@ -1,6 +1,5 @@
 // LoginPage.tsx
 import { useUser } from '@/contexts/UserContext'
-import { signIn } from '@/services/auth'
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -10,7 +9,7 @@ function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false) // Added loading state
   const navigate = useNavigate() // Initialize useNavigate hook
-  const { user, setUser } = useUser()
+  const { user, login } = useUser()
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -22,15 +21,15 @@ function LoginPage() {
       return
     }
 
-    const { data, error } = await signIn(email, password)
-    setLoading(false)
-    if (data) {
+    try {
+      await login(email, password)
+      setLoading(false)
       // Redirect to dashboard on successful login
-      setUser(data.user) // Update the global user state
       navigate('/dashboard') // Adjust the route as per your need
-    } else {
+    } catch (error: any) {
+      setLoading(false)
       console.log(error.message)
-      setError(error.message)
+      setError(error.message || 'Login failed. Please try again.')
     }
   }
 
