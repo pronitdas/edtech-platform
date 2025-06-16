@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Dict, Any
 from sqlalchemy import Column, Integer, String, Text, Boolean, JSON, ForeignKey, DateTime, Float
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
 
@@ -62,12 +62,13 @@ class PerformanceStats(Base):
     timestamp = Column(DateTime, default=datetime.utcnow)
 
 class Knowledge(Base):
-    """Model for storing knowledge entries."""
+    """Model for storing knowledge entries with multi-file support."""
     __tablename__ = "knowledge"
 
     id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)  # ADD: knowledge entry name
     status = Column(String)
-    content_type = Column(String)
+    content_type = Column(String)  # Can be "mixed" for multiple file types
     difficulty_level = Column(String)
     target_audience = Column(JSON)
     prerequisites = Column(JSON)
@@ -77,6 +78,9 @@ class Knowledge(Base):
     meta_data = Column(JSON)
     retry_count = Column(Integer, default=0)
     seeded = Column(Boolean, default=False)
+    
+    # ADD: Relationship to media files
+    media_files = relationship("Media", back_populates="knowledge", cascade="all, delete-orphan")
 
 class Chapter(Base):
     """Model for storing chapter content."""
@@ -123,7 +127,7 @@ class Media(Base):
     original_filename = Column(String, nullable=False)
     content_type = Column(String, nullable=False)
     file_size = Column(Integer, nullable=False)
-    file_path = Column(String, nullable=False)  # Path in MinIO
+    file_path = Column(String, nullable=False)  # Path in storage
     bucket_name = Column(String, nullable=False)
     upload_status = Column(String, default="pending")  # pending, completed, failed
     error_message = Column(Text)
@@ -131,3 +135,6 @@ class Media(Base):
     uploaded_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # ADD: Back reference to knowledge
+    knowledge = relationship("Knowledge", back_populates="media_files")
