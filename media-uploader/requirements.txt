@@ -11,3 +11,6 @@ fastapi
 uvicorn
 pytest
 minio
+redis>=4.0.0
+passlib[bcrypt]>=1.7.4
+psutil>=5.9.0

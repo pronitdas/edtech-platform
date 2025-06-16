@@ -145,6 +145,9 @@ class Knowledge(Base):
     meta_data = Column(JSON)
     retry_count = Column(Integer, default=0)
     seeded = Column(Boolean, default=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # ADD: user reference
+    created_at = Column(DateTime, default=datetime.utcnow)  # ADD: timestamp
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # ADD: update timestamp
     
     # ADD: Relationship to media files
     media_files = relationship("Media", back_populates="knowledge", cascade="all, delete-orphan")
@@ -205,3 +208,42 @@ class Media(Base):
     
     # ADD: Back reference to knowledge
     knowledge = relationship("Knowledge", back_populates="media_files")
+
+# V2 Schema Models
+
+class RoleplayScenario(Base):
+    """Model for storing roleplay scenarios."""
+    __tablename__ = "roleplay_scenarios"
+
+    id = Column(Integer, primary_key=True)
+    knowledge_id = Column(Integer, ForeignKey("knowledge.id", ondelete="CASCADE"), nullable=False)
+    chapter_id = Column(String(64))
+    language = Column(String(48), default="English")
+    topic = Column(Text)
+    prompt = Column(Text)
+    response = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class UserSession(Base):
+    """Model for tracking user sessions."""
+    __tablename__ = "user_sessions"
+
+    id = Column(String, primary_key=True)  # UUID as string
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    started_at = Column(DateTime, default=datetime.utcnow)
+    ended_at = Column(DateTime)
+    duration_sec = Column(Integer)
+
+class UserEvent(Base):
+    """Model for tracking user events and analytics."""
+    __tablename__ = "user_events"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    knowledge_id = Column(Integer, ForeignKey("knowledge.id", ondelete="SET NULL"))
+    chapter_id = Column(String(64))
+    session_id = Column(String, ForeignKey("user_sessions.id", ondelete="SET NULL"))
+    event_type = Column(String(64), nullable=False)
+    content_id = Column(String(64))
+    ts = Column(DateTime, default=datetime.utcnow)
+    data = Column(JSON)

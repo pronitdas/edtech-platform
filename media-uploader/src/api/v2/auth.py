@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from src.database import get_db
+from database import get_db
 from src.models.v2_models import LoginRequest, RegisterRequest, UserProfile, TokenResponse
 from src.services.auth_service import AuthService
-from src.models.database import User
+from models import User
 
 router = APIRouter()
 security = HTTPBearer()
@@ -45,6 +45,6 @@ async def get_profile(
     return UserProfile(
         id=current_user.id,
         email=current_user.email,
-        name=current_user.name,
-        created_at=current_user.created_at
+        name=getattr(current_user, 'display_name', None),
+        created_at=getattr(current_user, 'created_at', None)
     )

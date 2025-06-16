@@ -24,6 +24,7 @@ from api_routes import router
 from routes.analytics import router as analytics_router
 from routes.auth import router as auth_router
 from routes.media import router as media_router
+from src.api.v2 import v2_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -172,6 +173,7 @@ app.include_router(router, tags=["Knowledge Processing"])
 app.include_router(analytics_router, tags=["Analytics"])
 app.include_router(auth_router, tags=["Authentication"])
 app.include_router(media_router, tags=["Media Management"])
+app.include_router(v2_router, tags=["V2 API"])
 
 @app.get(
     "/health",

@@ -49,6 +49,69 @@ class ChapterUpdate(BaseModel):
     quiz: Optional[Dict[str, Any]] = None
     mindmap: Optional[Dict[str, Any]] = None
 
+# Roleplay Models
+class RoleplayRequest(BaseModel):
+    knowledge_id: int
+    topic: str
+    content: str
+    language: str = "English"
+
+class RoleplayResponse(BaseModel):
+    id: int
+    knowledge_id: int
+    chapter_id: Optional[str]
+    language: str
+    topic: str
+    prompt: str
+    response: str
+    created_at: datetime
+
+# Analytics Models
+class EventTrackingRequest(BaseModel):
+    event_type: str
+    knowledge_id: Optional[int] = None
+    chapter_id: Optional[str] = None
+    content_id: Optional[str] = None
+    session_id: Optional[str] = None
+    data: Optional[Dict[str, Any]] = None
+
+class UserProgressResponse(BaseModel):
+    user_id: int
+    knowledge_id: int
+    chapters_viewed: int
+    last_access: datetime
+    progress_percent: float
+
+class AnalyticsResponse(BaseModel):
+    success: bool
+    data: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
+
+# Content Generation Models
+class ContentGenerationRequest(BaseModel):
+    knowledge_id: int
+    content_types: List[str] = ["notes", "summary", "quiz", "mindmap"]
+    language: str = "English"
+
+# Search Models
+class SearchRequest(BaseModel):
+    query: str
+    filters: Optional[Dict[str, Any]] = None
+    limit: int = 10
+    offset: int = 0
+
+class SearchResponse(BaseModel):
+    results: List[Dict[str, Any]]
+    total: int
+    query: str
+
+# Admin Models
+class HealthCheckResponse(BaseModel):
+    status: str
+    timestamp: datetime
+    services: Dict[str, Dict[str, Any]]
+    version: str
+
 class ChapterResponse(BaseModel):
     id: str
     knowledge_id: int

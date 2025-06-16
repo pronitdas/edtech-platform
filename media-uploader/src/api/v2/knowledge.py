@@ -4,15 +4,14 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 import json
 
-from src.database import get_db
+from database import get_db
 from src.models.v2_models import KnowledgeUploadRequest, KnowledgeResponse, KnowledgeListResponse
 from src.services.knowledge_service import KnowledgeService
 from src.services.auth_service import AuthService
-from src.services.websocket_manager import WebSocketManager
-from src.models.database import User
+from src.services.websocket_manager import websocket_manager
+from models import User
 
 router = APIRouter()
-websocket_manager = WebSocketManager()
 
 @router.post("/", response_model=dict)
 async def upload_knowledge(
