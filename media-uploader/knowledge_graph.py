@@ -31,31 +31,39 @@ class GraphQueryResult(BaseModel):
 # Neo4j Graph Service
 class Neo4jGraphService:
     def __init__(self):
-        # Get connection details from environment variables
-        self.uri = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
-        self.username = os.environ.get("NEO4J_USERNAME", "neo4j")
-        self.password = os.environ.get("NEO4J_PASSWORD", "password")
+        # Get connection details from environment variables with consistent naming
+        self.uri = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+        self.username = os.getenv("NEO4J_USERNAME", "neo4j")
+        self.password = os.getenv("NEO4J_PASSWORD", "password")
         self.driver = None
+        self.connected = False
         
-        # Attempt to connect on initialization
-        self.connect()
+        # Try to connect, but don't fail if it's not available
+        try:
+            self.connect()
+        except Exception as e:
+            logger.warning(f"Neo4j not available during initialization: {str(e)}")
+            self.connected = False
     
     def connect(self) -> None:
-        """Initialize connection to Neo4j"""
-        if not self.driver:
-            try:
-                self.driver = GraphDatabase.driver(
-                    self.uri,
-                    auth=(self.username, self.password),
-                    max_connection_lifetime=3 * 60 * 60  # 3 hours
-                )
-                
-                # Verify connectivity
-                self.driver.verify_connectivity()
-                logger.info("Connected to Neo4j database")
-            except Exception as e:
-                logger.error(f"Failed to connect to Neo4j: {str(e)}")
-                raise Exception(f"Failed to connect to Neo4j database: {str(e)}")
+        """Connect to Neo4j database"""
+        try:
+            self.driver = GraphDatabase.driver(
+                self.uri,
+                auth=(self.username, self.password)
+            )
+            # Test the connection
+            self.driver.verify_connectivity()
+            self.connected = True
+            logger.info("Successfully connected to Neo4j")
+            
+            # Create schema constraints
+            self.create_schema_constraints()
+            
+        except Exception as e:
+            logger.error(f"Failed to connect to Neo4j: {str(e)}")
+            self.connected = False
+            # Don't raise exception - allow the service to work without Neo4j
     
     def close(self) -> None:
         """Close Neo4j connection"""
@@ -66,77 +74,99 @@ class Neo4jGraphService:
     
     def execute_query(self, cypher: str, params: Dict[str, Any] = None) -> Any:
         """Execute a Cypher query"""
-        if params is None:
-            params = {}
+        if not self.connected:
+            logger.warning("Neo4j not connected - skipping query execution")
+            return []
             
-        if not self.driver:
-            self.connect()
-        
-        with self.driver.session() as session:
-            try:
-                result = session.run(cypher, params)
+        try:
+            with self.driver.session() as session:
+                result = session.run(cypher, params or {})
                 return result
-            except Exception as e:
-                logger.error(f"Error executing Cypher query: {str(e)}")
-                raise e
+        except Exception as e:
+            logger.error(f"Error executing query: {str(e)}")
+            return []
     
     def create_node(self, node: GraphNode) -> GraphNode:
-        """Create a node in Neo4j"""
-        node_id = node.id or str(uuid.uuid4())
-        labels = ":".join(node.labels)
+        """Create a node in the graph"""
+        if not self.connected:
+            logger.warning("Neo4j not connected - skipping node creation")
+            return node
+            
+        # Generate ID if not provided
+        if not node.id:
+            node.id = str(uuid.uuid4())
+        
+        # Build labels string
+        labels_str = ":".join(node.labels)
+        
+        # Build properties string
+        properties = node.properties.copy()
+        properties["id"] = node.id
         
         cypher = f"""
-        CREATE (n:{labels} $properties)
-        SET n.id = $node_id
+        CREATE (n:{labels_str})
+        SET n = $properties
         RETURN n
         """
         
-        params = {
-            "node_id": node_id,
-            "properties": {**node.properties, "id": node_id}
-        }
+        try:
+            result = self.execute_query(cypher, {"properties": properties})
+            if result:
+                record = result.single()
+                if record:
+                    created_node = record["n"]
+                    return GraphNode(
+                        id=created_node["id"],
+                        labels=node.labels,
+                        properties=dict(created_node)
+                    )
+        except Exception as e:
+            logger.error(f"Error creating node: {str(e)}")
         
-        result = self.execute_query(cypher, params)
-        record = result.single()
-        created_node = record["n"]
-        
-        return GraphNode(
-            id=created_node["id"],
-            labels=node.labels,
-            properties=dict(created_node)
-        )
+        return node
     
     def create_relationship(self, relationship: GraphRelationship) -> GraphRelationship:
-        """Create a relationship between nodes"""
-        relationship_id = relationship.id or str(uuid.uuid4())
-        properties = relationship.properties or {}
+        """Create a relationship between two nodes"""
+        if not self.connected:
+            logger.warning("Neo4j not connected - skipping relationship creation")
+            return relationship
+            
+        # Generate ID if not provided
+        if not relationship.id:
+            relationship.id = str(uuid.uuid4())
         
-        cypher = f"""
-        MATCH (start), (end)
-        WHERE start.id = $start_node_id AND end.id = $end_node_id
-        CREATE (start)-[r:{relationship.type} $properties]->(end)
-        SET r.id = $relationship_id
-        RETURN r, start, end
+        cypher = """
+        MATCH (start {id: $start_id})
+        MATCH (end {id: $end_id})
+        CREATE (start)-[r:""" + relationship.type + """ $properties]->(end)
+        RETURN r
         """
         
-        params = {
-            "start_node_id": relationship.start_node_id,
-            "end_node_id": relationship.end_node_id,
-            "relationship_id": relationship_id,
-            "properties": {**properties, "id": relationship_id}
-        }
+        properties = relationship.properties or {}
+        properties["id"] = relationship.id
         
-        result = self.execute_query(cypher, params)
-        record = result.single()
-        created_rel = record["r"]
+        try:
+            result = self.execute_query(cypher, {
+                "start_id": relationship.start_node_id,
+                "end_id": relationship.end_node_id,
+                "properties": properties
+            })
+            
+            if result:
+                record = result.single()
+                if record:
+                    created_rel = record["r"]
+                    return GraphRelationship(
+                        id=created_rel["id"],
+                        start_node_id=relationship.start_node_id,
+                        end_node_id=relationship.end_node_id,
+                        type=relationship.type,
+                        properties=dict(created_rel)
+                    )
+        except Exception as e:
+            logger.error(f"Error creating relationship: {str(e)}")
         
-        return GraphRelationship(
-            id=created_rel["id"],
-            start_node_id=relationship.start_node_id,
-            end_node_id=relationship.end_node_id,
-            type=relationship.type,
-            properties=dict(created_rel)
-        )
+        return relationship
     
     def get_node_by_id(self, node_id: str) -> Optional[GraphNode]:
         """Get a node by ID"""
@@ -403,5 +433,5 @@ class Neo4jGraphService:
         
         return common_phrases + common_words
 
-# Create singleton instance
+# Create singleton instance - will not fail if Neo4j is unavailable
 graph_service = Neo4jGraphService() 

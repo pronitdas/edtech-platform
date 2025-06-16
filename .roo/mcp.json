@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-knowledge-graph"
+      ],
+      "env": {
+        "MEMORY_FILE_PATH": "/home/pronit/workspace/edtech-platform/memory.json"
+      },
+      "alwaysAllow": [
+        "create_entities",
+        "create_relations",
+        "add_observations",
+        "read_graph"
+      ]
+    }
+  }
+}

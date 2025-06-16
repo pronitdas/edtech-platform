@@ -1,0 +1,71 @@
+version: v1.0.0
+
+dsn: postgres://kratos:secret@kratos-postgres:5432/kratos?sslmode=disable
+
+serve:
+  public:
+    base_url: http://127.0.0.1:4433/
+    cors:
+      enabled: true
+  admin:
+    base_url: http://127.0.0.1:4434/
+
+secrets:
+  default:
+    - youReallyNeedToChangeThis
+
+hashers:
+  argon2:
+    parallelism: 1
+    memory: 128MB
+    iterations: 2
+    salt_length: 16
+    key_length: 16
+
+identity:
+  default_schema_id: user_v0
+  schemas:
+    - id: user_v0
+      url: file:///etc/config/kratos/user.schema.json
+
+courier:
+  smtp:
+    connection_uri: smtps://test:test@mailslurper:1025/?skip_ssl_verify=true
+
+selfservice:
+  default_browser_return_url: http://127.0.0.1:4455/
+  allowed_return_urls:
+    - http://127.0.0.1:4455
+
+  methods:
+    password:
+      enabled: true
+    
+  flows:
+    registration:
+      lifespan: 1h
+      ui_url: http://127.0.0.1:4455/registration
+    login:
+      lifespan: 1h
+      ui_url: http://127.0.0.1:4455/login
+    settings:
+      lifespan: 1h
+      privileged_session_max_age: 1h
+      required_aal: highest_available
+      ui_url: http://127.0.0.1:4455/settings
+    recovery:
+      lifespan: 1h
+      notify_unknown_recipients: false
+      ui_url: http://127.0.0.1:4455/recovery
+      use: code
+    verification:
+      lifespan: 1h
+      notify_unknown_recipients: false
+      ui_url: http://127.0.0.1:4455/verification
+      use: code
+    error:
+      ui_url: http://127.0.0.1:4455/error
+
+log:
+  level: debug
+  format: text

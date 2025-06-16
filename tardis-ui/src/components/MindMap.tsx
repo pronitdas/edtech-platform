@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import useAuthState from '@/hooks/useAuth';
-import { OpenAIClient } from '@/services/openAi';
+import { OpenAIService } from '@/services/openAi';
 import { generateMindMapStructure } from '@/services/openAiFns';
 
 import '@xyflow/react/dist/style.css';
@@ -222,7 +222,7 @@ const MindMapInner = (props) => {
     // Initialize API client
     useEffect(() => {
         if (!apiClient && oAiKey) {
-            setApiClient(new OpenAIClient(oAiKey));
+            setApiClient(new OpenAIService(oAiKey));
         }
     }, [oAiKey, apiClient]);
 

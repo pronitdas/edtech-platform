@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import useAuthState from "@/hooks/useAuth";
-import { OpenAIClient } from "@/services/openAi";
+import { OpenAIService } from "@/services/openAi";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Mic, MicOff, Volume2, VolumeX, Send, Loader2 } from "lucide-react";
@@ -50,7 +50,7 @@ const VoiceChatbot = ({ topic, language, onQuestionAsked }: ChatbotProps) => {
 
     useEffect(() => {
         if (!apiClient && oAiKey) {
-            setApiClient(new OpenAIClient(oAiKey));
+            setApiClient(new OpenAIService(oAiKey));
         }
     }, [oAiKey, apiClient]);
 

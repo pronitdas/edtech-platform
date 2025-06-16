@@ -21,10 +21,20 @@ class KnowledgeGraphSynchronizer:
         supabase_url = os.environ.get("SUPABASE_URL", "")
         supabase_key = os.environ.get("SUPABASE_KEY", "")
         
+        self.connected = False
+        self.supabase = None
+        
         if not supabase_url or not supabase_key:
-            logger.warning("SUPABASE_URL or SUPABASE_KEY not set")
+            logger.warning("SUPABASE_URL or SUPABASE_KEY not set - sync service will be disabled")
+            return
             
-        self.supabase: Client = create_client(supabase_url, supabase_key)
+        try:
+            self.supabase: Client = create_client(supabase_url, supabase_key)
+            self.connected = True
+            logger.info("Successfully connected to Supabase for knowledge graph sync")
+        except Exception as e:
+            logger.error(f"Failed to connect to Supabase: {str(e)}")
+            self.connected = False
         
     async def sync_knowledge(self, knowledge_id: int) -> Dict[str, Any]:
         """
@@ -36,6 +46,9 @@ class KnowledgeGraphSynchronizer:
         Returns:
             A dictionary with status and details of the sync operation
         """
+        if not self.connected:
+            return {"success": False, "error": "Supabase not connected - sync service disabled"}
+            
         try:
             # Fetch knowledge details from Supabase
             response = self.supabase.table("knowledge").select(

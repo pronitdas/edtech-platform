@@ -3,7 +3,7 @@
 import { windowedChunk } from "@/components/utils";
 import supabase from "./supabase";
 import { analyzeMarkdown, cleanMarkdown, processMarkdown } from "./markdown-utils";
-import { OpenAIClient } from "./openAi";
+import { OpenAIService } from "./openAi";
 
 
 export const getEdTechContent = async (chapter, language = "English") => {
@@ -424,7 +424,7 @@ export const generateRoleplayScenarios = async (
 ) => {
     try {
         // Initialize the OpenAI client
-        const openAIClient = new OpenAIClient(apiKey);
+        const openAIClient = new OpenAIService(apiKey);
 
         const systemPrompt = `
 You are an educational roleplay designer. Create 2 engaging roleplay scenarios for students learning about "${topic}" in ${language}.

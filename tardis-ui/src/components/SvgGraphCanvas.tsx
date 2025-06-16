@@ -28,23 +28,28 @@ interface TooltipState {
 }
 
 // Memoized shape component
-interface ElementHandlers {
-    onMouseEnter: (e: React.MouseEvent<SVGElement>, type: string, index: number) => void;
-    onTouchStart: (e: React.TouchEvent<SVGElement>, type: string, index: number) => void;
+interface ElementEventHandlers {
+    onMouseEnter: (e: React.MouseEvent<SVGElement>, index: number) => void;
+    onTouchStart: (e: React.TouchEvent<SVGElement>, index: number) => void;
     onMouseLeave: () => void;
     onClick: (index: number) => void;
 }
 
-type ElementProps<T> = {
-    item: T;
+const ShapeElement = memo<{
+    shape: Shape;
     index: number;
-    onMouseEnter: (e: React.MouseEvent<SVGElement>, type: string, index: number) => void;
-    onTouchStart: (e: React.TouchEvent<SVGElement>, type: string, index: number) => void;
-    onMouseLeave: () => void;
-    onClick: (index: number) => void;
-};
+} & ElementEventHandlers>(({ shape, index, onMouseEnter, onTouchStart, onMouseLeave, onClick }) => {
+    const handleMouseEnter = useCallback((e: React.MouseEvent<SVGElement>) => {
+        onMouseEnter(e, index);
+    }, [onMouseEnter, index]);
 
-const ShapeElement = memo<ElementProps<Shape>>(({ item: shape, index, onMouseEnter, onTouchStart, onMouseLeave, onClick }) => {
+    const handleTouchStart = useCallback((e: React.TouchEvent<SVGElement>) => {
+        onTouchStart(e, index);
+    }, [onTouchStart, index]);
+
+    const handleClick = useCallback(() => {
+        onClick(index);
+    }, [onClick, index]);
 
     if (shape.type === 'rectangle' && shape.topLeft && shape.bottomRight) {
         return (
@@ -59,10 +64,15 @@ const ShapeElement = memo<ElementProps<Shape>>(({ item: shape, index, onMouseEnt
                 fill={shape.fill || "rgba(200, 200, 200, 0.5)"}
                 stroke={shape.stroke || "gray"}
                 strokeWidth={shape.strokeWidth || 1}
-                onMouseEnter={(e) => onMouseEnter(e, 'Shape', index)}
-                onTouchStart={(e) => onTouchStart(e, 'Shape', index)}
-                onMouseLeave={handleMouseLeave}
-                onClick={() => onElementClick?.('shape', index, shape)}
+                onMouseEnter={handleMouseEnter}
+                onTouchStart={handleTouchStart}
+                onMouseLeave={onMouseLeave}
+                onClick={handleClick}
+                onTouchEnd={(e) => {
+                    e.preventDefault();
+                    handleClick();
+                    onMouseLeave();
+                }}
                 style={{
                     cursor: 'pointer',
                     touchAction: 'none'
@@ -83,10 +93,15 @@ const ShapeElement = memo<ElementProps<Shape>>(({ item: shape, index, onMouseEnt
                 fill={shape.fill || "rgba(200, 200, 200, 0.5)"}
                 stroke={shape.stroke || "gray"}
                 strokeWidth={shape.strokeWidth || 1}
-                onMouseEnter={(e) => onMouseEnter(e, 'Shape', index)}
-                onTouchStart={(e) => onTouchStart(e, 'Shape', index)}
+                onMouseEnter={handleMouseEnter}
+                onTouchStart={handleTouchStart}
                 onMouseLeave={onMouseLeave}
-                onClick={() => onClick(index)}
+                onClick={handleClick}
+                onTouchEnd={(e) => {
+                    e.preventDefault();
+                    handleClick();
+                    onMouseLeave();
+                }}
                 style={{
                     cursor: 'pointer',
                     touchAction: 'none'
@@ -99,7 +114,21 @@ const ShapeElement = memo<ElementProps<Shape>>(({ item: shape, index, onMouseEnt
 });
 
 // Memoized line component
-const LineElement = memo<ElementProps<Line>>(({ item: line, index, onMouseEnter, onTouchStart, onMouseLeave, onClick }) => {
+const LineElement = memo<{
+    line: Line;
+    index: number;
+} & ElementEventHandlers>(({ line, index, onMouseEnter, onTouchStart, onMouseLeave, onClick }) => {
+    const handleMouseEnter = useCallback((e: React.MouseEvent<SVGElement>) => {
+        onMouseEnter(e, index);
+    }, [onMouseEnter, index]);
+
+    const handleTouchStart = useCallback((e: React.TouchEvent<SVGElement>) => {
+        onTouchStart(e, index);
+    }, [onTouchStart, index]);
+
+    const handleClick = useCallback(() => {
+        onClick(index);
+    }, [onClick, index]);
 
     return (
         <motion.line
@@ -113,10 +142,15 @@ const LineElement = memo<ElementProps<Line>>(({ item: line, index, onMouseEnter,
             stroke={line.color || "blue"}
             strokeWidth={line.strokeWidth || 2}
             vectorEffect="non-scaling-stroke"
-            onMouseEnter={(e) => onMouseEnter(e, 'Line', index)}
-            onTouchStart={(e) => onTouchStart(e, 'Line', index)}
+            onMouseEnter={handleMouseEnter}
+            onTouchStart={handleTouchStart}
             onMouseLeave={onMouseLeave}
-            onClick={() => onClick(index)}
+            onClick={handleClick}
+            onTouchEnd={(e) => {
+                e.preventDefault();
+                handleClick();
+                onMouseLeave();
+            }}
             style={{
                 cursor: 'pointer',
                 touchAction: 'none'
@@ -126,7 +160,25 @@ const LineElement = memo<ElementProps<Line>>(({ item: line, index, onMouseEnter,
 });
 
 // Memoized point component
-const PointElement = memo<ElementProps<Point>>(({ item: point, index, onMouseEnter, onTouchStart, onMouseLeave, onClick }) => {
+const PointElement = memo<{
+    point: Point;
+    index: number;
+    onMouseEnter: (e: React.MouseEvent<SVGElement>, index: number) => void;
+    onTouchStart: (e: React.TouchEvent<SVGElement>, index: number) => void;
+    onMouseLeave: () => void;
+    onClick: (index: number) => void;
+}>(({ point, index, onMouseEnter, onTouchStart, onMouseLeave, onClick }) => {
+    const handleMouseEnter = useCallback((e: React.MouseEvent<SVGElement>) => {
+        onMouseEnter(e, index);
+    }, [onMouseEnter, index]);
+
+    const handleTouchStart = useCallback((e: React.TouchEvent<SVGElement>) => {
+        onTouchStart(e, index);
+    }, [onTouchStart, index]);
+
+    const handleClick = useCallback(() => {
+        onClick(index);
+    }, [onClick, index]);
 
     return (
         <motion.circle
@@ -139,10 +191,15 @@ const PointElement = memo<ElementProps<Point>>(({ item: point, index, onMouseEnt
             fill="red"
             stroke="white"
             strokeWidth={1}
-            onMouseEnter={(e) => onMouseEnter(e, 'Point', index)}
-            onTouchStart={(e) => onTouchStart(e, 'Point', index)}
+            onMouseEnter={handleMouseEnter}
             onMouseLeave={onMouseLeave}
-            onClick={() => onClick(index)}
+            onClick={handleClick}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={(e) => {
+                e.preventDefault();
+                handleClick();
+                onMouseLeave();
+            }}
             style={{
                 cursor: 'pointer',
                 touchAction: 'none'
@@ -152,7 +209,25 @@ const PointElement = memo<ElementProps<Point>>(({ item: point, index, onMouseEnt
 });
 
 // Memoized text component
-const TextElement = memo<ElementProps<Text>>(({ item: text, index, onMouseEnter, onTouchStart, onMouseLeave, onClick }) => {
+const TextElement = memo<{
+    text: Text;
+    index: number;
+    onMouseEnter: (e: React.MouseEvent<SVGElement>, index: number) => void;
+    onTouchStart: (e: React.TouchEvent<SVGElement>, index: number) => void;
+    onMouseLeave: () => void;
+    onClick: (index: number) => void;
+}>(({ text, index, onMouseEnter, onTouchStart, onMouseLeave, onClick }) => {
+    const handleMouseEnter = useCallback((e: React.MouseEvent<SVGElement>) => {
+        onMouseEnter(e, index);
+    }, [onMouseEnter, index]);
+
+    const handleTouchStart = useCallback((e: React.TouchEvent<SVGElement>) => {
+        onTouchStart(e, index);
+    }, [onTouchStart, index]);
+
+    const handleClick = useCallback(() => {
+        onClick(index);
+    }, [onClick, index]);
 
     return (
         <motion.text
@@ -166,10 +241,15 @@ const TextElement = memo<ElementProps<Text>>(({ item: text, index, onMouseEnter,
             fontSize={text.fontSize || "14px"}
             textAnchor="middle"
             dominantBaseline="middle"
-            onMouseEnter={(e) => onMouseEnter(e, 'Text', index)}
-            onTouchStart={(e) => onTouchStart(e, 'Text', index)}
+            onMouseEnter={handleMouseEnter}
             onMouseLeave={onMouseLeave}
-            onClick={() => onClick(index)}
+            onClick={handleClick}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={(e) => {
+                e.preventDefault();
+                handleClick();
+                onMouseLeave();
+            }}
             style={{
                 cursor: 'pointer',
                 touchAction: 'none'
@@ -220,18 +300,9 @@ const SvgGraphCanvas: React.FC<SvgGraphCanvasProps> = ({
     });
     const [tooltipState, setTooltipState] = useState<TooltipState>(tooltipRef.current);
 
-    // Mobile detection and styles
     const isMobile = useMemo(() => window.matchMedia('(max-width: 768px)').matches, []);
-    const styles = useMemo(() => ({
-        background: 'white',
-        ...(isMobile ? {
-            '--touch-target-size': '44px',
-            '--tooltip-offset': '20px',
-            strokeWidth: '3px'
-        } as React.CSSProperties : {})
-    }), [isMobile]);
 
-    // Tooltip management
+    // Tooltip updates with throttling
     const updateTooltip = useCallback(
         throttle((newState: TooltipState) => {
             tooltipRef.current = newState;
@@ -240,42 +311,30 @@ const SvgGraphCanvas: React.FC<SvgGraphCanvasProps> = ({
         []
     );
 
-    // Base event handlers
-    const handleInteraction = useCallback((
-        event: React.MouseEvent<SVGElement> | React.TouchEvent<SVGElement>,
-        type: string,
-        index: number,
-        item: any
-    ) => {
-        const rect = event.currentTarget.getBoundingClientRect();
-        const pos = 'touches' in event ? handleTouch(event, rect) : handleMouse(rect);
-        updateTooltip({
-            visible: true,
-            content: `${type} ${index + 1}`,
-            x: pos.x,
-            y: pos.y
-        });
-    }, [updateTooltip]);
-
-    const handleMouseLeave = useCallback(() => {
-        updateTooltip({ ...tooltipRef.current, visible: false });
-    }, [updateTooltip]);
-
-    // Create handlers for an element
-    // Event handlers factory
-    const createElementHandlers = useCallback((type: string, index: number, item: any): ElementHandlers => ({
-        onMouseEnter: (e) => handleInteraction(type, index, e),
-        onTouchStart: (e) => handleInteraction(type, index, e),
+    // Event handlers for elements
+    const createHandlers = (type: string): ElementEventHandlers => ({
+        onMouseEnter: (e: React.MouseEvent<SVGElement>, index: number) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const pos = handleMouse(rect);
+            updateTooltip({
+                visible: true,
+                content: `${type} ${index + 1}`,
+                x: pos.x,
+                y: pos.y
+            });
+        },
+        onTouchStart: (e: React.TouchEvent<SVGElement>, index: number) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const pos = handleTouch(e, rect);
+            updateTooltip({
+                visible: true,
+                content: `${type} ${index + 1}`,
+                x: pos.x,
+                y: pos.y
+            });
+        },
         onMouseLeave: handleMouseLeave,
-        onClick: () => onElementClick?.(type, index, item)
-    }), [handleInteraction, handleMouseLeave, onElementClick]);
-
-    // Create element-specific handlers
-    const createElementHandlers = (type: string, index: number, item: any): ElementEventHandlers => ({
-        onMouseEnter: (e) => handleMouseEnter(e, type, index),
-        onTouchStart: (e) => handleTouchStart(e, type, index),
-        onMouseLeave: handleMouseLeave,
-        onClick: () => onElementClick?.(type.toLowerCase(), index, item)
+        onClick: (index: number) => onElementClick?.(type.toLowerCase(), index, shapes[index])
     });
 
     // Memoized handlers for each element type
@@ -365,46 +424,57 @@ const SvgGraphCanvas: React.FC<SvgGraphCanvasProps> = ({
         });
     }, [updateTooltip]);
 
-    // Memoized element rendering
-    const renderContent = useMemo(() => (
+    const renderContent = () => (
         <>
-            {shapes.map((shape, i) => (
+            {shapes.map((shape, index) => (
                 <ShapeElement
-                    key={`shape-${i}`}
+                    key={`shape-${index}`}
                     shape={shape}
-                    index={i}
-                    {...createElementHandlers('Shape', i, shape)}
+                    index={index}
+                    onMouseEnter={(e) => shapeHandlers.onMouseEnter(e, index)}
+                    onTouchStart={(e) => shapeHandlers.onTouchStart(e, index)}
+                    onMouseLeave={handleMouseLeave}
+                    onClick={() => onElementClick?.('shape', index, shape)}
                 />
             ))}
 
-            {lines.map((line, i) => (
+            {lines.map((line, index) => (
                 <LineElement
-                    key={`line-${i}`}
+                    key={`line-${index}`}
                     line={line}
-                    index={i}
-                    {...createElementHandlers('Line', i, line)}
+                    index={index}
+                    onMouseEnter={(e) => lineHandlers.onMouseEnter(e, index)}
+                    onTouchStart={(e) => lineHandlers.onTouchStart(e, index)}
+                    onMouseLeave={handleMouseLeave}
+                    onClick={() => onElementClick?.('line', index, line)}
                 />
             ))}
 
-            {points.map((point, i) => (
+            {points.map((point, index) => (
                 <PointElement
-                    key={`point-${i}`}
+                    key={`point-${index}`}
                     point={point}
-                    index={i}
-                    {...createElementHandlers('Point', i, point)}
+                    index={index}
+                    onMouseEnter={(e) => pointHandlers.onMouseEnter(e, index)}
+                    onTouchStart={(e) => pointHandlers.onTouchStart(e, index)}
+                    onMouseLeave={handleMouseLeave}
+                    onClick={() => onElementClick?.('point', index, point)}
                 />
             ))}
 
-            {texts.map((text, i) => (
+            {texts.map((text, index) => (
                 <TextElement
-                    key={`text-${i}`}
+                    key={`text-${index}`}
                     text={text}
-                    index={i}
-                    {...createElementHandlers('Text', i, text)}
+                    index={index}
+                    onMouseEnter={(e) => textHandlers.onMouseEnter(e, index)}
+                    onTouchStart={(e) => textHandlers.onTouchStart(e, index)}
+                    onMouseLeave={handleMouseLeave}
+                    onClick={() => onElementClick?.('text', index, text)}
                 />
             ))}
         </>
-    ), [shapes, lines, points, texts, createElementHandlers]);
+    );
 
     // Render main SVG component
     return (
@@ -542,7 +612,7 @@ const SvgGraphCanvas: React.FC<SvgGraphCanvasProps> = ({
                     onMouseLeave={handleMouseLeave}
                     onClick={(idx) => onElementClick?.('shape', idx, shape)}
                 />
-                ))}
+                
 
                 {lines.map((line, index) => (
                     <LineElement

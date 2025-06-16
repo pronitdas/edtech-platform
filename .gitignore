@@ -9,10 +9,10 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-
+traaining/
 # testing
 /coverage
-
+lora_dpo_adapter**/
 # next.js
 /.next/
 /out/

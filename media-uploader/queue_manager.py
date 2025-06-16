@@ -255,28 +255,34 @@ class QueueManager:
                         logger.error(f"Error generating {content_type} for chapter {chapter_id}: {str(e)}")
                         results[content_type] = f"Error generating {content_type}: {str(e)}"
                 
-                # Update content in the database using the table with language suffix
-                table_name = f"EdTechContent_{language}"
-                logger.info(f"Updating content in {table_name} for chapter {chapter_id}, knowledge_id {knowledge_id}")
+                # Update content in the database using the EdTechContent model
+                logger.info(f"Updating content for chapter {chapter_id}, language {language}")
                 
                 try:
-                    data = self.db_manager.supabase.from_(table_name).update(
-                        results
-                    ).eq('chapter_id', chapter_id).eq('knowledge_id', knowledge_id).execute()
+                    # Add knowledge_id to the content data
+                    content_data = {
+                        "knowledge_id": knowledge_id,
+                        **results
+                    }
                     
-                    if hasattr(data, 'error') and data.error:
-                        logger.error(f"Error updating content for chapter {chapter_id}: {data.error}")
+                    # Update or create content using the new method
+                    self.db_manager.update_edtech_content(
+                        chapter_id=chapter_id,
+                        language=language,
+                        content_data=content_data
+                    )
                 except Exception as e:
-                    logger.error(f"Database error updating content: {str(e)}")
+                    logger.error(f"Error updating content for chapter {chapter_id}: {str(e)}")
+                    raise
             
-            logger.info(f"Content generation completed for knowledge {knowledge_id}")
+            logger.info(f"Content generation completed for knowledge {knowledge_id}, language {language}")
             
         except Exception as e:
             logger.error(f"Error in content generation: {str(e)}")
             raise
 
     def _process_knowledge(self, knowledge_id: int, retry_count: int = 0) -> None:
-        """Process a single knowledge entry."""
+        """Process a single knowledge entry with multi-file support."""
         try:
             # Update initial status
             self.db_manager.update_knowledge_status(
@@ -290,145 +296,234 @@ class QueueManager:
 
             # Retrieve knowledge row
             knowledge = self.db_manager.get_unseeded_knowledge(knowledge_id)
-
-            # Get filename
-            filename_field = knowledge["filename"]
-            if isinstance(filename_field, list):
-                filename = filename_field[0]
-            else:
-                filename = filename_field
-                
-            # Determine file type
-            file_extension = os.path.splitext(filename)[1].lower()
-            is_video = file_extension in ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v']
             
-            # Fetch the file from Supabase storage using appropriate path
-            file_path = f"video/{knowledge_id}/{filename}" if is_video else f"doc/{knowledge_id}/{filename}"
-            file_data = self.db_manager.download_file(file_path)
+            # Get associated media files
+            media_files = self.db_manager.get_knowledge_media_files(knowledge_id)
             
-            # Update status to indicate file type
-            self.db_manager.update_knowledge_status(
-                knowledge_id, 
-                "processing", 
-                {
-                    "message": f"Processing {'video' if is_video else 'document'}: {filename}",
-                    "file_type": "video" if is_video else "document",
-                    "start_time": datetime.utcnow().isoformat()
-                }
-            )
-
-            if is_video:
-                # Process video file
-                logger.info(f"Processing video file: {filename}")
-                
-                # Process the video to get structured content using VideoProcessorV2
-                textbook, chapters = VideoProcessorV2.process_video_to_chapters(
-                    file_data,
-                    knowledge_id=knowledge["id"],
-                    knowledge_name=knowledge["name"]
-                )
-                
-                # Insert chapters into database
-                self.db_manager.insert_chapters(knowledge_id, chapters)
-                
-                # Build metadata without images
-                result = {
-                    "markdown": "",  # Not using raw markdown for videos
-                    "metadata": textbook.get("metadata", {}),
-                    "analysis": textbook,
-                    "image_urls": {},
-                    "failed_images": [],
-                    "processed_at": datetime.utcnow().isoformat(),
-                    "retry_count": retry_count,
-                    "file_type": "video",
+            if not media_files:
+                raise ValueError(f"No media files found for knowledge {knowledge_id}")
+            
+            logger.info(f"Processing {len(media_files)} files for knowledge {knowledge_id}")
+            
+            # Process each file and collect results
+            processed_files = []
+            all_chapters = []
+            combined_metadata = {
+                "processed_files": [],
+                "file_types": [],
+                "total_files": len(media_files)
+            }
+            
+            for media_file in media_files:
+                try:
+                    logger.info(f"Processing file: {media_file['original_filename']}")
                     
-                    # Extract key fields to the top level for easier access
-                    "difficulty_level": textbook.get("difficulty_level"),
-                    "target_audience": textbook.get("target_audience", []),
-                    "prerequisites": textbook.get("recommended_prerequisites", []),
-                    "summary": textbook.get("summary")
-                }
-            else:
-                # Process PDF/document file
-                logger.info(f"Processing document file: {filename}")
-                
-                # Determine file type and process accordingly
-                file_type = "document"
-                if filename.lower().endswith('.pdf'):
-                    # Process PDF file
-                    markdown, images, metadata = PDFProcessor.process_pdf(file_data)
-                    processor = PDFProcessor
-                    file_type = "pdf"
-                elif filename.lower().endswith('.docx'):
-                    # Process DOCX file
-                    markdown, images, metadata = DOCXProcessor.process_docx(file_data)
-                    processor = DOCXProcessor
-                    file_type = "docx"
-                elif filename.lower().endswith('.pptx'):
-                    # Process PPTX file
-                    markdown, images, metadata = PPTXProcessor.process_pptx(file_data)
-                    processor = PPTXProcessor
-                    file_type = "pptx"
-                else:
-                    # Fallback to PDF processor for unknown document types
-                    markdown, images, metadata = PDFProcessor.process_pdf(file_data)
-                    processor = PDFProcessor
-    
-                # Upload each extracted image to Supabase
-                image_urls = {}
-                failed_images = []
-                
-                # Prepare images for upload
-                prepared_images = processor.prepare_images_for_upload(images)
-                
-                # Upload images
-                if prepared_images and len(prepared_images) > 0:
-                    for img_filename, img_data in prepared_images.items():
-                        try:
-                            upload_result = self.db_manager.upload_image(
-                                knowledge_id,
-                                img_filename,
-                                img_data["buffer"],
-                                f"image/{img_data['format']}"
-                            )
-                            
-                            image_urls[img_filename] = {
-                                "url": upload_result["url"],
-                                "metadata": {
-                                    "width": img_data["width"],
-                                    "height": img_data["height"],
-                                    "page": img_data["page"],
-                                },
-                            }
-                        except Exception as img_error:
-                            logger.error(f"Failed to upload image {img_filename}: {str(img_error)}")
-                            failed_images.append(img_filename)
-                        continue
-    
-                # Analyze content and insert chapters
-                textbook, chapters = processor.process_text_to_index(
-                    markdown, 
-                    knowledge_id=knowledge["id"],
-                    knowledge_name=knowledge["name"]
-                )
-                
-                # Insert chapters into database
-                self.db_manager.insert_chapters(knowledge_id, chapters)
-    
-                # Build final metadata to store in 'knowledge' table
-                result = {
-                    "markdown": markdown,
-                    "metadata": metadata,
-                    "analysis": textbook,
-                    "image_urls": image_urls,
-                    "failed_images": failed_images,
-                    "processed_at": datetime.utcnow().isoformat(),
-                    "retry_count": retry_count,
-                    "file_type": file_type
-                }
+                    # Download file from storage
+                    from storage import storage
+                    file_data = storage.download_file(media_file['file_path'])
+                    
+                    if not file_data:
+                        raise ValueError(f"Could not download file: {media_file['file_path']}")
+                    
+                    # Determine file type
+                    file_extension = os.path.splitext(media_file['original_filename'])[1].lower()
+                    is_video = file_extension in ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v']
+                    
+                    # Update status to indicate current file being processed
+                    self.db_manager.update_knowledge_status(
+                        knowledge_id, 
+                        "processing", 
+                        {
+                            "message": f"Processing {'video' if is_video else 'document'}: {media_file['original_filename']}",
+                            "current_file": media_file['original_filename'],
+                            "file_type": "video" if is_video else "document",
+                            "progress": f"{len(processed_files) + 1}/{len(media_files)}",
+                            "start_time": datetime.utcnow().isoformat()
+                        }
+                    )
 
-            # Update status to processed
+                    if is_video:
+                        # Process video file
+                        logger.info(f"Processing video file: {media_file['original_filename']}")
+                        
+                        # Process the video to get structured content using VideoProcessorV2
+                        textbook, chapters = VideoProcessorV2.process_video_to_chapters(
+                            file_data,
+                            knowledge_id=knowledge["id"],
+                            knowledge_name=knowledge["name"]
+                        )
+                        
+                        # Add chapters with file reference
+                        for chapter in chapters:
+                            chapter["meta_data"]["source_file"] = media_file['original_filename']
+                            chapter["meta_data"]["media_id"] = media_file['id']
+                        
+                        all_chapters.extend(chapters)
+                        
+                        # Collect file metadata
+                        file_result = {
+                            "media_id": media_file['id'],
+                            "filename": media_file['original_filename'],
+                            "file_type": "video",
+                            "processed_at": datetime.utcnow().isoformat(),
+                            "chapters_count": len(chapters),
+                            "analysis": textbook,
+                            "difficulty_level": textbook.get("difficulty_level"),
+                            "target_audience": textbook.get("target_audience", []),
+                            "prerequisites": textbook.get("recommended_prerequisites", []),
+                            "summary": textbook.get("summary")
+                        }
+                        
+                        combined_metadata["file_types"].append("video")
+                        
+                    else:
+                        # Process document file
+                        logger.info(f"Processing document file: {media_file['original_filename']}")
+                        
+                        # Determine file type and process accordingly
+                        file_type = "document"
+                        if media_file['original_filename'].lower().endswith('.pdf'):
+                            # Process PDF file
+                            markdown, images, metadata = PDFProcessor.process_pdf(file_data)
+                            processor = PDFProcessor
+                            file_type = "pdf"
+                        elif media_file['original_filename'].lower().endswith('.docx'):
+                            # Process DOCX file
+                            markdown, images, metadata = DOCXProcessor.process_docx(file_data)
+                            processor = DOCXProcessor
+                            file_type = "docx"
+                        elif media_file['original_filename'].lower().endswith('.pptx'):
+                            # Process PPTX file
+                            markdown, images, metadata = PPTXProcessor.process_pptx(file_data)
+                            processor = PPTXProcessor
+                            file_type = "pptx"
+                        else:
+                            # Fallback to PDF processor for unknown document types
+                            markdown, images, metadata = PDFProcessor.process_pdf(file_data)
+                            processor = PDFProcessor
+        
+                        # Upload each extracted image to storage
+                        image_urls = {}
+                        failed_images = []
+                        
+                        # Prepare images for upload
+                        prepared_images = processor.prepare_images_for_upload(images)
+                        
+                        # Upload images
+                        if prepared_images and len(prepared_images) > 0:
+                            for img_filename, img_data in prepared_images.items():
+                                try:
+                                    # Upload image to storage
+                                    from storage import storage
+                                    img_file_path = f"images/{knowledge_id}/{media_file['id']}/{img_filename}"
+                                    
+                                    upload_result = storage.upload_file(
+                                        file_data=img_data["buffer"],
+                                        object_name=img_file_path,
+                                        content_type=f"image/{img_data['format']}",
+                                        metadata={
+                                            "knowledge_id": str(knowledge_id),
+                                            "media_id": str(media_file['id']),
+                                            "source_file": media_file['original_filename']
+                                        }
+                                    )
+                                    
+                                    if upload_result["success"]:
+                                        # Generate presigned URL for access
+                                        presigned_url = storage.generate_presigned_url(img_file_path)
+                                        
+                                        image_urls[img_filename] = {
+                                            "url": presigned_url,
+                                            "file_path": img_file_path,
+                                            "metadata": {
+                                                "width": img_data["width"],
+                                                "height": img_data["height"],
+                                                "page": img_data["page"],
+                                            },
+                                        }
+                                    else:
+                                        failed_images.append(img_filename)
+                                        
+                                except Exception as img_error:
+                                    logger.error(f"Failed to upload image {img_filename}: {str(img_error)}")
+                                    failed_images.append(img_filename)
+                                continue
+        
+                        # Analyze content and get chapters
+                        textbook, chapters = processor.process_text_to_index(
+                            markdown, 
+                            knowledge_id=knowledge["id"],
+                            knowledge_name=knowledge["name"]
+                        )
+                        
+                        # Add chapters with file reference
+                        for chapter in chapters:
+                            chapter["meta_data"]["source_file"] = media_file['original_filename']
+                            chapter["meta_data"]["media_id"] = media_file['id']
+                        
+                        all_chapters.extend(chapters)
+        
+                        # Collect file metadata
+                        file_result = {
+                            "media_id": media_file['id'],
+                            "filename": media_file['original_filename'],
+                            "file_type": file_type,
+                            "processed_at": datetime.utcnow().isoformat(),
+                            "chapters_count": len(chapters),
+                            "markdown": markdown,
+                            "metadata": metadata,
+                            "analysis": textbook,
+                            "image_urls": image_urls,
+                            "failed_images": failed_images
+                        }
+                        
+                        combined_metadata["file_types"].append(file_type)
+                    
+                    processed_files.append(file_result)
+                    combined_metadata["processed_files"].append(file_result)
+                    
+                    logger.info(f"Successfully processed file: {media_file['original_filename']}")
+                    
+                except Exception as file_error:
+                    logger.error(f"Error processing file {media_file['original_filename']}: {str(file_error)}")
+                    # Continue processing other files
+                    failed_file = {
+                        "media_id": media_file['id'],
+                        "filename": media_file['original_filename'],
+                        "error": str(file_error),
+                        "processed_at": datetime.utcnow().isoformat()
+                    }
+                    processed_files.append(failed_file)
+                    combined_metadata["processed_files"].append(failed_file)
+            
+            # Insert all chapters into database
+            if all_chapters:
+                self.db_manager.insert_chapters(knowledge_id, all_chapters)
+                logger.info(f"Inserted {len(all_chapters)} chapters for knowledge {knowledge_id}")
+            
+            # Determine overall content type
+            unique_file_types = list(set(combined_metadata["file_types"]))
+            if len(unique_file_types) == 1:
+                overall_content_type = unique_file_types[0]
+            else:
+                overall_content_type = "mixed"
+            
+            # Build final metadata to store in 'knowledge' table
+            result = {
+                "processed_files": processed_files,
+                "total_files": len(media_files),
+                "successful_files": len([f for f in processed_files if "error" not in f]),
+                "failed_files": len([f for f in processed_files if "error" in f]),
+                "total_chapters": len(all_chapters),
+                "content_type": overall_content_type,
+                "file_types": unique_file_types,
+                "processed_at": datetime.utcnow().isoformat(),
+                "retry_count": retry_count
+            }
+
+            # Update knowledge entry
             self.db_manager.update_knowledge_status(knowledge_id, "processed", result)
+            self.db_manager.update_knowledge_metadata(knowledge_id, {"content_type": overall_content_type})
             
             # Add success entry to retry history if this was a retry
             if retry_count > 0:
@@ -438,10 +533,10 @@ class QueueManager:
                     f"Successfully processed after retry #{retry_count}"
                 )
                 
-            logger.info(f"Successfully processed knowledge {knowledge_id}")
+            logger.info(f"Successfully processed knowledge {knowledge_id} with {len(processed_files)} files")
 
             # Check if this knowledge entry has automatic content generation flag
-            knowledge_metadata = self.db_manager.get_knowledge(knowledge_id).get("metadata", "{}")
+            knowledge_metadata = self.db_manager.get_knowledge(knowledge_id).get("meta_data", {})
             if isinstance(knowledge_metadata, str):
                 try:
                     knowledge_metadata = json.loads(knowledge_metadata)
@@ -476,5 +571,5 @@ class QueueManager:
                 error_message
             )
             
-            # Re-raise the exception to trigger retry
+            # Re-raise the exception to trigger retry logic
             raise

@@ -823,7 +823,7 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
         <RoleplayComponent 
           scenarios={validatedScenarios as any} 
           onRegenerate={onGenerateContentRequest}
-          openaiApiKey={process.env.OPENAI_API_KEY || ''} 
+          openaiApiKey={''} 
           userId={userId || 'anonymous'} 
           language={language} 
         />
