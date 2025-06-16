@@ -6,7 +6,7 @@ import os
 import dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models import Knowledge, Chapter, RetryHistory
+from models import Knowledge, Chapter, RetryHistory, Media, EdTechContent
 
 dotenv.load_dotenv()
 
@@ -46,6 +46,7 @@ class DatabaseManager:
                     raise ValueError(f"Knowledge entry {knowledge_id} not found")
                 return {
                     "id": knowledge.id,
+                    "name": knowledge.name,
                     "status": knowledge.status,
                     "content_type": knowledge.content_type,
                     "difficulty_level": knowledge.difficulty_level,
@@ -74,6 +75,7 @@ class DatabaseManager:
                     raise ValueError(f"Unseeded knowledge entry {knowledge_id} not found")
                 return {
                     "id": knowledge.id,
+                    "name": knowledge.name,
                     "status": knowledge.status,
                     "content_type": knowledge.content_type,
                     "difficulty_level": knowledge.difficulty_level,
@@ -319,4 +321,98 @@ class DatabaseManager:
                 } for content in contents]
         except Exception as e:
             logger.error(f"Error getting edtech content by knowledge: {str(e)}")
+            raise
+
+    def create_knowledge(self, name: str, **kwargs) -> int:
+        """Create a new knowledge entry and return its ID."""
+        try:
+            with self.get_db() as db:
+                knowledge = Knowledge(
+                    name=name,
+                    status=kwargs.get('status', 'pending'),
+                    content_type=kwargs.get('content_type', 'mixed'),
+                    difficulty_level=kwargs.get('difficulty_level'),
+                    target_audience=kwargs.get('target_audience', []),
+                    prerequisites=kwargs.get('prerequisites', []),
+                    summary=kwargs.get('summary'),
+                    video_url=kwargs.get('video_url'),
+                    has_transcript=kwargs.get('has_transcript', False),
+                    meta_data=kwargs.get('meta_data', {}),
+                    retry_count=0,
+                    seeded=False
+                )
+                db.add(knowledge)
+                db.commit()
+                db.refresh(knowledge)
+                return knowledge.id
+        except Exception as e:
+            logger.error(f"Error creating knowledge: {str(e)}")
+            raise
+
+    def add_media_file(self, knowledge_id: int, filename: str, original_filename: str, 
+                      content_type: str, file_size: int, file_path: str, 
+                      bucket_name: str, uploaded_by: Optional[int] = None, 
+                      meta_data: Optional[Dict] = None) -> int:
+        """Add a media file record and return its ID."""
+        try:
+            with self.get_db() as db:
+                media = Media(
+                    knowledge_id=knowledge_id,
+                    filename=filename,
+                    original_filename=original_filename,
+                    content_type=content_type,
+                    file_size=file_size,
+                    file_path=file_path,
+                    bucket_name=bucket_name,
+                    upload_status="completed",
+                    uploaded_by=uploaded_by,
+                    meta_data=meta_data or {}
+                )
+                db.add(media)
+                db.commit()
+                db.refresh(media)
+                return media.id
+        except Exception as e:
+            logger.error(f"Error adding media file: {str(e)}")
+            raise
+
+    def get_knowledge_media_files(self, knowledge_id: int) -> List[Dict]:
+        """Get all media files for a knowledge entry."""
+        try:
+            with self.get_db() as db:
+                media_files = db.query(Media).filter(Media.knowledge_id == knowledge_id).all()
+                return [
+                    {
+                        "id": media.id,
+                        "filename": media.filename,
+                        "original_filename": media.original_filename,
+                        "content_type": media.content_type,
+                        "file_size": media.file_size,
+                        "file_path": media.file_path,
+                        "bucket_name": media.bucket_name,
+                        "upload_status": media.upload_status,
+                        "error_message": media.error_message,
+                        "meta_data": media.meta_data,
+                        "uploaded_by": media.uploaded_by,
+                        "created_at": media.created_at,
+                        "updated_at": media.updated_at
+                    } for media in media_files
+                ]
+        except Exception as e:
+            logger.error(f"Error getting media files for knowledge {knowledge_id}: {str(e)}")
+            raise
+
+    def update_media_status(self, media_id: int, status: str, error_message: Optional[str] = None) -> None:
+        """Update media file upload status."""
+        try:
+            with self.get_db() as db:
+                media = db.query(Media).filter(Media.id == media_id).first()
+                if not media:
+                    raise ValueError(f"Media file {media_id} not found")
+                media.upload_status = status
+                if error_message:
+                    media.error_message = error_message
+                db.commit()
+        except Exception as e:
+            logger.error(f"Error updating media status: {str(e)}")
             raise
