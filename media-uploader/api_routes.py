@@ -5,7 +5,7 @@ import tempfile
 from typing import Dict, Optional, List, Any
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, Depends, BackgroundTasks, Query, Form, Request
+from fastapi import APIRouter, HTTPException, UploadFile, File, Depends, BackgroundTasks, Query, Form, Request, Path
 from fastapi.responses import JSONResponse
 import requests
 
@@ -59,14 +59,92 @@ def health_check():
     return {"status": "healthy"}
 
 
-@router.get("/process/{knowledge_id}")
+@router.get(
+    "/process/{knowledge_id}",
+    summary="🚀 Start Knowledge Processing",
+    description="""
+    Start processing a knowledge entry to extract content and generate educational materials.
+    
+    **Processing Steps:**
+    1. Extract text and content from uploaded files
+    2. Generate chapters and structure content
+    3. Optionally generate educational content (notes, summaries, quizzes, mindmaps)
+    
+    **Content Types Available:**
+    - `notes`: Detailed study notes
+    - `summary`: Concise summaries
+    - `quiz`: Interactive quizzes
+    - `mindmap`: Visual mind map structures
+    
+    **Languages Supported:**
+    - English (default)
+    - Spanish, French, German, Italian, Portuguese
+    - Chinese, Japanese, Korean
+    - And many more...
+    """,
+    response_description="Processing queue confirmation with options",
+    responses={
+        200: {
+            "description": "Processing started successfully",
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "with_content_generation": {
+                            "summary": "Processing with content generation",
+                            "value": {
+                                "knowledge_id": 123,
+                                "status": "queued",
+                                "message": "Knowledge processing has been queued with subsequent content generation.",
+                                "content_generation": True,
+                                "content_types": ["notes", "summary", "quiz"],
+                                "content_language": "English"
+                            }
+                        },
+                        "basic_processing": {
+                            "summary": "Basic processing only",
+                            "value": {
+                                "knowledge_id": 123,
+                                "status": "queued",
+                                "message": "Knowledge processing has been queued."
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Knowledge entry not found or already processed",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Knowledge not found or already seeded."
+                    }
+                }
+            }
+        }
+    },
+    tags=["Knowledge Processing"]
+)
 def start_processing(
-    knowledge_id: int,
+    knowledge_id: int = Path(
+        ..., 
+        description="ID of the knowledge entry to process",
+        example=123
+    ),
     queue_manager: QueueManager = Depends(get_queue_manager),
     db_manager: DatabaseManager = Depends(get_db_manager),
-    generate_content: bool = Query(True, description="Whether to generate content after processing"),
-    content_types: List[str] = Query(["notes", "summary", "quiz", "mindmap"], description="Types of content to generate"),
-    content_language: str = Query("English", description="Language for content generation")
+    generate_content: bool = Query(
+        True, 
+        description="Whether to generate educational content after processing"
+    ),
+    content_types: List[str] = Query(
+        ["notes", "summary", "quiz", "mindmap"], 
+        description="Types of educational content to generate"
+    ),
+    content_language: str = Query(
+        "English", 
+        description="Language for content generation"
+    )
 ):
     """Start processing a knowledge entry."""
     try:
@@ -207,9 +285,64 @@ def get_retry_history(
         raise HTTPException(500, f"Failed to get retry history: {str(e)}")
 
 
-@router.get("/process/{knowledge_id}/status")
+@router.get(
+    "/process/{knowledge_id}/status",
+    summary="📊 Get Processing Status",
+    description="""
+    Get the current processing status of a knowledge entry.
+    
+    **Status Values:**
+    - `pending`: Waiting to be processed
+    - `processing`: Currently being processed
+    - `completed`: Processing finished successfully
+    - `failed`: Processing failed
+    - `retrying`: Being retried after failure
+    
+    **Response includes:**
+    - Current processing status
+    - Status message with details
+    - Retry count if applicable
+    - Processing metadata and results
+    """,
+    response_description="Current processing status and details",
+    responses={
+        200: {
+            "description": "Processing status retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "knowledge_id": 123,
+                        "status": "completed",
+                        "message": "Processing completed successfully",
+                        "retry_count": 0,
+                        "result": {
+                            "chapters_extracted": 5,
+                            "processing_time": "2.5 minutes",
+                            "content_generated": ["notes", "summary", "quiz"]
+                        }
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Knowledge entry not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Knowledge not found"
+                    }
+                }
+            }
+        }
+    },
+    tags=["Knowledge Processing"]
+)
 def get_processing_status(
-    knowledge_id: int,
+    knowledge_id: int = Path(
+        ..., 
+        description="ID of the knowledge entry to check",
+        example=123
+    ),
     db_manager: DatabaseManager = Depends(get_db_manager)
 ):
     """Get the current processing status."""
@@ -773,10 +906,82 @@ async def delete_knowledge_from_graph(
         logger.error(f"Error deleting knowledge from graph: {str(e)}")
         raise HTTPException(500, f"Error deleting knowledge from graph: {str(e)}")
 
-@router.post("/upload-knowledge-file")
+@router.post(
+    "/upload-knowledge-file",
+    summary="📁 Upload Multiple Files for Knowledge Processing",
+    description="""
+    Upload multiple educational files (PDFs, videos, documents) and create a knowledge entry.
+    
+    **Supported File Types:**
+    - 📄 **Documents**: PDF, DOCX, PPTX, DOC, PPT
+    - 🎥 **Videos**: MP4, MOV, AVI, MKV, WEBM, M4V
+    - 📁 **Other**: Any file type (stored as miscellaneous)
+    
+    **Process:**
+    1. Creates a new knowledge entry with the provided name
+    2. Uploads all files to MinIO storage with unique filenames
+    3. Associates files with the knowledge entry in the database
+    4. Returns detailed upload results and file information
+    
+    **File Organization:**
+    - Videos: `video/{knowledge_id}/{unique_filename}`
+    - Documents: `doc/{knowledge_id}/{unique_filename}`
+    - Other: `misc/{knowledge_id}/{unique_filename}`
+    """,
+    response_description="Upload results with knowledge ID and file details",
+    responses={
+        200: {
+            "description": "Files uploaded successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "knowledge_id": 123,
+                        "knowledge_name": "Course Materials",
+                        "uploaded_files": [
+                            {
+                                "media_id": 456,
+                                "filename": "lecture1.pdf",
+                                "unique_filename": "abc123.pdf",
+                                "content_type": "application/pdf",
+                                "file_size": 1024000,
+                                "file_path": "doc/123/abc123.pdf",
+                                "status": "uploaded"
+                            }
+                        ],
+                        "failed_files": [],
+                        "total_files": 1,
+                        "successful_uploads": 1,
+                        "failed_uploads": 0,
+                        "content_type": "document",
+                        "message": "Knowledge entry created with 1 files uploaded successfully"
+                    }
+                }
+            }
+        },
+        500: {
+            "description": "Upload failed",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Error uploading knowledge files: Storage service unavailable"
+                    }
+                }
+            }
+        }
+    },
+    tags=["Knowledge Processing"]
+)
 async def upload_knowledge_file(
-    files: List[UploadFile] = File(...),
-    name: str = Form(...),
+    files: List[UploadFile] = File(
+        ..., 
+        description="List of files to upload (PDFs, videos, documents)",
+        example=["lecture1.pdf", "video1.mp4"]
+    ),
+    name: str = Form(
+        ..., 
+        description="Name for the knowledge entry",
+        example="Introduction to Python Programming"
+    ),
     db_manager: DatabaseManager = Depends(get_db_manager)
 ):
     """
@@ -908,9 +1113,67 @@ async def upload_knowledge_file(
         raise HTTPException(500, f"Error uploading knowledge files: {str(e)}")
 
 # ADD: New endpoint to get knowledge files
-@router.get("/knowledge/{knowledge_id}/files")
+@router.get(
+    "/knowledge/{knowledge_id}/files",
+    summary="📋 Get Knowledge Files",
+    description="""
+    Retrieve all files associated with a specific knowledge entry.
+    
+    **Returns:**
+    - Knowledge entry information
+    - List of all associated media files
+    - File metadata including sizes, types, and storage paths
+    
+    **Use Cases:**
+    - View all files in a knowledge entry
+    - Check file upload status
+    - Get file metadata for processing
+    """,
+    response_description="Knowledge entry with associated files",
+    responses={
+        200: {
+            "description": "Knowledge files retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "knowledge_id": 123,
+                        "knowledge_name": "Course Materials",
+                        "content_type": "document",
+                        "files": [
+                            {
+                                "media_id": 456,
+                                "filename": "abc123.pdf",
+                                "original_filename": "lecture1.pdf",
+                                "content_type": "application/pdf",
+                                "file_size": 1024000,
+                                "file_path": "doc/123/abc123.pdf",
+                                "created_at": "2024-12-16T15:00:00Z"
+                            }
+                        ],
+                        "total_files": 1
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Knowledge entry not found",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Knowledge with ID 123 not found"
+                    }
+                }
+            }
+        }
+    },
+    tags=["Knowledge Processing"]
+)
 async def get_knowledge_files(
-    knowledge_id: int,
+    knowledge_id: int = Path(
+        ..., 
+        description="ID of the knowledge entry",
+        example=123
+    ),
     db_manager: DatabaseManager = Depends(get_db_manager)
 ):
     """

@@ -9,14 +9,22 @@ load_dotenv()
 
 import jwt
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Response, Header
+from fastapi import APIRouter, Depends, HTTPException, Response, Header, Request, Query
 
 from sqlalchemy.orm import Session
 
 from database import DatabaseManager
 from models import User
 
-router = APIRouter(prefix="/auth", tags=["authentication"])
+router = APIRouter(
+    prefix="/auth", 
+    tags=["Authentication"],
+    responses={
+        401: {"description": "Authentication failed"},
+        403: {"description": "Access forbidden"},
+        404: {"description": "User not found"}
+    }
+)
 
 # Constants from environment variables
 KRATOS_PUBLIC_URL = os.getenv("KRATOS_PUBLIC_URL", "http://127.0.0.1:4433")
@@ -54,9 +62,66 @@ async def get_current_user(request: Request) -> User:
         raise HTTPException(status_code=401, detail="Not authenticated")
     return user
 
-@router.post("/register")
+@router.post(
+    "/register",
+    summary="👤 Complete User Registration",
+    description="""
+    Complete the user registration process using ORY Kratos flow.
+    
+    **Registration Process:**
+    1. User initiates registration through Kratos UI
+    2. Kratos validates credentials and creates identity
+    3. This endpoint completes registration and creates local user
+    4. Returns JWT token for immediate authentication
+    
+    **Requirements:**
+    - Valid Kratos registration flow ID
+    - Completed registration form data
+    - Valid email and password
+    
+    **Returns:**
+    - JWT access token
+    - User profile information
+    - Token expiration details
+    """,
+    response_description="Registration success with JWT token",
+    responses={
+        200: {
+            "description": "Registration completed successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+                        "token_type": "bearer",
+                        "user": {
+                            "id": 123,
+                            "email": "user@example.com",
+                            "display_name": "John Doe",
+                            "roles": ["user"],
+                            "verified": False
+                        }
+                    }
+                }
+            }
+        },
+        400: {
+            "description": "Invalid registration flow or data",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Invalid registration flow"
+                    }
+                }
+            }
+        }
+    }
+)
 async def register_user(
-    flow_id: str,
+    flow_id: str = Query(
+        ..., 
+        description="Kratos registration flow ID",
+        example="a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    ),
     client: httpx.AsyncClient = Depends(get_kratos_client),
     db: Session = Depends(get_db)
 ):
@@ -112,9 +177,76 @@ async def register_user(
     except httpx.HTTPError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/login")
+@router.post(
+    "/login",
+    summary="🔐 User Login",
+    description="""
+    Complete user login process using ORY Kratos authentication.
+    
+    **Login Process:**
+    1. User initiates login through Kratos UI
+    2. Kratos validates credentials
+    3. This endpoint completes login and issues JWT
+    4. Updates user's last login timestamp
+    
+    **Security Features:**
+    - JWT token with configurable expiration
+    - Secure session management
+    - Integration with ORY Kratos identity system
+    
+    **Token Details:**
+    - Default expiration: 24 hours
+    - Contains user ID and Kratos identity ID
+    - Required for accessing protected endpoints
+    """,
+    response_description="Login success with JWT token",
+    responses={
+        200: {
+            "description": "Login completed successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+                        "token_type": "bearer",
+                        "user": {
+                            "id": 123,
+                            "email": "user@example.com",
+                            "display_name": "John Doe",
+                            "roles": ["user"],
+                            "verified": True
+                        }
+                    }
+                }
+            }
+        },
+        400: {
+            "description": "Invalid login flow or credentials",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Invalid login flow"
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "User not found in local database",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "User not found"
+                    }
+                }
+            }
+        }
+    }
+)
 async def login_user(
-    flow_id: str,
+    flow_id: str = Query(
+        ..., 
+        description="Kratos login flow ID",
+        example="a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    ),
     client: httpx.AsyncClient = Depends(get_kratos_client),
     db: Session = Depends(get_db)
 ):
@@ -163,9 +295,45 @@ async def login_user(
     except httpx.HTTPError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/reset-password")
+@router.post(
+    "/reset-password",
+    summary="🔄 Reset Password",
+    description="""
+    Initiate password reset process through ORY Kratos.
+    
+    **Reset Process:**
+    1. User provides email address
+    2. Kratos sends reset email if account exists
+    3. User follows email link to reset password
+    4. Password is updated in Kratos identity system
+    
+    **Security Features:**
+    - Secure email-based verification
+    - Time-limited reset tokens
+    - No sensitive information exposed
+    
+    **Note:** This endpoint always returns success to prevent email enumeration attacks.
+    """,
+    response_description="Password reset initiated",
+    responses={
+        200: {
+            "description": "Password reset email sent (if account exists)",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "Password reset initiated. Check your email."
+                    }
+                }
+            }
+        }
+    }
+)
 async def reset_password(
-    email: str,
+    email: str = Query(
+        ..., 
+        description="Email address for password reset",
+        example="user@example.com"
+    ),
     client: httpx.AsyncClient = Depends(get_kratos_client)
 ):
     """Initiate password reset flow through Kratos."""
@@ -182,9 +350,43 @@ async def reset_password(
     except httpx.HTTPError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/verify-reset")
+@router.post(
+    "/verify-reset",
+    summary="✅ Verify Password Reset",
+    description="""
+    Complete password reset verification process.
+    
+    **Verification Process:**
+    1. User clicks reset link from email
+    2. Kratos validates reset token
+    3. This endpoint confirms reset completion
+    4. User can now login with new password
+    
+    **Security:**
+    - One-time use reset tokens
+    - Time-limited validity
+    - Secure token validation
+    """,
+    response_description="Password reset verification result",
+    responses={
+        200: {
+            "description": "Password reset completed successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "Password has been reset successfully."
+                    }
+                }
+            }
+        }
+    }
+)
 async def verify_reset(
-    flow_id: str,
+    flow_id: str = Query(
+        ..., 
+        description="Kratos recovery flow ID",
+        example="a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+    ),
     client: httpx.AsyncClient = Depends(get_kratos_client)
 ):
     """Complete password reset verification."""
@@ -200,15 +402,73 @@ async def verify_reset(
     except httpx.HTTPError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/me")
+@router.get(
+    "/me",
+    summary="👤 Get User Profile",
+    description="""
+    Get the current authenticated user's profile information.
+    
+    **Authentication Required:**
+    - Valid JWT token in Authorization header
+    - Format: `Bearer <token>`
+    
+    **Profile Information:**
+    - User ID and Kratos identity ID
+    - Email address and display name
+    - User roles and permissions
+    - Account verification status
+    - Last login timestamp
+    - JWT token information
+    
+    **Use Cases:**
+    - Display user information in UI
+    - Check authentication status
+    - Verify user permissions
+    """,
+    response_description="Current user profile information",
+    responses={
+        200: {
+            "description": "User profile retrieved successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "id": 123,
+                        "kratos_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                        "email": "user@example.com",
+                        "display_name": "John Doe",
+                        "roles": ["user"],
+                        "verified": True,
+                        "active": True,
+                        "last_login": "2024-12-16T15:00:00Z",
+                        "created_at": "2024-12-01T10:00:00Z",
+                        "jwt_expires_at": "2024-12-17T15:00:00Z"
+                    }
+                }
+            }
+        },
+        401: {
+            "description": "Authentication required",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Not authenticated"
+                    }
+                }
+            }
+        }
+    }
+)
 async def get_user_profile(current_user: User = Depends(get_current_user)):
-    """Get current user's profile."""
+    """Get current user profile information."""
     return {
         "id": current_user.id,
+        "kratos_id": current_user.kratos_id,
         "email": current_user.email,
         "display_name": current_user.display_name,
         "roles": current_user.roles,
         "verified": current_user.verified,
+        "active": current_user.active,
         "last_login": current_user.last_login,
-        "created_at": current_user.created_at
+        "created_at": current_user.created_at,
+        "jwt_expires_at": current_user.jwt_expires_at
     }

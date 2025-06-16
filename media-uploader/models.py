@@ -1,9 +1,76 @@
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 from sqlalchemy import Column, Integer, String, Text, Boolean, JSON, ForeignKey, DateTime, Float
 from sqlalchemy.orm import declarative_base, relationship
+from pydantic import BaseModel
 
 Base = declarative_base()
+
+# Pydantic models for API responses
+class ProcessingStatus(BaseModel):
+    """Response model for processing status."""
+    knowledge_id: int
+    status: str
+    message: str
+    retry_count: int
+    result: Optional[Dict[str, Any]] = None
+
+class RetryRequest(BaseModel):
+    """Request model for retry operations."""
+    force: bool = False
+    max_retries: Optional[int] = None
+
+class RetryHistoryEntry(BaseModel):
+    """Model for a single retry history entry."""
+    id: int
+    knowledge_id: int
+    status: str
+    error: Optional[str]
+    created_at: datetime
+
+class RetryHistory(BaseModel):
+    """Response model for retry history."""
+    knowledge_id: int
+    retries: List[RetryHistoryEntry]
+
+class ImageUploadStatus(BaseModel):
+    """Response model for image upload status."""
+    knowledge_id: int
+    total_images: int
+    uploaded_images: int
+    failed_images: List[str]
+
+class PDFResponse(BaseModel):
+    """Response model for PDF processing."""
+    success: bool
+    message: str
+    data: Optional[Dict[str, Any]] = None
+
+class ContentGenerationResponse(BaseModel):
+    """Response model for content generation."""
+    success: bool
+    error: Optional[str] = None
+    data: Optional[List[Dict[str, Any]]] = None
+
+class ChapterDataResponse(BaseModel):
+    """Response model for chapter data."""
+    success: bool
+    data: Optional[List[Dict[str, Any]]] = None
+    error: Optional[str] = None
+
+class ContentGenerationRequest(BaseModel):
+    """Request model for content generation."""
+    knowledge_id: int
+    chapter_id: Optional[str] = None
+    types: List[str]
+    language: str = "English"
+
+class ChapterDataRequest(BaseModel):
+    """Request model for chapter data."""
+    knowledge_id: int
+    chapter_id: Optional[str] = None
+    types: Optional[List[str]] = None
+    language: str = "English"
 
 class User(Base):
     """Model for user accounts integrated with ORY Kratos and JWT sessions."""
@@ -91,8 +158,8 @@ class Chapter(Base):
     content = Column(Text)
     meta_data = Column(JSON)
 
-class RetryHistory(Base):
-    """Model for tracking retry attempts."""
+class RetryHistoryDB(Base):
+    """SQLAlchemy model for tracking retry attempts."""
     __tablename__ = "retry_history"
 
     id = Column(Integer, primary_key=True)

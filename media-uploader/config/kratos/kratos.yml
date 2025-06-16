@@ -43,15 +43,28 @@ selfservice:
     
   flows:
     registration:
-      enabled: true
+      lifespan: 1h
+      ui_url: http://127.0.0.1:4455/registration
     login:
-      enabled: true
+      lifespan: 1h
+      ui_url: http://127.0.0.1:4455/login
     settings:
-      enabled: true
+      lifespan: 1h
+      privileged_session_max_age: 1h
+      required_aal: highest_available
+      ui_url: http://127.0.0.1:4455/settings
     recovery:
-      enabled: true
+      lifespan: 1h
+      notify_unknown_recipients: false
+      ui_url: http://127.0.0.1:4455/recovery
+      use: code
     verification:
-      enabled: true
+      lifespan: 1h
+      notify_unknown_recipients: false
+      ui_url: http://127.0.0.1:4455/verification
+      use: code
+    error:
+      ui_url: http://127.0.0.1:4455/error
 
 log:
   level: debug
