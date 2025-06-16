@@ -4,8 +4,6 @@ import { windowedChunk } from "@/components/utils";
 import supabase from "./supabase";
 import { analyzeMarkdown, cleanMarkdown, processMarkdown } from "./markdown-utils";
 import { OpenAIService } from "./openAi";
-import { apiClient } from './api-client';
-import { Chapter } from '../types/api';
 
 
 export const getEdTechContent = async (chapter, language = "English") => {
@@ -548,26 +546,3 @@ Format your response as a valid JSON object with a 'scenarios' array:
         return null;
     }
 };
-
-interface ChapterUpdate {
-  notes?: string;
-  summary?: string;
-  quiz?: any;
-  mindmap?: any;
-}
-
-export class ContentService {
-  async getChapters(knowledgeId: number): Promise<Chapter[]> {
-    return apiClient.get<Chapter[]>(`/chapters/${knowledgeId}`);
-  }
-
-  async updateChapter(knowledgeId: number, chapterId: string, updates: ChapterUpdate): Promise<Chapter> {
-    return apiClient.put<Chapter>(`/chapters/${knowledgeId}/${chapterId}`, updates);
-  }
-
-  async generateContent(knowledgeId: number): Promise<void> {
-    return apiClient.post(`/content/generate/${knowledgeId}`);
-  }
-}
-
-export const contentService = new ContentService();
