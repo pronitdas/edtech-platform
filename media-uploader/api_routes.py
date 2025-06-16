@@ -780,36 +780,169 @@ async def upload_knowledge_file(
     db_manager: DatabaseManager = Depends(get_db_manager)
 ):
     """
-    Upload one or more files, create a knowledge entry, associate files, and store vector embeddings.
+    Upload multiple files, create a knowledge entry, and associate files.
+    
+    Args:
+        files: List of files to upload
+        name: Name for the knowledge entry
+        db_manager: Database manager dependency
+        
+    Returns:
+        JSON response with knowledge ID and file information
     """
     try:
-        # Create knowledge entry
+        from storage import storage
+        import uuid
+        
+        # Create knowledge entry first
         knowledge_id = db_manager.create_knowledge(name=name)
-        file_infos = []
+        
+        uploaded_files = []
+        failed_files = []
+        
+        # Determine content type based on uploaded files
+        file_types = set()
+        
         for file in files:
-            content = await file.read()
-            # Stub for embedding generation
-            embedding = generate_embedding_stub(content)
-            # Store file metadata and embedding
-            db_manager.add_knowledge_file(
-                knowledge_id=knowledge_id,
-                filename=file.filename,
-                content_type=file.content_type,
-                embedding=embedding
-            )
-            file_infos.append({
-                "filename": file.filename,
-                "content_type": file.content_type,
-                "embedding": embedding
-            })
+            try:
+                # Read file content
+                content = await file.read()
+                file_size = len(content)
+                
+                # Generate unique filename to avoid conflicts
+                file_extension = os.path.splitext(file.filename)[1].lower()
+                unique_filename = f"{uuid.uuid4()}{file_extension}"
+                
+                # Determine file path based on content type
+                is_video = file_extension in ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v']
+                is_document = file_extension in ['.pdf', '.docx', '.pptx', '.doc', '.ppt']
+                
+                if is_video:
+                    file_path = f"video/{knowledge_id}/{unique_filename}"
+                    file_types.add("video")
+                elif is_document:
+                    file_path = f"doc/{knowledge_id}/{unique_filename}"
+                    file_types.add("document")
+                else:
+                    file_path = f"misc/{knowledge_id}/{unique_filename}"
+                    file_types.add("other")
+                
+                # Upload to storage
+                upload_result = storage.upload_file(
+                    file_data=content,
+                    object_name=file_path,
+                    content_type=file.content_type or "application/octet-stream",
+                    metadata={
+                        "knowledge_id": str(knowledge_id),
+                        "original_filename": file.filename,
+                        "uploaded_at": datetime.utcnow().isoformat()
+                    }
+                )
+                
+                if upload_result["success"]:
+                    # Add media record to database
+                    media_id = db_manager.add_media_file(
+                        knowledge_id=knowledge_id,
+                        filename=unique_filename,
+                        original_filename=file.filename,
+                        content_type=file.content_type or "application/octet-stream",
+                        file_size=file_size,
+                        file_path=file_path,
+                        bucket_name=upload_result["bucket_name"],
+                        meta_data={
+                            "etag": upload_result.get("etag"),
+                            "version_id": upload_result.get("version_id")
+                        }
+                    )
+                    
+                    uploaded_files.append({
+                        "media_id": media_id,
+                        "filename": file.filename,
+                        "unique_filename": unique_filename,
+                        "content_type": file.content_type,
+                        "file_size": file_size,
+                        "file_path": file_path,
+                        "status": "uploaded"
+                    })
+                else:
+                    failed_files.append({
+                        "filename": file.filename,
+                        "error": upload_result.get("error", "Upload failed")
+                    })
+                    
+            except Exception as file_error:
+                logger.error(f"Error processing file {file.filename}: {str(file_error)}")
+                failed_files.append({
+                    "filename": file.filename,
+                    "error": str(file_error)
+                })
+        
+        # Update knowledge entry with determined content type
+        if len(file_types) == 1:
+            content_type = list(file_types)[0]
+        else:
+            content_type = "mixed"
+            
+        db_manager.update_knowledge_metadata(knowledge_id, {"content_type": content_type})
+        
+        # Prepare response
+        response = {
+            "knowledge_id": knowledge_id,
+            "knowledge_name": name,
+            "uploaded_files": uploaded_files,
+            "failed_files": failed_files,
+            "total_files": len(files),
+            "successful_uploads": len(uploaded_files),
+            "failed_uploads": len(failed_files),
+            "content_type": content_type,
+            "message": f"Knowledge entry created with {len(uploaded_files)} files uploaded successfully"
+        }
+        
+        if failed_files:
+            response["message"] += f" ({len(failed_files)} files failed)"
+            
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error uploading knowledge files: {str(e)}")
+        raise HTTPException(500, f"Error uploading knowledge files: {str(e)}")
+
+# ADD: New endpoint to get knowledge files
+@router.get("/knowledge/{knowledge_id}/files")
+async def get_knowledge_files(
+    knowledge_id: int,
+    db_manager: DatabaseManager = Depends(get_db_manager)
+):
+    """
+    Get all files associated with a knowledge entry.
+    
+    Args:
+        knowledge_id: ID of the knowledge entry
+        db_manager: Database manager dependency
+        
+    Returns:
+        JSON response with file information
+    """
+    try:
+        # Check if knowledge exists
+        knowledge = db_manager.get_knowledge(knowledge_id)
+        
+        # Get media files
+        media_files = db_manager.get_knowledge_media_files(knowledge_id)
+        
         return {
             "knowledge_id": knowledge_id,
-            "files": file_infos,
-            "message": "Knowledge and files uploaded successfully."
+            "knowledge_name": knowledge["name"],
+            "content_type": knowledge["content_type"],
+            "files": media_files,
+            "total_files": len(media_files)
         }
+        
+    except ValueError as e:
+        raise HTTPException(404, str(e))
     except Exception as e:
-        logger.error(f"Error uploading knowledge file: {str(e)}")
-        raise HTTPException(500, f"Error uploading knowledge file: {str(e)}")
+        logger.error(f"Error getting knowledge files: {str(e)}")
+        raise HTTPException(500, f"Error getting knowledge files: {str(e)}")
 
 # --- Helper stub for embedding generation ---
 def generate_embedding_stub(content: bytes):
