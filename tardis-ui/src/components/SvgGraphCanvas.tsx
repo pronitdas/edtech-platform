@@ -612,7 +612,7 @@ const SvgGraphCanvas: React.FC<SvgGraphCanvasProps> = ({
                     onMouseLeave={handleMouseLeave}
                     onClick={(idx) => onElementClick?.('shape', idx, shape)}
                 />
-                ))}
+                
 
                 {lines.map((line, index) => (
                     <LineElement

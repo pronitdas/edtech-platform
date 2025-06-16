@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MessageSquare, RefreshCw, Users, User, ChevronLeft, ChevronRight, Send } from 'lucide-react';
-import { OpenAIClient } from '@/services/openAi';
+import { OpenAIService } from '@/services/openAi';
 import { RoleplayService } from '@/services/RoleplayService';
 import { EvaluationService } from '@/services/EvaluationService';
 import { analyticsService } from '@/services/analytics-service';
@@ -64,7 +64,7 @@ const RoleplayComponent: React.FC<RoleplayComponentProps> = ({
 
   const [roleplayState, setRoleplayState] = useState<RoleplayState>(getInitialRoleplayState());
 
-  const openaiClient = useMemo(() => new OpenAIClient(openaiApiKey), [openaiApiKey]);
+  const openaiClient = useMemo(() => new OpenAIService(openaiApiKey), [openaiApiKey]);
   const roleplayService = useMemo(() => new RoleplayService(openaiClient), [openaiClient]);
 
   const activeScenario = scenarios[activeScenarioIndex];
