@@ -112,3 +112,22 @@ class EdTechContent(Base):
     meta_data = Column(JSON)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class Media(Base):
+    """Model for tracking uploaded media files and their metadata."""
+    __tablename__ = "media"
+
+    id = Column(Integer, primary_key=True)
+    knowledge_id = Column(Integer, ForeignKey("knowledge.id"), nullable=True)
+    filename = Column(String, nullable=False)
+    original_filename = Column(String, nullable=False)
+    content_type = Column(String, nullable=False)
+    file_size = Column(Integer, nullable=False)
+    file_path = Column(String, nullable=False)  # Path in MinIO
+    bucket_name = Column(String, nullable=False)
+    upload_status = Column(String, default="pending")  # pending, completed, failed
+    error_message = Column(Text)
+    meta_data = Column(JSON)
+    uploaded_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -3,6 +3,7 @@ import os
 import io
 import base64
 from typing import Dict, Optional
+from datetime import datetime
 
 import fitz  # PyMuPDF
 from PIL import Image
@@ -22,6 +23,7 @@ from video_processor_v2 import VideoProcessorV2
 from api_routes import router
 from routes.analytics import router as analytics_router
 from routes.auth import router as auth_router
+from routes.media import router as media_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -96,6 +98,27 @@ app.add_middleware(
 app.include_router(router)
 app.include_router(analytics_router)
 app.include_router(auth_router)
+app.include_router(media_router)
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring."""
+    return {
+        "status": "healthy",
+        "service": "edtech-platform",
+        "version": "1.0.0",
+        "timestamp": datetime.utcnow().isoformat()
+    }
+
+@app.get("/")
+async def root():
+    """Root endpoint with API information."""
+    return {
+        "message": "EdTech Platform - Local-First Media Uploader Service",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/health"
+    }
 
 # Run locally (for testing with: python -m media-uploader.main)
 if __name__ == "__main__":
