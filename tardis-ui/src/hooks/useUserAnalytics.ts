@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
-import { analyticsService } from '@/services/analytics-service';
+import { useState, useEffect, useCallback } from 'react'
+import { analyticsService } from '@/services/analytics-service'
 
 interface UserAnalyticsState {
-  sessionStats: any;
-  interactionSummary: any;
-  numericSummaries: Record<string, any>;
-  isLoading: boolean;
-  error: Error | null;
+  sessionStats: any
+  interactionSummary: any
+  numericSummaries: Record<string, any>
+  isLoading: boolean
+  error: Error | null
 }
 
 export function useUserAnalytics(userId: string, contentId?: string) {
@@ -15,67 +15,74 @@ export function useUserAnalytics(userId: string, contentId?: string) {
     interactionSummary: null,
     numericSummaries: {},
     isLoading: true,
-    error: null
-  });
+    error: null,
+  })
 
   const fetchSessionStats = useCallback(async () => {
     try {
-      const stats = await analyticsService.getUserSessionStats(userId);
-      setState(prev => ({ ...prev, sessionStats: stats }));
+      const stats = await analyticsService.getUserSessionStats(userId)
+      setState(prev => ({ ...prev, sessionStats: stats }))
     } catch (err) {
-      setState(prev => ({ ...prev, error: err as Error }));
+      setState(prev => ({ ...prev, error: err as Error }))
     }
-  }, [userId]);
+  }, [userId])
 
   const fetchInteractionSummary = useCallback(async () => {
     try {
-      const summary = await analyticsService.getUserInteractionSummary(userId, contentId);
-      setState(prev => ({ ...prev, interactionSummary: summary }));
+      const summary = await analyticsService.getUserInteractionSummary(
+        userId,
+        contentId
+      )
+      setState(prev => ({ ...prev, interactionSummary: summary }))
     } catch (err) {
-      setState(prev => ({ ...prev, error: err as Error }));
+      setState(prev => ({ ...prev, error: err as Error }))
     }
-  }, [userId, contentId]);
+  }, [userId, contentId])
 
-  const fetchNumericSummary = useCallback(async (eventType: string, jsonKey: string) => {
-    try {
-      const summary = await analyticsService.summarizeNumericEventData(userId, eventType, jsonKey);
-      setState(prev => ({
-        ...prev,
-        numericSummaries: {
-          ...prev.numericSummaries,
-          [`${eventType}_${jsonKey}`]: summary
-        }
-      }));
-    } catch (err) {
-      setState(prev => ({ ...prev, error: err as Error }));
-    }
-  }, [userId]);
+  const fetchNumericSummary = useCallback(
+    async (eventType: string, jsonKey: string) => {
+      try {
+        const summary = await analyticsService.summarizeNumericEventData(
+          userId,
+          eventType,
+          jsonKey
+        )
+        setState(prev => ({
+          ...prev,
+          numericSummaries: {
+            ...prev.numericSummaries,
+            [`${eventType}_${jsonKey}`]: summary,
+          },
+        }))
+      } catch (err) {
+        setState(prev => ({ ...prev, error: err as Error }))
+      }
+    },
+    [userId]
+  )
 
   // Initial data fetch
   useEffect(() => {
     const fetchData = async () => {
-      setState(prev => ({ ...prev, isLoading: true, error: null }));
+      setState(prev => ({ ...prev, isLoading: true, error: null }))
       try {
-        await Promise.all([
-          fetchSessionStats(),
-          fetchInteractionSummary()
-        ]);
+        await Promise.all([fetchSessionStats(), fetchInteractionSummary()])
       } catch (err) {
-        setState(prev => ({ ...prev, error: err as Error }));
+        setState(prev => ({ ...prev, error: err as Error }))
       } finally {
-        setState(prev => ({ ...prev, isLoading: false }));
+        setState(prev => ({ ...prev, isLoading: false }))
       }
-    };
+    }
 
     if (userId) {
-      fetchData();
+      fetchData()
     }
-  }, [userId, contentId, fetchSessionStats, fetchInteractionSummary]);
+  }, [userId, contentId, fetchSessionStats, fetchInteractionSummary])
 
   return {
     ...state,
     refreshSessionStats: fetchSessionStats,
     refreshInteractionSummary: fetchInteractionSummary,
-    fetchNumericSummary
-  };
-} 
+    fetchNumericSummary,
+  }
+}

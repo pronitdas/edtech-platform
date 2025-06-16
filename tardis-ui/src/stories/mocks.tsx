@@ -1,2 +1,2 @@
-const ws = jest.fn();
-export default ws;
+const ws = jest.fn()
+export default ws

@@ -1,17 +1,21 @@
-import type { Preview } from "@storybook/react";
-import '../src/app/globals.css';
-
-// Note: Instead of a global decorator for MockInteractionTrackerProvider,
-// each story file that needs it should import and use it in their individual decorators.
-// See MockInteractionTrackerProvider.tsx in the stories directory.
+import { withThemeByClassName } from '@storybook/addon-themes'
+import type { Preview } from '@storybook/react'
+import '../src/app/globals.css'
 
 const preview: Preview = {
   parameters: {
-    actions: { argTypesRegex: "^on[A-Z].*" },
+    actions: { argTypesRegex: '^on[A-Z].*' },
     controls: {
       matchers: {
         color: /(background|color)$/i,
         date: /Date$/i,
+      },
+      expanded: true,
+    },
+    docs: {
+      toc: true,
+      source: {
+        state: 'open',
       },
     },
     viewport: {
@@ -46,26 +50,55 @@ const preview: Preview = {
         },
       },
     },
+    backgrounds: {
+      default: 'light',
+      values: [
+        {
+          name: 'light',
+          value: '#ffffff',
+        },
+        {
+          name: 'dark',
+          value: '#0f172a',
+        },
+        {
+          name: 'gray',
+          value: '#f1f5f9',
+        },
+      ],
+    },
     // Ensure React 18 strict mode is enabled
     react: {
       strictMode: true,
     },
+    layout: 'centered',
   },
-  // Add dark mode support
+  // Add theme switching support
+  decorators: [
+    withThemeByClassName({
+      themes: {
+        light: 'light',
+        dark: 'dark',
+      },
+      defaultTheme: 'light',
+    }),
+  ],
   globalTypes: {
-    darkMode: {
-      defaultValue: false,
-    },
     theme: {
+      description: 'Global theme for components',
       defaultValue: 'light',
       toolbar: {
         title: 'Theme',
-        icon: 'circlehollow',
-        items: ['light', 'dark'],
+        icon: 'paintbrush',
+        items: [
+          { value: 'light', title: 'Light', icon: 'sun' },
+          { value: 'dark', title: 'Dark', icon: 'moon' },
+        ],
         dynamicTitle: true,
       },
     },
   },
-};
+  tags: ['autodocs'],
+}
 
-export default preview; 
+export default preview

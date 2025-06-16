@@ -1,31 +1,31 @@
-import { useCallback } from 'react';
-import { useInteractionTracker } from '@/contexts/InteractionTrackerContext';
+import { useCallback } from 'react'
+import { useInteractionTracker } from '@/contexts/InteractionTrackerContext'
 
 // Types for the roleplay analytics
 interface RoleplayStudent {
-  name: string;
-  personality: string;
+  name: string
+  personality: string
 }
 
 interface RoleplayScenario {
-  id: string;
-  title: string;
-  difficulty: string;
-  estimatedDuration: number;
-  students: RoleplayStudent[];
+  id: string
+  title: string
+  difficulty: string
+  estimatedDuration: number
+  students: RoleplayStudent[]
 }
 
 interface RoleplayEvaluation {
-  criteriaId: string;
-  criteriaName: string;
-  score: number;
-  maxScore: number;
-  feedback: string;
+  criteriaId: string
+  criteriaName: string
+  score: number
+  maxScore: number
+  feedback: string
 }
 
 // Roleplay analytics hook
 export const useRoleplayAnalytics = (knowledgeId: string, moduleId: string) => {
-  const tracker = useInteractionTracker();
+  const tracker = useInteractionTracker()
 
   // Start tracking a roleplay session
   const trackRoleplayStart = useCallback(
@@ -41,10 +41,10 @@ export const useRoleplayAnalytics = (knowledgeId: string, moduleId: string) => {
           name: student.name,
           personality: student.personality,
         })),
-      });
+      })
     },
     [tracker, knowledgeId, moduleId]
-  );
+  )
 
   // Track a teacher's response to a student
   const trackTeacherResponse = useCallback(
@@ -69,10 +69,10 @@ export const useRoleplayAnalytics = (knowledgeId: string, moduleId: string) => {
         response,
         responseTime,
         feedbackProvided: feedback,
-      });
+      })
     },
     [tracker, knowledgeId, moduleId]
-  );
+  )
 
   // Track completion of a roleplay scenario
   const trackRoleplayComplete = useCallback(
@@ -95,16 +95,16 @@ export const useRoleplayAnalytics = (knowledgeId: string, moduleId: string) => {
         maxPossibleScore,
         durationSeconds,
         evaluations,
-      });
+      })
     },
     [tracker, knowledgeId, moduleId]
-  );
+  )
 
   // Utility function to time responses
   const createResponseTimer = useCallback(() => {
-    const startTime = Date.now();
-    return () => Date.now() - startTime;
-  }, []);
+    const startTime = Date.now()
+    return () => Date.now() - startTime
+  }, [])
 
   // Return the public API
   return {
@@ -112,7 +112,7 @@ export const useRoleplayAnalytics = (knowledgeId: string, moduleId: string) => {
     trackTeacherResponse,
     trackRoleplayComplete,
     createResponseTimer,
-  };
-};
+  }
+}
 
-export default useRoleplayAnalytics; 
+export default useRoleplayAnalytics

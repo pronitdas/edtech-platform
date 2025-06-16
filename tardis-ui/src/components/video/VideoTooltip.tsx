@@ -1,10 +1,10 @@
-import React from 'react';
-import { TimelineMarker } from './VideoTypes';
+import React from 'react'
+import { TimelineMarker } from './VideoTypes'
 
 interface VideoTooltipProps {
-  content: TimelineMarker;
-  position: { x: number; y: number };
-  className?: string;
+  content: TimelineMarker
+  position: { x: number; y: number }
+  className?: string
 }
 
 /**
@@ -14,39 +14,38 @@ interface VideoTooltipProps {
 const VideoTooltip: React.FC<VideoTooltipProps> = ({
   content,
   position,
-  className = ''
+  className = '',
 }) => {
   // Format time for display
   const formatTime = (time: number): string => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
+    const minutes = Math.floor(time / 60)
+    const seconds = Math.floor(time % 60)
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+  }
 
   return (
     <div
-      className={`absolute z-10 bg-black bg-opacity-80 text-white p-2 rounded-md text-sm pointer-events-none max-w-xs ${className}`}
+      className={`pointer-events-none absolute z-10 max-w-xs rounded-md bg-black bg-opacity-80 p-2 text-sm text-white ${className}`}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
         transform: 'translateX(-50%)',
       }}
-      role="tooltip"
+      role='tooltip'
     >
-      <div className="font-bold">
-        {content.label || (content.chapterTitle ? `Chapter: ${content.chapterTitle}` : 'Marker')}
+      <div className='font-bold'>
+        {content.label ||
+          (content.chapterTitle
+            ? `Chapter: ${content.chapterTitle}`
+            : 'Marker')}
       </div>
-      <div className="text-xs text-gray-300">
-        {formatTime(content.time)}
-      </div>
+      <div className='text-xs text-gray-300'>{formatTime(content.time)}</div>
       {content.description && (
-        <div className="text-xs mt-1 text-gray-300">
-          {content.description}
-        </div>
+        <div className='mt-1 text-xs text-gray-300'>{content.description}</div>
       )}
       {/* Triangle pointer at the bottom */}
       <div
-        className="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-full w-0 h-0"
+        className='absolute bottom-0 left-1/2 h-0 w-0 -translate-x-1/2 translate-y-full transform'
         style={{
           borderLeft: '6px solid transparent',
           borderRight: '6px solid transparent',
@@ -54,7 +53,7 @@ const VideoTooltip: React.FC<VideoTooltipProps> = ({
         }}
       ></div>
     </div>
-  );
-};
+  )
+}
 
-export default VideoTooltip; 
+export default VideoTooltip

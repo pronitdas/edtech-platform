@@ -1,21 +1,23 @@
-import { apiClient } from './api-client';
-import { RoleplayScenario } from '../types/api';
+import { apiClient } from './api-client'
+import { RoleplayScenario } from '../types/api'
 
 interface GenerateRoleplayRequest {
-  knowledge_id: number;
-  topic: string;
-  content: string;
-  language?: string;
+  knowledge_id: number
+  topic: string
+  content: string
+  language?: string
 }
 
 export class RoleplayService {
-  async generateScenario(request: GenerateRoleplayRequest): Promise<RoleplayScenario> {
-    return apiClient.post<RoleplayScenario>('/roleplay/generate', request);
+  async generateScenario(
+    request: GenerateRoleplayRequest
+  ): Promise<RoleplayScenario> {
+    return apiClient.post<RoleplayScenario>('/roleplay/generate', request)
   }
 
   async getScenarios(knowledgeId: number): Promise<RoleplayScenario[]> {
-    return apiClient.get<RoleplayScenario[]>(`/roleplay/${knowledgeId}`);
+    return apiClient.get<RoleplayScenario[]>(`/roleplay/${knowledgeId}`)
   }
 }
 
-export const roleplayService = new RoleplayService();
+export const roleplayService = new RoleplayService()

@@ -1,4 +1,5 @@
 {
+  // Deno configuration for Supabase functions
   "deno.enablePaths": [
     "supabase/functions"
   ],
@@ -18,7 +19,106 @@
     "http",
     "net"
   ],
+  // TypeScript & JavaScript configuration
+  "typescript.preferences.includePackageJsonAutoImports": "auto",
+  "typescript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  // Editor configuration
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "editor.rulers": [
+    80,
+    120
+  ],
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  // File associations
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  // Language-specific formatting
   "[typescript]": {
-    "editor.defaultFormatter": "denoland.vscode-deno"
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "vscode.css-language-features"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "vscode.markdown-language-features"
+  },
+  // Prettier configuration
+  "prettier.requireConfig": true,
+  "prettier.useEditorConfig": false,
+  // ESLint configuration
+  "eslint.enable": true,
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  // Tailwind CSS configuration
+  "tailwindCSS.includeLanguages": {
+    "typescript": "typescript",
+    "typescriptreact": "typescriptreact"
+  },
+  "tailwindCSS.experimental.classRegex": [
+    [
+      "cva\\(([^)]*)\\)",
+      "[\"'`]([^\"'`]*).*?[\"'`]"
+    ],
+    [
+      "cn\\(([^)]*)\\)",
+      "[\"'`]([^\"'`]*).*?[\"'`]"
+    ]
+  ],
+  // Testing configuration
+  "vitest.enable": true,
+  "vitest.commandLine": "npx vitest",
+  // File explorer configuration
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "*.ts": "${capture}.js",
+    "*.tsx": "${capture}.js",
+    "package.json": "package-lock.json, pnpm-lock.yaml, yarn.lock",
+    "tailwind.config.*": "postcss.config.*",
+    "README.md": "CHANGELOG.md, CONTRIBUTING.md, LICENSE*",
+    ".eslintrc.*": ".eslintignore, .prettierrc.*, .prettierignore"
+  },
+  // Search exclusions
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/coverage": true,
+    "**/.next": true,
+    "**/storybook-static": true
+  },
+  // Auto-save configuration
+  "files.autoSave": "onFocusChange",
+  // Emmet configuration
+  "emmet.includeLanguages": {
+    "typescript": "html",
+    "typescriptreact": "html"
   }
 }

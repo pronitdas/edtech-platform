@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import CourseHeader from './CourseHeader';
-import { ContentType } from '@/services/edtech-api';
+import type { Meta, StoryObj } from '@storybook/react'
+import CourseHeader from './CourseHeader'
+import { ContentType } from '@/services/edtech-api'
 
 const mockChapter = {
   id: 1,
@@ -22,42 +22,42 @@ const mockChapter = {
   seeded: true,
   timestamp_end: 600,
   timestamp_start: 0,
-  type: 'lecture'
-};
+  type: 'lecture',
+}
 
 // Define available tabs with iconIdentifier instead of icon React elements
 const availableTabs = [
   {
-    label: "Notes",
-    key: "notes",
-    iconIdentifier: "FileText"
+    label: 'Notes',
+    key: 'notes',
+    iconIdentifier: 'FileText',
   },
   {
-    label: "Summary",
-    key: "summary",
-    iconIdentifier: "BookOpen"
+    label: 'Summary',
+    key: 'summary',
+    iconIdentifier: 'BookOpen',
   },
   {
-    label: "Quiz",
-    key: "quiz",
-    iconIdentifier: "PieChart"
+    label: 'Quiz',
+    key: 'quiz',
+    iconIdentifier: 'PieChart',
   },
   {
-    label: "Mindmap",
-    key: "mindmap",
-    iconIdentifier: "Brain"
+    label: 'Mindmap',
+    key: 'mindmap',
+    iconIdentifier: 'Brain',
   },
   {
-    label: "Video",
-    key: "video",
-    iconIdentifier: "Video"
+    label: 'Video',
+    key: 'video',
+    iconIdentifier: 'Video',
   },
   {
-    label: "Roleplay",
-    key: "roleplay",
-    iconIdentifier: "MessageSquare"
-  }
-];
+    label: 'Roleplay',
+    key: 'roleplay',
+    iconIdentifier: 'MessageSquare',
+  },
+]
 
 const meta: Meta<typeof CourseHeader> = {
   title: 'Course/CourseHeader',
@@ -66,8 +66,8 @@ const meta: Meta<typeof CourseHeader> = {
     layout: 'fullscreen',
   },
   decorators: [
-    (Story) => (
-      <div className="bg-gray-900">
+    Story => (
+      <div className='bg-gray-900'>
         <Story />
       </div>
     ),
@@ -77,19 +77,19 @@ const meta: Meta<typeof CourseHeader> = {
     onShowReport: { action: 'showReport clicked' },
     toggleSidebar: { action: 'toggleSidebar clicked' },
     handleTabClick: { action: 'tab clicked' },
-    getMissingContentTypes: { 
-      description: 'Function to get missing content types'
+    getMissingContentTypes: {
+      description: 'Function to get missing content types',
     },
   },
-};
+}
 
-export default meta;
-type Story = StoryObj<typeof CourseHeader>;
+export default meta
+type Story = StoryObj<typeof CourseHeader>
 
 // Helper function to mock getMissingContentTypes
 const mockGetMissingContentTypes = () => {
-  return ['quiz', 'mindmap', 'video'] as ContentType[];
-};
+  return ['quiz', 'mindmap', 'video'] as ContentType[]
+}
 
 export const Default: Story = {
   args: {
@@ -100,7 +100,7 @@ export const Default: Story = {
     showSettingsButton: true,
     getMissingContentTypes: mockGetMissingContentTypes,
   },
-};
+}
 
 export const WithNoMissingContent: Story = {
   args: {
@@ -111,7 +111,7 @@ export const WithNoMissingContent: Story = {
     showSettingsButton: false,
     getMissingContentTypes: () => [] as ContentType[],
   },
-};
+}
 
 export const WithSidebarClosed: Story = {
   args: {
@@ -122,7 +122,7 @@ export const WithSidebarClosed: Story = {
     showSettingsButton: true,
     getMissingContentTypes: mockGetMissingContentTypes,
   },
-};
+}
 
 export const WithLimitedTabs: Story = {
   args: {
@@ -133,7 +133,7 @@ export const WithLimitedTabs: Story = {
     showSettingsButton: true,
     getMissingContentTypes: mockGetMissingContentTypes,
   },
-};
+}
 
 export const WithActiveTabVideo: Story = {
   args: {
@@ -144,4 +144,4 @@ export const WithActiveTabVideo: Story = {
     showSettingsButton: true,
     getMissingContentTypes: mockGetMissingContentTypes,
   },
-}; 
+}

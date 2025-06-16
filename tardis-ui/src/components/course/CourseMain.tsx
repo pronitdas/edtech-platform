@@ -1,44 +1,48 @@
-'use client';
+'use client'
 
-import React, { useEffect, useMemo } from 'react';
-import { ChapterContent, ChapterV1 } from '@/types/database';
-import { CourseProvider } from '@/contexts/CourseContext';
-import { useCourse } from '@/contexts/CourseContext';
-import CourseHeader from './CourseHeader';
-import CourseContentRenderer from './CourseContentRenderer';
-import { ContentGenerationPanel } from '@/components/content/ContentGenerationPanel';
-import ChatbotFloatingButton from '@/components/ChatbotFloatingButton';
-import LearningReport from '@/components/LearningReport';
-import { useChapters } from '@/hooks/useChapters';
-import { useInteractionTracker } from '@/contexts/InteractionTrackerContext';
-import { 
-  BookOpen, 
-  FileText, 
-  PieChart, 
-  Video, 
-  Brain, 
-  Play, 
-  BarChart2, 
-  MessageSquare
-} from 'lucide-react';
-import { ContentType } from '@/services/edtech-api';
-import Loader from '@/components/ui/Loader';
+import React, { useEffect, useMemo } from 'react'
+import { ChapterContent, ChapterV1 } from '@/types/database'
+import { CourseProvider } from '@/contexts/CourseContext'
+import { useCourse } from '@/contexts/CourseContext'
+import CourseHeader from './CourseHeader'
+import CourseContentRenderer from './CourseContentRenderer'
+import { ContentGenerationPanel } from '@/components/content/ContentGenerationPanel'
+import ChatbotFloatingButton from '@/components/ChatbotFloatingButton'
+import LearningReport from '@/components/LearningReport'
+import { useChapters } from '@/hooks/useChapters'
+import { useInteractionTracker } from '@/contexts/InteractionTrackerContext'
+import {
+  BookOpen,
+  FileText,
+  PieChart,
+  Video,
+  Brain,
+  Play,
+  BarChart2,
+  MessageSquare,
+} from 'lucide-react'
+import { ContentType } from '@/services/edtech-api'
+import Loader from '@/components/ui/Loader'
 
 interface CourseMainProps {
-  content: ChapterContent;
-  language: string;
-  chapter: ChapterV1;
+  content: ChapterContent
+  language: string
+  chapter: ChapterV1
 }
 
 // Add props interface for CourseContent
 interface CourseContentProps {
-  content: ChapterContent;
-  chapter: ChapterV1;
-  language: string;
+  content: ChapterContent
+  chapter: ChapterV1
+  language: string
 }
 
-const CourseContent: React.FC<CourseContentProps> = ({ content, chapter, language }) => {
-  const { 
+const CourseContent: React.FC<CourseContentProps> = ({
+  content,
+  chapter,
+  language,
+}) => {
+  const {
     activeTab,
     showReport,
     isFullscreenMindmap,
@@ -55,24 +59,22 @@ const CourseContent: React.FC<CourseContentProps> = ({ content, chapter, languag
     handleGenerateContent: generateContentFromHook,
     handleCloseReport,
     handleShowReport,
-  } = useCourse();
-  
-  const {
-    getMissingContentTypes,
-    isGeneratingContent: isHookGenerating
-  } = useChapters();
-  
-  const { session } = useInteractionTracker();
-  const userId = session?.metadata?.userId;
+  } = useCourse()
+
+  const { getMissingContentTypes, isGeneratingContent: isHookGenerating } =
+    useChapters()
+
+  const { session } = useInteractionTracker()
+  const userId = session?.metadata?.userId
 
   // Create chaptersMeta array from the current chapter
   const chaptersMeta = useMemo(() => {
-    if (!chapter) return [];
-    return [chapter];
-  }, [chapter]);
-  
+    if (!chapter) return []
+    return [chapter]
+  }, [chapter])
+
   return (
-    <div className="course-viewer bg-gray-900 min-h-screen flex flex-col">
+    <div className='course-viewer flex min-h-screen flex-col bg-gray-900'>
       {/* Course Header Component */}
       <CourseHeader
         chapter={chapter}
@@ -83,25 +85,27 @@ const CourseContent: React.FC<CourseContentProps> = ({ content, chapter, languag
         toggleSidebar={toggleSidebar}
         handleTabClick={handleTabClick}
         onShowSettings={showContentGenerationPanel}
-        showSettingsButton={content ? getMissingContentTypes(content).length > 0 : false} 
+        showSettingsButton={
+          content ? getMissingContentTypes(content).length > 0 : false
+        }
         onShowReport={handleShowReport}
       />
-      
+
       {/* Main Content Area */}
-      <div className="flex-grow overflow-hidden relative">
+      <div className='relative flex-grow overflow-hidden'>
         {/* Settings Panel */}
         {showSettings && (
           <ContentGenerationPanel
             chapter={chapter}
             language={language}
-            missingTypes={content ? getMissingContentTypes(content) : []} 
+            missingTypes={content ? getMissingContentTypes(content) : []}
             onGenerate={generateContentFromHook}
             isGenerating={isHookGenerating}
             onClose={hideContentGenerationPanel}
             generatingTypes={generatingTypes}
           />
         )}
-        
+
         {/* Content Renderer Component */}
         <CourseContentRenderer
           activeTab={activeTab}
@@ -120,8 +124,8 @@ const CourseContent: React.FC<CourseContentProps> = ({ content, chapter, languag
         />
 
         {/* Chatbot Floating Button */}
-        <div className="absolute bottom-4 left-4 z-50">
-          <ChatbotFloatingButton 
+        <div className='absolute bottom-4 left-4 z-50'>
+          <ChatbotFloatingButton
             contentContext={content?.notes || ''}
             chapterTitle={chapter?.chaptertitle || 'Current Chapter'}
           />
@@ -130,97 +134,101 @@ const CourseContent: React.FC<CourseContentProps> = ({ content, chapter, languag
 
       {/* Learning Report Modal */}
       {showReport && userId && chapter?.knowledge_id && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-800 rounded-lg w-full max-w-3xl max-h-[90vh] overflow-auto">
-            <LearningReport 
+        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'>
+          <div className='max-h-[90vh] w-full max-w-3xl overflow-auto rounded-lg bg-gray-800'>
+            <LearningReport
               userId={userId}
               knowledgeId={String(chapter.knowledge_id)}
-              onClose={handleCloseReport} 
-            /> 
+              onClose={handleCloseReport}
+            />
           </div>
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
 // Main component with CourseProvider
-const CourseMain: React.FC<CourseMainProps> = ({ content, language, chapter }) => {
+const CourseMain: React.FC<CourseMainProps> = ({
+  content,
+  language,
+  chapter,
+}) => {
   // Ensure we have valid chapter data before rendering
   if (!chapter || !chapter.id) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-gray-900 text-white">
-        <Loader size="large" />
-        <p className="mt-4">Loading chapter data...</p>
+      <div className='flex h-screen flex-col items-center justify-center bg-gray-900 text-white'>
+        <Loader size='large' />
+        <p className='mt-4'>Loading chapter data...</p>
       </div>
-    );
+    )
   }
-  
+
   // Create availableTabs from content
   const getAvailableTabs = () => {
-    const tabs = [];
-    
+    const tabs = []
+
     if (content.notes) {
       tabs.push({
-        label: "Notes",
-        key: "notes",
-        icon: <FileText className="w-4 h-4" />
-      });
+        label: 'Notes',
+        key: 'notes',
+        icon: <FileText className='h-4 w-4' />,
+      })
     }
-    
+
     if (content.summary) {
       tabs.push({
-        label: "Summary",
-        key: "summary",
-        icon: <BookOpen className="w-4 h-4" />
-      });
+        label: 'Summary',
+        key: 'summary',
+        icon: <BookOpen className='h-4 w-4' />,
+      })
     }
-    
+
     if (content.quiz && content.quiz.length > 0) {
       tabs.push({
-        label: "Quiz",
-        key: "quiz",
-        icon: <PieChart className="w-4 h-4" />
-      });
+        label: 'Quiz',
+        key: 'quiz',
+        icon: <PieChart className='h-4 w-4' />,
+      })
     }
-    
+
     if (content.mindmap) {
       tabs.push({
-        label: "Mindmap",
-        key: "mindmap",
-        icon: <Brain className="w-4 h-4" />
-      });
+        label: 'Mindmap',
+        key: 'mindmap',
+        icon: <Brain className='h-4 w-4' />,
+      })
     }
-    
+
     if (content.video_url) {
       tabs.push({
-        label: "Video",
-        key: "video",
-        icon: <Video className="w-4 h-4" />
-      });
+        label: 'Video',
+        key: 'video',
+        icon: <Video className='h-4 w-4' />,
+      })
     }
-    
+
     if (content.roleplay) {
       tabs.push({
-        label: "Roleplay",
-        key: "roleplay",
-        icon: <MessageSquare className="w-4 h-4" />
-      });
+        label: 'Roleplay',
+        key: 'roleplay',
+        icon: <MessageSquare className='h-4 w-4' />,
+      })
     }
-    
-    return tabs;
-  };
-  
+
+    return tabs
+  }
+
   return (
-    <CourseProvider 
-      content={content} 
+    <CourseProvider
+      content={content}
       chapter={chapter}
       language={language}
       availableTabs={getAvailableTabs()}
     >
       <CourseContent content={content} chapter={chapter} language={language} />
     </CourseProvider>
-  );
-};
+  )
+}
 
-export default CourseMain; 
+export default CourseMain

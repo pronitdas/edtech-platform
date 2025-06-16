@@ -1,15 +1,15 @@
-import React, { useRef, useEffect } from 'react';
-import { useSlopeDrawing } from '../contexts/SlopeDrawingContext';
-import GraphCanvas from '../../../../components/GraphCanvas';
-import ConceptExplanation from './ConceptExplanation';
-import PracticeProblem from './PracticeProblem';
-import CustomProblemSolver from './CustomProblemSolver';
-import WordProblem from './WordProblem';
-import AnimatedSolution from './AnimatedSolution';
-import StatsDisplay from './StatsDisplay';
-import ModeSelector from './ModeSelector';
-import DrawingToolbar from './DrawingToolbar';
-import BottomControls from './BottomControls';
+import React, { useRef, useEffect } from 'react'
+import { useSlopeDrawing } from '../contexts/SlopeDrawingContext'
+import GraphCanvas from '../../../../components/GraphCanvas'
+import ConceptExplanation from './ConceptExplanation'
+import PracticeProblem from './PracticeProblem'
+import CustomProblemSolver from './CustomProblemSolver'
+import WordProblem from './WordProblem'
+import AnimatedSolution from './AnimatedSolution'
+import StatsDisplay from './StatsDisplay'
+import ModeSelector from './ModeSelector'
+import DrawingToolbar from './DrawingToolbar'
+import BottomControls from './BottomControls'
 
 /**
  * The main layout component for SlopeDrawing
@@ -88,133 +88,139 @@ const SlopeDrawingLayout: React.FC = () => {
     // Props passed to the SlopeDrawing component
     language,
     openaiClient,
-  } = useSlopeDrawing();
+  } = useSlopeDrawing()
 
   // Reference to the container div (for sizing calculations)
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null)
 
   // Update canvas dimensions when container size changes
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current) return
 
     const updateDimensions = () => {
-      if (!containerRef.current) return;
+      if (!containerRef.current) return
 
-      const canvas = containerRef.current.querySelector('.canvas-container');
+      const canvas = containerRef.current.querySelector('.canvas-container')
       if (canvas) {
         setDimensions({
           width: canvas.clientWidth,
           height: canvas.clientHeight,
-        });
+        })
       }
-    };
+    }
 
     // Initial size
-    updateDimensions();
+    updateDimensions()
 
     // Listen for resize events
-    const resizeObserver = new ResizeObserver(updateDimensions);
-    resizeObserver.observe(containerRef.current);
+    const resizeObserver = new ResizeObserver(updateDimensions)
+    resizeObserver.observe(containerRef.current)
 
     return () => {
       if (containerRef.current) {
-        resizeObserver.unobserve(containerRef.current);
+        resizeObserver.unobserve(containerRef.current)
       }
-    };
-  }, [setDimensions]);
+    }
+  }, [setDimensions])
 
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Prevent default behavior for certain keys to avoid interference
-      if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-        event.preventDefault();
+      if (
+        [' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(
+          event.key
+        )
+      ) {
+        event.preventDefault()
       }
 
       // Handle tool selection shortcuts
       switch (event.key.toLowerCase()) {
         case 'p': // Point tool
-          setDrawingTool('point');
-          break;
+          setDrawingTool('point')
+          break
         case 'l': // Line tool (assuming solid line)
-          setDrawingTool('solidLine');
-          break;
+          setDrawingTool('solidLine')
+          break
         case 'e': // Erase tool (assuming clear)
-          setDrawingTool('clear');
-          break;
+          setDrawingTool('clear')
+          break
         // Existing shortcuts
         case 'r':
-          setDrawingTool('reset');
-          break;
+          setDrawingTool('reset')
+          break
         case 'm':
-          setDrawingTool('move');
-          break;
+          setDrawingTool('move')
+          break
         case 's':
-          setDrawingTool('solidLine');
-          break;
+          setDrawingTool('solidLine')
+          break
         case 't':
-          setDrawingTool('text');
-          break;
+          setDrawingTool('text')
+          break
         case 'c':
-          setDrawingTool('clear');
-          break;
+          setDrawingTool('clear')
+          break
         case 'a': // 'a' for pan, as 'p' is for point
-          setDrawingTool('pan');
-          break;
+          setDrawingTool('pan')
+          break
         case '+':
-          setDrawingTool('zoomIn');
-          break;
+          setDrawingTool('zoomIn')
+          break
         case '-':
-          setDrawingTool('zoomOut');
-          break;
+          setDrawingTool('zoomOut')
+          break
       }
 
       // Handle Undo/Redo shortcuts (Ctrl+Z/Cmd+Z, Ctrl+Y/Cmd+Y)
       if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
-        setDrawingTool('undo');
-        event.preventDefault(); // Prevent browser undo
+        setDrawingTool('undo')
+        event.preventDefault() // Prevent browser undo
       } else if ((event.ctrlKey || event.metaKey) && event.key === 'y') {
-        setDrawingTool('redo');
-        event.preventDefault(); // Prevent browser redo
+        setDrawingTool('redo')
+        event.preventDefault() // Prevent browser redo
       }
 
       // Handle Clear canvas shortcut (Delete or Backspace)
       if (event.key === 'Delete' || event.key === 'Backspace') {
-        setDrawingTool('clear');
-        event.preventDefault(); // Prevent browser back navigation
+        setDrawingTool('clear')
+        event.preventDefault() // Prevent browser back navigation
       }
-    };
+    }
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown)
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [setDrawingTool]); // Depend on setDrawingTool to ensure the latest function is used
-
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [setDrawingTool]) // Depend on setDrawingTool to ensure the latest function is used
 
   // Handle submitting an answer for practice problems
   const handleSubmitAnswer = () => {
     if (lineData) {
-      const isCorrect = checkSolution(lineData);
+      const isCorrect = checkSolution(lineData)
       if (!isCorrect) {
-        recordError();
+        recordError()
       }
     }
-  };
+  }
 
   // Handle hint usage for practice problems
   const handleHintRequest = () => {
-    recordHesitation(30); // Assume using a hint indicates 30 seconds of hesitation
-  };
+    recordHesitation(30) // Assume using a hint indicates 30 seconds of hesitation
+  }
 
   // Handle solution reveal
   const handleSolutionReveal = () => {
-    recordHesitation(60); // Assume revealing solution indicates 60 seconds of hesitation
-  };
+    recordHesitation(60) // Assume revealing solution indicates 60 seconds of hesitation
+  }
 
   return (
-    <div ref={containerRef} className="w-full h-full flex flex-col overflow-hidden">
+    <div
+      ref={containerRef}
+      className='flex h-full w-full flex-col overflow-hidden'
+    >
       {/* Tool mode selector */}
       <ModeSelector
         activeMode={activeMode}
@@ -224,7 +230,7 @@ const SlopeDrawingLayout: React.FC = () => {
       />
 
       {/* Main content area with sidebar */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className='flex flex-1 overflow-hidden'>
         {/* Sidebar - Drawing Tools */}
         <DrawingToolbar
           drawingTool={drawingTool}
@@ -232,11 +238,14 @@ const SlopeDrawingLayout: React.FC = () => {
         />
 
         {/* Main Graph/Canvas Area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className='flex flex-1 flex-col overflow-hidden'>
           {/* Graph Canvas */}
-          <div className="flex-1 canvas-container relative overflow-hidden bg-gray-900" style={{ minHeight: '60vh' }}>
+          <div
+            className='canvas-container relative flex-1 overflow-hidden bg-gray-900'
+            style={{ minHeight: '60vh' }}
+          >
             <GraphCanvas
-              drawingMode="slope"
+              drawingMode='slope'
               width={dimensions.width}
               height={dimensions.height}
               points={points}
@@ -247,8 +256,12 @@ const SlopeDrawingLayout: React.FC = () => {
               onOffsetChange={setOffset}
               mapPointToCanvas={mapPointToCanvas}
               mapCanvasToPoint={mapCanvasToPoint}
-              editMode={activeMode !== 'concept' || !selectedConcept?.demoPoints}
-              highlightSolution={activeMode === 'practice' && isCorrect === true}
+              editMode={
+                activeMode !== 'concept' || !selectedConcept?.demoPoints
+              }
+              highlightSolution={
+                activeMode === 'practice' && isCorrect === true
+              }
               drawingTool={drawingTool}
               onDrawingToolChange={setDrawingTool}
               customPoints={customPoints}
@@ -272,7 +285,7 @@ const SlopeDrawingLayout: React.FC = () => {
 
           {/* Animated Solution */}
           {showAnimation && lineData && (
-            <div className="h-48 border-t border-gray-700 overflow-hidden">
+            <div className='h-48 overflow-hidden border-t border-gray-700'>
               <AnimatedSolution
                 points={points}
                 slope={lineData.slope}
@@ -288,7 +301,7 @@ const SlopeDrawingLayout: React.FC = () => {
         </div>
 
         {/* Right Panel (mode specific) - Fixed width with scrolling */}
-        <div className="w-96 overflow-y-auto border-l border-gray-700 flex-shrink-0">
+        <div className='w-96 flex-shrink-0 overflow-y-auto border-l border-gray-700'>
           {/* Concept Explanation Mode */}
           {activeMode === 'concept' && (
             <ConceptExplanation
@@ -307,9 +320,9 @@ const SlopeDrawingLayout: React.FC = () => {
                 currentProblemId={currentProblemId}
                 difficulty={difficulty}
                 setDifficulty={changeDifficulty} // Pass changeDifficulty
-                onSelectProblem={(problemId) => {
+                onSelectProblem={problemId => {
                   // Logic to select problem - might need to be added to context or here
-                  console.log("Select problem:", problemId);
+                  console.log('Select problem:', problemId)
                 }}
                 onGenerateNewProblem={generateProblem}
                 lineData={lineData}
@@ -355,7 +368,7 @@ const SlopeDrawingLayout: React.FC = () => {
         onShowAnimation={() => setShowAnimation(true)} // Pass setShowAnimation to trigger animation
       />
     </div>
-  );
-};
+  )
+}
 
-export default SlopeDrawingLayout;
+export default SlopeDrawingLayout

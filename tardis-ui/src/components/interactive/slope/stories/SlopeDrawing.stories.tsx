@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import SlopeDrawing from '../SlopeDrawing';
+import type { Meta, StoryObj } from '@storybook/react'
+import SlopeDrawing from '../SlopeDrawing'
 
 const meta = {
   title: 'Slope/SlopeDrawing',
@@ -8,15 +8,16 @@ const meta = {
     layout: 'fullscreen',
   },
   tags: ['autodocs'],
-} satisfies Meta<typeof SlopeDrawing>;
+} satisfies Meta<typeof SlopeDrawing>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
+export default meta
+type Story = StoryObj<typeof meta>
 
 const sampleInteractiveContent = {
   id: 'sample-content',
   title: 'Understanding Slope',
-  description: 'Learn about different types of slopes and how to calculate them.',
+  description:
+    'Learn about different types of slopes and how to calculate them.',
   type: 'slope-drawing',
   data: {
     conceptExplanations: [
@@ -25,14 +26,20 @@ const sampleInteractiveContent = {
         title: 'Positive Slope',
         content: 'A line that rises from left to right has a positive slope.',
         formula: '$$m = \\frac{y_2 - y_1}{x_2 - x_1} > 0$$',
-        demoPoints: [{ x: -2, y: -1 }, { x: 2, y: 3 }],
+        demoPoints: [
+          { x: -2, y: -1 },
+          { x: 2, y: 3 },
+        ],
       },
       {
         id: 'negative',
         title: 'Negative Slope',
         content: 'A line that falls from left to right has a negative slope.',
         formula: '$$m = \\frac{y_2 - y_1}{x_2 - x_1} < 0$$',
-        demoPoints: [{ x: -2, y: 3 }, { x: 2, y: -1 }],
+        demoPoints: [
+          { x: -2, y: 3 },
+          { x: 2, y: -1 },
+        ],
       },
     ],
     problems: [
@@ -52,7 +59,7 @@ const sampleInteractiveContent = {
       },
     ],
   },
-};
+}
 
 export const Default: Story = {
   args: {
@@ -60,9 +67,9 @@ export const Default: Story = {
     userId: 'user-123',
     knowledgeId: 'knowledge-456',
     language: 'en',
-    onUpdateProgress: (progress) => console.log('Progress updated:', progress),
+    onUpdateProgress: progress => console.log('Progress updated:', progress),
   },
-};
+}
 
 export const WithOpenAI: Story = {
   args: {
@@ -70,12 +77,12 @@ export const WithOpenAI: Story = {
     userId: 'user-123',
     knowledgeId: 'knowledge-456',
     language: 'en',
-    onUpdateProgress: (progress) => console.log('Progress updated:', progress),
+    onUpdateProgress: progress => console.log('Progress updated:', progress),
     openaiClient: {
-      generateResponse: async (prompt) => {
-        console.log('OpenAI prompt:', prompt);
-        return 'Sample OpenAI response';
+      generateResponse: async prompt => {
+        console.log('OpenAI prompt:', prompt)
+        return 'Sample OpenAI response'
       },
     },
   },
-}; 
+}

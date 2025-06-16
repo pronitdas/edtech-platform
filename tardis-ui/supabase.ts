@@ -163,11 +163,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "chapters_local_k_id_fkey"
-            columns: ["k_id"]
+            foreignKeyName: 'chapters_local_k_id_fkey'
+            columns: ['k_id']
             isOneToOne: false
-            referencedRelation: "knowledge"
-            referencedColumns: ["id"]
+            referencedRelation: 'knowledge'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -240,11 +240,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "chapters_v1_k_id_fkey"
-            columns: ["k_id"]
+            foreignKeyName: 'chapters_v1_k_id_fkey'
+            columns: ['k_id']
             isOneToOne: false
-            referencedRelation: "knowledge"
-            referencedColumns: ["id"]
+            referencedRelation: 'knowledge'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -734,11 +734,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "nods_page_parent_page_id_fkey"
-            columns: ["parent_page_id"]
+            foreignKeyName: 'nods_page_parent_page_id_fkey'
+            columns: ['parent_page_id']
             isOneToOne: false
-            referencedRelation: "nods_page"
-            referencedColumns: ["id"]
+            referencedRelation: 'nods_page'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -772,11 +772,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "nods_page_section_page_id_fkey"
-            columns: ["page_id"]
+            foreignKeyName: 'nods_page_section_page_id_fkey'
+            columns: ['page_id']
             isOneToOne: false
-            referencedRelation: "nods_page"
-            referencedColumns: ["id"]
+            referencedRelation: 'nods_page'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -837,11 +837,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "quiz_answers_attempt_id_fkey"
-            columns: ["attempt_id"]
+            foreignKeyName: 'quiz_answers_attempt_id_fkey'
+            columns: ['attempt_id']
             isOneToOne: false
-            referencedRelation: "quiz_attempts"
-            referencedColumns: ["id"]
+            referencedRelation: 'quiz_attempts'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -878,11 +878,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "quiz_attempts_quiz_id_fkey"
-            columns: ["quiz_id"]
+            foreignKeyName: 'quiz_attempts_quiz_id_fkey'
+            columns: ['quiz_id']
             isOneToOne: false
-            referencedRelation: "quiz"
-            referencedColumns: ["id"]
+            referencedRelation: 'quiz'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -1012,11 +1012,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "user_interactions_session_id_fkey"
-            columns: ["session_id"]
+            foreignKeyName: 'user_interactions_session_id_fkey'
+            columns: ['session_id']
             isOneToOne: false
-            referencedRelation: "user_sessions"
-            referencedColumns: ["id"]
+            referencedRelation: 'user_sessions'
+            referencedColumns: ['id']
           },
         ]
       }
@@ -1100,13 +1100,13 @@ export type Database = {
       binary_quantize:
         | {
             Args: {
-              "": string
+              '': string
             }
             Returns: unknown
           }
         | {
             Args: {
-              "": unknown
+              '': unknown
             }
             Returns: unknown
           }
@@ -1195,99 +1195,99 @@ export type Database = {
       }
       halfvec_avg: {
         Args: {
-          "": number[]
+          '': number[]
         }
         Returns: unknown
       }
       halfvec_out: {
         Args: {
-          "": unknown
+          '': unknown
         }
         Returns: unknown
       }
       halfvec_send: {
         Args: {
-          "": unknown
+          '': unknown
         }
         Returns: string
       }
       halfvec_typmod_in: {
         Args: {
-          "": unknown[]
+          '': unknown[]
         }
         Returns: number
       }
       hnsw_bit_support: {
         Args: {
-          "": unknown
+          '': unknown
         }
         Returns: unknown
       }
       hnsw_halfvec_support: {
         Args: {
-          "": unknown
+          '': unknown
         }
         Returns: unknown
       }
       hnsw_sparsevec_support: {
         Args: {
-          "": unknown
+          '': unknown
         }
         Returns: unknown
       }
       hnswhandler: {
         Args: {
-          "": unknown
+          '': unknown
         }
         Returns: unknown
       }
       ivfflat_bit_support: {
         Args: {
-          "": unknown
+          '': unknown
         }
         Returns: unknown
       }
       ivfflat_halfvec_support: {
         Args: {
-          "": unknown
+          '': unknown
         }
         Returns: unknown
       }
       ivfflathandler: {
         Args: {
-          "": unknown
+          '': unknown
         }
         Returns: unknown
       }
       l2_norm:
         | {
             Args: {
-              "": unknown
+              '': unknown
             }
             Returns: number
           }
         | {
             Args: {
-              "": unknown
+              '': unknown
             }
             Returns: number
           }
       l2_normalize:
         | {
             Args: {
-              "": string
+              '': string
             }
             Returns: string
           }
         | {
             Args: {
-              "": unknown
+              '': unknown
             }
             Returns: unknown
           }
         | {
             Args: {
-              "": unknown
+              '': unknown
             }
             Returns: unknown
           }
@@ -1309,19 +1309,19 @@ export type Database = {
       }
       sparsevec_out: {
         Args: {
-          "": unknown
+          '': unknown
         }
         Returns: unknown
       }
       sparsevec_send: {
         Args: {
-          "": unknown
+          '': unknown
         }
         Returns: string
       }
       sparsevec_typmod_in: {
         Args: {
-          "": unknown[]
+          '': unknown[]
         }
         Returns: number
       }
@@ -1351,44 +1351,44 @@ export type Database = {
       }
       vector_avg: {
         Args: {
-          "": number[]
+          '': number[]
         }
         Returns: string
       }
       vector_dims:
         | {
             Args: {
-              "": string
+              '': string
             }
             Returns: number
           }
         | {
             Args: {
-              "": unknown
+              '': unknown
             }
             Returns: number
           }
       vector_norm: {
         Args: {
-          "": string
+          '': string
         }
         Returns: number
       }
       vector_out: {
         Args: {
-          "": string
+          '': string
         }
         Returns: unknown
       }
       vector_send: {
         Args: {
-          "": string
+          '': string
         }
         Returns: string
       }
       vector_typmod_in: {
         Args: {
-          "": unknown[]
+          '': unknown[]
         }
         Returns: number
       }
@@ -1402,27 +1402,27 @@ export type Database = {
   }
 }
 
-type PublicSchema = Database[Extract<keyof Database, "public">]
+type PublicSchema = Database[Extract<keyof Database, 'public'>]
 
 export type Tables<
   PublicTableNameOrOptions extends
-    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
+    | keyof (PublicSchema['Tables'] & PublicSchema['Views'])
     | { schema: keyof Database },
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-        Database[PublicTableNameOrOptions["schema"]]["Views"])
+    ? keyof (Database[PublicTableNameOrOptions['schema']]['Tables'] &
+        Database[PublicTableNameOrOptions['schema']]['Views'])
     : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
-      Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+  ? (Database[PublicTableNameOrOptions['schema']]['Tables'] &
+      Database[PublicTableNameOrOptions['schema']]['Views'])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
-        PublicSchema["Views"])
-    ? (PublicSchema["Tables"] &
-        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+  : PublicTableNameOrOptions extends keyof (PublicSchema['Tables'] &
+        PublicSchema['Views'])
+    ? (PublicSchema['Tables'] &
+        PublicSchema['Views'])[PublicTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -1431,19 +1431,19 @@ export type Tables<
 
 export type TablesInsert<
   PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
+    | keyof PublicSchema['Tables']
     | { schema: keyof Database },
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+    ? keyof Database[PublicTableNameOrOptions['schema']]['Tables']
     : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? Database[PublicTableNameOrOptions['schema']]['Tables'][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : PublicTableNameOrOptions extends keyof PublicSchema['Tables']
+    ? PublicSchema['Tables'][PublicTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -1452,19 +1452,19 @@ export type TablesInsert<
 
 export type TablesUpdate<
   PublicTableNameOrOptions extends
-    | keyof PublicSchema["Tables"]
+    | keyof PublicSchema['Tables']
     | { schema: keyof Database },
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
+    ? keyof Database[PublicTableNameOrOptions['schema']]['Tables']
     : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? Database[PublicTableNameOrOptions['schema']]['Tables'][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
-    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+  : PublicTableNameOrOptions extends keyof PublicSchema['Tables']
+    ? PublicSchema['Tables'][PublicTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -1473,28 +1473,28 @@ export type TablesUpdate<
 
 export type Enums<
   PublicEnumNameOrOptions extends
-    | keyof PublicSchema["Enums"]
+    | keyof PublicSchema['Enums']
     | { schema: keyof Database },
   EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
-    ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof Database[PublicEnumNameOrOptions['schema']]['Enums']
     : never = never,
 > = PublicEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
-    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+  ? Database[PublicEnumNameOrOptions['schema']]['Enums'][EnumName]
+  : PublicEnumNameOrOptions extends keyof PublicSchema['Enums']
+    ? PublicSchema['Enums'][PublicEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof PublicSchema["CompositeTypes"]
+    | keyof PublicSchema['CompositeTypes']
     | { schema: keyof Database },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof Database
   }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof Database[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
-    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  ? Database[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema['CompositeTypes']
+    ? PublicSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
     : never

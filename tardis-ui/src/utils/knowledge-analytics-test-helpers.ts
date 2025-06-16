@@ -1,5 +1,5 @@
-import { analyticsService } from '@/services/analytics-service';
-import supabase from '@/services/supabase';
+import { analyticsService } from '@/services/analytics-service'
+import supabase from '@/services/supabase'
 
 /**
  * Test helpers for knowledge analytics functionality
@@ -9,8 +9,8 @@ export const knowledgeAnalyticsTestHelpers = {
    * Generate test knowledge events for a user
    */
   async generateKnowledgeEvents(
-    userId: string, 
-    sessionId: string, 
+    userId: string,
+    sessionId: string,
     knowledgeId: string,
     count: number = 5
   ): Promise<boolean> {
@@ -25,23 +25,21 @@ export const knowledgeAnalyticsTestHelpers = {
           knowledgeId,
           testValue: i * 10,
           testString: `test_string_${i}`,
-          timestamp: Date.now() - i * 1000
-        }
-      }));
+          timestamp: Date.now() - i * 1000,
+        },
+      }))
 
-      const { error } = await supabase
-        .from('user_interactions')
-        .insert(events);
+      const { error } = await supabase.from('user_interactions').insert(events)
 
       if (error) {
-        console.error('Error generating knowledge events:', error);
-        return false;
+        console.error('Error generating knowledge events:', error)
+        return false
       }
 
-      return true;
+      return true
     } catch (err) {
-      console.error('Failed to generate knowledge events:', err);
-      return false;
+      console.error('Failed to generate knowledge events:', err)
+      return false
     }
   },
 
@@ -49,15 +47,15 @@ export const knowledgeAnalyticsTestHelpers = {
    * Generate test video events for a knowledge item
    */
   async generateVideoEvents(
-    userId: string, 
-    sessionId: string, 
+    userId: string,
+    sessionId: string,
     knowledgeId: string,
     videoId: string,
     count: number = 3
   ): Promise<boolean> {
     try {
-      const events = [];
-      
+      const events = []
+
       // Add video play events
       for (let i = 0; i < count; i++) {
         events.push({
@@ -70,10 +68,10 @@ export const knowledgeAnalyticsTestHelpers = {
             knowledgeId,
             videoId,
             timestamp: Date.now() - i * 2000,
-            elapsedTime: 0
-          }
-        });
-        
+            elapsedTime: 0,
+          },
+        })
+
         // Add video pause events with watch time
         events.push({
           user_id: userId,
@@ -85,11 +83,11 @@ export const knowledgeAnalyticsTestHelpers = {
             knowledgeId,
             videoId,
             timestamp: Date.now() - i * 2000 + 1000,
-            elapsedTime: 30 + i * 10 // Increasing watch time
-          }
-        });
+            elapsedTime: 30 + i * 10, // Increasing watch time
+          },
+        })
       }
-      
+
       // Add a video complete event
       events.push({
         user_id: userId,
@@ -102,23 +100,21 @@ export const knowledgeAnalyticsTestHelpers = {
           videoId,
           timestamp: Date.now() - 1000,
           totalWatchedTime: 120,
-          completePercent: 100
-        }
-      });
+          completePercent: 100,
+        },
+      })
 
-      const { error } = await supabase
-        .from('user_interactions')
-        .insert(events);
+      const { error } = await supabase.from('user_interactions').insert(events)
 
       if (error) {
-        console.error('Error generating video events:', error);
-        return false;
+        console.error('Error generating video events:', error)
+        return false
       }
 
-      return true;
+      return true
     } catch (err) {
-      console.error('Failed to generate video events:', err);
-      return false;
+      console.error('Failed to generate video events:', err)
+      return false
     }
   },
 
@@ -126,15 +122,15 @@ export const knowledgeAnalyticsTestHelpers = {
    * Generate test quiz events for a knowledge item
    */
   async generateQuizEvents(
-    userId: string, 
-    sessionId: string, 
+    userId: string,
+    sessionId: string,
     knowledgeId: string,
     quizId: string,
     count: number = 2
   ): Promise<boolean> {
     try {
-      const events = [];
-      
+      const events = []
+
       // Add quiz start events
       for (let i = 0; i < count; i++) {
         events.push({
@@ -147,10 +143,10 @@ export const knowledgeAnalyticsTestHelpers = {
             knowledgeId,
             quizId,
             timestamp: Date.now() - i * 3000,
-            attemptNumber: i + 1
-          }
-        });
-        
+            attemptNumber: i + 1,
+          },
+        })
+
         // Add quiz question answer events
         for (let j = 0; j < 5; j++) {
           events.push({
@@ -165,11 +161,11 @@ export const knowledgeAnalyticsTestHelpers = {
               questionId: `q${j}`,
               isCorrect: Math.random() > 0.3, // 70% correct answers
               timeTaken: 10 + j * 2,
-              timestamp: Date.now() - i * 3000 + j * 500
-            }
-          });
+              timestamp: Date.now() - i * 3000 + j * 500,
+            },
+          })
         }
-        
+
         // Add quiz submit events with scores
         events.push({
           user_id: userId,
@@ -182,24 +178,22 @@ export const knowledgeAnalyticsTestHelpers = {
             quizId,
             score: 70 + i * 10, // Increasing scores
             maxScore: 100,
-            timestamp: Date.now() - i * 3000 + 2500
-          }
-        });
+            timestamp: Date.now() - i * 3000 + 2500,
+          },
+        })
       }
 
-      const { error } = await supabase
-        .from('user_interactions')
-        .insert(events);
+      const { error } = await supabase.from('user_interactions').insert(events)
 
       if (error) {
-        console.error('Error generating quiz events:', error);
-        return false;
+        console.error('Error generating quiz events:', error)
+        return false
       }
 
-      return true;
+      return true
     } catch (err) {
-      console.error('Failed to generate quiz events:', err);
-      return false;
+      console.error('Failed to generate quiz events:', err)
+      return false
     }
   },
 
@@ -207,60 +201,79 @@ export const knowledgeAnalyticsTestHelpers = {
    * Test the knowledge analytics flow
    */
   async testKnowledgeAnalyticsFlow(
-    userId: string, 
+    userId: string,
     knowledgeId: string
   ): Promise<{
-    success: boolean;
-    sessionId?: string;
-    eventCount?: number;
-    interactionSummary?: any;
-    videoStats?: any;
-    quizStats?: any;
+    success: boolean
+    sessionId?: string
+    eventCount?: number
+    interactionSummary?: any
+    videoStats?: any
+    quizStats?: any
   }> {
     try {
       // Start a session
-      const sessionResult = await analyticsService.startUserSession(userId);
-      
+      const sessionResult = await analyticsService.startUserSession(userId)
+
       if (!sessionResult || !sessionResult.id) {
-        return { success: false };
+        return { success: false }
       }
 
-      const sessionId = sessionResult.id;
-      const videoId = `video_${knowledgeId}`;
-      const quizId = `quiz_${knowledgeId}`;
-      
+      const sessionId = sessionResult.id
+      const videoId = `video_${knowledgeId}`
+      const quizId = `quiz_${knowledgeId}`
+
       // Generate test events
       const knowledgeEventsGenerated = await this.generateKnowledgeEvents(
-        userId, sessionId, knowledgeId, 5
-      );
-      
+        userId,
+        sessionId,
+        knowledgeId,
+        5
+      )
+
       const videoEventsGenerated = await this.generateVideoEvents(
-        userId, sessionId, knowledgeId, videoId, 2
-      );
-      
+        userId,
+        sessionId,
+        knowledgeId,
+        videoId,
+        2
+      )
+
       const quizEventsGenerated = await this.generateQuizEvents(
-        userId, sessionId, knowledgeId, quizId, 2
-      );
-      
-      if (!knowledgeEventsGenerated || !videoEventsGenerated || !quizEventsGenerated) {
-        return { success: false, sessionId };
+        userId,
+        sessionId,
+        knowledgeId,
+        quizId,
+        2
+      )
+
+      if (
+        !knowledgeEventsGenerated ||
+        !videoEventsGenerated ||
+        !quizEventsGenerated
+      ) {
+        return { success: false, sessionId }
       }
 
       // Get analytics data
-      const interactionSummary = await analyticsService.getKnowledgeInteractionSummary(
-        userId, knowledgeId
-      );
-      
+      const interactionSummary =
+        await analyticsService.getKnowledgeInteractionSummary(
+          userId,
+          knowledgeId
+        )
+
       const videoStats = await analyticsService.getKnowledgeVideoStats(
-        userId, knowledgeId
-      );
-      
+        userId,
+        knowledgeId
+      )
+
       const quizStats = await analyticsService.getKnowledgeQuizStats(
-        userId, knowledgeId
-      );
+        userId,
+        knowledgeId
+      )
 
       // End the session
-      await analyticsService.endUserSession(sessionId);
+      await analyticsService.endUserSession(sessionId)
 
       return {
         success: true,
@@ -268,45 +281,48 @@ export const knowledgeAnalyticsTestHelpers = {
         eventCount: 5 + 7 + 14, // Knowledge + Video + Quiz events
         interactionSummary,
         videoStats,
-        quizStats
-      };
+        quizStats,
+      }
     } catch (err) {
-      console.error('Failed to test knowledge analytics flow:', err);
-      return { success: false };
+      console.error('Failed to test knowledge analytics flow:', err)
+      return { success: false }
     }
   },
 
   /**
    * Clean up test knowledge data
    */
-  async cleanupKnowledgeTestData(userId: string, sessionId: string): Promise<boolean> {
+  async cleanupKnowledgeTestData(
+    userId: string,
+    sessionId: string
+  ): Promise<boolean> {
     try {
       // Delete test events
       const { error: eventsError } = await supabase
         .from('user_interactions')
         .delete()
-        .eq('session_id', sessionId);
+        .eq('session_id', sessionId)
 
       if (eventsError) {
-        console.error('Error cleaning up knowledge test events:', eventsError);
-        return false;
+        console.error('Error cleaning up knowledge test events:', eventsError)
+        return false
       }
 
       // Delete test session
       const { error: sessionError } = await supabase
         .from('user_sessions')
         .delete()
-        .eq('id', sessionId);
+        .eq('id', sessionId)
 
       if (sessionError) {
-        console.error('Error cleaning up knowledge test session:', sessionError);
-        return false;
+        console.error('Error cleaning up knowledge test session:', sessionError)
+        return false
       }
 
-      return true;
+      return true
     } catch (err) {
-      console.error('Failed to clean up knowledge test data:', err);
-      return false;
+      console.error('Failed to clean up knowledge test data:', err)
+      return false
     }
-  }
-}; 
+  },
+}

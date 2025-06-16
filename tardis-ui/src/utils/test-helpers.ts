@@ -1,5 +1,5 @@
-import { analyticsService } from '@/services/analytics-service';
-import supabase from '@/services/supabase';
+import { analyticsService } from '@/services/analytics-service'
+import supabase from '@/services/supabase'
 
 /**
  * Test helpers for analytics session management and event tracking
@@ -16,20 +16,20 @@ export const analyticsTestHelpers = {
         .eq('user_id', userId)
         .is('ended_at', null) // Only active sessions
         .order('started_at', { ascending: false })
-        .limit(1);
-      
+        .limit(1)
+
       if (error) {
-        console.error('Error verifying user session:', error);
-        return false;
+        console.error('Error verifying user session:', error)
+        return false
       }
-      
-      return Boolean(data && data.length > 0);
+
+      return Boolean(data && data.length > 0)
     } catch (err) {
-      console.error('Failed to verify user session:', err);
-      return false;
+      console.error('Failed to verify user session:', err)
+      return false
     }
   },
-  
+
   /**
    * Verify if events are properly associated with a session
    */
@@ -39,36 +39,36 @@ export const analyticsTestHelpers = {
         .from('user_interactions')
         .select('id')
         .eq('session_id', sessionId)
-        .order('created_at', { ascending: false });
-      
+        .order('created_at', { ascending: false })
+
       if (error) {
-        console.error('Error verifying session events:', error);
-        return 0;
+        console.error('Error verifying session events:', error)
+        return 0
       }
-      
-      return data ? data.length : 0;
+
+      return data ? data.length : 0
     } catch (err) {
-      console.error('Failed to verify session events:', err);
-      return 0;
+      console.error('Failed to verify session events:', err)
+      return 0
     }
   },
-  
+
   /**
    * Create a test session and track a test event
    */
   async testSessionAndEventCreation(userId: string): Promise<{
-    success: boolean;
-    sessionId?: string;
-    eventCount?: number;
+    success: boolean
+    sessionId?: string
+    eventCount?: number
   }> {
     try {
       // Start a session
-      const sessionResult = await analyticsService.startUserSession(userId);
-      
+      const sessionResult = await analyticsService.startUserSession(userId)
+
       if (!sessionResult || !sessionResult.id) {
-        return { success: false };
+        return { success: false }
       }
-      
+
       // Track a test event
       await analyticsService.trackEvent({
         userId,
@@ -76,49 +76,53 @@ export const analyticsTestHelpers = {
         contentId: null,
         timestamp: Date.now(),
         sessionId: sessionResult.id,
-        testData: 'This is a test event'
-      });
-      
+        testData: 'This is a test event',
+      })
+
       // Verify the event was created
-      const eventCount = await this.verifySessionEvents(sessionResult.id);
-      
+      const eventCount = await this.verifySessionEvents(sessionResult.id)
+
       // End the session
-      await analyticsService.endUserSession(sessionResult.id);
-      
+      await analyticsService.endUserSession(sessionResult.id)
+
       return {
         success: true,
         sessionId: sessionResult.id,
-        eventCount
-      };
+        eventCount,
+      }
     } catch (err) {
-      console.error('Failed to test session and event creation:', err);
-      return { success: false };
+      console.error('Failed to test session and event creation:', err)
+      return { success: false }
     }
   },
 
   /**
    * Test the roleplay analytics tracking functionality
    */
-  async testRoleplayAnalytics(userId: string, knowledgeId: string, moduleId: string): Promise<{
-    success: boolean;
-    sessionId?: string;
+  async testRoleplayAnalytics(
+    userId: string,
+    knowledgeId: string,
+    moduleId: string
+  ): Promise<{
+    success: boolean
+    sessionId?: string
     events?: {
-      start?: boolean;
-      response?: boolean;
-      complete?: boolean;
-    };
+      start?: boolean
+      response?: boolean
+      complete?: boolean
+    }
   }> {
     try {
       // Start a session
-      const sessionResult = await analyticsService.startUserSession(userId);
-      
+      const sessionResult = await analyticsService.startUserSession(userId)
+
       if (!sessionResult || !sessionResult.id) {
-        return { success: false };
+        return { success: false }
       }
 
-      const sessionId = sessionResult.id;
-      const scenarioId = 'test-scenario-123';
-      
+      const sessionId = sessionResult.id
+      const scenarioId = 'test-scenario-123'
+
       // Track roleplay start event
       await analyticsService.trackEvent({
         userId,
@@ -131,12 +135,10 @@ export const analyticsTestHelpers = {
         scenarioTitle: 'Test Scenario',
         difficulty: 'medium',
         estimatedDuration: 600,
-        studentProfiles: [
-          { name: 'Student A', personality: 'Curious' }
-        ],
-        interactionType: 'scenario_selection'
-      });
-      
+        studentProfiles: [{ name: 'Student A', personality: 'Curious' }],
+        interactionType: 'scenario_selection',
+      })
+
       // Track roleplay response event
       await analyticsService.trackEvent({
         userId,
@@ -152,9 +154,9 @@ export const analyticsTestHelpers = {
         question: 'What is this test about?',
         response: 'This is a test of the roleplay analytics system.',
         responseTime: 5000,
-        interactionType: 'teacher_response'
-      });
-      
+        interactionType: 'teacher_response',
+      })
+
       // Track roleplay complete event
       await analyticsService.trackEvent({
         userId,
@@ -175,43 +177,51 @@ export const analyticsTestHelpers = {
             criteriaName: 'Clarity of Explanation',
             score: 4,
             maxScore: 5,
-            feedback: 'Good clarity in responses'
-          }
+            feedback: 'Good clarity in responses',
+          },
         ],
-        interactionType: 'completion'
-      });
-      
+        interactionType: 'completion',
+      })
+
       // Verify events were created
       const { data: events, error } = await supabase
         .from('user_interactions')
         .select('event_type')
         .eq('session_id', sessionId)
-        .in('event_type', ['roleplay_start', 'roleplay_response', 'roleplay_complete']);
-      
+        .in('event_type', [
+          'roleplay_start',
+          'roleplay_response',
+          'roleplay_complete',
+        ])
+
       if (error) {
-        console.error('Error verifying roleplay events:', error);
-        return { success: false, sessionId };
+        console.error('Error verifying roleplay events:', error)
+        return { success: false, sessionId }
       }
-      
-      const hasStartEvent = events.some(e => e.event_type === 'roleplay_start');
-      const hasResponseEvent = events.some(e => e.event_type === 'roleplay_response');
-      const hasCompleteEvent = events.some(e => e.event_type === 'roleplay_complete');
-      
+
+      const hasStartEvent = events.some(e => e.event_type === 'roleplay_start')
+      const hasResponseEvent = events.some(
+        e => e.event_type === 'roleplay_response'
+      )
+      const hasCompleteEvent = events.some(
+        e => e.event_type === 'roleplay_complete'
+      )
+
       // End the session
-      await analyticsService.endUserSession(sessionId);
-      
+      await analyticsService.endUserSession(sessionId)
+
       return {
         success: true,
         sessionId,
         events: {
           start: hasStartEvent,
           response: hasResponseEvent,
-          complete: hasCompleteEvent
-        }
-      };
+          complete: hasCompleteEvent,
+        },
+      }
     } catch (err) {
-      console.error('Failed to test roleplay analytics:', err);
-      return { success: false };
+      console.error('Failed to test roleplay analytics:', err)
+      return { success: false }
     }
-  }
-}; 
+  },
+}

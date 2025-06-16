@@ -1,21 +1,21 @@
 class ApiClient {
-  private baseURL: string;
+  private baseURL: string
 
   constructor() {
-    this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    this.baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
   }
 
   private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('auth_token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    const token = localStorage.getItem('auth_token')
+    return token ? { Authorization: `Bearer ${token}` } : {}
   }
 
   private async handleResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`API Error: ${response.status} - ${error}`);
+      const error = await response.text()
+      throw new Error(`API Error: ${response.status} - ${error}`)
     }
-    return response.json();
+    return response.json()
   }
 
   async get<T>(endpoint: string): Promise<T> {
@@ -24,8 +24,8 @@ class ApiClient {
         'Content-Type': 'application/json',
         ...this.getAuthHeaders(),
       },
-    });
-    return this.handleResponse<T>(response);
+    })
+    return this.handleResponse<T>(response)
   }
 
   async post<T>(endpoint: string, data?: any): Promise<T> {
@@ -36,8 +36,8 @@ class ApiClient {
         ...this.getAuthHeaders(),
       },
       body: data ? JSON.stringify(data) : undefined,
-    });
-    return this.handleResponse<T>(response);
+    })
+    return this.handleResponse<T>(response)
   }
 
   async put<T>(endpoint: string, data?: any): Promise<T> {
@@ -48,16 +48,16 @@ class ApiClient {
         ...this.getAuthHeaders(),
       },
       body: data ? JSON.stringify(data) : undefined,
-    });
-    return this.handleResponse<T>(response);
+    })
+    return this.handleResponse<T>(response)
   }
 
   async delete<T>(endpoint: string): Promise<T> {
     const response = await fetch(`${this.baseURL}/v2${endpoint}`, {
       method: 'DELETE',
       headers: this.getAuthHeaders(),
-    });
-    return this.handleResponse<T>(response);
+    })
+    return this.handleResponse<T>(response)
   }
 
   async upload<T>(endpoint: string, formData: FormData): Promise<T> {
@@ -65,14 +65,14 @@ class ApiClient {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: formData,
-    });
-    return this.handleResponse<T>(response);
+    })
+    return this.handleResponse<T>(response)
   }
 
   createWebSocket(endpoint: string): WebSocket {
-    const wsUrl = this.baseURL.replace('http', 'ws');
-    return new WebSocket(`${wsUrl}/ws${endpoint}`);
+    const wsUrl = this.baseURL.replace('http', 'ws')
+    return new WebSocket(`${wsUrl}/ws${endpoint}`)
   }
 }
 
-export const apiClient = new ApiClient();
+export const apiClient = new ApiClient()

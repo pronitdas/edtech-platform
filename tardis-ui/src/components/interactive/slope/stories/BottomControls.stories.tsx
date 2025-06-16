@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import BottomControls from '../components/BottomControls';
+import type { Meta, StoryObj } from '@storybook/react'
+import BottomControls from '../components/BottomControls'
 
 const meta = {
   title: 'Slope/BottomControls',
@@ -8,10 +8,10 @@ const meta = {
     layout: 'centered',
   },
   tags: ['autodocs'],
-} satisfies Meta<typeof BottomControls>;
+} satisfies Meta<typeof BottomControls>
 
-export default meta;
-type Story = StoryObj<typeof meta>;
+export default meta
+type Story = StoryObj<typeof meta>
 
 export const NoLineData: Story = {
   args: {
@@ -19,7 +19,7 @@ export const NoLineData: Story = {
     clearPoints: () => console.log('Clear points'),
     onShowAnimation: () => console.log('Show animation'),
   },
-};
+}
 
 export const WithLineData: Story = {
   args: {
@@ -34,7 +34,7 @@ export const WithLineData: Story = {
     clearPoints: () => console.log('Clear points'),
     onShowAnimation: () => console.log('Show animation'),
   },
-};
+}
 
 export const UndefinedSlope: Story = {
   args: {
@@ -48,4 +48,4 @@ export const UndefinedSlope: Story = {
     clearPoints: () => console.log('Clear points'),
     onShowAnimation: () => console.log('Show animation'),
   },
-}; 
+}

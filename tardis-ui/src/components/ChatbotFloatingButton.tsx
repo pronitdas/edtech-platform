@@ -1,68 +1,71 @@
-import React, { useState } from 'react';
-import { MessageSquare, X } from 'lucide-react';
-import Chatbot from './ChatBot';
-import { useInteractionTracker } from '@/contexts/InteractionTrackerContext';
+import React, { useState } from 'react'
+import { MessageSquare, X } from 'lucide-react'
+import Chatbot from './ChatBot'
+import { useInteractionTracker } from '@/contexts/InteractionTrackerContext'
 
 interface ChatbotFloatingButtonProps {
-  contentContext: string;
-  chapterTitle: string;
+  contentContext: string
+  chapterTitle: string
 }
 
 const ChatbotFloatingButton: React.FC<ChatbotFloatingButtonProps> = ({
   contentContext,
-  chapterTitle
+  chapterTitle,
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const { trackEvent } = useInteractionTracker() as any;
+  const [isOpen, setIsOpen] = useState(false)
+  const { trackEvent } = useInteractionTracker() as any
 
   const toggleChatbot = () => {
-    setIsOpen(!isOpen);
-  };
+    setIsOpen(!isOpen)
+  }
 
   const handleQuestionAsked = (question: string) => {
     if (trackEvent) {
-      trackEvent('chatbot_query', undefined, { query: question, chapter: chapterTitle });
+      trackEvent('chatbot_query', undefined, {
+        query: question,
+        chapter: chapterTitle,
+      })
     }
-  };
+  }
 
   return (
-    <div className="relative">
+    <div className='relative'>
       {/* Floating Button */}
       <button
         onClick={toggleChatbot}
-        className="bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-full shadow-lg transition-colors flex items-center justify-center"
-        aria-label={isOpen ? "Close chatbot" : "Open chatbot"}
+        className='flex items-center justify-center rounded-full bg-indigo-600 p-3 text-white shadow-lg transition-colors hover:bg-indigo-700'
+        aria-label={isOpen ? 'Close chatbot' : 'Open chatbot'}
       >
         {isOpen ? (
-          <X className="w-6 h-6" />
+          <X className='h-6 w-6' />
         ) : (
-          <MessageSquare className="w-6 h-6" />
+          <MessageSquare className='h-6 w-6' />
         )}
       </button>
 
       {/* Chatbot Dialog */}
       {isOpen && (
-        <div className="absolute bottom-16 left-0 w-80 h-96 bg-gray-800 rounded-lg shadow-xl overflow-hidden border border-gray-700 flex flex-col">
-          <div className="bg-indigo-900/20 p-2 text-white font-medium flex justify-between items-center">
+        <div className='absolute bottom-16 left-0 flex h-96 w-80 flex-col overflow-hidden rounded-lg border border-gray-700 bg-gray-800 shadow-xl'>
+          <div className='flex items-center justify-between bg-indigo-900/20 p-2 font-medium text-white'>
             <span>Course Assistant: {chapterTitle}</span>
-            <button 
+            <button
               onClick={toggleChatbot}
-              className="text-gray-300 hover:text-white p-1 rounded-full hover:bg-indigo-800/30"
+              className='rounded-full p-1 text-gray-300 hover:bg-indigo-800/30 hover:text-white'
             >
-              <X className="w-4 h-4" />
+              <X className='h-4 w-4' />
             </button>
           </div>
-          <div className="flex-grow overflow-hidden">
+          <div className='flex-grow overflow-hidden'>
             <Chatbot
               topic={`${chapterTitle}: ${contentContext}`}
-              language="English"
+              language='English'
               onQuestionAsked={handleQuestionAsked}
             />
           </div>
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default ChatbotFloatingButton; 
+export default ChatbotFloatingButton

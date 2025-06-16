@@ -57,7 +57,7 @@ export const updateEdtechContent = async (updateObject, edtechId, chapterId, kno
     return data;
 }
 export const getChapterMetaDataByLanguage = async (id: number, language) => {
-    let { data: goldenContent, error: errTemp } = await supabase
+    const { data: goldenContent, error: errTemp } = await supabase
         .rpc('check_edtech_columns', {
             knowledge_id: id,
             language: language
@@ -199,7 +199,7 @@ const insertChapters = async (knowledge_id, markdownData) => {
     const mergedMap = selectionCriteria.map((topic, index) => {
         topic.id = index + 1;
         if (images) {
-            let mdText = topic.chapter
+            const mdText = topic.chapter
 
             topic.chapter = processMarkdown(mdText, images)
         }

@@ -1,54 +1,55 @@
-import React from 'react';
-import { LineData } from '../types';
+import React from 'react'
+import { LineData } from '../types'
 
 interface BottomControlsProps {
-  lineData?: LineData;
-  resetView: () => void;
-  clearPoints: () => void;
-  onShowAnimation: () => void;
+  lineData?: LineData
+  resetView: () => void
+  clearPoints: () => void
+  onShowAnimation: () => void
 }
 
 /**
  * BottomControls component provides the bottom control bar for SlopeDrawing
  */
-const BottomControls: React.FC<BottomControlsProps> = ({ 
-  lineData, 
-  resetView, 
-  clearPoints, 
-  onShowAnimation 
+const BottomControls: React.FC<BottomControlsProps> = ({
+  lineData,
+  resetView,
+  clearPoints,
+  onShowAnimation,
 }) => {
   return (
-    <div className="p-3 bg-gray-800 border-t border-gray-700 flex justify-between items-center">
-      <div className="flex space-x-2">
+    <div className='flex items-center justify-between border-t border-gray-700 bg-gray-800 p-3'>
+      <div className='flex space-x-2'>
         <button
           onClick={resetView}
-          className="px-3 py-1 bg-gray-700 text-gray-200 text-sm rounded-md hover:bg-gray-600"
+          className='rounded-md bg-gray-700 px-3 py-1 text-sm text-gray-200 hover:bg-gray-600'
         >
           Reset View
         </button>
         <button
           onClick={clearPoints}
-          className="px-3 py-1 bg-gray-700 text-gray-200 text-sm rounded-md hover:bg-gray-600"
+          className='rounded-md bg-gray-700 px-3 py-1 text-sm text-gray-200 hover:bg-gray-600'
         >
           Clear Points
         </button>
         {lineData && (
           <button
             onClick={onShowAnimation}
-            className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
+            className='rounded-md bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700'
           >
             Show Steps
           </button>
         )}
       </div>
-      
+
       {lineData && (
-        <div className="text-gray-400 text-sm">
-          {lineData.equation} | Slope: {lineData.slope !== null ? lineData.slope.toFixed(2) : 'Undefined'}
+        <div className='text-sm text-gray-400'>
+          {lineData.equation} | Slope:{' '}
+          {lineData.slope !== null ? lineData.slope.toFixed(2) : 'Undefined'}
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default BottomControls; 
+export default BottomControls

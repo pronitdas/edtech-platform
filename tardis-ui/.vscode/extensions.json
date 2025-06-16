@@ -1,3 +1,18 @@
 {
-  "recommendations": ["denoland.vscode-deno"]
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "bradlc.vscode-tailwindcss",
+    "steoates.autoimport-es6-ts",
+    "ms-vscode.vscode-typescript-next",
+    "formulahendry.auto-rename-tag",
+    "christian-kohler.path-intellisense",
+    "ms-vscode.vscode-json",
+    "streetsidesoftware.code-spell-checker",
+    "usernamehw.errorlens",
+    "ms-playwright.playwright",
+    "vitest.explorer",
+    "unifiedjs.vscode-mdx",
+    "denoland.vscode-deno"
+  ]
 }

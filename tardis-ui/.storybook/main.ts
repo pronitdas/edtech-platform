@@ -1,56 +1,75 @@
-import type { StorybookConfig } from "@storybook/react-vite";
-import path from 'path';
+import type { StorybookConfig } from '@storybook/react-vite'
+import path from 'path'
+import { mergeConfig } from 'vite'
 
 const config: StorybookConfig = {
-  stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|ts|tsx)"],
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
   addons: [
-    "@storybook/addon-links",
-    "@storybook/addon-essentials",
-    "@storybook/addon-interactions",
-    "@storybook/addon-a11y",
-    "@storybook/addon-coverage",
+    '@storybook/addon-links',
+    '@storybook/addon-essentials',
+    '@storybook/addon-interactions',
+    '@storybook/addon-a11y',
+    '@storybook/addon-coverage',
+    {
+      name: '@storybook/addon-styling-webpack',
+      options: {
+        plugins: [
+          {
+            postCss: {
+              implementation: require.resolve('postcss'),
+            },
+          },
+        ],
+      },
+    },
   ],
   framework: {
-    name: "@storybook/react-vite",
-    options: {},
+    name: '@storybook/react-vite',
+    options: {
+      builder: {
+        viteConfigPath: '../vite.config.ts',
+      },
+    },
   },
   docs: {
-    autodocs: true,
+    autodocs: 'tag',
+    defaultName: 'Documentation',
   },
   core: {
-    builder: "@storybook/builder-vite",
+    builder: '@storybook/builder-vite',
     disableTelemetry: true,
   },
   typescript: {
     reactDocgen: 'react-docgen-typescript',
     check: false,
+    reactDocgenTypescriptOptions: {
+      shouldExtractLiteralValuesFromEnum: true,
+      propFilter: (prop) => (prop.parent ? !/node_modules/.test(prop.parent.fileName) : true),
+    },
   },
-  async viteFinal(config) {
-    // Add special alias for our mocked modules in Storybook
-    if (config.resolve) {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        '@': path.resolve(__dirname, '../src'),
-        // Use our mock implementation for the InteractionTrackerContext
-        '@/contexts/InteractionTrackerContext': path.resolve(__dirname, '../src/stories/mockHooks.tsx'),
-      };
-    }
-    
-    return {
-      ...config,
-      define: { 
-        ...config.define,
-        global: 'window',
-      },
+  async viteFinal(config, { configType }) {
+    return mergeConfig(config, {
       resolve: {
-        ...config.resolve,
         alias: {
-          ...config.resolve?.alias,
-          '@': '/src',
+          '@': path.resolve(__dirname, '../src'),
+          // Mock implementations for Storybook
+          '@/contexts/InteractionTrackerContext': path.resolve(__dirname, '../src/stories/mockHooks.tsx'),
         },
       },
-    };
+      define: {
+        global: 'window',
+      },
+      // Optimize for Storybook
+      optimizeDeps: {
+        include: [
+          '@storybook/addon-docs',
+          '@storybook/addon-controls',
+          '@storybook/addon-actions',
+          '@storybook/addon-viewport',
+        ],
+      },
+    })
   },
-};
+}
 
-export default config; 
+export default config 

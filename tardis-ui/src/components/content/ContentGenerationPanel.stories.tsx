@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { ContentGenerationPanel } from './ContentGenerationPanel';
-import { ContentType } from '@/services/edtech-api';
-import { ChapterV1 } from '@/types/database';
+import type { Meta, StoryObj } from '@storybook/react'
+import { ContentGenerationPanel } from './ContentGenerationPanel'
+import { ContentType } from '@/services/edtech-api'
+import { ChapterV1 } from '@/types/database'
 
 const mockChapter: ChapterV1 = {
   id: 1,
@@ -23,8 +23,8 @@ const mockChapter: ChapterV1 = {
   seeded: true,
   timestamp_end: 600,
   timestamp_start: 0,
-  type: 'lecture'
-};
+  type: 'lecture',
+}
 
 const meta: Meta<typeof ContentGenerationPanel> = {
   title: 'Course/ContentGenerationPanel',
@@ -36,8 +36,8 @@ const meta: Meta<typeof ContentGenerationPanel> = {
     },
   },
   decorators: [
-    (Story) => (
-      <div className="bg-gray-900 h-[600px] w-[400px] relative">
+    Story => (
+      <div className='relative h-[600px] w-[400px] bg-gray-900'>
         <Story />
       </div>
     ),
@@ -46,10 +46,10 @@ const meta: Meta<typeof ContentGenerationPanel> = {
     onGenerate: { action: 'generate content' },
     onClose: { action: 'close panel' },
   },
-};
+}
 
-export default meta;
-type Story = StoryObj<typeof ContentGenerationPanel>;
+export default meta
+type Story = StoryObj<typeof ContentGenerationPanel>
 
 export const WithMissingContent: Story = {
   args: {
@@ -59,7 +59,7 @@ export const WithMissingContent: Story = {
     generatingTypes: [] as ContentType[],
     isGenerating: false,
   },
-};
+}
 
 export const WithAllContentAvailable: Story = {
   args: {
@@ -69,7 +69,7 @@ export const WithAllContentAvailable: Story = {
     generatingTypes: [] as ContentType[],
     isGenerating: false,
   },
-};
+}
 
 export const GeneratingNotes: Story = {
   args: {
@@ -79,7 +79,7 @@ export const GeneratingNotes: Story = {
     generatingTypes: ['notes'] as ContentType[],
     isGenerating: true,
   },
-};
+}
 
 export const GeneratingMultipleTypes: Story = {
   args: {
@@ -89,7 +89,7 @@ export const GeneratingMultipleTypes: Story = {
     generatingTypes: ['notes', 'quiz'] as ContentType[],
     isGenerating: true,
   },
-};
+}
 
 export const WithDifferentLanguage: Story = {
   args: {
@@ -99,4 +99,4 @@ export const WithDifferentLanguage: Story = {
     generatingTypes: [] as ContentType[],
     isGenerating: false,
   },
-}; 
+}

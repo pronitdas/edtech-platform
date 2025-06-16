@@ -1,6 +1,6 @@
-import React from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils';
+import React from 'react'
+import { cva, type VariantProps } from 'class-variance-authority'
+import { cn } from '@/lib/utils'
 
 const typographyVariants = cva('text-slate-950 dark:text-slate-50', {
   variants: {
@@ -37,24 +37,25 @@ const typographyVariants = cva('text-slate-950 dark:text-slate-50', {
     weight: 'normal',
     align: 'left',
   },
-});
+})
 
 export interface TypographyProps
   extends React.HTMLAttributes<HTMLElement>,
     VariantProps<typeof typographyVariants> {
-  as?: keyof JSX.IntrinsicElements;
+  as?: keyof JSX.IntrinsicElements
 }
 
 export const Typography = React.forwardRef<HTMLElement, TypographyProps>(
   ({ className, variant, weight, align, as, ...props }, ref) => {
-    const Component = as || (variant?.toString().startsWith('h') ? variant : 'p');
+    const Component =
+      as || (variant?.toString().startsWith('h') ? variant : 'p')
 
     return React.createElement(Component, {
       ref,
       className: cn(typographyVariants({ variant, weight, align, className })),
       ...props,
-    });
+    })
   }
-);
+)
 
-Typography.displayName = 'Typography'; 
+Typography.displayName = 'Typography'

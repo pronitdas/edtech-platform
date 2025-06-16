@@ -1,11 +1,11 @@
-'use client';
+'use client'
 
-import React, { useRef, useEffect } from 'react';
-import { SlopeDrawingProps } from './types';
-import { SlopeDrawingProvider } from './contexts/SlopeDrawingContext';
-import SlopeDrawingLayout from './components/SlopeDrawingLayout';
+import React, { useRef, useEffect } from 'react'
+import { SlopeDrawingProps } from './types'
+import { SlopeDrawingProvider } from './contexts/SlopeDrawingContext'
+import SlopeDrawingLayout from './components/SlopeDrawingLayout'
 
-const SlopeDrawing: React.FC<SlopeDrawingProps> = (props) => {
+const SlopeDrawing: React.FC<SlopeDrawingProps> = props => {
   // Pass the props directly to the context provider, which will handle all state management
   // The SlopeDrawingLayout component will use the context to render the UI
   return (
@@ -19,7 +19,7 @@ const SlopeDrawing: React.FC<SlopeDrawingProps> = (props) => {
     >
       <SlopeDrawingLayout />
     </SlopeDrawingProvider>
-  );
-};
+  )
+}
 
-export default SlopeDrawing; 
+export default SlopeDrawing
