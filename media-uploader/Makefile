@@ -54,9 +54,29 @@ logs:
 shell:
 	docker-compose exec app /bin/bash
 
+# Phase 1 specific commands
+.PHONY: migrate test-v2 refresh-view
+
+migrate:
+	alembic upgrade head
+
+test-v2:
+	pytest tests/test_v2_api.py -v
+
+refresh-view:
+	psql $(DATABASE_URL) -c "REFRESH MATERIALIZED VIEW CONCURRENTLY user_progress;"
+
+# Full Phase 1 setup
+phase1-setup: migrate
+	@echo "Phase 1 setup complete - v2 API ready"
+
 # Development workflow
-dev: up migrate seed
-	@echo "Development environment ready!"
+dev-v2: migrate
+	uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+
+# Testing workflow  
+test: test-v2
+	pytest tests/ -v --cov=src --cov-report=html
 
 # Install dependencies
 install:
@@ -78,4 +98,4 @@ lint:
 
 # Full development setup
 setup: install migrate seed
-	@echo "Local development setup complete!" 
+	@echo "Local development setup complete!"
