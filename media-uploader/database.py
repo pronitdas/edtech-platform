@@ -1,108 +1,106 @@
 import json
 import logging
 from datetime import datetime
-from typing import Dict, Optional, List, Any, Tuple
+from typing import Dict, Optional, List, Any
 import os
+import dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from models import Knowledge, Chapter, RetryHistory
 
-from supabase import create_client, Client
+dotenv.load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Supabase configuration
-SUPABASE_URL = os.getenv('SUPABASE_URL', '')
-SUPABASE_KEY = os.getenv('SUPABASE_KEY', '')
+# SQLAlchemy setup
+DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/postgres')
 
+# Initialize SQLAlchemy
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 class DatabaseManager:
     """Manager for database operations."""
     
-    def __init__(self, url: str = SUPABASE_URL, key: str = SUPABASE_KEY):
-        """Initialize the database manager."""
-        self.supabase: Client = create_client(url, key)
-        
+    def __init__(self, db_url: str = DATABASE_URL):
+        """Initialize the database manager with SQLAlchemy."""
+        self.engine = create_engine(db_url)
+        self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
+
+    def get_db(self):
+        """Get database session."""
+        db = self.SessionLocal()
+        try:
+            return db
+        finally:
+            db.close()
+            
     def get_knowledge(self, knowledge_id: int) -> Dict:
         """Get a knowledge entry by ID."""
         try:
-            response = (
-                self.supabase.table("knowledge")
-                .select("*")
-                .eq("id", knowledge_id)
-                .execute()
-            )
-            
-            if not response.data:
-                raise Exception(f"Knowledge not found with id={knowledge_id}.")
-                
-            return response.data[0]
+            with self.get_db() as db:
+                knowledge = db.query(Knowledge).filter(Knowledge.id == knowledge_id).first()
+                if not knowledge:
+                    raise ValueError(f"Knowledge entry {knowledge_id} not found")
+                return {
+                    "id": knowledge.id,
+                    "status": knowledge.status,
+                    "content_type": knowledge.content_type,
+                    "difficulty_level": knowledge.difficulty_level,
+                    "target_audience": knowledge.target_audience,
+                    "prerequisites": knowledge.prerequisites,
+                    "summary": knowledge.summary,
+                    "video_url": knowledge.video_url,
+                    "has_transcript": knowledge.has_transcript,
+                    "meta_data": knowledge.meta_data,
+                    "retry_count": knowledge.retry_count,
+                    "seeded": knowledge.seeded
+                }
         except Exception as e:
-            print(e)
             logger.error(f"Error getting knowledge {knowledge_id}: {str(e)}")
             raise
             
     def get_unseeded_knowledge(self, knowledge_id: int) -> Dict:
         """Get an unseeded knowledge entry by ID."""
         try:
-            response = (
-                self.supabase.table("knowledge")
-                .select("*")
-                .eq("id", knowledge_id)
-                .eq("seeded", False)
-                .execute()
-            )
-            print(response);
-            if not response.data:
-                raise Exception(f"No unseeded knowledge entry found with id={knowledge_id}.")
-                
-            return response.data[0]
+            with self.get_db() as db:
+                knowledge = db.query(Knowledge).filter(
+                    Knowledge.id == knowledge_id,
+                    Knowledge.seeded == False
+                ).first()
+                if not knowledge:
+                    raise ValueError(f"Unseeded knowledge entry {knowledge_id} not found")
+                return {
+                    "id": knowledge.id,
+                    "status": knowledge.status,
+                    "content_type": knowledge.content_type,
+                    "difficulty_level": knowledge.difficulty_level,
+                    "target_audience": knowledge.target_audience,
+                    "prerequisites": knowledge.prerequisites,
+                    "summary": knowledge.summary,
+                    "video_url": knowledge.video_url,
+                    "has_transcript": knowledge.has_transcript,
+                    "meta_data": knowledge.meta_data,
+                    "retry_count": knowledge.retry_count,
+                    "seeded": knowledge.seeded
+                }
         except Exception as e:
-            print(e)
             logger.error(f"Error getting unseeded knowledge {knowledge_id}: {str(e)}")
             raise
             
     def update_knowledge_status(self, knowledge_id: int, status: str, metadata: Optional[Dict] = None) -> None:
         """Update knowledge status and metadata."""
         try:
-            update_data = {"status": status}
-            
-            # If metadata is provided, handle specific fields directly
-            if metadata is not None:
-                # Extract fields that should be stored directly in columns
-                direct_fields = {
-                    "difficulty_level": metadata.get("difficulty_level"),
-                    "target_audience": metadata.get("target_audience", []),
-                    "prerequisites": metadata.get("recommended_prerequisites", []),
-                    "summary": metadata.get("summary"),
-                }
-                
-                # Add direct fields to update data if they exist
-                for key, value in direct_fields.items():
-                    if value is not None:
-                        # Convert lists to strings for database storage
-                        if isinstance(value, list):
-                            update_data[key] = json.dumps(value)
-                        else:
-                            update_data[key] = value
-                
-                # Store remaining metadata as JSON
-                remaining_metadata = {k: v for k, v in metadata.items() 
-                                    if k not in direct_fields}
-                if remaining_metadata:
-                    update_data["metadata"] = json.dumps(remaining_metadata)
-
-            response = (
-                self.supabase.table("knowledge")
-                .update(update_data)
-                .eq("id", knowledge_id)
-                .execute()
-            )
-            
-            if hasattr(response, 'error') and response.error:
-                raise Exception(f"Error updating knowledge status: {response.error}")
-                
-            logger.info(f"Updated knowledge {knowledge_id} status to {status}")
-            
+            with self.get_db() as db:
+                knowledge = db.query(Knowledge).filter(Knowledge.id == knowledge_id).first()
+                if not knowledge:
+                    raise ValueError(f"Knowledge entry {knowledge_id} not found")
+                knowledge.status = status
+                if metadata:
+                    knowledge.meta_data = metadata
+                db.commit()
         except Exception as e:
             logger.error(f"Error updating knowledge status: {str(e)}")
             raise
@@ -110,71 +108,30 @@ class DatabaseManager:
     def insert_chapters(self, knowledge_id: int, chapters: List[Dict]) -> None:
         """Insert chapters into the database."""
         try:
-            # Insert chapters in batches
-            batch_size = 30
-            for i in range(0, len(chapters), batch_size):
-                batch = chapters[i:i + batch_size]
-                response = self.supabase.table("chapters_v1").insert(batch).execute()
-                if hasattr(response, 'error') and response.error:
-                    raise Exception(f"Error inserting chapters: {response.error}")
-                
-            logger.info(f"Successfully inserted {len(chapters)} chapters for knowledge_id {knowledge_id}")
-            
+            with self.get_db() as db:
+                chapter_objects = [
+                    Chapter(
+                        knowledge_id=knowledge_id,
+                        id=chapter.get("id"),
+                        content=chapter.get("content"),
+                        meta_data=chapter.get("meta_data", {})
+                    ) for chapter in chapters
+                ]
+                db.bulk_save_objects(chapter_objects)
+                db.commit()
         except Exception as e:
             logger.error(f"Error inserting chapters: {str(e)}")
             raise
-            
-    def download_file(self, file_path: str) -> bytes:
-        """Download a file from Supabase storage."""
-        try:
-            response = self.supabase.storage.from_("media").download(file_path)
-            return response
-        except Exception as e:
-            logger.error(f"Error downloading file {file_path}: {str(e)}")
-            raise
-            
-    def upload_image(self, knowledge_id: int, img_filename: str, image_buffer: bytes, content_type: str) -> Dict:
-        """Upload an image to Supabase storage."""
-        try:
-            storage_path = f"image/{knowledge_id}/{img_filename}"
-            
-            upload_response = self.supabase.storage.from_("media").upload(
-                storage_path,
-                image_buffer,
-                {"contentType": content_type}
-            )
-            
-            if hasattr(upload_response, 'error') and upload_response.error:
-                raise Exception(f"Error uploading image: {upload_response.error}")
-                
-            return {
-                "url": storage_path,
-                "filename": img_filename
-            }
-            
-        except Exception as e:
-            logger.error(f"Failed to upload image {img_filename}: {str(e)}")
-            raise
-            
+
     def update_retry_info(self, knowledge_id: int, retry_count: int) -> None:
         """Update retry information for a knowledge entry."""
         try:
-            update_data = {
-                "retry_count": retry_count
-            }
-            
-            response = (
-                self.supabase.table("knowledge")
-                .update(update_data)
-                .eq("id", knowledge_id)
-                .execute()
-            )
-            
-            if hasattr(response, 'error') and response.error:
-                raise Exception(f"Error updating retry info: {response.error}")
-                
-            logger.info(f"Updated retry info for knowledge {knowledge_id}: count={retry_count}")
-            
+            with self.get_db() as db:
+                knowledge = db.query(Knowledge).filter(Knowledge.id == knowledge_id).first()
+                if not knowledge:
+                    raise ValueError(f"Knowledge entry {knowledge_id} not found")
+                knowledge.retry_count = retry_count
+                db.commit()
         except Exception as e:
             logger.error(f"Error updating retry info: {str(e)}")
             raise
@@ -182,16 +139,20 @@ class DatabaseManager:
     def get_retry_history(self, knowledge_id: int) -> List[Dict]:
         """Get retry history for a knowledge entry."""
         try:
-            response = (
-                self.supabase.table("retry_history")
-                .select("*")
-                .eq("knowledge_id", knowledge_id)
-                .order("created_at", {"ascending": False})
-                .execute()
-            )
-            
-            return response.data
-            
+            with self.get_db() as db:
+                history = db.query(RetryHistory)\
+                    .filter(RetryHistory.knowledge_id == knowledge_id)\
+                    .order_by(RetryHistory.created_at.desc())\
+                    .all()
+                return [
+                    {
+                        "id": entry.id,
+                        "knowledge_id": entry.knowledge_id,
+                        "status": entry.status,
+                        "error": entry.error,
+                        "created_at": entry.created_at
+                    } for entry in history
+                ]
         except Exception as e:
             logger.error(f"Error getting retry history: {str(e)}")
             raise
@@ -199,91 +160,50 @@ class DatabaseManager:
     def add_retry_history(self, knowledge_id: int, status: str, error: Optional[str] = None) -> None:
         """Add a retry history entry."""
         try:
-            entry = {
-                "knowledge_id": knowledge_id,
-                "status": status,
-                "error": error,
-                "created_at": datetime.utcnow().isoformat()
-            }
-            
-            response = self.supabase.table("retry_history").insert([entry]).execute()
-            
-            if hasattr(response, 'error') and response.error:
-                logger.error(f"Error adding retry history: {response.error}")
-                # Don't raise here to avoid breaking the main process
-                
+            with self.get_db() as db:
+                retry_entry = RetryHistory(
+                    knowledge_id=knowledge_id,
+                    status=status,
+                    error=error,
+                    created_at=datetime.utcnow()
+                )
+                db.add(retry_entry)
+                db.commit()
         except Exception as e:
             logger.error(f"Error adding retry history: {str(e)}")
             # Don't raise here to avoid breaking the main process
             
     def get_chapter_data(self, knowledge_id: int, chapter_id: Optional[str] = None) -> List[Dict]:
-        """Get chapter data from the chapters_v1 table.
-        
-        Args:
-            knowledge_id: The ID of the knowledge entry
-            chapter_id: Optional chapter ID to filter by
-            
-        Returns:
-            List of chapter data dictionaries
-        """
+        """Get chapter data from the chapters_v1 table."""
         try:
-            query = (
-                self.supabase.table("chapters_v1")
-                .select("*")
-                .eq("knowledge_id", knowledge_id)
-            )
-            
-            if chapter_id:
-                query = query.eq("id", chapter_id)
-                
-            response = query.execute()
-            
-            if not response.data:
-                logger.warning(f"No chapters found for knowledge_id={knowledge_id}" + 
-                              (f", chapter_id={chapter_id}" if chapter_id else ""))
-                return []
-                
-            return response.data
-            
+            with self.get_db() as db:
+                query = db.query(Chapter).filter(Chapter.knowledge_id == knowledge_id)
+                if chapter_id:
+                    query = query.filter(Chapter.id == chapter_id)
+                chapters = query.all()
+                return [
+                    {
+                        "id": chapter.id,
+                        "knowledge_id": chapter.knowledge_id,
+                        "content": chapter.content,
+                        "meta_data": chapter.meta_data
+                    } for chapter in chapters
+                ]
         except Exception as e:
             logger.error(f"Error getting chapter data: {str(e)}")
             raise
 
     def update_knowledge_metadata(self, knowledge_id: int, metadata: Dict[str, Any]) -> None:
         """Update knowledge metadata fields directly."""
-        print(metadata)
         try:
-            # Extract specific fields that should be stored as direct columns
-            direct_fields = {
-                "difficulty_level": metadata.get("difficulty_level"),
-                "target_audience": metadata.get("target_audience"),
-                "prerequisites": metadata.get("recommended_prerequisites"),
-                "summary": metadata.get("summary"),
-                "video_url": metadata.get("video_url"),
-                "has_transcript": metadata.get("has_transcript", False)
-            }
-            
-            # Store remaining metadata as JSON
-            remaining_metadata = {k: v for k, v in metadata.items() 
-                                 if k not in direct_fields}
-            
-            # Combine update data
-            update_data = direct_fields
-            if remaining_metadata:
-                update_data["metadata"] = json.dumps(remaining_metadata)
-
-            response = (
-                self.supabase.table("knowledge")
-                .update(update_data)
-                .eq("id", knowledge_id)
-                .execute()
-            )
-            
-            if hasattr(response, 'error') and response.error:
-                raise Exception(f"Error updating knowledge metadata: {response.error}")
-                
-            logger.info(f"Updated metadata for knowledge {knowledge_id}")
-            
+            with self.get_db() as db:
+                knowledge = db.query(Knowledge).filter(Knowledge.id == knowledge_id).first()
+                if not knowledge:
+                    raise ValueError(f"Knowledge entry {knowledge_id} not found")
+                for key, value in metadata.items():
+                    if hasattr(knowledge, key):
+                        setattr(knowledge, key, value)
+                db.commit()
         except Exception as e:
             logger.error(f"Error updating knowledge metadata: {str(e)}")
             raise
@@ -291,121 +211,112 @@ class DatabaseManager:
     def update_knowledge_type(self, knowledge_id: int, content_type: str) -> None:
         """Update the content type of a knowledge entry."""
         try:
-            update_data = {"content_type": content_type}
-            
-            response = (
-                self.supabase.table("knowledge")
-                .update(update_data)
-                .eq("id", knowledge_id)
-                .execute()
-            )
-            
-            if hasattr(response, 'error') and response.error:
-                raise Exception(f"Error updating knowledge type: {response.error}")
-                
-            logger.info(f"Updated knowledge {knowledge_id} type to {content_type}")
-            
+            with self.get_db() as db:
+                knowledge = db.query(Knowledge).filter(Knowledge.id == knowledge_id).first()
+                if not knowledge:
+                    raise ValueError(f"Knowledge entry {knowledge_id} not found")
+                knowledge.content_type = content_type
+                db.commit()
         except Exception as e:
             logger.error(f"Error updating knowledge type: {str(e)}")
             raise
 
-    def get_knowledge_with_metadata(self, knowledge_id: int) -> Dict:
-        """Get a knowledge entry with properly formatted metadata."""
+    # File operations can be handled by a separate FileStorage class in the future
+    def download_file(self, file_path: str) -> bytes:
+        """Download a file from local storage."""
         try:
-            response = (
-                self.supabase.table("knowledge")
-                .select("*")
-                .eq("id", knowledge_id)
-                .execute()
-            )
-            
-            if not response.data:
-                raise Exception(f"Knowledge not found with id={knowledge_id}.")
-            
-            knowledge = response.data[0]
-            
-            # Parse JSON strings back to Python objects
-            if knowledge.get("metadata"):
-                try:
-                    knowledge["metadata"] = json.loads(knowledge["metadata"])
-                except:
-                    knowledge["metadata"] = {}
-            
-            # Parse target_audience if it's stored as a JSON string
-            if isinstance(knowledge.get("target_audience"), str):
-                try:
-                    knowledge["target_audience"] = json.loads(knowledge["target_audience"])
-                except:
-                    knowledge["target_audience"] = []
-            
-            # Parse prerequisites if it's stored as a JSON string
-            if isinstance(knowledge.get("prerequisites"), str):
-                try:
-                    knowledge["prerequisites"] = json.loads(knowledge["prerequisites"])
-                except:
-                    knowledge["prerequisites"] = []
-                
-            return knowledge
+            raise NotImplementedError("File operations need to be implemented separately")
         except Exception as e:
-            logger.error(f"Error getting knowledge with metadata {knowledge_id}: {str(e)}")
+            logger.error(f"Error downloading file {file_path}: {str(e)}")
             raise
 
-    def set_video_metadata(self, knowledge_id: int, video_url: str, video_duration: float = None) -> None:
-        """Set video-specific metadata for a knowledge entry."""
+    def upload_image(self, knowledge_id: int, img_filename: str, image_buffer: bytes, content_type: str) -> Dict:
+        """Upload an image to local storage."""
         try:
-            if not video_url:
-                raise ValueError("Video URL cannot be empty")
-            
-            update_data = {
-                "content_type": "video",
-                "video_url": video_url,
-                "has_transcript": True  # Since we're processing the video
-            }
-            
-            if video_duration is not None:
-                update_data["video_duration"] = video_duration
-                
-            response = (
-                self.supabase.table("knowledge")
-                .update(update_data)
-                .eq("id", knowledge_id)
-                .execute()
-            )
-            
-            if hasattr(response, 'error') and response.error:
-                raise Exception(f"Error setting video metadata: {response.error}")
-                
-            logger.info(f"Updated knowledge {knowledge_id} with video metadata: {video_url}")
-            
+            raise NotImplementedError("File operations need to be implemented separately")
         except Exception as e:
-            logger.error(f"Error setting video metadata: {str(e)}")
+            logger.error(f"Error uploading image {img_filename}: {str(e)}")
             raise
-
-    def get_video_content(self, knowledge_id: int) -> Dict:
-        """Get video content details from a knowledge entry."""
+            
+    def get_edtech_content(self, chapter_id: str, language: str) -> Optional[Dict]:
+        """Get educational content for a specific chapter and language."""
         try:
-            knowledge = self.get_knowledge_with_metadata(knowledge_id)
-            
-            # Check if this is a video content type
-            if knowledge.get("content_type") != "video":
-                logger.warning(f"Knowledge {knowledge_id} is not video content")
+            with self.get_db() as db:
+                content = db.query(EdTechContent).filter(
+                    EdTechContent.chapter_id == chapter_id,
+                    EdTechContent.language == language
+                ).first()
                 
-            video_data = {
-                "id": knowledge_id,
-                "title": knowledge.get("name", "Untitled Video"),
-                "video_url": knowledge.get("video_url"),
-                "duration": knowledge.get("video_duration"),
-                "has_transcript": knowledge.get("has_transcript", False),
-                "chapters": []
-            }
-            
-            # Fetch associated chapters if any
-            chapters = self.get_chapter_data(knowledge_id)
-            if chapters:
-                video_data["chapters"] = chapters
-                
-            return video_data
-            
+                if not content:
+                    return None
+                    
+                return {
+                    "id": content.id,
+                    "knowledge_id": content.knowledge_id,
+                    "chapter_id": content.chapter_id,
+                    "language": content.language,
+                    "notes": content.notes,
+                    "summary": content.summary,
+                    "quiz": content.quiz,
+                    "mindmap": content.mindmap,
+                    "meta_data": content.meta_data,
+                    "created_at": content.created_at,
+                    "updated_at": content.updated_at
+                }
         except Exception as e:
-            logger.error(f"Error getting video content for {knowledge_id}: {str(e)}")
+            logger.error(f"Error getting edtech content: {str(e)}")
+            raise
+            
+    def update_edtech_content(self, chapter_id: str, language: str, content_data: Dict[str, Any]) -> None:
+        """Update or create educational content for a specific chapter and language."""
+        try:
+            with self.get_db() as db:
+                content = db.query(EdTechContent).filter(
+                    EdTechContent.chapter_id == chapter_id,
+                    EdTechContent.language == language
+                ).first()
+                
+                if content:
+                    # Update existing content
+                    for key, value in content_data.items():
+                        if hasattr(content, key):
+                            setattr(content, key, value)
+                else:
+                    # Create new content
+                    content = EdTechContent(
+                        chapter_id=chapter_id,
+                        language=language,
+                        **content_data
+                    )
+                    db.add(content)
+                    
+                db.commit()
+        except Exception as e:
+            logger.error(f"Error updating edtech content: {str(e)}")
+            raise
+            
+    def get_edtech_content_by_knowledge(self, knowledge_id: int, language: str) -> List[Dict]:
+        """Get all educational content for a knowledge entry in a specific language."""
+        try:
+            with self.get_db() as db:
+                contents = db.query(EdTechContent).filter(
+                    EdTechContent.knowledge_id == knowledge_id,
+                    EdTechContent.language == language
+                ).all()
+                
+                return [{
+                    "id": content.id,
+                    "knowledge_id": content.knowledge_id,
+                    "chapter_id": content.chapter_id,
+                    "language": content.language,
+                    "notes": content.notes,
+                    "summary": content.summary,
+                    "quiz": content.quiz,
+                    "mindmap": content.mindmap,
+                    "meta_data": content.meta_data,
+                    "created_at": content.created_at,
+                    "updated_at": content.updated_at
+                } for content in contents]
+        except Exception as e:
+            logger.error(f"Error getting edtech content by knowledge: {str(e)}")
             raise

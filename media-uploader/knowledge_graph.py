@@ -31,10 +31,10 @@ class GraphQueryResult(BaseModel):
 # Neo4j Graph Service
 class Neo4jGraphService:
     def __init__(self):
-        # Get connection details from environment variables
+        # Get connection details from environment variables with consistent naming
         self.uri = os.environ.get("NEO4J_URI", "bolt://localhost:7687")
-        self.username = os.environ.get("NEO4J_USERNAME", "neo4j")
-        self.password = os.environ.get("NEO4J_PASSWORD", "password")
+        self.username = os.environ.get("NEO4J_USER", "neo4j")
+        self.password = os.environ.get("NEO4J_PASSWORD", "development")
         self.driver = None
         
         # Attempt to connect on initialization

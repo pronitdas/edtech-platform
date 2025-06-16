@@ -1,189 +1,114 @@
 from datetime import datetime
-from typing import Dict, Optional, List, Any, Union
-from pydantic import BaseModel, Field
-from enum import Enum
+from typing import Dict, Any
+from sqlalchemy import Column, Integer, String, Text, Boolean, JSON, ForeignKey, DateTime, Float
+from sqlalchemy.orm import declarative_base
 
+Base = declarative_base()
 
-class ProcessingStatus(BaseModel):
-    """Status of a knowledge processing job."""
-    knowledge_id: int
-    status: Optional[str] = ""
-    message: Optional[str] = ""
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
-    result: Optional[Dict] = None
-    retry_count: Optional[int] = 0
-    last_retry: Optional[datetime] = None
+class User(Base):
+    """Model for user accounts integrated with ORY Kratos and JWT sessions."""
+    __tablename__ = "users"
 
+    id = Column(Integer, primary_key=True)
+    kratos_id = Column(String(36), unique=True, nullable=False, index=True)  # UUID from Kratos
+    email = Column(String, unique=True, nullable=False, index=True)
+    display_name = Column(String(100))
+    roles = Column(JSON, default=list, nullable=False)
+    verified = Column(Boolean, default=False, nullable=False)
+    active = Column(Boolean, default=True, nullable=False)
+    last_login = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-class PDFResponse(BaseModel):
-    """Response model for PDF processing."""
-    markdown: str
-    images: Dict[str, Any]  # filename -> image data
-    metadata: Dict
+    # JWT session tracking
+    current_jwt = Column(String)  # Store current active JWT
+    jwt_issued_at = Column(DateTime)  # When the current JWT was issued
+    jwt_expires_at = Column(DateTime)  # When the current JWT expires
 
+class ContentAnalytics(Base):
+    """Model for tracking content generation analytics."""
+    __tablename__ = "content_analytics"
 
-class RetryRequest(BaseModel):
-    """Request model for retrying a failed processing job."""
-    max_retries: Optional[int] = 3
-    force: Optional[bool] = False
+    id = Column(Integer, primary_key=True)
+    knowledge_id = Column(Integer, ForeignKey("knowledge.id"))
+    content_type = Column(String(50))
+    language = Column(String(50))
+    generation_time = Column(Float)
+    success = Column(Boolean)
+    error_message = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
+class EngagementMetrics(Base):
+    """Model for tracking user engagement with content."""
+    __tablename__ = "engagement_metrics"
 
-class RetryEntry(BaseModel):
-    timestamp: str
-    type: str
-    message: str
+    id = Column(Integer, primary_key=True)
+    knowledge_id = Column(Integer, ForeignKey("knowledge.id"))
+    chapter_id = Column(String(50))
+    views = Column(Integer, default=0)
+    completions = Column(Integer, default=0)
+    avg_time_spent = Column(Float)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
+class PerformanceStats(Base):
+    """Model for tracking system performance metrics."""
+    __tablename__ = "performance_stats"
 
-class RetryHistory(BaseModel):
-    """Model for retry history."""
-    knowledge_id: int
-    retries: List[Dict[str, Any]]
+    id = Column(Integer, primary_key=True)
+    operation_type = Column(String(50))
+    duration = Column(Float)
+    success = Column(Boolean)
+    error_count = Column(Integer, default=0)
+    timestamp = Column(DateTime, default=datetime.utcnow)
 
+class Knowledge(Base):
+    """Model for storing knowledge entries."""
+    __tablename__ = "knowledge"
 
-class ImageUploadStatus(BaseModel):
-    """Status of image uploads for a knowledge entry."""
-    knowledge_id: int
-    total_images: int
-    uploaded_images: int
-    failed_images: List[str] = []
+    id = Column(Integer, primary_key=True, index=True)
+    status = Column(String)
+    content_type = Column(String)
+    difficulty_level = Column(String)
+    target_audience = Column(JSON)
+    prerequisites = Column(JSON)
+    summary = Column(Text)
+    video_url = Column(String)
+    has_transcript = Column(Boolean, default=False)
+    meta_data = Column(JSON)
+    retry_count = Column(Integer, default=0)
+    seeded = Column(Boolean, default=False)
 
+class Chapter(Base):
+    """Model for storing chapter content."""
+    __tablename__ = "chapters_v1"
 
-# New models for content generation
+    id = Column(String, primary_key=True)
+    knowledge_id = Column(Integer, ForeignKey("knowledge.id"))
+    content = Column(Text)
+    meta_data = Column(JSON)
 
-class ContentGenerationRequest(BaseModel):
-    """Request model for content generation."""
-    edtech_id: str
-    chapter: Dict[str, Any]
-    knowledge_id: int
-    types: List[str]
-    language: str = "English"
-    chapter_id: Optional[str] = None
+class RetryHistory(Base):
+    """Model for tracking retry attempts."""
+    __tablename__ = "retry_history"
 
+    id = Column(Integer, primary_key=True)
+    knowledge_id = Column(Integer, ForeignKey("knowledge.id"))
+    status = Column(String)
+    error = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
-class ContentGenerationResponse(BaseModel):
-    """Response model for content generation."""
-    success: bool
-    message: Optional[str] = None
-    data: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
+class EdTechContent(Base):
+    """Model for storing generated educational content in different languages."""
+    __tablename__ = "edtech_content"
 
-
-class ChapterDataRequest(BaseModel):
-    """Request model for chapter data."""
-    knowledge_id: int
-    chapter_id: Optional[str] = None
-    types: List[str] = []
-    language: str = "English"
-
-
-class ChapterDataResponse(BaseModel):
-    """Response model for chapter data."""
-    success: bool
-    data: Optional[List[Dict[str, Any]]] = None
-    error: Optional[str] = None
-
-
-class FileResponse(BaseModel):
-    """Response model for PDF processing."""
-    markdown: str
-    metadata: Dict
-    analysis: Dict
-    image_urls: Dict
-    failed_images: List[str]
-    processed_at: str
-    retry_count: int
-    file_type: str = "document"  # Can be "pdf", "docx", "pptx", "document" (generic) or "video"
-
-
-# Knowledge Graph Models
-
-class NodeLabel(str, Enum):
-    KNOWLEDGE = "Knowledge"
-    CHAPTER = "Chapter"
-    CONCEPT = "Concept"
-    SKILL = "Skill"
-    STUDENT = "Student"
-
-
-class RelationshipType(str, Enum):
-    HAS_CHAPTER = "HAS_CHAPTER"
-    TEACHES_CONCEPT = "TEACHES_CONCEPT"
-    CONTAINS_CONCEPT = "CONTAINS_CONCEPT"
-    RELATED_TO = "RELATED_TO"
-    REQUIRES = "REQUIRES"
-    LEARNED = "LEARNED"
-
-
-class GraphNode(BaseModel):
-    id: Optional[str] = None
-    labels: List[str]
-    properties: Dict[str, Any]
-
-
-class GraphRelationship(BaseModel):
-    id: Optional[str] = None
-    start_node_id: str
-    end_node_id: str
-    type: str
-    properties: Optional[Dict[str, Any]] = None
-
-
-class GraphQueryResult(BaseModel):
-    nodes: List[GraphNode]
-    relationships: List[GraphRelationship]
-    summary: Optional[Dict[str, Any]] = None
-
-
-class GraphSyncRequest(BaseModel):
-    knowledge_id: int
-    force: bool = False
-    include_chapters: bool = True
-    include_concepts: bool = True
-
-
-class GraphSyncResponse(BaseModel):
-    success: bool
-    knowledge_id: int
-    message: str
-    nodes_created: Optional[int] = None
-    relationships_created: Optional[int] = None
-    error: Optional[str] = None
-
-
-class GraphDeleteRequest(BaseModel):
-    knowledge_id: int
-    cascade: bool = True
-
-
-class GraphDeleteResponse(BaseModel):
-    success: bool
-    knowledge_id: int
-    message: str
-    nodes_deleted: Optional[int] = None
-    error: Optional[str] = None
-
-
-class GraphSchemaResponse(BaseModel):
-    node_labels: List[str]
-    relationship_types: List[str]
-    constraints: List[str]
-    schema_status: str
-
-
-class ConceptNode(BaseModel):
-    id: str
-    name: str
-    occurrence_count: int
-
-
-class ConceptRelationship(BaseModel):
-    source: str
-    target: str
-    weight: float
-
-
-class ConceptMapResponse(BaseModel):
-    knowledge_id: int
-    concepts: List[ConceptNode]
-    relationships: List[ConceptRelationship]
+    id = Column(Integer, primary_key=True)
+    knowledge_id = Column(Integer, ForeignKey("knowledge.id"), nullable=False)
+    chapter_id = Column(String, ForeignKey("chapters_v1.id"), nullable=False)
+    language = Column(String, nullable=False)
+    notes = Column(Text)
+    summary = Column(Text)
+    quiz = Column(JSON)  # Store quiz questions/answers as JSON
+    mindmap = Column(JSON)  # Store mindmap structure as JSON
+    meta_data = Column(JSON)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

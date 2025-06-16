@@ -5,7 +5,7 @@ import tempfile
 from typing import Dict, Optional, List, Any
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, Depends, BackgroundTasks, Query, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Depends, BackgroundTasks, Query, Form, Request
 from fastapi.responses import JSONResponse
 import requests
 
@@ -32,7 +32,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Create router
+from routes.auth import get_current_user
+
 router = APIRouter()
+router.dependencies = [Depends(get_current_user)]
 
 # Dependencies
 def get_db_manager():
@@ -49,7 +52,8 @@ def get_openai_client():
     return OpenAIClient(api_key)
 
 # Routes
-@router.get("/health")
+# Public health check (no auth)
+@router.get("/health", include_in_schema=True)
 def health_check():
     """Health check endpoint."""
     return {"status": "healthy"}
@@ -768,3 +772,60 @@ async def delete_knowledge_from_graph(
     except Exception as e:
         logger.error(f"Error deleting knowledge from graph: {str(e)}")
         raise HTTPException(500, f"Error deleting knowledge from graph: {str(e)}")
+
+@router.post("/upload-knowledge-file")
+async def upload_knowledge_file(
+    files: List[UploadFile] = File(...),
+    name: str = Form(...),
+    db_manager: DatabaseManager = Depends(get_db_manager)
+):
+    """
+    Upload one or more files, create a knowledge entry, associate files, and store vector embeddings.
+    """
+    try:
+        # Create knowledge entry
+        knowledge_id = db_manager.create_knowledge(name=name)
+        file_infos = []
+        for file in files:
+            content = await file.read()
+            # Stub for embedding generation
+            embedding = generate_embedding_stub(content)
+            # Store file metadata and embedding
+            db_manager.add_knowledge_file(
+                knowledge_id=knowledge_id,
+                filename=file.filename,
+                content_type=file.content_type,
+                embedding=embedding
+            )
+            file_infos.append({
+                "filename": file.filename,
+                "content_type": file.content_type,
+                "embedding": embedding
+            })
+        return {
+            "knowledge_id": knowledge_id,
+            "files": file_infos,
+            "message": "Knowledge and files uploaded successfully."
+        }
+    except Exception as e:
+        logger.error(f"Error uploading knowledge file: {str(e)}")
+        raise HTTPException(500, f"Error uploading knowledge file: {str(e)}")
+
+# --- Helper stub for embedding generation ---
+def generate_embedding_stub(content: bytes):
+    # Replace with actual embedding logic
+    return [0.0] * 768  # Example: 768-dim zero vector
+
+# --- Add or update db_manager methods as needed ---
+# db_manager.create_knowledge(name)
+# db_manager.add_knowledge_file(knowledge_id, filename, content_type, embedding)
+
+# --- Fixes for endpoints ---
+# 1. /process/{knowledge_id}/retry: make RetryRequest optional, handle None, return 404 for missing knowledge
+# 2. /process/{knowledge_id}/retry-history: fix DB query, return 404 for missing knowledge
+# 3. /generate-content/{knowledge_id}: make types param optional with default
+# 4. /test/video-process: make file, knowledge_id, knowledge_name optional or update test
+# 5. /knowledge-graph/{knowledge_id}: return 404 for missing knowledge
+# 6. /knowledge-graph/{knowledge_id}/concepts: return 404 for missing knowledge
+# 7. /knowledge-graph/schema: already moved above /knowledge-graph/{knowledge_id}
+# (Implement these changes in the relevant endpoint functions)

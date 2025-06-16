@@ -255,21 +255,27 @@ class QueueManager:
                         logger.error(f"Error generating {content_type} for chapter {chapter_id}: {str(e)}")
                         results[content_type] = f"Error generating {content_type}: {str(e)}"
                 
-                # Update content in the database using the table with language suffix
-                table_name = f"EdTechContent_{language}"
-                logger.info(f"Updating content in {table_name} for chapter {chapter_id}, knowledge_id {knowledge_id}")
+                # Update content in the database using the EdTechContent model
+                logger.info(f"Updating content for chapter {chapter_id}, language {language}")
                 
                 try:
-                    data = self.db_manager.supabase.from_(table_name).update(
-                        results
-                    ).eq('chapter_id', chapter_id).eq('knowledge_id', knowledge_id).execute()
+                    # Add knowledge_id to the content data
+                    content_data = {
+                        "knowledge_id": knowledge_id,
+                        **results
+                    }
                     
-                    if hasattr(data, 'error') and data.error:
-                        logger.error(f"Error updating content for chapter {chapter_id}: {data.error}")
+                    # Update or create content using the new method
+                    self.db_manager.update_edtech_content(
+                        chapter_id=chapter_id,
+                        language=language,
+                        content_data=content_data
+                    )
                 except Exception as e:
-                    logger.error(f"Database error updating content: {str(e)}")
+                    logger.error(f"Error updating content for chapter {chapter_id}: {str(e)}")
+                    raise
             
-            logger.info(f"Content generation completed for knowledge {knowledge_id}")
+            logger.info(f"Content generation completed for knowledge {knowledge_id}, language {language}")
             
         except Exception as e:
             logger.error(f"Error in content generation: {str(e)}")
