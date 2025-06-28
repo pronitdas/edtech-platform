@@ -115,6 +115,51 @@
 - **Load Testing**: WebSocket stress testing with locust
 - **CI Integration**: GitHub Actions for automated testing
 
+### 1.5 Dockerization & Container Orchestration
+
+- **Dockerfile**: Multi-stage build for FastAPI backend (dev & prod)
+- **docker-compose**: Unified stack (FastAPI, PostgreSQL, Redis, Neo4j)
+- **Environment Variables**: `.env` for secrets/config, mounted in containers
+- **Healthchecks**: FastAPI `/v2/admin/health/basic` for container orchestration
+- **Volumes**: Persistent storage for PostgreSQL, Redis, Neo4j
+- **Local vs. Production**: Separate compose files or overrides for dev/prod
+- **Build & Run**:
+  ```bash
+  docker-compose up --build
+  # or for prod
+  docker-compose -f docker-compose.prod.yml up -d
+  ```
+- **Documentation**: Add Docker usage to README
+
+### 1.6 Workflow Testing
+
+- **API Tests**: pytest for all endpoints, including auth, knowledge, chapters, analytics, Neo4j
+- **Integration Tests**: Database, Redis, Neo4j, and service layer
+- **E2E Tests**: Playwright for frontend-backend flows (login, upload, analytics, roleplay)
+- **CI Pipeline**: All tests run on PRs (GitHub Actions)
+- **Test Coverage**: 90%+ for critical workflows
+- **Mocking**: Use test containers/mocks for Neo4j and Redis in CI
+- **Load Testing**: Locust for API and WebSocket
+- **Reporting**: Coverage and test reports in CI artifacts
+
+### 1.7 Neo4j Service Integration
+
+- **Dockerized Neo4j**: Service in `docker-compose.yml` (with persistent volume)
+- **Data Model**: Store knowledge entities, user interactions, content relationships
+- **Backend Service Layer**:
+  - Use official Neo4j Python driver
+  - Abstracted service for graph operations (create, query, update, delete)
+  - Error handling and retries
+- **Schema Migration**: Scripts for initial graph setup and updates
+- **Testing**:
+  - Integration tests with Neo4j test container
+  - Mock Neo4j for unit tests
+- **Monitoring**:
+  - Healthcheck endpoint for Neo4j
+  - Backup and recovery procedures
+  - Metrics collection (optional)
+- **Documentation**: Data model diagrams, API usage examples
+
 ---
 
 ## 🎨 PHASE 2: Frontend Rebuild (React + Vite)
@@ -282,7 +327,7 @@ cd media-uploader && python main.py
 
 ---
 
-## 📋 Implementation Roadmap
+## 📋 Implementation Roadmap (Updated)
 
 ### Sprint 15: Backend Completion ✅ **COMPLETED**
 **Priority 1 - Core Backend**:
@@ -323,46 +368,51 @@ cd media-uploader && python main.py
 - [ ] Documentation completion
 - [ ] Launch preparation
 
----
+### Sprint 18: Backend Dockerization & Neo4j Integration
+**Priority 1 - Infrastructure**:
+- [ ] Dockerize FastAPI backend (multi-stage Dockerfile)
+- [ ] Add Neo4j service to docker-compose
+- [ ] Document environment variable management
+- [ ] Healthcheck endpoints for all services
 
-## ✅ Success Criteria **MAJOR PROGRESS ACHIEVED** 🎉
+**Priority 2 - Neo4j Integration**:
+- [ ] Implement Neo4j service layer in backend
+- [ ] Define and migrate initial graph schema
+- [ ] Add integration tests for Neo4j workflows
+- [ ] Document Neo4j data model and usage
 
-### Technical Excellence
-- ✅ **ACHIEVED** All `/v2` API endpoints functional and documented
-- ✅ **ACHIEVED** Frontend completely migrated from Supabase
-- 🟡 **Partial** 90%+ test coverage for critical components (basic tests in place)
-- 🟡 **Partial** Performance benchmarks (< 2s page load, < 200ms API response)
-- 🟡 **Partial** Security scan passes with zero critical vulnerabilities
-
-### User Experience  
-- ✅ **ACHIEVED** Complete feature parity with previous version
-- ✅ **ACHIEVED** Intuitive navigation and interactions
-- 🟡 **Partial** Real-time feedback and progress tracking (hooks ready)
-- ✅ **ACHIEVED** Mobile-responsive design
-- ✅ **ACHIEVED** WCAG 2.1 AA accessibility compliance
-
-### Production Readiness
-- ✅ **ACHIEVED** Local development stack fully functional
-- 🟡 **Partial** CI/CD pipeline operational
-- 🟡 **Partial** Monitoring and alerting configured
-- ✅ **ACHIEVED** Documentation complete and current
-- 🟡 **Partial** Support procedures established
+**Priority 3 - Workflow Testing**:
+- [ ] Expand API and integration tests (pytest)
+- [ ] Add E2E tests for all user flows (Playwright)
+- [ ] Ensure CI runs all tests and reports coverage
 
 ---
 
-## 🔥 Critical Dependencies & Blockers
+## ✅ Success Criteria (Expanded)
+
+- ✅ All `/v2` API endpoints functional and documented
+- ✅ Frontend completely migrated from Supabase
+- ✅ Backend and Neo4j fully dockerized, running via docker-compose
+- ✅ Neo4j knowledge graph integrated and tested
+- ✅ 90%+ test coverage for all critical workflows (API, integration, E2E)
+- ✅ CI/CD pipeline runs all tests and builds containers
+- ✅ Documentation updated for Docker, Neo4j, and testing
+
+---
+
+## 🔥 Critical Dependencies & Blockers (Updated)
 
 ### High Priority Blockers
-1. **Backend Services**: Service layer implementations required for frontend integration
-2. **WebSocket Integration**: Real-time features depend on Redis + WebSocket setup
-3. **Database Migration**: Schema changes must be tested and validated
-4. **Authentication Flow**: JWT implementation must be rock-solid for security
+1. **Backend Dockerization**: FastAPI and Neo4j must be containerized for production
+2. **Neo4j Integration**: Service layer and schema must be implemented and tested
+3. **Workflow Testing**: All critical workflows must be covered by automated tests
+4. **WebSocket Integration**: Real-time features depend on Redis + WebSocket setup
+5. **Authentication Flow**: JWT implementation must be rock-solid for security
 
 ### Medium Priority Dependencies
-1. **Testing Framework**: Comprehensive testing required before production
-2. **Performance Optimization**: Critical for user experience
-3. **Documentation**: Required for maintenance and onboarding
-4. **Deployment Pipeline**: Needed for reliable releases
+1. **Performance Optimization**: Critical for user experience
+2. **Documentation**: Required for maintenance and onboarding
+3. **Deployment Pipeline**: Needed for reliable releases
 
 ---
 
