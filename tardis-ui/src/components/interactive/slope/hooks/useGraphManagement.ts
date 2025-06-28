@@ -74,11 +74,11 @@ export function useGraphManagement({
     const zoomY = canvasHeight / scaleFactor / (rangeY * margin)
     const newZoom = Math.min(zoomX, zoomY, maxZoom) // Limit max zoom
 
-    // Center the points in the canvas
+    // Center the points in the canvas with corrected offset calculation
     setZoomWithLimits(newZoom)
     setOffset({
-      x: -centerX * scaleFactor * newZoom + canvasWidth / 2,
-      y: -centerY * scaleFactor * newZoom + canvasHeight / 2,
+      x: -centerX * scaleFactor * newZoom,
+      y: centerY * scaleFactor * newZoom,
     })
   }, [
     points,

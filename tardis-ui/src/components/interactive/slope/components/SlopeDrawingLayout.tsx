@@ -1,5 +1,6 @@
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useState } from 'react'
 import { useSlopeDrawing } from '../contexts/SlopeDrawingContext'
+import { useAccessibility } from '../hooks/useAccessibility'
 import GraphCanvas from '../../../../components/GraphCanvas'
 import ConceptExplanation from './ConceptExplanation'
 import PracticeProblem from './PracticeProblem'
@@ -10,6 +11,9 @@ import StatsDisplay from './StatsDisplay'
 import ModeSelector from './ModeSelector'
 import DrawingToolbar from './DrawingToolbar'
 import BottomControls from './BottomControls'
+import AITutor from './AITutor'
+import GameificationPanel from './GameificationPanel'
+import { ChevronLeft, ChevronRight, Settings, Volume2 } from 'lucide-react'
 
 /**
  * The main layout component for SlopeDrawing
@@ -92,6 +96,25 @@ const SlopeDrawingLayout: React.FC = () => {
 
   // Reference to the container div (for sizing calculations)
   const containerRef = useRef<HTMLDivElement>(null)
+  
+  // Right panel state
+  const [rightPanelTab, setRightPanelTab] = useState<'content' | 'ai' | 'gamification' | 'accessibility'>('content')
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false)
+  
+  // Accessibility features
+  const {
+    isMobile,
+    hasHapticFeedback,
+    prefersReducedMotion,
+    highContrast,
+    screenReaderActive,
+    fontSize,
+    announceToScreenReader,
+    triggerHapticFeedback,
+    focusElement,
+    setFontSize,
+    toggleHighContrast,
+  } = useAccessibility()
 
   // Update canvas dimensions when container size changes
   useEffect(() => {
@@ -202,6 +225,11 @@ const SlopeDrawingLayout: React.FC = () => {
       const isCorrect = checkSolution(lineData)
       if (!isCorrect) {
         recordError()
+        announceToScreenReader('Incorrect answer. Try again or ask for a hint.')
+        triggerHapticFeedback('medium')
+      } else {
+        announceToScreenReader('Correct! Well done.')
+        triggerHapticFeedback('light')
       }
     }
   }
@@ -209,41 +237,60 @@ const SlopeDrawingLayout: React.FC = () => {
   // Handle hint usage for practice problems
   const handleHintRequest = () => {
     recordHesitation(30) // Assume using a hint indicates 30 seconds of hesitation
+    announceToScreenReader('Hint provided. Take your time to understand the concept.')
   }
 
   // Handle solution reveal
   const handleSolutionReveal = () => {
     recordHesitation(60) // Assume revealing solution indicates 60 seconds of hesitation
+    announceToScreenReader('Solution revealed. Review the steps to understand the approach.')
   }
 
   return (
     <div
       ref={containerRef}
-      className='flex h-full w-full flex-col overflow-hidden'
+      className='flex h-full w-full flex-col overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative'
     >
+      {/* Futuristic Background Effects */}
+      <div className='absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-400/10 via-pink-400/5 to-cyan-400/5 pointer-events-none' />
+      <div className='absolute inset-0 bg-grid-white/[0.02] pointer-events-none' />
+      
+      {/* Animated Particles Background */}
+      <div className='absolute inset-0 overflow-hidden pointer-events-none'>
+        <div className='absolute w-96 h-96 rounded-full bg-gradient-to-r from-purple-500/10 to-cyan-500/10 blur-3xl animate-pulse -top-48 -left-48' />
+        <div className='absolute w-80 h-80 rounded-full bg-gradient-to-r from-pink-500/10 to-purple-500/10 blur-3xl animate-pulse delay-700 -bottom-40 -right-40' />
+        <div className='absolute w-64 h-64 rounded-full bg-gradient-to-r from-cyan-500/10 to-blue-500/10 blur-3xl animate-pulse delay-1000 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2' />
+      </div>
+
       {/* Tool mode selector */}
-      <ModeSelector
-        activeMode={activeMode}
-        onModeChange={setActiveMode}
-        cognitiveState={cognitiveState}
-        onReset={resetTracking}
-      />
+      <div className='relative z-10 backdrop-blur-xl bg-white/5 border-b border-white/10 shadow-2xl'>
+        <ModeSelector
+          activeMode={activeMode}
+          onModeChange={setActiveMode}
+          cognitiveState={cognitiveState}
+          onReset={resetTracking}
+        />
+      </div>
 
       {/* Main content area with sidebar */}
-      <div className='flex flex-1 overflow-hidden'>
+      <div className='flex flex-1 overflow-hidden relative z-10'>
         {/* Sidebar - Drawing Tools */}
-        <DrawingToolbar
-          drawingTool={drawingTool}
-          setDrawingTool={setDrawingTool}
-        />
+        <div className='backdrop-blur-xl bg-black/20 border-r border-white/10 shadow-2xl'>
+          <DrawingToolbar
+            drawingTool={drawingTool}
+            setDrawingTool={setDrawingTool}
+          />
+        </div>
 
         {/* Main Graph/Canvas Area */}
         <div className='flex flex-1 flex-col overflow-hidden'>
           {/* Graph Canvas */}
           <div
-            className='canvas-container relative flex-1 overflow-hidden bg-gray-900'
+            className='canvas-container relative flex-1 overflow-hidden bg-gradient-to-br from-slate-950 via-gray-900 to-slate-950 border border-white/10 rounded-lg m-2 shadow-2xl backdrop-blur-sm'
             style={{ minHeight: '60vh' }}
           >
+            {/* Canvas Glow Effect */}
+            <div className='absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-cyan-500/5 rounded-lg pointer-events-none' />
             <GraphCanvas
               drawingMode='slope'
               width={dimensions.width}
@@ -285,88 +332,346 @@ const SlopeDrawingLayout: React.FC = () => {
 
           {/* Animated Solution */}
           {showAnimation && lineData && (
-            <div className='h-48 overflow-hidden border-t border-gray-700'>
-              <AnimatedSolution
-                points={points}
-                slope={lineData.slope}
-                equation={lineData.equation}
-                onPointsChange={setPoints}
-                autoPlay={true}
-                speed={animationSpeed}
-                onSpeedChange={setAnimationSpeed}
-                onComplete={() => setShowAnimation(false)}
-              />
+            <div className='h-48 overflow-hidden border-t border-white/20 backdrop-blur-xl bg-black/30 m-2 rounded-lg shadow-xl'>
+              <div className='absolute inset-0 bg-gradient-to-r from-purple-500/10 to-cyan-500/10 rounded-lg' />
+              <div className='relative z-10'>
+                <AnimatedSolution
+                  points={points}
+                  slope={lineData.slope}
+                  equation={lineData.equation}
+                  onPointsChange={setPoints}
+                  autoPlay={true}
+                  speed={animationSpeed}
+                  onSpeedChange={setAnimationSpeed}
+                  onComplete={() => setShowAnimation(false)}
+                />
+              </div>
             </div>
           )}
         </div>
 
-        {/* Right Panel (mode specific) - Fixed width with scrolling */}
-        <div className='w-96 flex-shrink-0 overflow-y-auto border-l border-gray-700'>
-          {/* Concept Explanation Mode */}
-          {activeMode === 'concept' && (
-            <ConceptExplanation
-              concepts={concepts}
-              selectedConceptId={selectedConceptId}
-              onSelectConcept={setSelectedConceptId}
-              lineData={lineData}
-            />
-          )}
+        {/* Right Panel (enhanced with tabs) */}
+        <div className={`${rightPanelCollapsed ? 'w-12' : 'w-96'} flex-shrink-0 transition-all duration-300 backdrop-blur-xl bg-black/20 border-l border-white/10 shadow-2xl relative`}>
+          {/* Collapse Toggle */}
+          <button
+            onClick={() => setRightPanelCollapsed(!rightPanelCollapsed)}
+            className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1/2 w-6 h-6 bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform duration-200 z-20"
+          >
+            {rightPanelCollapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          </button>
 
-          {/* Practice Problem Mode */}
-          {activeMode === 'practice' && (
+          {!rightPanelCollapsed && (
             <>
-              <PracticeProblem
-                problems={problems}
-                currentProblemId={currentProblemId}
-                difficulty={difficulty}
-                setDifficulty={changeDifficulty} // Pass changeDifficulty
-                onSelectProblem={problemId => {
-                  // Logic to select problem - might need to be added to context or here
-                  console.log('Select problem:', problemId)
-                }}
-                onGenerateNewProblem={generateProblem}
-                lineData={lineData}
-                onSubmitAnswer={handleSubmitAnswer}
-                isCorrect={isCorrect}
-                showSolution={showSolution}
-                onToggleSolution={handleSolutionReveal}
-                onNextProblem={nextProblem}
-                stats={stats}
-                onHintRequest={handleHintRequest}
-              />
+              {/* Tab Navigation */}
+              <div className="flex border-b border-white/20 bg-black/30">
+                {[
+                  { id: 'content', label: 'Content', icon: '📚' },
+                  { id: 'ai', label: 'AI Tutor', icon: '🤖' },
+                  { id: 'gamification', label: 'Progress', icon: '🏆' },
+                  { id: 'accessibility', label: 'Access', icon: '♿' },
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setRightPanelTab(tab.id as any)}
+                    className={`flex-1 px-3 py-3 text-sm font-medium transition-all duration-200 ${
+                      rightPanelTab === tab.id
+                        ? 'bg-gradient-to-r from-purple-500/30 to-cyan-500/30 text-white border-b-2 border-cyan-400'
+                        : 'text-gray-400 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center space-x-1">
+                      <span>{tab.icon}</span>
+                      <span className="hidden lg:inline">{tab.label}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Tab Content */}
+              <div className="overflow-y-auto h-full pb-16">
+                {/* Content Tab */}
+                {rightPanelTab === 'content' && (
+                  <div className="p-4">
+                    {/* Concept Explanation Mode */}
+                    {activeMode === 'concept' && (
+                      <ConceptExplanation
+                        concepts={concepts}
+                        selectedConceptId={selectedConceptId}
+                        onSelectConcept={setSelectedConceptId}
+                        lineData={lineData}
+                      />
+                    )}
+
+                    {/* Practice Problem Mode */}
+                    {activeMode === 'practice' && (
+                      <PracticeProblem
+                        problems={problems}
+                        currentProblemId={currentProblemId}
+                        difficulty={difficulty}
+                        setDifficulty={changeDifficulty}
+                        onSelectProblem={problemId => {
+                          console.log('Select problem:', problemId)
+                        }}
+                        onGenerateNewProblem={generateProblem}
+                        lineData={lineData}
+                        onSubmitAnswer={handleSubmitAnswer}
+                        isCorrect={isCorrect}
+                        showSolution={showSolution}
+                        onToggleSolution={handleSolutionReveal}
+                        onNextProblem={nextProblem}
+                        stats={stats}
+                        onHintRequest={handleHintRequest}
+                      />
+                    )}
+
+                    {/* Custom Problem Solver Mode */}
+                    {activeMode === 'custom' && (
+                      <CustomProblemSolver
+                        lineData={lineData}
+                        onPointsChange={setPointsFromCoordinates}
+                        openaiClient={openaiClient}
+                        language={language}
+                      />
+                    )}
+
+                    {/* Word Problem Mode */}
+                    {activeMode === 'word' && (
+                      <WordProblem
+                        lineData={lineData}
+                        onPointsChange={setPointsFromCoordinates}
+                        openaiClient={openaiClient}
+                        language={language}
+                        difficulty={difficulty}
+                      />
+                    )}
+                  </div>
+                )}
+
+                {/* AI Tutor Tab */}
+                {rightPanelTab === 'ai' && (
+                  <div className="p-4">
+                    <AITutor
+                      cognitiveState={cognitiveState}
+                      currentProblem={currentProblem}
+                      userProgress={{
+                        correct: stats.correct,
+                        incorrect: stats.incorrect,
+                        difficulty: difficulty,
+                        streakCount: stats.streakCount,
+                      }}
+                      onHint={(hint) => {
+                        console.log('AI Hint:', hint)
+                        // Show hint in UI
+                      }}
+                      onDifficultyAdjust={changeDifficulty}
+                      onGenerateExplanation={(concept) => {
+                        console.log('Generate explanation for:', concept)
+                        // Generate and show explanation
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Gamification Tab */}
+                {rightPanelTab === 'gamification' && (
+                  <div className="p-4">
+                    <GameificationPanel
+                      userProgress={{
+                        correct: stats.correct,
+                        incorrect: stats.incorrect,
+                        difficulty: difficulty,
+                        streakCount: stats.streakCount,
+                      }}
+                      cognitiveState={cognitiveState}
+                      onAchievementUnlocked={(achievement) => {
+                        console.log('Achievement unlocked:', achievement)
+                        announceToScreenReader(`Achievement unlocked: ${achievement.title}. ${achievement.description}`)
+                        triggerHapticFeedback('heavy')
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Accessibility Tab */}
+                {rightPanelTab === 'accessibility' && (
+                  <div className="p-4 space-y-6">
+                    <div className="flex items-center space-x-2 text-cyan-400">
+                      <span className="text-lg">♿</span>
+                      <h3 className="font-bold">Accessibility Settings</h3>
+                    </div>
+
+                    {/* Device Info */}
+                    <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                      <h4 className="text-white font-medium mb-2">Device Features</h4>
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Mobile Device:</span>
+                          <span className={isMobile ? "text-green-400" : "text-gray-500"}>
+                            {isMobile ? "Yes" : "No"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Haptic Feedback:</span>
+                          <span className={hasHapticFeedback ? "text-green-400" : "text-gray-500"}>
+                            {hasHapticFeedback ? "Supported" : "Not Supported"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Screen Reader:</span>
+                          <span className={screenReaderActive ? "text-green-400" : "text-gray-500"}>
+                            {screenReaderActive ? "Active" : "Not Detected"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Font Size Control */}
+                    <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                      <h4 className="text-white font-medium mb-3">Font Size</h4>
+                      <div className="flex space-x-2">
+                        {(['small', 'medium', 'large'] as const).map(size => (
+                          <button
+                            key={size}
+                            onClick={() => {
+                              setFontSize(size)
+                              triggerHapticFeedback('light')
+                            }}
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                              fontSize === size
+                                ? 'bg-gradient-to-r from-purple-500 to-cyan-500 text-white'
+                                : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                            }`}
+                            aria-label={`Set font size to ${size}`}
+                          >
+                            {size.charAt(0).toUpperCase() + size.slice(1)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* High Contrast Toggle */}
+                    <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-white font-medium">High Contrast</h4>
+                          <p className="text-gray-300 text-sm">Enhance visual contrast for better readability</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            toggleHighContrast()
+                            triggerHapticFeedback('medium')
+                          }}
+                          className={`w-12 h-6 rounded-full transition-all duration-200 ${
+                            highContrast 
+                              ? 'bg-gradient-to-r from-purple-500 to-cyan-500' 
+                              : 'bg-gray-600'
+                          }`}
+                          aria-label={`${highContrast ? 'Disable' : 'Enable'} high contrast`}
+                        >
+                          <div className={`w-5 h-5 bg-white rounded-full transition-transform duration-200 ${
+                            highContrast ? 'transform translate-x-6' : 'transform translate-x-0.5'
+                          }`} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Motion Preferences */}
+                    <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                      <h4 className="text-white font-medium mb-2">Motion Preferences</h4>
+                      <div className="flex items-center space-x-2 text-sm">
+                        <span className={`px-2 py-1 rounded ${
+                          prefersReducedMotion ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'
+                        }`}>
+                          {prefersReducedMotion ? 'Reduced Motion' : 'Normal Motion'}
+                        </span>
+                        <span className="text-gray-300">
+                          {prefersReducedMotion ? 'Animations minimized' : 'Full animations enabled'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Keyboard Shortcuts */}
+                    <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                      <h4 className="text-white font-medium mb-3">Keyboard Shortcuts</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Tab</span>
+                          <span className="text-cyan-400">Navigate elements</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Enter/Space</span>
+                          <span className="text-cyan-400">Activate button</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Escape</span>
+                          <span className="text-cyan-400">Close modal</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">P</span>
+                          <span className="text-cyan-400">Point tool</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">L</span>
+                          <span className="text-cyan-400">Line tool</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-300">Ctrl+Z</span>
+                          <span className="text-cyan-400">Undo</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Haptic Test */}
+                    {hasHapticFeedback && (
+                      <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                        <h4 className="text-white font-medium mb-3">Haptic Feedback Test</h4>
+                        <div className="flex space-x-2">
+                          {(['light', 'medium', 'heavy'] as const).map(intensity => (
+                            <button
+                              key={intensity}
+                              onClick={() => {
+                                triggerHapticFeedback(intensity)
+                                announceToScreenReader(`${intensity} haptic feedback triggered`)
+                              }}
+                              className="px-3 py-2 rounded-lg bg-gradient-to-r from-purple-500/20 to-cyan-500/20 text-white text-sm hover:from-purple-500/30 hover:to-cyan-500/30 transition-all duration-200"
+                              aria-label={`Test ${intensity} haptic feedback`}
+                            >
+                              {intensity.charAt(0).toUpperCase() + intensity.slice(1)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Audio Announcements Test */}
+                    <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                      <h4 className="text-white font-medium mb-3">Screen Reader Test</h4>
+                      <button
+                        onClick={() => announceToScreenReader('This is a test announcement for screen readers. All accessibility features are working properly.')}
+                        className="w-full px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-cyan-500 text-white font-medium hover:from-purple-600 hover:to-cyan-600 transition-all duration-200"
+                        aria-label="Test screen reader announcement"
+                      >
+                        <Volume2 className="w-4 h-4 inline mr-2" />
+                        Test Screen Reader
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </>
-          )}
-
-          {/* Custom Problem Solver Mode */}
-          {activeMode === 'custom' && (
-            <CustomProblemSolver
-              lineData={lineData}
-              onPointsChange={setPointsFromCoordinates}
-              openaiClient={openaiClient}
-              language={language}
-            />
-          )}
-
-          {/* Word Problem Mode */}
-          {activeMode === 'word' && (
-            <WordProblem
-              lineData={lineData}
-              onPointsChange={setPointsFromCoordinates}
-              openaiClient={openaiClient}
-              language={language}
-              difficulty={difficulty} // Pass difficulty to word problem generator
-            />
           )}
         </div>
       </div>
 
       {/* Bottom Controls */}
-      <BottomControls
-        lineData={lineData}
-        resetView={resetView}
-        clearPoints={clearPoints}
-        onShowAnimation={() => setShowAnimation(true)} // Pass setShowAnimation to trigger animation
-      />
+      <div className='relative z-10 backdrop-blur-xl bg-white/5 border-t border-white/10 shadow-2xl'>
+        <BottomControls
+          lineData={lineData}
+          resetView={resetView}
+          clearPoints={clearPoints}
+          onShowAnimation={() => setShowAnimation(true)} // Pass setShowAnimation to trigger animation
+        />
+      </div>
     </div>
   )
 }

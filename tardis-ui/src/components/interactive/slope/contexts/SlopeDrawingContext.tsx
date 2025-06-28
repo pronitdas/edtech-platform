@@ -139,9 +139,12 @@ export const SlopeDrawingProvider: React.FC<SlopeDrawingProviderProps> = ({
 }) => {
   // Component state
   const [activeMode, setActiveMode] = useState<ToolMode>('concept')
-  const [selectedConceptId, setSelectedConceptId] = useState<string | null>(
-    null
-  )
+  const [selectedConceptId, setSelectedConceptId] = useState<string | null>(() => {
+    // Initialize with first concept if available
+    return interactiveContent.concepts && interactiveContent.concepts.length > 0 
+      ? interactiveContent.concepts[0].id 
+      : null
+  })
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
   const [drawingTool, setDrawingTool] = useState<DrawingTool>('move')
   const [showAnimation, setShowAnimation] = useState(false)
@@ -239,6 +242,14 @@ export const SlopeDrawingProvider: React.FC<SlopeDrawingProviderProps> = ({
     if (!selectedConceptId) return undefined
     return interactiveContent.concepts?.find(c => c.id === selectedConceptId)
   }, [selectedConceptId, interactiveContent])
+
+  // Initialize points when concept changes to ensure preloaded content is visible
+  React.useEffect(() => {
+    if (selectedConcept && selectedConcept.demoPoints && selectedConcept.demoPoints.length > 0) {
+      // Set points from the selected concept's demo points
+      setPointsFromCoordinates(selectedConcept.demoPoints)
+    }
+  }, [selectedConcept, setPointsFromCoordinates])
 
   const contextValue: SlopeDrawingContextValue = {
     activeMode,

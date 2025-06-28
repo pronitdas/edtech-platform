@@ -18,6 +18,17 @@ interface SlopeDrawingStrategyConfig {
   drawingTool: DrawingTool
 }
 
+interface Particle {
+  x: number
+  y: number
+  vx: number
+  vy: number
+  life: number
+  maxLife: number
+  color: [number, number, number]
+  size: number
+}
+
 export class SlopeDrawingStrategy implements DrawingStrategy {
   private points: Point[]
   private customPoints: Point[]
@@ -31,6 +42,8 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
   private highlightSolution: boolean
   private editMode: boolean
   private drawingTool: DrawingTool
+  private particles: Particle[] = []
+  private animationTime: number = 0
 
   constructor(config: SlopeDrawingStrategyConfig) {
     this.points = config.points
@@ -52,71 +65,145 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
     // Helper functions are included or adapted here.
 
     const drawGrid = (p: p5) => {
-      p.stroke(200)
+      p.stroke(220, 220, 220)
       p.strokeWeight(0.5)
-      const gridSize = 50 * this.zoom // Adjust grid size based on zoom
-
-      // Draw vertical lines
-      for (let x = this.offset.x % gridSize; x < p.width; x += gridSize) {
-        p.line(x, 0, x, p.height)
+      
+      // Grid spacing in world coordinates (1 unit)
+      const gridSpacing = 1
+      
+      // Find the visible world coordinate range
+      const topLeft = this.mapCanvasToPoint({ x: 0, y: 0 })
+      const bottomRight = this.mapCanvasToPoint({ x: p.width, y: p.height })
+      
+      // Draw vertical grid lines
+      const minX = Math.floor(topLeft.x / gridSpacing) * gridSpacing
+      const maxX = Math.ceil(bottomRight.x / gridSpacing) * gridSpacing
+      
+      for (let x = minX; x <= maxX; x += gridSpacing) {
+        const startCanvas = this.mapPointToCanvas({ x, y: topLeft.y })
+        const endCanvas = this.mapPointToCanvas({ x, y: bottomRight.y })
+        if (startCanvas.x >= 0 && startCanvas.x <= p.width) {
+          p.line(startCanvas.x, 0, endCanvas.x, p.height)
+        }
       }
-      for (
-        let x = (this.offset.x % gridSize) - gridSize;
-        x > 0;
-        x -= gridSize
-      ) {
-        p.line(x, 0, x, p.height)
-      }
-
-      // Draw horizontal lines
-      for (let y = this.offset.y % gridSize; y < p.height; y += gridSize) {
-        p.line(0, y, p.width, y)
-      }
-      for (
-        let y = (this.offset.y % gridSize) - gridSize;
-        y > 0;
-        y -= gridSize
-      ) {
-        p.line(0, y, p.width, y)
+      
+      // Draw horizontal grid lines
+      const minY = Math.floor(bottomRight.y / gridSpacing) * gridSpacing
+      const maxY = Math.ceil(topLeft.y / gridSpacing) * gridSpacing
+      
+      for (let y = minY; y <= maxY; y += gridSpacing) {
+        const startCanvas = this.mapPointToCanvas({ x: topLeft.x, y })
+        const endCanvas = this.mapPointToCanvas({ x: bottomRight.x, y })
+        if (startCanvas.y >= 0 && startCanvas.y <= p.height) {
+          p.line(0, startCanvas.y, p.width, endCanvas.y)
+        }
       }
     }
 
     const drawAxes = (p: p5) => {
       p.stroke(0)
-      p.strokeWeight(1)
+      p.strokeWeight(2)
 
-      // Calculate axis positions based on offset
-      const xAxisY = p.height - this.offset.y
-      const yAxisX = this.offset.x
+      // Calculate axis positions - axes should go through origin (0,0) in world coordinates
+      const origin = this.mapPointToCanvas({ x: 0, y: 0 })
+      
+      // Draw X-axis (horizontal line through origin)
+      if (origin.y >= 0 && origin.y <= p.height) {
+        p.line(0, origin.y, p.width, origin.y)
+      }
 
-      // Draw X-axis
-      p.line(0, xAxisY, p.width, xAxisY)
+      // Draw Y-axis (vertical line through origin)
+      if (origin.x >= 0 && origin.x <= p.width) {
+        p.line(origin.x, 0, origin.x, p.height)
+      }
 
-      // Draw Y-axis
-      p.line(yAxisX, 0, yAxisX, p.height)
-
-      // Draw axis labels (optional, could be added here)
+      // Draw axis labels and tick marks
+      p.textAlign(p.CENTER, p.CENTER)
+      p.textSize(10)
+      p.fill(100)
+      
+      // X-axis labels
+      if (origin.y >= 10 && origin.y <= p.height - 10) {
+        for (let x = -10; x <= 10; x++) {
+          if (x === 0) continue // Skip origin
+          const canvasPoint = this.mapPointToCanvas({ x, y: 0 })
+          if (canvasPoint.x >= 0 && canvasPoint.x <= p.width) {
+            p.text(x.toString(), canvasPoint.x, canvasPoint.y + 15)
+            // Tick mark
+            p.stroke(0)
+            p.line(canvasPoint.x, canvasPoint.y - 3, canvasPoint.x, canvasPoint.y + 3)
+          }
+        }
+      }
+      
+      // Y-axis labels
+      if (origin.x >= 10 && origin.x <= p.width - 10) {
+        for (let y = -10; y <= 10; y++) {
+          if (y === 0) continue // Skip origin
+          const canvasPoint = this.mapPointToCanvas({ x: 0, y })
+          if (canvasPoint.y >= 0 && canvasPoint.y <= p.height) {
+            p.text(y.toString(), canvasPoint.x - 15, canvasPoint.y)
+            // Tick mark
+            p.stroke(0)
+            p.line(canvasPoint.x - 3, canvasPoint.y, canvasPoint.x + 3, canvasPoint.y)
+          }
+        }
+      }
     }
 
     const drawPointsAndLine = (p: p5) => {
       if (this.points.length > 0) {
-        p.stroke(0, 0, 255) // Blue color for the line
-        p.strokeWeight(2)
+        // Animated line with gradient effect
+        p.strokeWeight(3)
         p.noFill()
 
-        p.beginShape()
-        this.points.forEach(point => {
-          const canvasPoint = this.mapPointToCanvas(point)
-          p.vertex(canvasPoint.x, canvasPoint.y)
-        })
-        p.endShape()
+        if (this.points.length >= 2) {
+          // Draw gradient line
+          const point1 = this.mapPointToCanvas(this.points[0])
+          const point2 = this.mapPointToCanvas(this.points[1])
+          
+          // Create gradient effect manually
+          for (let i = 0; i < 100; i++) {
+            const t = i / 99
+            const x = p.lerp(point1.x, point2.x, t)
+            const y = p.lerp(point1.y, point2.y, t)
+            
+            // Animate color transition
+            const hue = (this.animationTime * 0.5 + t * 60) % 360
+            p.colorMode(p.HSB, 360, 100, 100)
+            p.stroke(hue, 80, 90, 0.8)
+            p.strokeWeight(3 + Math.sin(this.animationTime * 0.02 + t * 10) * 1)
+            
+            if (i > 0) {
+              const prevT = (i - 1) / 99
+              const prevX = p.lerp(point1.x, point2.x, prevT)
+              const prevY = p.lerp(point1.y, point2.y, prevT)
+              p.line(prevX, prevY, x, y)
+            }
+          }
+          p.colorMode(p.RGB, 255)
+        }
 
-        // Draw points
-        p.fill(255, 0, 0) // Red color for points
-        p.noStroke()
-        this.points.forEach(point => {
+        // Draw animated points with glow effect
+        this.points.forEach((point, index) => {
           const canvasPoint = this.mapPointToCanvas(point)
-          p.ellipse(canvasPoint.x, canvasPoint.y, 8, 8) // Draw a circle for each point
+          const pulseSize = 12 + Math.sin(this.animationTime * 0.05 + index * 2) * 4
+          
+          // Outer glow
+          p.fill(100, 200, 255, 50)
+          p.noStroke()
+          p.ellipse(canvasPoint.x, canvasPoint.y, pulseSize * 2, pulseSize * 2)
+          
+          // Main point
+          p.fill(255, 100, 100)
+          p.stroke(255, 255, 255)
+          p.strokeWeight(2)
+          p.ellipse(canvasPoint.x, canvasPoint.y, pulseSize, pulseSize)
+          
+          // Create particles around active points
+          if (Math.random() < 0.1) {
+            this.createParticle(canvasPoint.x, canvasPoint.y, [100, 200, 255])
+          }
         })
       }
     }
@@ -165,14 +252,23 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
       })
     }
 
-    // Main drawing logic
+    // Update animation time
+    this.animationTime++
+    
+    // Update and draw particles
+    this.updateParticles(p)
+    
+    // Main drawing logic with enhanced effects
     drawGrid(p)
     drawAxes(p)
     drawPointsAndLine(p)
     drawCustomItems(p)
-
-    // Add logic for highlightSolution, editMode, drawingTool if needed for visual feedback
-    // For example, drawing a temporary line while in 'solidLine' drawingTool mode
+    
+    // Draw particles
+    this.drawParticles(p)
+    
+    // Add tool-specific visual feedback
+    this.drawToolFeedback(p)
   }
 
   findElementAtPoint(point: Point): InteractiveElement | null {
@@ -309,5 +405,67 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
     const dy = point.y - yy
 
     return Math.sqrt(dx * dx + dy * dy)
+  }
+
+  private createParticle(x: number, y: number, color: [number, number, number]) {
+    const particle: Particle = {
+      x: x + (Math.random() - 0.5) * 20,
+      y: y + (Math.random() - 0.5) * 20,
+      vx: (Math.random() - 0.5) * 2,
+      vy: (Math.random() - 0.5) * 2,
+      life: 60,
+      maxLife: 60,
+      color,
+      size: Math.random() * 3 + 1
+    }
+    this.particles.push(particle)
+  }
+
+  private updateParticles(p: p5) {
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const particle = this.particles[i]
+      particle.x += particle.vx
+      particle.y += particle.vy
+      particle.life--
+      particle.vy += 0.1 // gravity
+      
+      if (particle.life <= 0) {
+        this.particles.splice(i, 1)
+      }
+    }
+  }
+
+  private drawParticles(p: p5) {
+    p.noStroke()
+    this.particles.forEach(particle => {
+      const alpha = (particle.life / particle.maxLife) * 255
+      p.fill(particle.color[0], particle.color[1], particle.color[2], alpha)
+      p.ellipse(particle.x, particle.y, particle.size, particle.size)
+    })
+  }
+
+  private drawToolFeedback(p: p5) {
+    // Add visual feedback based on current drawing tool
+    switch (this.drawingTool) {
+      case 'point':
+        // Show crosshair cursor effect
+        p.stroke(255, 255, 0, 150)
+        p.strokeWeight(1)
+        const mousePos = { x: p.mouseX, y: p.mouseY }
+        p.line(mousePos.x - 10, mousePos.y, mousePos.x + 10, mousePos.y)
+        p.line(mousePos.x, mousePos.y - 10, mousePos.x, mousePos.y + 10)
+        break
+      case 'solidLine':
+        // Show line preview
+        p.stroke(255, 255, 0, 100)
+        p.strokeWeight(2)
+        break
+      case 'text':
+        // Show text placement indicator
+        p.fill(255, 255, 0, 100)
+        p.noStroke()
+        p.rect(p.mouseX - 2, p.mouseY - 10, 4, 20)
+        break
+    }
   }
 }
