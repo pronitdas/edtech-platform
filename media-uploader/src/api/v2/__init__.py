@@ -7,6 +7,8 @@ from .roleplay import router as roleplay_router
 from .analytics import router as analytics_router
 from .search import router as search_router
 from .admin import router as admin_router
+from .media import router as media_router
+from .llm import router as llm_router
 
 v2_router = APIRouter(prefix="/v2")
 
@@ -18,3 +20,5 @@ v2_router.include_router(roleplay_router, prefix="/roleplay", tags=["roleplay"])
 v2_router.include_router(analytics_router, prefix="/analytics", tags=["analytics"])
 v2_router.include_router(search_router, prefix="/search", tags=["search"])
 v2_router.include_router(admin_router, prefix="/admin", tags=["admin"])
+v2_router.include_router(media_router, tags=["media"])
+v2_router.include_router(llm_router, tags=["llm"])

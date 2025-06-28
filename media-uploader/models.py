@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Dict, Any, List, Optional
-from sqlalchemy import Column, Integer, String, Text, Boolean, JSON, ForeignKey, DateTime, Float
+from sqlalchemy import Column, Integer, String, Text, Boolean, JSON, ForeignKey, DateTime, Float, LargeBinary
 from sqlalchemy.orm import declarative_base, relationship
 from pydantic import BaseModel
 
@@ -187,6 +187,36 @@ class EdTechContent(Base):
     meta_data = Column(JSON)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+# Add MediaFile model for V2 API
+class MediaFile(Base):
+    """Model for V2 media file storage."""
+    __tablename__ = "media_files_v2"
+    
+    id = Column(String, primary_key=True)  # UUID
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    original_filename = Column(String, nullable=False)
+    filename = Column(String, nullable=False)  # Secure filename
+    file_path = Column(String, nullable=False)
+    file_size = Column(Integer, nullable=False)
+    content_type = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+# Add LLM usage tracking
+class LLMUsageLog(Base):
+    """Model for tracking LLM API usage."""
+    __tablename__ = "llm_usage_logs"
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    model = Column(String, nullable=False)
+    prompt_tokens = Column(Integer, default=0)
+    completion_tokens = Column(Integer, default=0)
+    total_tokens = Column(Integer, default=0)
+    cost = Column(Float, default=0.0)
+    request_id = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 class Media(Base):
     """Model for tracking uploaded media files and their metadata."""

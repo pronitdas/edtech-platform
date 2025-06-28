@@ -142,6 +142,49 @@ class RoleplayScenario(BaseModel):
     response: str
     created_at: datetime
 
+# Media Models
+class MediaUploadResponse(BaseModel):
+    id: str
+    filename: str
+    size: int
+    content_type: str
+    upload_url: str
+    status: str
+
+class MediaInfoResponse(BaseModel):
+    id: str
+    filename: str
+    size: int
+    content_type: str
+    created_at: datetime
+    download_url: str
+
+class MediaListResponse(BaseModel):
+    items: List[MediaInfoResponse]
+    total: int
+    limit: int
+    offset: int
+
+class PresignedUrlResponse(BaseModel):
+    url: str
+    expires_at: float
+    media_id: str
+
+# LLM Models
+class LLMRequest(BaseModel):
+    messages: List[Dict[str, Any]]
+    model: str = "gpt-4"
+    temperature: float = 0.7
+    max_tokens: Optional[int] = None
+    stream: bool = False
+
+class LLMResponse(BaseModel):
+    id: str
+    choices: List[Dict[str, Any]]
+    usage: Dict[str, Any]
+    model: str
+    created: int
+
 # Analytics Models
 class EventTrackRequest(BaseModel):
     event_type: str

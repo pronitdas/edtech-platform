@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 import jwt
+from src.middleware.security import SecurityMiddleware
 
 from models import ProcessingStatus, RetryRequest, RetryHistory, ImageUploadStatus, PDFResponse, User
 from routes.auth import JWT_SECRET, JWT_ALGORITHM, get_db
@@ -76,7 +77,13 @@ class JWTMiddleware(BaseHTTPMiddleware):
         """Check if the endpoint requires JWT validation."""
         protected_paths = [
             "/analytics",  # All analytics endpoints
-            "/api/protected"  # Future protected endpoints
+            "/api/protected",  # Future protected endpoints
+            "/v2/media",  # V2 media endpoints
+            "/v2/llm",  # V2 LLM endpoints
+            "/v2/knowledge",  # V2 knowledge endpoints
+            "/v2/chapters",  # V2 chapters endpoints
+            "/v2/content",  # V2 content endpoints
+            "/v2/analytics"  # V2 analytics endpoints
         ]
         return any(path.startswith(prefix) for prefix in protected_paths)
 
@@ -156,7 +163,10 @@ app = FastAPI(
     openapi_url="/openapi.json"
 )
 
-# Add JWT middleware
+# Add security middleware (first, for all requests)
+app.add_middleware(SecurityMiddleware)
+
+# Add JWT middleware (after security)
 app.add_middleware(JWTMiddleware)
 
 # CORS configuration
