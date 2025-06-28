@@ -1,5 +1,5 @@
 import { normalizeVideoMetadata } from '@/utils/contentHelpers'
-import supabase from '@/services/supabase'
+import { knowledgeService } from '@/services/knowledge'
 import { Knowledge, VideoMetadata } from '@/types/database'
 
 /**
@@ -7,15 +7,7 @@ import { Knowledge, VideoMetadata } from '@/types/database'
  */
 export async function fetchVideoContent(id: number): Promise<VideoMetadata> {
   try {
-    const { data, error } = await supabase
-      .from('knowledge')
-      .select('*, chapters_v1(*)')
-      .eq('id', id)
-      .single()
-
-    if (error) throw error
-    console.log(data)
-    const knowledgeData = data as Knowledge
+    const knowledgeData = await knowledgeService.getKnowledge(id) as Knowledge
 
     // Check if video content
     if (!knowledgeData.video_url) {

@@ -10,7 +10,7 @@ import EnhancedMindMap from '../EnhancedMindMap' // Assuming path
 import RoleplayComponent from '../RoleplayComponent' // Import RoleplayComponent
 import { ChapterContent, ChapterV1, QuizQuestion } from '@/types/database' // Removed RoleplayScenario
 import { ChevronLeft } from 'lucide-react'
-import supabase from '@/services/supabase' // Import Supabase client
+// Removed Supabase import - now using local API services
 import { useInteractionTracker } from '@/contexts/InteractionTrackerContext' // Import the hook
 import { SlopeDrawing, InteractiveComponentTypes } from '../interactive' // Import interactive components
 

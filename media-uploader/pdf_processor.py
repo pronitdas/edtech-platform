@@ -16,9 +16,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import fitz  # PyMuPDF
 from PIL import Image
 from openai import OpenAI
-from vllm import LLM, SamplingParams
-from docling_core.types.doc import DoclingDocument
-from docling_core.types.doc.document import DocTagsDocument
+# Temporarily disabled ML dependencies
+# from vllm import LLM, SamplingParams
+# from docling_core.types.doc import DoclingDocument
+# from docling_core.types.doc.document import DocTagsDocument
 
 # Import methods from VideoProcessorV2
 from video_processor_v2 import VideoProcessorV2

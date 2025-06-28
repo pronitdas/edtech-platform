@@ -6,7 +6,7 @@ import {
 } from '@/services/edtech-content'
 import useAuthState from './useAuth'
 import { EdTechAPI, ContentType, ProcessingStatus } from '@/services/edtech-api'
-import supabase from '@/services/supabase'
+import { knowledgeService } from '@/services/knowledge'
 import { ChapterContent, ChapterV1, EdTechChapter } from '@/types/database'
 
 // Create an instance of the EdTechAPI
@@ -116,21 +116,16 @@ export const useChapters = () => {
       if (!knowledgeId) return
       console.log('Fetching knowledge data for knowledgeId:', knowledgeId)
       try {
-        const { data, error } = await supabase
-          .from('knowledge')
-          .select('video_url, roleplay')
-          .eq('id', knowledgeId)
-          .single()
-
-        if (error) {
-          throw error
-        }
-
+        const knowledge = await knowledgeService.getKnowledge(knowledgeId)
+        
         setState(prev => ({
           ...prev,
-          knowledgeData: data || { video_url: null, roleplay: null },
+          knowledgeData: {
+            video_url: knowledge.video_url || null,
+            roleplay: knowledge.roleplay || null,
+          },
         }))
-        console.log('Fetched knowledge data:', data)
+        console.log('Fetched knowledge data:', knowledge)
       } catch (error) {
         console.error('Error fetching knowledge data:', error)
         setState(prev => ({

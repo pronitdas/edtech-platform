@@ -1,11 +1,12 @@
 // SignUpPage.tsx
-import supabase from '@/services/supabase'
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { authService } from '@/services/auth'
 
 function SignUpPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
@@ -22,19 +23,10 @@ function SignUpPage() {
     }
 
     try {
-      const { user, error } = await supabase.auth.signUp({ email, password })
-
-      if (error) {
-        setError(error.message)
-        setLoading(false)
-        return
-      }
-
-      if (user) {
-        navigate('/login') // Redirect to login page after successful sign up
-      }
-    } catch (err) {
-      setError('An error occurred during sign up.')
+      await authService.register({ email, password, name })
+      navigate('/') // Redirect to dashboard after successful sign up
+    } catch (err: any) {
+      setError(err.message || 'An error occurred during sign up.')
       setLoading(false)
     }
   }
@@ -47,6 +39,22 @@ function SignUpPage() {
         </h2>
 
         <form onSubmit={handleSignUp}>
+          <div className='mb-4'>
+            <label
+              htmlFor='name'
+              className='block text-sm font-medium text-gray-600'
+            >
+              Name (optional)
+            </label>
+            <input
+              type='text'
+              id='name'
+              value={name}
+              onChange={e => setName(e.target.value)}
+              className='mt-2 w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
+            />
+          </div>
+
           <div className='mb-4'>
             <label
               htmlFor='email'

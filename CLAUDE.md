@@ -183,3 +183,4 @@ Key modules:
 - **Backend**: FastAPI, SQLAlchemy 1.4+, Alembic, PostgreSQL 13+
 - **AI/ML**: OpenAI API, custom model gateway
 - **Infrastructure**: Docker, Redis, S3-compatible storage
+

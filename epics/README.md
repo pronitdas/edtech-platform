@@ -1,11 +1,13 @@
 # EdTech Platform Refactoring Epics
 
+> **🔗 Navigation**: [📚 Documentation Index](../docs/INDEX.md) | [🛠️ Technical Plan](../TECHNICAL_PLAN.md) | [🏗️ Architecture](../architecture/main.md) | [🏃‍♂️ Sprints](../sprint/README.md)
+
 This directory contains refactoring epics for the EdTech platform based on the analysis of:
 - Existing components in `tardis-ui`
-- Types in `supabase.ts`
-- Issues identified in `.issues` directory
+- Issues identified in `.issues` directory  
 - Refactoring plan in `media-uploader/issues.md`
 - Strategic roadmap and production roadmap
+- Updated architecture (Vite + React, no Supabase/Next.js)
 
 ## Overview of Epics
 
@@ -231,3 +233,44 @@ graph TD
     EP003[EP-003: Responsive Design] --> EP012
     EP010[EP-010: Accessibility] --> EP012
     EP004[EP-004: Performance Optimization] --> EP012 
+```
+
+## 🔗 Cross-References & Dependencies
+
+### Technical Plan Alignment
+- **Phase 1 (Backend)** → Enables EP-007 (Analytics), EP-011 (Student Practice)
+- **Phase 2 (Frontend)** → Delivers EP-002 (Quiz), EP-005 (Content), EP-010 (Accessibility)  
+- **Phase 3 (Analytics)** → Completes EP-006 (Gamification), EP-008 (Data Export)
+- **Phase 4 (Production)** → Addresses EP-009 (Offline), monitoring epics
+
+### Sprint Assignments
+- **Sprint 14** (Active): EP-011 (Student Practice), EP-012 (Slope Drawing Polish)
+- **Sprint 15** (Planned): EP-001 (Test Framework), EP-003 (Responsive), EP-004 (Performance)
+- **Sprint 16** (Planned): EP-002 (Quiz), EP-005 (Content), EP-007 (Analytics), EP-010 (Accessibility)
+- **Sprint 17+** (Future): EP-006 (Gamification), EP-008 (Data Export), EP-009 (Offline)
+
+### Dependency Chain
+```mermaid
+graph TD
+    EP001[EP-001: Test Framework] --> EP002[EP-002: Interactive Quiz]
+    EP001 --> EP003[EP-003: Responsive Design]
+    EP001 --> EP004[EP-004: Performance]
+    EP001 --> EP005[EP-005: Content Management]
+    
+    EP004 --> EP011[EP-011: Student Practice]
+    EP003 --> EP012[EP-012: Slope Drawing Polish]
+    EP011 --> EP012
+    
+    EP001 --> EP007[EP-007: Analytics Dashboard]
+    EP007 --> EP006[EP-006: Gamification]
+    EP007 --> EP008[EP-008: Data Export]
+    
+    EP004 --> EP009[EP-009: Offline Access]
+    EP003 --> EP010[EP-010: Accessibility]
+```
+
+### Related Documentation
+- **[Technical Implementation Plan](../TECHNICAL_PLAN.md)** - Two-phase refactor roadmap
+- **[Architecture Overview](../architecture/main.md)** - System design and principles
+- **[Sprint Management](../sprint/README.md)** - Current sprint status and planning
+- **[Documentation Index](../docs/INDEX.md)** - Master navigation hub

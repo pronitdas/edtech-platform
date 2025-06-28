@@ -1,5 +1,7 @@
 # EdTech Platform Architecture
 
+> **🔗 Navigation**: [📚 Documentation Index](../docs/INDEX.md) | [🛠️ Technical Plan](../TECHNICAL_PLAN.md) | [🎪 Epics](../epics/README.md) | [🏃‍♂️ Sprints](../sprint/README.md)
+
 ## System Overview
 A modular, scalable educational technology platform delivering interactive learning experiences with analytics-driven insights.
 
@@ -32,10 +34,10 @@ A modular, scalable educational technology platform delivering interactive learn
 ## Component Architecture
 
 ### Client Layer
-- **React Application**: SPA with TypeScript and Vite
+- **Vite + React**: SPA with TypeScript and hot-reload development
 - **Component Library**: Reusable UI components with TailwindCSS
 - **State Management**: React Context API and custom hooks
-- **Client-Side Analytics**: Event tracking and data collection
+- **Event System**: EventDispatcher for real-time UI updates
 - **PWA Features**: Service workers for offline functionality
 
 ### Application Layer
@@ -46,10 +48,10 @@ A modular, scalable educational technology platform delivering interactive learn
 - **Analytics Engine**: Data processing and insights
 
 ### Data Layer
-- **PostgreSQL**: Primary data store
-- **Redis**: Caching and session management
-- **Supabase**: Real-time data synchronization
-- **S3-Compatible Storage**: Media and file storage
+- **PostgreSQL**: Primary data store with materialized views
+- **Redis**: Caching, session management, and PubSub messaging
+- **MinIO**: S3-compatible media and file storage
+- **Neo4j**: Knowledge graph for AI tutor (optional)
 - **Time-Series Database**: Analytics data storage
 
 ### Services
