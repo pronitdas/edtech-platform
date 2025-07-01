@@ -31,28 +31,37 @@ export function useAccessibility(): AccessibilityState & AccessibilityActions {
   useEffect(() => {
     const checkAccessibilityFeatures = () => {
       // Detect mobile device
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-                      (window.innerWidth <= 768)
+      const isMobile =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        ) || window.innerWidth <= 768
 
       // Check for haptic feedback support
-      const hasHapticFeedback = 'vibrate' in navigator || 
-                               'hapticEngineSupported' in window ||
-                               'webkitHapticEngineSupported' in window
+      const hasHapticFeedback =
+        'vibrate' in navigator ||
+        'hapticEngineSupported' in window ||
+        'webkitHapticEngineSupported' in window
 
       // Check for reduced motion preference
-      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      const prefersReducedMotion = window.matchMedia(
+        '(prefers-reduced-motion: reduce)'
+      ).matches
 
       // Check for high contrast preference
-      const highContrast = window.matchMedia('(prefers-contrast: high)').matches ||
-                          localStorage.getItem('high-contrast') === 'true'
+      const highContrast =
+        window.matchMedia('(prefers-contrast: high)').matches ||
+        localStorage.getItem('high-contrast') === 'true'
 
       // Detect screen reader
-      const screenReaderActive = document.body.getAttribute('aria-hidden') === 'false' ||
-                                navigator.userAgent.includes('NVDA') ||
-                                navigator.userAgent.includes('JAWS')
+      const screenReaderActive =
+        document.body.getAttribute('aria-hidden') === 'false' ||
+        navigator.userAgent.includes('NVDA') ||
+        navigator.userAgent.includes('JAWS')
 
       // Get font size preference
-      const fontSize = (localStorage.getItem('font-size') as 'small' | 'medium' | 'large') || 'medium'
+      const fontSize =
+        (localStorage.getItem('font-size') as 'small' | 'medium' | 'large') ||
+        'medium'
 
       setState({
         isMobile,
@@ -74,7 +83,7 @@ export function useAccessibility(): AccessibilityState & AccessibilityActions {
     ]
 
     const handleMediaQueryChange = () => checkAccessibilityFeatures()
-    
+
     mediaQueryLists.forEach(mql => {
       mql.addEventListener('change', handleMediaQueryChange)
     })
@@ -106,34 +115,37 @@ export function useAccessibility(): AccessibilityState & AccessibilityActions {
   }, [])
 
   // Trigger haptic feedback
-  const triggerHapticFeedback = useCallback((type: 'light' | 'medium' | 'heavy') => {
-    if (!state.hasHapticFeedback) return
+  const triggerHapticFeedback = useCallback(
+    (type: 'light' | 'medium' | 'heavy') => {
+      if (!state.hasHapticFeedback) return
 
-    try {
-      // Try modern Haptics API first
-      if ('vibrate' in navigator) {
-        const patterns = {
-          light: [10],
-          medium: [50],
-          heavy: [100],
+      try {
+        // Try modern Haptics API first
+        if ('vibrate' in navigator) {
+          const patterns = {
+            light: [10],
+            medium: [50],
+            heavy: [100],
+          }
+          navigator.vibrate(patterns[type])
         }
-        navigator.vibrate(patterns[type])
-      }
 
-      // Try WebKit Haptic Engine
-      if ('webkitHapticEngineSupported' in window) {
-        const hapticTypes = {
-          light: 'impactLight',
-          medium: 'impactMedium', 
-          heavy: 'impactHeavy',
+        // Try WebKit Haptic Engine
+        if ('webkitHapticEngineSupported' in window) {
+          const hapticTypes = {
+            light: 'impactLight',
+            medium: 'impactMedium',
+            heavy: 'impactHeavy',
+          }
+          // @ts-ignore - WebKit haptic API
+          window.TapticEngine?.impact(hapticTypes[type])
         }
-        // @ts-ignore - WebKit haptic API
-        window.TapticEngine?.impact(hapticTypes[type])
+      } catch (error) {
+        console.warn('Haptic feedback not supported:', error)
       }
-    } catch (error) {
-      console.warn('Haptic feedback not supported:', error)
-    }
-  }, [state.hasHapticFeedback])
+    },
+    [state.hasHapticFeedback]
+  )
 
   // Focus element by ID
   const focusElement = useCallback((elementId: string) => {
@@ -145,43 +157,51 @@ export function useAccessibility(): AccessibilityState & AccessibilityActions {
   }, [])
 
   // Set font size
-  const setFontSize = useCallback((size: 'small' | 'medium' | 'large') => {
-    setState(prev => ({ ...prev, fontSize: size }))
-    localStorage.setItem('font-size', size)
-    
-    // Apply font size to document
-    const root = document.documentElement
-    const fontSizes = {
-      small: '14px',
-      medium: '16px',
-      large: '18px',
-    }
-    root.style.fontSize = fontSizes[size]
-    
-    announceToScreenReader(`Font size changed to ${size}`)
-  }, [announceToScreenReader])
+  const setFontSize = useCallback(
+    (size: 'small' | 'medium' | 'large') => {
+      setState(prev => ({ ...prev, fontSize: size }))
+      localStorage.setItem('font-size', size)
+
+      // Apply font size to document
+      const root = document.documentElement
+      const fontSizes = {
+        small: '14px',
+        medium: '16px',
+        large: '18px',
+      }
+      root.style.fontSize = fontSizes[size]
+
+      announceToScreenReader(`Font size changed to ${size}`)
+    },
+    [announceToScreenReader]
+  )
 
   // Toggle high contrast
   const toggleHighContrast = useCallback(() => {
     const newHighContrast = !state.highContrast
     setState(prev => ({ ...prev, highContrast: newHighContrast }))
     localStorage.setItem('high-contrast', newHighContrast.toString())
-    
+
     // Apply high contrast styles
     if (newHighContrast) {
       document.body.classList.add('high-contrast')
     } else {
       document.body.classList.remove('high-contrast')
     }
-    
-    announceToScreenReader(`High contrast ${newHighContrast ? 'enabled' : 'disabled'}`)
+
+    announceToScreenReader(
+      `High contrast ${newHighContrast ? 'enabled' : 'disabled'}`
+    )
   }, [state.highContrast, announceToScreenReader])
 
   // Add keyboard navigation support
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Skip navigation if user is typing in an input
-      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+      if (
+        event.target instanceof HTMLInputElement ||
+        event.target instanceof HTMLTextAreaElement
+      ) {
         return
       }
 
@@ -193,7 +213,10 @@ export function useAccessibility(): AccessibilityState & AccessibilityActions {
             setTimeout(() => {
               const focusedElement = document.activeElement as HTMLElement
               if (focusedElement) {
-                focusedElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                focusedElement.scrollIntoView({
+                  behavior: 'smooth',
+                  block: 'center',
+                })
               }
             }, 10)
           }
@@ -216,7 +239,9 @@ export function useAccessibility(): AccessibilityState & AccessibilityActions {
           if (modals.length > 0) {
             event.preventDefault()
             const lastModal = modals[modals.length - 1] as HTMLElement
-            const closeButton = lastModal.querySelector('[aria-label*="close"]') as HTMLElement
+            const closeButton = lastModal.querySelector(
+              '[aria-label*="close"]'
+            ) as HTMLElement
             if (closeButton) {
               closeButton.click()
             }
@@ -227,7 +252,9 @@ export function useAccessibility(): AccessibilityState & AccessibilityActions {
           // Show keyboard shortcuts help
           if (event.ctrlKey || event.metaKey) {
             event.preventDefault()
-            announceToScreenReader('Keyboard shortcuts: Tab to navigate, Enter or Space to activate, Escape to close, Arrow keys to move between options')
+            announceToScreenReader(
+              'Keyboard shortcuts: Tab to navigate, Enter or Space to activate, Escape to close, Arrow keys to move between options'
+            )
           }
           break
       }

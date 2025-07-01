@@ -1,5 +1,5 @@
 import { analyticsService } from '@/services/analytics-service'
-import supabase from '@/services/supabase'
+// import supabase from '@/services/supabase'
 
 /**
  * Test helpers for knowledge analytics functionality
@@ -29,7 +29,7 @@ export const knowledgeAnalyticsTestHelpers = {
         },
       }))
 
-      const { error } = await supabase.from('user_interactions').insert(events)
+      // const { error } = await supabase.from('user_interactions').insert(events)
 
       if (error) {
         console.error('Error generating knowledge events:', error)
@@ -104,7 +104,7 @@ export const knowledgeAnalyticsTestHelpers = {
         },
       })
 
-      const { error } = await supabase.from('user_interactions').insert(events)
+      // const { error } = await supabase.from('user_interactions').insert(events)
 
       if (error) {
         console.error('Error generating video events:', error)
@@ -183,7 +183,7 @@ export const knowledgeAnalyticsTestHelpers = {
         })
       }
 
-      const { error } = await supabase.from('user_interactions').insert(events)
+      // const { error } = await supabase.from('user_interactions').insert(events)
 
       if (error) {
         console.error('Error generating quiz events:', error)
@@ -298,10 +298,10 @@ export const knowledgeAnalyticsTestHelpers = {
   ): Promise<boolean> {
     try {
       // Delete test events
-      const { error: eventsError } = await supabase
-        .from('user_interactions')
-        .delete()
-        .eq('session_id', sessionId)
+      // const { error: eventsError } = await supabase
+      //   .from('user_interactions')
+      //   .delete()
+      //   .eq('session_id', sessionId)
 
       if (eventsError) {
         console.error('Error cleaning up knowledge test events:', eventsError)
@@ -309,10 +309,10 @@ export const knowledgeAnalyticsTestHelpers = {
       }
 
       // Delete test session
-      const { error: sessionError } = await supabase
-        .from('user_sessions')
-        .delete()
-        .eq('id', sessionId)
+      // const { error: sessionError } = await supabase
+      //   .from('user_sessions')
+      //   .delete()
+      //   .eq('id', sessionId)
 
       if (sessionError) {
         console.error('Error cleaning up knowledge test session:', sessionError)

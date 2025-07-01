@@ -14,13 +14,20 @@ import ProtectedRoute from './components/ProtectedRoute'
 // Main application components
 import LandingPage from './app/landing/page'
 import PricingPage from './app/pricing/page'
-// import AnalyticsPage from './pages/AnalyticsPage';
+import AnalyticsPage from './pages/AnalyticsPage'
 import ChapterViewer from './components/ChapterViewer'
+import MainApplication from './app/page'
+import { analyticsService } from './services/analytics-service'
+import { useUser } from './contexts/UserContext'
 
 function App() {
+  const { user } = useUser()
   return (
     <UserProvider>
-      <InteractionTrackerProvider>
+      <InteractionTrackerProvider
+        dataService={analyticsService}
+        userId={user?.id || ''}
+      >
         <Router>
           <Routes>
             {/* Public routes */}

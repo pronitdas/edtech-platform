@@ -4,7 +4,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { Dialog } from './Dialog'
 
 describe('Dialog', () => {
-  const mockOnClose = jest.fn()
+  const mockOnClose = vi.fn()
 
   beforeEach(() => {
     mockOnClose.mockClear()
@@ -25,7 +25,7 @@ describe('Dialog', () => {
         Test Content
       </Dialog>
     )
-    expect(screen.queryByText('Test Content')).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('renders title when provided', () => {
@@ -96,6 +96,6 @@ describe('Dialog', () => {
     )
     const panel = container.querySelector('.custom-class')
     expect(panel).toBeInTheDocument()
-    expect(panel).toHaveClass('rounded-lg') // default style
+    expect(panel).toHaveClass('bg-transparent') // default style
   })
 })

@@ -5,9 +5,9 @@ const StockValuationModel = () => {
   const [dividend, setDividend] = useState(2)
   const [growth, setGrowth] = useState(3)
   const [requiredReturn, setRequiredReturn] = useState(10)
-  const [stockPrice, setStockPrice] = useState(0)
-  const [priceHistory, setPriceHistory] = useState([])
-  const canvasRef = useRef(null)
+  const [stockPrice, setStockPrice] = useState<number | null>(0)
+  const [priceHistory, setPriceHistory] = useState<number[]>([])
+  const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
     calculateStockPrice()
@@ -32,7 +32,9 @@ const StockValuationModel = () => {
 
   useEffect(() => {
     const canvas = canvasRef.current
+    if (!canvas) return
     const ctx = canvas.getContext('2d')
+    if (!ctx) return
     const width = 600
     const height = 300
 

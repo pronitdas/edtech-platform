@@ -2,9 +2,6 @@ import { Problem } from '@/types/interactive'
 ;('use client')
 
 import React, { useState } from 'react'
-import { LineData } from '@/types/geometry'
-
-// Define LineData interface to match what's returned from useGraphManagement
 
 export interface PracticeProblemProps {
   problems: Problem[]
@@ -51,7 +48,6 @@ const PracticeProblem: React.FC<PracticeProblemProps> = ({
   onHintRequest,
 }) => {
   const [showHint, setShowHint] = useState(false)
-  const [hintIndex, setHintIndex] = useState<number>(-1)
 
   // Get current problem
   const currentProblem = problems.find(p => p.id === currentProblemId) || null

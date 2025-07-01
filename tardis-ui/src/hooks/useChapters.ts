@@ -7,7 +7,7 @@ import {
 import useAuthState from './useAuth'
 import { EdTechAPI, ContentType, ProcessingStatus } from '@/services/edtech-api'
 import { knowledgeService } from '@/services/knowledge'
-import { ChapterContent, ChapterV1, EdTechChapter } from '@/types/database'
+import { Chapter, ChapterContent, EdTechChapter } from '@/types/api'
 
 // Create an instance of the EdTechAPI
 const edtechApi = new EdTechAPI()
@@ -17,7 +17,7 @@ const STATUS_CHECK_INTERVAL = 30000 // 30 seconds between status checks
 const MAX_STATUS_CHECKS = 1 // Maximum number of consecutive status checks
 
 interface ChaptersState {
-  uploadedFiles: ChapterV1[]
+  uploadedFiles: Chapter[]
   chaptersMeta: EdTechChapter[]
   content: ChapterContent | null
   knowledgeData: {
@@ -62,7 +62,7 @@ export const useChapters = () => {
 
   // Memoized state update functions using useCallback
   const fetchChapters = useCallback(
-    async (knowledgeId: number, language: string): Promise<ChapterV1[]> => {
+    async (knowledgeId: number, language: string): Promise<Chapter[]> => {
       try {
         const chapters = await getChapters(knowledgeId, language)
         if (chapters) {
@@ -117,7 +117,7 @@ export const useChapters = () => {
       console.log('Fetching knowledge data for knowledgeId:', knowledgeId)
       try {
         const knowledge = await knowledgeService.getKnowledge(knowledgeId)
-        
+
         setState(prev => ({
           ...prev,
           knowledgeData: {
@@ -143,7 +143,7 @@ export const useChapters = () => {
 
   const getEdTechContentForChapter = useCallback(
     async (
-      chapter: ChapterV1,
+      chapter: Chapter,
       language: string
     ): Promise<ChapterContent | null> => {
       try {
@@ -161,12 +161,15 @@ export const useChapters = () => {
           return null
         }
 
-        const contentResult = await getEdTechContent(chapter, language)
+        const contentResult = await getEdTechContent({ 
+          knowledge_id: Number(chapter.knowledgeId), 
+          id: Number(chapter.id) 
+        }, language)
         console.log('Raw EdTech content result:', contentResult)
 
         let chapterContent: ChapterContent | null = null
         if (contentResult && contentResult.length > 0) {
-          chapterContent = contentResult[0] as ChapterContent
+          chapterContent = contentResult[0] as unknown as ChapterContent
         }
 
         setState(prev => ({
@@ -194,7 +197,7 @@ export const useChapters = () => {
 
   const generateMissingContent = useCallback(
     async (
-      chapter: ChapterV1,
+      chapter: Chapter,
       language: string,
       contentTypes: ContentType[]
     ): Promise<ChapterContent | null> => {
@@ -309,7 +312,7 @@ export const useChapters = () => {
   // Retry failed content generation
   const retryContentGeneration = useCallback(
     async (
-      chapter: ChapterV1,
+      chapter: Chapter,
       language: string,
       contentTypes?: ContentType[]
     ): Promise<ChapterContent | null> => {

@@ -1,4 +1,4 @@
-import { Knowledge, VideoMetadata } from '@/types/database'
+import { Knowledge, VideoMetadata } from '@/types/api'
 
 /**
  * Determines the appropriate content type for a knowledge entry

@@ -5,7 +5,7 @@ import { User } from '@/types/api'
 const useAuthState = () => {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  
+
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -42,13 +42,13 @@ const useAuthState = () => {
     setUser(null)
   }
 
-  return { 
-    user, 
-    loading, 
-    login, 
-    register, 
+  return {
+    user,
+    loading,
+    login,
+    register,
     logout,
-    isAuthenticated: authService.isAuthenticated()
+    isAuthenticated: authService.isAuthenticated(),
   }
 }
 

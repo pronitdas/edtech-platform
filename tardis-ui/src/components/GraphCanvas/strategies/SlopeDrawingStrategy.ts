@@ -67,18 +67,18 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
     const drawGrid = (p: p5) => {
       p.stroke(220, 220, 220)
       p.strokeWeight(0.5)
-      
+
       // Grid spacing in world coordinates (1 unit)
       const gridSpacing = 1
-      
+
       // Find the visible world coordinate range
       const topLeft = this.mapCanvasToPoint({ x: 0, y: 0 })
       const bottomRight = this.mapCanvasToPoint({ x: p.width, y: p.height })
-      
+
       // Draw vertical grid lines
       const minX = Math.floor(topLeft.x / gridSpacing) * gridSpacing
       const maxX = Math.ceil(bottomRight.x / gridSpacing) * gridSpacing
-      
+
       for (let x = minX; x <= maxX; x += gridSpacing) {
         const startCanvas = this.mapPointToCanvas({ x, y: topLeft.y })
         const endCanvas = this.mapPointToCanvas({ x, y: bottomRight.y })
@@ -86,11 +86,11 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
           p.line(startCanvas.x, 0, endCanvas.x, p.height)
         }
       }
-      
+
       // Draw horizontal grid lines
       const minY = Math.floor(bottomRight.y / gridSpacing) * gridSpacing
       const maxY = Math.ceil(topLeft.y / gridSpacing) * gridSpacing
-      
+
       for (let y = minY; y <= maxY; y += gridSpacing) {
         const startCanvas = this.mapPointToCanvas({ x: topLeft.x, y })
         const endCanvas = this.mapPointToCanvas({ x: bottomRight.x, y })
@@ -106,7 +106,7 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
 
       // Calculate axis positions - axes should go through origin (0,0) in world coordinates
       const origin = this.mapPointToCanvas({ x: 0, y: 0 })
-      
+
       // Draw X-axis (horizontal line through origin)
       if (origin.y >= 0 && origin.y <= p.height) {
         p.line(0, origin.y, p.width, origin.y)
@@ -121,7 +121,7 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
       p.textAlign(p.CENTER, p.CENTER)
       p.textSize(10)
       p.fill(100)
-      
+
       // X-axis labels
       if (origin.y >= 10 && origin.y <= p.height - 10) {
         for (let x = -10; x <= 10; x++) {
@@ -131,11 +131,16 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
             p.text(x.toString(), canvasPoint.x, canvasPoint.y + 15)
             // Tick mark
             p.stroke(0)
-            p.line(canvasPoint.x, canvasPoint.y - 3, canvasPoint.x, canvasPoint.y + 3)
+            p.line(
+              canvasPoint.x,
+              canvasPoint.y - 3,
+              canvasPoint.x,
+              canvasPoint.y + 3
+            )
           }
         }
       }
-      
+
       // Y-axis labels
       if (origin.x >= 10 && origin.x <= p.width - 10) {
         for (let y = -10; y <= 10; y++) {
@@ -145,7 +150,12 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
             p.text(y.toString(), canvasPoint.x - 15, canvasPoint.y)
             // Tick mark
             p.stroke(0)
-            p.line(canvasPoint.x - 3, canvasPoint.y, canvasPoint.x + 3, canvasPoint.y)
+            p.line(
+              canvasPoint.x - 3,
+              canvasPoint.y,
+              canvasPoint.x + 3,
+              canvasPoint.y
+            )
           }
         }
       }
@@ -157,23 +167,23 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
         p.strokeWeight(3)
         p.noFill()
 
-        if (this.points.length >= 2) {
+        if (this.points.length >= 2 && this.points[0] && this.points[1]) {
           // Draw gradient line
           const point1 = this.mapPointToCanvas(this.points[0])
           const point2 = this.mapPointToCanvas(this.points[1])
-          
+
           // Create gradient effect manually
           for (let i = 0; i < 100; i++) {
             const t = i / 99
             const x = p.lerp(point1.x, point2.x, t)
             const y = p.lerp(point1.y, point2.y, t)
-            
+
             // Animate color transition
             const hue = (this.animationTime * 0.5 + t * 60) % 360
             p.colorMode(p.HSB, 360, 100, 100)
             p.stroke(hue, 80, 90, 0.8)
             p.strokeWeight(3 + Math.sin(this.animationTime * 0.02 + t * 10) * 1)
-            
+
             if (i > 0) {
               const prevT = (i - 1) / 99
               const prevX = p.lerp(point1.x, point2.x, prevT)
@@ -187,19 +197,20 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
         // Draw animated points with glow effect
         this.points.forEach((point, index) => {
           const canvasPoint = this.mapPointToCanvas(point)
-          const pulseSize = 12 + Math.sin(this.animationTime * 0.05 + index * 2) * 4
-          
+          const pulseSize =
+            12 + Math.sin(this.animationTime * 0.05 + index * 2) * 4
+
           // Outer glow
           p.fill(100, 200, 255, 50)
           p.noStroke()
           p.ellipse(canvasPoint.x, canvasPoint.y, pulseSize * 2, pulseSize * 2)
-          
+
           // Main point
           p.fill(255, 100, 100)
           p.stroke(255, 255, 255)
           p.strokeWeight(2)
           p.ellipse(canvasPoint.x, canvasPoint.y, pulseSize, pulseSize)
-          
+
           // Create particles around active points
           if (Math.random() < 0.1) {
             this.createParticle(canvasPoint.x, canvasPoint.y, [100, 200, 255])
@@ -230,7 +241,7 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
       p.fill(128, 0, 128, 100) // Purple with transparency
       p.noStroke()
       this.shapes.forEach(shape => {
-        if (shape.type === 'rectangle') {
+        if (shape.type === 'rectangle' && shape.topLeft && shape.bottomRight) {
           const topLeft = this.mapPointToCanvas(shape.topLeft)
           const bottomRight = this.mapPointToCanvas(shape.bottomRight)
           p.rect(
@@ -254,19 +265,19 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
 
     // Update animation time
     this.animationTime++
-    
+
     // Update and draw particles
     this.updateParticles(p)
-    
+
     // Main drawing logic with enhanced effects
     drawGrid(p)
     drawAxes(p)
     drawPointsAndLine(p)
     drawCustomItems(p)
-    
+
     // Draw particles
     this.drawParticles(p)
-    
+
     // Add tool-specific visual feedback
     this.drawToolFeedback(p)
   }
@@ -279,7 +290,9 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
 
     // Check custom points first
     for (let i = 0; i < this.customPoints.length; i++) {
-      const canvasPoint = this.mapPointToCanvas(this.customPoints[i])
+      const customPoint = this.customPoints[i]
+      if (!customPoint) continue
+      const canvasPoint = this.mapPointToCanvas(customPoint)
       const distance = Math.sqrt(
         Math.pow(canvasPoint.x - targetPoint.x, 2) +
           Math.pow(canvasPoint.y - targetPoint.y, 2)
@@ -288,14 +301,16 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
         return {
           type: 'custom-point',
           index: i,
-          data: this.customPoints[i],
+          data: customPoint,
         }
       }
     }
 
     // Check main points
     for (let i = 0; i < this.points.length; i++) {
-      const canvasPoint = this.mapPointToCanvas(this.points[i])
+      const point = this.points[i]
+      if (!point) continue
+      const canvasPoint = this.mapPointToCanvas(point)
       const distance = Math.sqrt(
         Math.pow(canvasPoint.x - targetPoint.x, 2) +
           Math.pow(canvasPoint.y - targetPoint.y, 2)
@@ -312,6 +327,7 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
     // Check lines (check if point is near line segment)
     for (let i = 0; i < this.customLines.length; i++) {
       const line = this.customLines[i]
+      if (!line || !line.start || !line.end) continue
       const start = this.mapPointToCanvas(line.start)
       const end = this.mapPointToCanvas(line.end)
 
@@ -330,6 +346,7 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
     // Check shapes
     for (let i = 0; i < this.shapes.length; i++) {
       const shape = this.shapes[i]
+      if (!shape) continue
       if (shape.type === 'rectangle' && shape.topLeft && shape.bottomRight) {
         const topLeft = this.mapPointToCanvas(shape.topLeft)
         const bottomRight = this.mapPointToCanvas(shape.bottomRight)
@@ -352,6 +369,7 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
     // Check texts
     for (let i = 0; i < this.texts.length; i++) {
       const textItem = this.texts[i]
+      if (!textItem || !textItem.position) continue
       const textPoint = this.mapPointToCanvas(textItem.position)
       const distance = Math.sqrt(
         Math.pow(textPoint.x - targetPoint.x, 2) +
@@ -407,7 +425,11 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
     return Math.sqrt(dx * dx + dy * dy)
   }
 
-  private createParticle(x: number, y: number, color: [number, number, number]) {
+  private createParticle(
+    x: number,
+    y: number,
+    color: [number, number, number]
+  ) {
     const particle: Particle = {
       x: x + (Math.random() - 0.5) * 20,
       y: y + (Math.random() - 0.5) * 20,
@@ -416,7 +438,7 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
       life: 60,
       maxLife: 60,
       color,
-      size: Math.random() * 3 + 1
+      size: Math.random() * 3 + 1,
     }
     this.particles.push(particle)
   }
@@ -424,11 +446,12 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
   private updateParticles(p: p5) {
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const particle = this.particles[i]
+      if (!particle) continue
       particle.x += particle.vx
       particle.y += particle.vy
       particle.life--
       particle.vy += 0.1 // gravity
-      
+
       if (particle.life <= 0) {
         this.particles.splice(i, 1)
       }

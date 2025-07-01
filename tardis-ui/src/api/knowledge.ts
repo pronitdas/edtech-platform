@@ -1,13 +1,13 @@
 import { normalizeVideoMetadata } from '@/utils/contentHelpers'
 import { knowledgeService } from '@/services/knowledge'
-import { Knowledge, VideoMetadata } from '@/types/database'
+import { Knowledge, VideoMetadata } from '@/types/api'
 
 /**
  * Fetches video content with all metadata
  */
 export async function fetchVideoContent(id: number): Promise<VideoMetadata> {
   try {
-    const knowledgeData = await knowledgeService.getKnowledge(id) as Knowledge
+    const knowledgeData = (await knowledgeService.getKnowledge(id)) as Knowledge
 
     // Check if video content
     if (!knowledgeData.video_url) {

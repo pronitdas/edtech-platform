@@ -10,6 +10,9 @@ import {
   ReactFlowProvider,
   useReactFlow,
   Panel,
+  type Node,
+  type Edge,
+  type Connection,
 } from '@xyflow/react'
 import Dagre from '@dagrejs/dagre'
 import { Card } from '@/components/ui/card'
@@ -28,6 +31,10 @@ import { OpenAIService } from '@/services/openAi'
 import { generateMindMapStructure } from '@/services/openAiFns'
 
 import '@xyflow/react/dist/style.css'
+
+// Use ReactFlow's built-in types
+type ReactFlowNode = Node<{ label: string }>
+type ReactFlowEdge = Edge
 
 const NODE_STYLES = {
   input: {
@@ -59,7 +66,7 @@ const reactFlowStyles: React.CSSProperties = {
   background: '#1f2937',
 }
 
-const getLayoutedElements = (nodes, edges, direction = 'TB') => {
+const getLayoutedElements = (nodes: ReactFlowNode[], edges: ReactFlowEdge[], direction: string = 'TB') => {
   const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}))
   g.setGraph({
     rankdir: direction,
@@ -69,14 +76,14 @@ const getLayoutedElements = (nodes, edges, direction = 'TB') => {
     marginy: 20,
   })
 
-  edges.forEach(edge => g.setEdge(edge.source, edge.target))
-  nodes.forEach(node => {
+  edges.forEach((edge: ReactFlowEdge) => g.setEdge(edge.source, edge.target))
+  nodes.forEach((node: ReactFlowNode) => {
     g.setNode(node.id, { width: 150, height: 40 })
   })
 
   Dagre.layout(g)
 
-  const layoutedNodes = nodes.map(node => {
+  const layoutedNodes = nodes.map((node: ReactFlowNode) => {
     const nodeWithPosition = g.node(node.id)
     return {
       ...node,
@@ -93,21 +100,26 @@ const getLayoutedElements = (nodes, edges, direction = 'TB') => {
   }
 }
 
-const MindMapInner = props => {
-  const { markdown } = props
+interface MindMapInnerProps {
+  markdown: string;
+}
+
+const MindMapInner: React.FC<MindMapInnerProps> = ({ markdown }) => {
   const { nodes: ogNodes, edges: ogEdges } = JSON.parse(markdown)
 
-  const [nodes, setNodes, onNodesChange] = useNodesState([])
-  const [edges, setEdges, onEdgesChange] = useEdgesState([])
-  const [error, setError] = useState(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [initialized, setInitialized] = useState(false)
-  const [selectedNode, setSelectedNode] = useState(null)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [editLabel, setEditLabel] = useState('')
+  const [nodes, setNodes, onNodesChange] = useNodesState<ReactFlowNode>([])
+  const [edges, setEdges, onEdgesChange] = useEdgesState<ReactFlowEdge>([])
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [initialized, setInitialized] = useState<boolean>(false)
+  const [selectedNode, setSelectedNode] = useState<ReactFlowNode | null>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState<boolean>(false)
+  const [editLabel, setEditLabel] = useState<string>('')
 
-  const { oAiKey } = useAuthState()
-  const [apiClient, setApiClient] = useState(null)
+  const authState = useAuthState()
+  // TODO: Get OpenAI key from proper source
+  const oAiKey = import.meta.env.VITE_OPENAI_API_KEY || null
+  const [apiClient, setApiClient] = useState<OpenAIService | null>(null)
   const {
     fitView,
     getNode,
@@ -119,7 +131,7 @@ const MindMapInner = props => {
   } = useReactFlow()
 
   const onConnect = useCallback(
-    connection => {
+    (connection: Connection) => {
       const newEdge = {
         ...connection,
         animated: true,
@@ -131,7 +143,7 @@ const MindMapInner = props => {
     [setEdges]
   )
 
-  const onNodeClick = useCallback((event, node) => {
+  const onNodeClick = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
     setSelectedNode(node)
   }, [])
 
@@ -250,21 +262,21 @@ const MindMapInner = props => {
 
   // Initialize the mind map (once)
   useEffect(() => {
-    if (!props || initialized) return
+    if (!markdown || initialized) return
 
     setError(null)
     setIsLoading(true)
 
     try {
-      const styledNodes = ogNodes.map(node => ({
+      const styledNodes = ogNodes.map((node: { type?: string; [key: string]: unknown }) => ({
         ...node,
         style: {
           ...NODE_STYLES.common,
-          ...NODE_STYLES[node.type || 'default'],
+          ...NODE_STYLES[node.type as keyof typeof NODE_STYLES || 'default'],
         },
       }))
 
-      const styledEdges = ogEdges.map(edge => ({
+      const styledEdges = ogEdges.map((edge: Record<string, unknown>) => ({
         ...edge,
         animated: true,
         markerEnd: { type: MarkerType.ArrowClosed },
@@ -283,7 +295,7 @@ const MindMapInner = props => {
       console.error(err)
       setIsLoading(false)
     }
-  }, [props, initialized, fitView, setNodes, setEdges])
+  }, [markdown, initialized, fitView, setNodes, setEdges])
 
   // Fix for the React Flow container size issue
   const rfWrapper: React.CSSProperties = {
@@ -408,7 +420,7 @@ const MindMapInner = props => {
   )
 }
 
-const MindMap = props => {
+const MindMap: React.FC<MindMapInnerProps> = (props) => {
   const rfWrapper: React.CSSProperties = {
     width: '100%',
     height: 'calc(100vh - 200px)', // Adjust for header and padding

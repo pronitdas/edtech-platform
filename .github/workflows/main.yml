@@ -1,0 +1,56 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install Python dependencies
+      run: pip install -r requirements.txt
+      working-directory: ./media-uploader
+
+    - name: Install Frontend dependencies
+      run: pnpm install
+      working-directory: ./tardis-ui
+
+    - name: Run Backend tests
+      run: pytest
+      working-directory: ./media-uploader
+
+    - name: Run Frontend tests
+      run: pnpm test
+      working-directory: ./tardis-ui
+
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Deploy to production
+      run: echo "Deploying to production..."
+      # Add your deployment steps here (e.g., Docker build and push, SSH to server, etc.)

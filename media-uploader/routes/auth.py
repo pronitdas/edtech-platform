@@ -1,6 +1,6 @@
+from typing import List, Optional
 import os
 from datetime import datetime, timedelta
-from typing import Optional
 from urllib.parse import urljoin
 from dotenv import load_dotenv
 
@@ -58,10 +58,20 @@ def create_jwt_token(user_id: int, kratos_id: str) -> str:
 
 async def get_current_user(request: Request) -> User:
     """Return current user from request state (attached by JWTMiddleware)."""
+    if not hasattr(request.state, 'user'):
+        raise HTTPException(status_code=401, detail="Not authenticated")
     user = request.state.user
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
     return user
+
+def has_role(roles: List[str]):
+    def role_checker(current_user: User = Depends(get_current_user)):
+        for role in roles:
+            if role in current_user.roles:
+                return True
+        raise HTTPException(status_code=403, detail="Operation forbidden")
+    return role_checker
 
 @router.post(
     "/register",
@@ -473,3 +483,76 @@ async def get_user_profile(current_user: User = Depends(get_current_user)):
         "created_at": current_user.created_at,
         "jwt_expires_at": current_user.jwt_expires_at
     }
+
+@router.post(
+    "/refresh",
+    summary="🔄 Refresh JWT Token",
+    description="""
+    Refresh an expired or soon-to-expire JWT access token.
+    
+    **Process:**
+    1. Client sends current (potentially expired) JWT token.
+    2. Server validates the token (even if expired, for refresh purposes).
+    3. If valid, a new JWT token with extended expiration is issued.
+    
+    **Security:**
+    - Prevents constant re-authentication.
+    - Uses existing token for validation, reducing need for refresh tokens.
+    - New token issued with updated expiration.
+    """,
+    response_description="New JWT token and expiration details",
+    responses={
+        200: {
+            "description": "Token refreshed successfully",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+                        "token_type": "bearer",
+                        "expires_in_minutes": 1440
+                    }
+                }
+            }
+        },
+        401: {
+            "description": "Invalid or expired token for refresh",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "detail": "Could not validate credentials"
+                    }
+                }
+            }
+        }
+    }
+)
+async def refresh_token(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    try:
+        # The JWTMiddleware already handles basic token validation
+        # If we reach here, the token is at least syntactically valid
+        # and potentially expired, which is fine for refresh.
+        if not hasattr(request.state, 'user'):
+            raise HTTPException(status_code=401, detail="Not authenticated")
+        user = request.state.user
+        if not user:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+
+        # Generate a new token
+        new_token = create_jwt_token(user.id, user.kratos_id)
+        
+        # Update user's JWT info in DB
+        user.current_jwt = new_token
+        user.jwt_issued_at = datetime.utcnow()
+        user.jwt_expires_at = datetime.utcnow() + timedelta(minutes=JWT_EXPIRE_MINUTES)
+        db.commit()
+
+        return {
+            "access_token": new_token,
+            "token_type": "bearer",
+            "expires_in_minutes": JWT_EXPIRE_MINUTES
+        }
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Could not validate credentials: {e}")

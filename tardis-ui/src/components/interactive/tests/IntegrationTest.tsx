@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { SlopeDrawing } from '../index'
 import { InteractiveComponentTypes } from '../index'
-import { InteractiveContent } from '@/types/database'
+import { InteractiveContent } from '@/types/api'
 
 /**
  * Integration Test Component for SlopeDrawing with Cognitive Load Management

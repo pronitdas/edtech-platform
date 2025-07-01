@@ -3,9 +3,11 @@
 
 export const knowledgeAnalyticsTestHelpers = {
   async createTestKnowledgeScenario(): Promise<any> {
-    console.warn('Knowledge analytics test helpers disabled - migrate to local API')
+    console.warn(
+      'Knowledge analytics test helpers disabled - migrate to local API'
+    )
     return null
-  }
+  },
 }
 
 /* LEGACY SUPABASE CODE - TODO: MIGRATE TO LOCAL API */

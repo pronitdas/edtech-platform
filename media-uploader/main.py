@@ -25,11 +25,14 @@ from api_routes import router
 from routes.analytics import router as analytics_router
 from routes.auth import router as auth_router
 from routes.media import router as media_router
+from routes.neo4j import router as neo4j_router
 from src.api.v2 import v2_router
+from knowledge_graph import Neo4jGraphService
+from config import redis_client, logger
+import redis
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Initialize Neo4jGraphService
+neo4j_graph_service = Neo4jGraphService()
 
 class JWTMiddleware(BaseHTTPMiddleware):
     """Middleware to validate JWT tokens on protected endpoints."""
@@ -75,15 +78,31 @@ class JWTMiddleware(BaseHTTPMiddleware):
 
     def should_validate_token(self, path: str) -> bool:
         """Check if the endpoint requires JWT validation."""
+        # Public endpoints that don't require authentication
+        public_paths = [
+            "/health",
+            "/",
+            "/docs",
+            "/redoc", 
+            "/openapi.json",
+            "/api/info",
+            "/v2/auth/register",
+            "/v2/auth/login",
+            "/v2/admin/health"
+        ]
+        
+        # Check if path is public
+        if any(path.startswith(prefix) for prefix in public_paths):
+            return False
+            
+        # All V2 endpoints except auth are protected
+        if path.startswith("/v2/"):
+            return True
+            
+        # Legacy protected paths
         protected_paths = [
-            "/analytics",  # All analytics endpoints
-            "/api/protected",  # Future protected endpoints
-            "/v2/media",  # V2 media endpoints
-            "/v2/llm",  # V2 LLM endpoints
-            "/v2/knowledge",  # V2 knowledge endpoints
-            "/v2/chapters",  # V2 chapters endpoints
-            "/v2/content",  # V2 content endpoints
-            "/v2/analytics"  # V2 analytics endpoints
+            "/analytics",
+            "/api/protected"
         ]
         return any(path.startswith(prefix) for prefix in protected_paths)
 
@@ -156,6 +175,10 @@ app = FastAPI(
         {
             "name": "Content Generation",
             "description": "AI-powered content creation and chapter generation",
+        },
+        {
+            "name": "Neo4j Graph",
+            "description": "Endpoints for interacting with the Neo4j knowledge graph",
         }
     ],
     docs_url="/docs",
@@ -205,7 +228,9 @@ async def health_check():
         "version": "2.0.0",
         "timestamp": datetime.utcnow().isoformat(),
         "components": {
-            "database": "connected",
+            "database": "skipped",
+            "redis": "skipped",
+            "neo4j": "skipped",
             "storage": "available", 
             "queue": "running"
         }

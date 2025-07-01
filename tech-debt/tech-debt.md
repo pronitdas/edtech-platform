@@ -1,5 +1,62 @@
 # Tech Debt Items
 
+## 🚨 CRITICAL: Production Readiness Gaps (Added 2025-06-29)
+
+### Frontend Build Failures
+- **Issue**: 592 TypeScript errors preventing compilation
+- **Root Cause**: Incomplete Supabase migration, missing type definitions, broken imports
+- **Impact**: Application cannot be deployed to production
+- **Files Affected**: 103 files with errors across components, hooks, services
+- **Priority**: P0 - Blocks everything
+- **Action Items**:
+  - Fix all TypeScript errors systematically
+  - Add missing type definitions (@types/p5, etc.)
+  - Remove dead code from services.backup/
+  - Update all imports to use new service implementations
+
+### Backend Test Infrastructure Broken
+- **Issue**: Test suite cannot run due to import errors
+- **Root Cause**: `conftest.py` imports Base from wrong module
+- **Impact**: Cannot verify backend functionality, 0% test coverage
+- **Priority**: P0 - Critical for quality assurance
+- **Action Items**:
+  - Fix import to use `from models import Base`
+  - Setup proper test database configuration
+  - Add integration tests for all endpoints
+  - Implement E2E test suite
+
+### Missing Core Implementations
+- **Neo4j Integration**: Listed in docker-compose but NO implementation code exists
+- **WebSocket**: Marked as "IMPLEMENTED" but actually missing
+- **Real-time Updates**: Frontend hooks exist but no backend support
+- **Priority**: P0 - Core features don't work
+- **Action Items**:
+  - Implement Neo4j service layer with proper abstraction
+  - Add WebSocket manager using Redis pub/sub
+  - Create integration tests for real-time features
+  - Update documentation to reflect actual state
+
+### Docker/Infrastructure Issues
+- **Current State**: Basic Dockerfile with 5GB+ image size
+- **Missing**: Multi-stage builds, security hardening, production configs
+- **Impact**: Slow deployments, security vulnerabilities, resource waste
+- **Priority**: P1 - Important for production
+- **Action Items**:
+  - Implement multi-stage Dockerfile
+  - Add health checks for all services
+  - Create separate dev/prod configurations
+  - Implement proper secrets management
+
+### Security Vulnerabilities
+- **Issues**: No input validation, missing rate limiting, incomplete JWT, improper CORS
+- **Impact**: Major security risks for user data and system integrity
+- **Priority**: P0 - Critical security gaps
+- **Action Items**:
+  - Add input validation middleware
+  - Implement rate limiting with Redis
+  - Complete JWT refresh token flow
+  - Configure CORS properly for production
+
 ## Redundant GraphCanvas Implementations and Related Issues
 
 - **Redundancy**: There are two separate `GraphCanvas.tsx` files (`tardis-ui/src/components/GraphCanvas.tsx` and `tardis-ui/src/components/interactive/slope/components/GraphCanvas.tsx`). This leads to code duplication, maintenance overhead, and potential for inconsistent behavior or bug fixes.
@@ -81,3 +138,38 @@ classDiagram
 
 ## Recommended Solution
 Solution 2 (Composition and Strategy Pattern) is the recommended solution because it promotes modularity, extensibility, and testability, which are crucial for long-term maintainability and scalability of the `GraphCanvas` component.
+
+## Updated Priorities (2025-06-29)
+
+### P0 - Critical (Must fix before production)
+1. Frontend build failures (592 errors)
+2. Backend test suite broken
+3. Missing Neo4j implementation
+4. Missing WebSocket implementation
+5. Security vulnerabilities
+
+### P1 - Important (Should fix soon)
+1. Docker optimization
+2. Database performance and migrations
+3. Monitoring and observability
+4. API design standardization
+
+### P2 - Technical Debt (Plan to fix)
+1. GraphCanvas redundancy
+2. Code quality issues
+3. Documentation gaps
+4. Performance optimizations
+
+## Tracking Metrics
+- **Build Success Rate**: 0% (frontend), 100% (backend)
+- **Test Coverage**: 0% (actual), claimed 100%
+- **Security Score**: 2/10 (critical gaps)
+- **Production Readiness**: 25% overall
+
+## Next Steps
+1. **Week 1**: Fix all P0 build and test issues
+2. **Week 2**: Implement missing core features
+3. **Week 3**: Security hardening and infrastructure
+4. **Week 4**: Testing and monitoring setup
+
+*Last Updated: 2025-06-29 - Major technical debt discovered during production readiness assessment*

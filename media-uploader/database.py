@@ -37,66 +37,30 @@ class DatabaseManager:
         """Initialize the database manager with SQLAlchemy."""
         self.engine = create_engine(db_url)
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
-
-    def get_db(self):
-        """Get database session."""
-        db = self.SessionLocal()
-        try:
-            return db
-        finally:
-            db.close()
             
-    def get_knowledge(self, knowledge_id: int) -> Dict:
+    def get_knowledge(self, knowledge_id: int) -> Knowledge:
         """Get a knowledge entry by ID."""
         try:
-            with self.get_db() as db:
+            with SessionLocal() as db:
                 knowledge = db.query(Knowledge).filter(Knowledge.id == knowledge_id).first()
                 if not knowledge:
                     raise ValueError(f"Knowledge entry {knowledge_id} not found")
-                return {
-                    "id": knowledge.id,
-                    "name": knowledge.name,
-                    "status": knowledge.status,
-                    "content_type": knowledge.content_type,
-                    "difficulty_level": knowledge.difficulty_level,
-                    "target_audience": knowledge.target_audience,
-                    "prerequisites": knowledge.prerequisites,
-                    "summary": knowledge.summary,
-                    "video_url": knowledge.video_url,
-                    "has_transcript": knowledge.has_transcript,
-                    "meta_data": knowledge.meta_data,
-                    "retry_count": knowledge.retry_count,
-                    "seeded": knowledge.seeded
-                }
+                return knowledge
         except Exception as e:
             logger.error(f"Error getting knowledge {knowledge_id}: {str(e)}")
             raise
             
-    def get_unseeded_knowledge(self, knowledge_id: int) -> Dict:
+    def get_unseeded_knowledge(self, knowledge_id: int) -> Knowledge:
         """Get an unseeded knowledge entry by ID."""
         try:
-            with self.get_db() as db:
+            with SessionLocal() as db:
                 knowledge = db.query(Knowledge).filter(
                     Knowledge.id == knowledge_id,
                     Knowledge.seeded == False
                 ).first()
                 if not knowledge:
                     raise ValueError(f"Unseeded knowledge entry {knowledge_id} not found")
-                return {
-                    "id": knowledge.id,
-                    "name": knowledge.name,
-                    "status": knowledge.status,
-                    "content_type": knowledge.content_type,
-                    "difficulty_level": knowledge.difficulty_level,
-                    "target_audience": knowledge.target_audience,
-                    "prerequisites": knowledge.prerequisites,
-                    "summary": knowledge.summary,
-                    "video_url": knowledge.video_url,
-                    "has_transcript": knowledge.has_transcript,
-                    "meta_data": knowledge.meta_data,
-                    "retry_count": knowledge.retry_count,
-                    "seeded": knowledge.seeded
-                }
+                return knowledge
         except Exception as e:
             logger.error(f"Error getting unseeded knowledge {knowledge_id}: {str(e)}")
             raise
@@ -104,7 +68,7 @@ class DatabaseManager:
     def update_knowledge_status(self, knowledge_id: int, status: str, metadata: Optional[Dict] = None) -> None:
         """Update knowledge status and metadata."""
         try:
-            with self.get_db() as db:
+            with SessionLocal() as db:
                 knowledge = db.query(Knowledge).filter(Knowledge.id == knowledge_id).first()
                 if not knowledge:
                     raise ValueError(f"Knowledge entry {knowledge_id} not found")
@@ -119,7 +83,7 @@ class DatabaseManager:
     def insert_chapters(self, knowledge_id: int, chapters: List[Dict]) -> None:
         """Insert chapters into the database."""
         try:
-            with self.get_db() as db:
+            with SessionLocal() as db:
                 chapter_objects = [
                     Chapter(
                         knowledge_id=knowledge_id,
@@ -137,7 +101,7 @@ class DatabaseManager:
     def update_retry_info(self, knowledge_id: int, retry_count: int) -> None:
         """Update retry information for a knowledge entry."""
         try:
-            with self.get_db() as db:
+            with SessionLocal() as db:
                 knowledge = db.query(Knowledge).filter(Knowledge.id == knowledge_id).first()
                 if not knowledge:
                     raise ValueError(f"Knowledge entry {knowledge_id} not found")
@@ -147,23 +111,12 @@ class DatabaseManager:
             logger.error(f"Error updating retry info: {str(e)}")
             raise
             
-    def get_retry_history(self, knowledge_id: int) -> List[Dict]:
+    def get_retry_history(self, knowledge_id: int) -> List[RetryHistory]:
         """Get retry history for a knowledge entry."""
         try:
-            with self.get_db() as db:
-                history = db.query(RetryHistory)\
-                    .filter(RetryHistory.knowledge_id == knowledge_id)\
-                    .order_by(RetryHistory.created_at.desc())\
-                    .all()
-                return [
-                    {
-                        "id": entry.id,
-                        "knowledge_id": entry.knowledge_id,
-                        "status": entry.status,
-                        "error": entry.error,
-                        "created_at": entry.created_at
-                    } for entry in history
-                ]
+            with SessionLocal() as db:
+                history = db.query(RetryHistory).filter(RetryHistory.knowledge_id == knowledge_id).order_by(RetryHistory.created_at.desc()).all()
+                return history
         except Exception as e:
             logger.error(f"Error getting retry history: {str(e)}")
             raise
@@ -171,7 +124,7 @@ class DatabaseManager:
     def add_retry_history(self, knowledge_id: int, status: str, error: Optional[str] = None) -> None:
         """Add a retry history entry."""
         try:
-            with self.get_db() as db:
+            with SessionLocal() as db:
                 retry_entry = RetryHistory(
                     knowledge_id=knowledge_id,
                     status=status,
@@ -184,22 +137,15 @@ class DatabaseManager:
             logger.error(f"Error adding retry history: {str(e)}")
             # Don't raise here to avoid breaking the main process
             
-    def get_chapter_data(self, knowledge_id: int, chapter_id: Optional[str] = None) -> List[Dict]:
+    def get_chapter_data(self, knowledge_id: int, chapter_id: Optional[str] = None) -> List[Chapter]:
         """Get chapter data from the chapters_v1 table."""
         try:
-            with self.get_db() as db:
+            with SessionLocal() as db:
                 query = db.query(Chapter).filter(Chapter.knowledge_id == knowledge_id)
                 if chapter_id:
                     query = query.filter(Chapter.id == chapter_id)
                 chapters = query.all()
-                return [
-                    {
-                        "id": chapter.id,
-                        "knowledge_id": chapter.knowledge_id,
-                        "content": chapter.content,
-                        "meta_data": chapter.meta_data
-                    } for chapter in chapters
-                ]
+                return chapters
         except Exception as e:
             logger.error(f"Error getting chapter data: {str(e)}")
             raise
@@ -207,7 +153,7 @@ class DatabaseManager:
     def update_knowledge_metadata(self, knowledge_id: int, metadata: Dict[str, Any]) -> None:
         """Update knowledge metadata fields directly."""
         try:
-            with self.get_db() as db:
+            with SessionLocal() as db:
                 knowledge = db.query(Knowledge).filter(Knowledge.id == knowledge_id).first()
                 if not knowledge:
                     raise ValueError(f"Knowledge entry {knowledge_id} not found")
@@ -222,7 +168,7 @@ class DatabaseManager:
     def update_knowledge_type(self, knowledge_id: int, content_type: str) -> None:
         """Update the content type of a knowledge entry."""
         try:
-            with self.get_db() as db:
+            with SessionLocal() as db:
                 knowledge = db.query(Knowledge).filter(Knowledge.id == knowledge_id).first()
                 if not knowledge:
                     raise ValueError(f"Knowledge entry {knowledge_id} not found")
@@ -249,10 +195,10 @@ class DatabaseManager:
             logger.error(f"Error uploading image {img_filename}: {str(e)}")
             raise
             
-    def get_edtech_content(self, chapter_id: str, language: str) -> Optional[Dict]:
+    def get_edtech_content(self, chapter_id: str, language: str) -> Optional[EdTechContent]:
         """Get educational content for a specific chapter and language."""
         try:
-            with self.get_db() as db:
+            with SessionLocal() as db:
                 content = db.query(EdTechContent).filter(
                     EdTechContent.chapter_id == chapter_id,
                     EdTechContent.language == language
@@ -261,19 +207,7 @@ class DatabaseManager:
                 if not content:
                     return None
                     
-                return {
-                    "id": content.id,
-                    "knowledge_id": content.knowledge_id,
-                    "chapter_id": content.chapter_id,
-                    "language": content.language,
-                    "notes": content.notes,
-                    "summary": content.summary,
-                    "quiz": content.quiz,
-                    "mindmap": content.mindmap,
-                    "meta_data": content.meta_data,
-                    "created_at": content.created_at,
-                    "updated_at": content.updated_at
-                }
+                return content
         except Exception as e:
             logger.error(f"Error getting edtech content: {str(e)}")
             raise
@@ -281,7 +215,7 @@ class DatabaseManager:
     def update_edtech_content(self, chapter_id: str, language: str, content_data: Dict[str, Any]) -> None:
         """Update or create educational content for a specific chapter and language."""
         try:
-            with self.get_db() as db:
+            with SessionLocal() as db:
                 content = db.query(EdTechContent).filter(
                     EdTechContent.chapter_id == chapter_id,
                     EdTechContent.language == language
@@ -306,36 +240,24 @@ class DatabaseManager:
             logger.error(f"Error updating edtech content: {str(e)}")
             raise
             
-    def get_edtech_content_by_knowledge(self, knowledge_id: int, language: str) -> List[Dict]:
+    def get_edtech_content_by_knowledge(self, knowledge_id: int, language: str) -> List[EdTechContent]:
         """Get all educational content for a knowledge entry in a specific language."""
         try:
-            with self.get_db() as db:
+            with SessionLocal() as db:
                 contents = db.query(EdTechContent).filter(
                     EdTechContent.knowledge_id == knowledge_id,
                     EdTechContent.language == language
                 ).all()
                 
-                return [{
-                    "id": content.id,
-                    "knowledge_id": content.knowledge_id,
-                    "chapter_id": content.chapter_id,
-                    "language": content.language,
-                    "notes": content.notes,
-                    "summary": content.summary,
-                    "quiz": content.quiz,
-                    "mindmap": content.mindmap,
-                    "meta_data": content.meta_data,
-                    "created_at": content.created_at,
-                    "updated_at": content.updated_at
-                } for content in contents]
+                return contents
         except Exception as e:
             logger.error(f"Error getting edtech content by knowledge: {str(e)}")
             raise
 
-    def create_knowledge(self, name: str, **kwargs) -> int:
+    def create_knowledge(self, name: str, **kwargs) -> Knowledge:
         """Create a new knowledge entry and return its ID."""
         try:
-            with self.get_db() as db:
+            with SessionLocal() as db:
                 knowledge = Knowledge(
                     name=name,
                     status=kwargs.get('status', 'pending'),
@@ -353,7 +275,7 @@ class DatabaseManager:
                 db.add(knowledge)
                 db.commit()
                 db.refresh(knowledge)
-                return knowledge.id
+                return knowledge
         except Exception as e:
             logger.error(f"Error creating knowledge: {str(e)}")
             raise
@@ -361,10 +283,10 @@ class DatabaseManager:
     def add_media_file(self, knowledge_id: int, filename: str, original_filename: str, 
                       content_type: str, file_size: int, file_path: str, 
                       bucket_name: str, uploaded_by: Optional[int] = None, 
-                      meta_data: Optional[Dict] = None) -> int:
+                      meta_data: Optional[Dict] = None) -> Media:
         """Add a media file record and return its ID."""
         try:
-            with self.get_db() as db:
+            with SessionLocal() as db:
                 media = Media(
                     knowledge_id=knowledge_id,
                     filename=filename,
@@ -380,33 +302,17 @@ class DatabaseManager:
                 db.add(media)
                 db.commit()
                 db.refresh(media)
-                return media.id
+                return media
         except Exception as e:
             logger.error(f"Error adding media file: {str(e)}")
             raise
 
-    def get_knowledge_media_files(self, knowledge_id: int) -> List[Dict]:
+    def get_knowledge_media_files(self, knowledge_id: int) -> List[Media]:
         """Get all media files for a knowledge entry."""
         try:
-            with self.get_db() as db:
+            with SessionLocal() as db:
                 media_files = db.query(Media).filter(Media.knowledge_id == knowledge_id).all()
-                return [
-                    {
-                        "id": media.id,
-                        "filename": media.filename,
-                        "original_filename": media.original_filename,
-                        "content_type": media.content_type,
-                        "file_size": media.file_size,
-                        "file_path": media.file_path,
-                        "bucket_name": media.bucket_name,
-                        "upload_status": media.upload_status,
-                        "error_message": media.error_message,
-                        "meta_data": media.meta_data,
-                        "uploaded_by": media.uploaded_by,
-                        "created_at": media.created_at,
-                        "updated_at": media.updated_at
-                    } for media in media_files
-                ]
+                return media_files
         except Exception as e:
             logger.error(f"Error getting media files for knowledge {knowledge_id}: {str(e)}")
             raise
@@ -414,7 +320,7 @@ class DatabaseManager:
     def update_media_status(self, media_id: int, status: str, error_message: Optional[str] = None) -> None:
         """Update media file upload status."""
         try:
-            with self.get_db() as db:
+            with SessionLocal() as db:
                 media = db.query(Media).filter(Media.id == media_id).first()
                 if not media:
                     raise ValueError(f"Media file {media_id} not found")

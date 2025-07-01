@@ -11,8 +11,8 @@ const mockResponses: MockResponses = {
       id: 'mock_user_123',
       email: 'user@example.com',
       name: 'John Doe',
-      created_at: new Date().toISOString()
-    }
+      created_at: new Date().toISOString(),
+    },
   },
   'POST:/v2/auth/register': {
     token: 'mock_token_' + Date.now(),
@@ -20,21 +20,21 @@ const mockResponses: MockResponses = {
       id: 'mock_user_' + Math.random().toString(36).substr(2, 9),
       email: 'newuser@example.com',
       name: 'New User',
-      created_at: new Date().toISOString()
-    }
+      created_at: new Date().toISOString(),
+    },
   },
   'POST:/v2/auth/logout': { success: true },
   'GET:/v2/auth/profile': {
     id: 'mock_user_123',
     email: 'user@example.com',
     name: 'John Doe',
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
   },
   'PUT:/v2/auth/profile': {
     id: 'mock_user_123',
     email: 'user@example.com',
     name: 'Updated Name',
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
   },
 
   // Knowledge endpoints
@@ -44,29 +44,29 @@ const mockResponses: MockResponses = {
       title: 'Sample Knowledge Base 1',
       description: 'A sample knowledge base for testing',
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     },
     {
       id: 'knowledge_2',
       title: 'Sample Knowledge Base 2',
       description: 'Another sample knowledge base',
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
+      updated_at: new Date().toISOString(),
+    },
   ],
   'GET:/v2/knowledge/([^/]+)': {
     id: 'knowledge_1',
     title: 'Sample Knowledge Base',
     description: 'A sample knowledge base for testing',
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
   },
   'POST:/v2/knowledge': {
     id: 'knowledge_' + Math.random().toString(36).substr(2, 9),
     title: 'New Knowledge Base',
     description: 'A newly created knowledge base',
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
   },
   'DELETE:/v2/knowledge/([^/]+)': { success: true },
 
@@ -76,21 +76,21 @@ const mockResponses: MockResponses = {
       id: 'chapter_1',
       title: 'Introduction',
       content: 'This is the introduction chapter...',
-      order: 1
+      order: 1,
     },
     {
       id: 'chapter_2',
       title: 'Getting Started',
       content: 'This chapter covers the basics...',
-      order: 2
-    }
+      order: 2,
+    },
   ],
   'PUT:/v2/chapters/([^/]+)/([^/]+)': {
     id: 'chapter_1',
     title: 'Updated Chapter',
     content: 'Updated content...',
-    order: 1
-  }
+    order: 1,
+  },
 }
 
 class ApiClient {
@@ -100,7 +100,8 @@ class ApiClient {
   constructor() {
     this.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
     // Check for sandbox mode from environment variable or localStorage
-    this.sandboxMode = import.meta.env.VITE_SANDBOX_MODE === 'true' ||
+    this.sandboxMode =
+      import.meta.env.VITE_SANDBOX_MODE === 'true' ||
       localStorage.getItem('api_sandbox_mode') === 'true'
   }
 
@@ -141,7 +142,7 @@ class ApiClient {
     return {
       success: true,
       message: 'Mock response',
-      data: null
+      data: null,
     } as unknown as T
   }
 
@@ -269,8 +270,8 @@ class ApiClient {
         close: () => {
           console.log(`[SANDBOX] WebSocket closed`)
         },
-        addEventListener: () => { },
-        removeEventListener: () => { },
+        addEventListener: () => {},
+        removeEventListener: () => {},
         dispatchEvent: () => false,
         binaryType: 'blob',
         bufferedAmount: 0,

@@ -28,7 +28,7 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 
-const CustomNode = ({ data }) => (
+const CustomNode = ({ data }: { data: any }) => (
   <>
     <Handle type='target' position={Position.Top} />
     <div
@@ -41,7 +41,7 @@ const CustomNode = ({ data }) => (
     <Handle type='source' position={Position.Bottom} id='b' />
   </>
 )
-const CustomEdge = ({ id, sourceX, sourceY, targetX, targetY }) => {
+const CustomEdge = ({ id, sourceX, sourceY, targetX, targetY }: { id: string; sourceX: number; sourceY: number; targetX: number; targetY: number }) => {
   const [edgePath] = getStraightPath({
     sourceX,
     sourceY,
@@ -255,7 +255,7 @@ function FlowDiagram() {
   const [nodes, setNodes] = useState(initialNodes)
   const [edges, setEdges] = useState(initialEdges)
   const onConnect = useCallback(
-    params => setEdges(eds => addEdge(params, eds)),
+    (params: any) => setEdges(eds => addEdge(params, eds)),
     [setEdges]
   )
 
@@ -263,11 +263,11 @@ function FlowDiagram() {
     setSequence(e.target.value)
   }
   const onNodesChange = useCallback(
-    changes => setNodes(nds => applyNodeChanges(changes, nds)),
+    (changes: any) => setNodes(nds => applyNodeChanges(changes, nds)),
     []
   )
   const onEdgesChange = useCallback(
-    changes => setEdges(eds => applyEdgeChanges(changes, eds)),
+    (changes: any) => setEdges(eds => applyEdgeChanges(changes, eds)),
     []
   )
   const resetNodes = useCallback(() => {

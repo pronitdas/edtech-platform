@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react'
-import * as math from 'mathjs'
+// import * as math from 'mathjs' // TODO: Install mathjs or use native Math
 
 const DividendGrowthCalculator = () => {
   const [initialDividend, setInitialDividend] = useState(1.0)
   const [growthRate, setGrowthRate] = useState(7)
   const [years, setYears] = useState(10)
-  const canvasRef = useRef(null)
-  const canvasContainerRef = useRef(null)
+  const canvasRef = useRef<{ remove(): void; updateVis?(): void } | null>(null)
+  const canvasContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     // Only run this effect when the component mounts
@@ -20,8 +20,8 @@ const DividendGrowthCalculator = () => {
 
       script.onload = () => {
         // Initialize MathJax after it's loaded
-        if (window.MathJax) {
-          window.MathJax.Hub.Queue(['Typeset', window.MathJax.Hub])
+        if ((window as any).MathJax) {
+          (window as any).MathJax.Hub.Queue(['Typeset', (window as any).MathJax.Hub])
         }
       }
 
@@ -35,7 +35,7 @@ const DividendGrowthCalculator = () => {
   useEffect(() => {
     if (!canvasContainerRef.current) return
 
-    const sketch = p => {
+    const sketch = (p: any) => { // TODO: Install p5.js types
       const paddingLeft = 80
       const paddingRight = 50
       const paddingTop = 50
@@ -135,13 +135,17 @@ const DividendGrowthCalculator = () => {
       p.updateVis = updateVisualization
     }
 
-    // Load p5.js
-    import('https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js').then(
-      module => {
-        const p5 = module.default
-        canvasRef.current = new p5(sketch)
-      }
-    )
+    // TODO: Install p5.js properly with: npm install p5 @types/p5
+    // For now, check if p5 is available on window
+    interface P5Constructor {
+      new (sketch: (p: unknown) => void): { remove(): void; updateVis?(): void }
+    }
+    
+    const p5 = (window as any).p5 as P5Constructor | undefined
+    if (p5) {
+      const instance = new p5(sketch)
+      canvasRef.current = instance
+    }
 
     return () => {
       // Clean up p5 instance when component unmounts
@@ -153,7 +157,7 @@ const DividendGrowthCalculator = () => {
 
   // Update visualization when inputs change
   useEffect(() => {
-    if (canvasRef.current && canvasRef.current.updateVis) {
+    if (canvasRef.current?.updateVis) {
       canvasRef.current.updateVis()
     }
   }, [initialDividend, growthRate, years])

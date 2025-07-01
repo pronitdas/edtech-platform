@@ -93,7 +93,7 @@ const GameificationPanel: React.FC<GameificationPanelProps> = ({
       xp: 100,
     },
   ])
-  
+
   const [streak, setStreak] = useState(0)
   const [sessionTime, setSessionTime] = useState(0)
 
@@ -106,7 +106,7 @@ const GameificationPanel: React.FC<GameificationPanelProps> = ({
       medium: 1.5,
       hard: 2,
     }[userProgress.difficulty]
-    
+
     const calculatedXP = Math.floor(baseXP * difficultyBonus)
     setXp(calculatedXP)
     setLevel(Math.floor(calculatedXP / 100) + 1)
@@ -122,87 +122,102 @@ const GameificationPanel: React.FC<GameificationPanelProps> = ({
 
   // Update achievements based on progress
   useEffect(() => {
-    setAchievements(prev => prev.map(achievement => {
-      let newProgress = achievement.progress
-      let unlocked = achievement.unlocked
+    setAchievements(prev =>
+      prev.map(achievement => {
+        let newProgress = achievement.progress
+        let unlocked = achievement.unlocked
 
-      switch (achievement.id) {
-        case 'first_problem':
-          newProgress = userProgress.correct > 0 ? 1 : 0
-          break
-        case 'streak_master':
-          newProgress = Math.min(userProgress.streakCount, achievement.maxProgress)
-          break
-        case 'speed_demon':
-          // This would be triggered from parent component when a fast solve occurs
-          break
-        case 'perfectionist':
-          newProgress = cognitiveState.errorCount === 0 ? userProgress.correct : 0
-          break
-        case 'persistent_learner':
-          newProgress = Math.min(sessionTime, achievement.maxProgress)
-          break
-      }
+        switch (achievement.id) {
+          case 'first_problem':
+            newProgress = userProgress.correct > 0 ? 1 : 0
+            break
+          case 'streak_master':
+            newProgress = Math.min(
+              userProgress.streakCount,
+              achievement.maxProgress
+            )
+            break
+          case 'speed_demon':
+            // This would be triggered from parent component when a fast solve occurs
+            break
+          case 'perfectionist':
+            newProgress =
+              cognitiveState.errorCount === 0 ? userProgress.correct : 0
+            break
+          case 'persistent_learner':
+            newProgress = Math.min(sessionTime, achievement.maxProgress)
+            break
+        }
 
-      if (newProgress >= achievement.maxProgress && !unlocked) {
-        unlocked = true
-        onAchievementUnlocked({ ...achievement, unlocked: true, progress: newProgress })
-      }
+        if (newProgress >= achievement.maxProgress && !unlocked) {
+          unlocked = true
+          onAchievementUnlocked({
+            ...achievement,
+            unlocked: true,
+            progress: newProgress,
+          })
+        }
 
-      return { ...achievement, progress: newProgress, unlocked }
-    }))
+        return { ...achievement, progress: newProgress, unlocked }
+      })
+    )
   }, [userProgress, cognitiveState, sessionTime, onAchievementUnlocked])
 
   const getRarityColor = (rarity: string) => {
     switch (rarity) {
-      case 'common': return 'from-gray-500 to-gray-600'
-      case 'rare': return 'from-blue-500 to-blue-600'
-      case 'epic': return 'from-purple-500 to-purple-600'
-      case 'legendary': return 'from-yellow-500 to-orange-500'
-      default: return 'from-gray-500 to-gray-600'
+      case 'common':
+        return 'from-gray-500 to-gray-600'
+      case 'rare':
+        return 'from-blue-500 to-blue-600'
+      case 'epic':
+        return 'from-purple-500 to-purple-600'
+      case 'legendary':
+        return 'from-yellow-500 to-orange-500'
+      default:
+        return 'from-gray-500 to-gray-600'
     }
   }
 
-  const xpToNextLevel = (level * 100) - xp
+  const xpToNextLevel = level * 100 - xp
   const xpProgress = (xp % 100) / 100
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       {/* Player Status */}
-      <div className="p-4 rounded-xl backdrop-blur-xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-purple-400/30">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
-              <Crown className="w-6 h-6 text-white" />
+      <div className='rounded-xl border border-purple-400/30 bg-gradient-to-br from-purple-500/20 to-cyan-500/20 p-4 backdrop-blur-xl'>
+        <div className='mb-4 flex items-center justify-between'>
+          <div className='flex items-center space-x-3'>
+            <div className='flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-orange-500'>
+              <Crown className='h-6 w-6 text-white' />
             </div>
             <div>
-              <h3 className="text-white font-bold text-lg">Level {level}</h3>
-              <p className="text-gray-300 text-sm">{xp} XP</p>
+              <h3 className='text-lg font-bold text-white'>Level {level}</h3>
+              <p className='text-sm text-gray-300'>{xp} XP</p>
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-cyan-400 text-sm font-medium">Next Level</div>
-            <div className="text-white text-sm">{xpToNextLevel} XP</div>
+          <div className='text-right'>
+            <div className='text-sm font-medium text-cyan-400'>Next Level</div>
+            <div className='text-sm text-white'>{xpToNextLevel} XP</div>
           </div>
         </div>
-        
+
         {/* XP Progress Bar */}
-        <div className="w-full bg-black/30 rounded-full h-3 overflow-hidden">
-          <div 
-            className="h-full bg-gradient-to-r from-cyan-400 to-purple-400 transition-all duration-500 ease-out relative"
+        <div className='h-3 w-full overflow-hidden rounded-full bg-black/30'>
+          <div
+            className='relative h-full bg-gradient-to-r from-cyan-400 to-purple-400 transition-all duration-500 ease-out'
             style={{ width: `${xpProgress * 100}%` }}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-pulse" />
+            <div className='absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/20 to-transparent' />
           </div>
         </div>
       </div>
 
       {/* Current Streak */}
       {userProgress.streakCount > 0 && (
-        <div className="p-3 rounded-lg bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-400/30">
-          <div className="flex items-center space-x-2">
-            <Flame className="w-5 h-5 text-orange-400" />
-            <span className="text-white font-bold">
+        <div className='rounded-lg border border-orange-400/30 bg-gradient-to-r from-orange-500/20 to-red-500/20 p-3'>
+          <div className='flex items-center space-x-2'>
+            <Flame className='h-5 w-5 text-orange-400' />
+            <span className='font-bold text-white'>
               {userProgress.streakCount} Problem Streak! 🔥
             </span>
           </div>
@@ -210,52 +225,63 @@ const GameificationPanel: React.FC<GameificationPanelProps> = ({
       )}
 
       {/* Achievements */}
-      <div className="space-y-3">
-        <h4 className="text-white font-bold flex items-center space-x-2">
-          <Trophy className="w-5 h-5 text-yellow-400" />
+      <div className='space-y-3'>
+        <h4 className='flex items-center space-x-2 font-bold text-white'>
+          <Trophy className='h-5 w-5 text-yellow-400' />
           <span>Achievements</span>
         </h4>
-        
+
         {achievements.map(achievement => {
-          const progressPercent = (achievement.progress / achievement.maxProgress) * 100
-          
+          const progressPercent =
+            (achievement.progress / achievement.maxProgress) * 100
+
           return (
-            <div 
+            <div
               key={achievement.id}
-              className={`p-3 rounded-lg border transition-all duration-300 ${
-                achievement.unlocked 
-                  ? `bg-gradient-to-r ${getRarityColor(achievement.rarity)} border-white/30 shadow-lg` 
-                  : 'bg-white/5 border-white/10 opacity-75'
+              className={`rounded-lg border p-3 transition-all duration-300 ${
+                achievement.unlocked
+                  ? `bg-gradient-to-r ${getRarityColor(achievement.rarity)} border-white/30 shadow-lg`
+                  : 'border-white/10 bg-white/5 opacity-75'
               }`}
             >
-              <div className="flex items-center space-x-3">
-                <div className={`text-2xl ${achievement.unlocked ? 'animate-bounce' : 'grayscale'}`}>
+              <div className='flex items-center space-x-3'>
+                <div
+                  className={`text-2xl ${achievement.unlocked ? 'animate-bounce' : 'grayscale'}`}
+                >
                   {achievement.icon}
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <h5 className="text-white font-medium text-sm">{achievement.title}</h5>
-                    {achievement.unlocked && <Award className="w-4 h-4 text-yellow-400" />}
+                <div className='flex-1'>
+                  <div className='flex items-center justify-between'>
+                    <h5 className='text-sm font-medium text-white'>
+                      {achievement.title}
+                    </h5>
+                    {achievement.unlocked && (
+                      <Award className='h-4 w-4 text-yellow-400' />
+                    )}
                   </div>
-                  <p className="text-gray-300 text-xs">{achievement.description}</p>
-                  
+                  <p className='text-xs text-gray-300'>
+                    {achievement.description}
+                  </p>
+
                   {/* Progress Bar */}
-                  <div className="mt-2 w-full bg-black/30 rounded-full h-2 overflow-hidden">
-                    <div 
+                  <div className='mt-2 h-2 w-full overflow-hidden rounded-full bg-black/30'>
+                    <div
                       className={`h-full transition-all duration-500 ${
-                        achievement.unlocked 
-                          ? 'bg-gradient-to-r from-yellow-400 to-orange-400' 
+                        achievement.unlocked
+                          ? 'bg-gradient-to-r from-yellow-400 to-orange-400'
                           : 'bg-gradient-to-r from-gray-600 to-gray-500'
                       }`}
                       style={{ width: `${progressPercent}%` }}
                     />
                   </div>
-                  
-                  <div className="flex justify-between mt-1">
-                    <span className="text-xs text-gray-400">
+
+                  <div className='mt-1 flex justify-between'>
+                    <span className='text-xs text-gray-400'>
                       {achievement.progress}/{achievement.maxProgress}
                     </span>
-                    <span className="text-xs text-cyan-400">+{achievement.xp} XP</span>
+                    <span className='text-xs text-cyan-400'>
+                      +{achievement.xp} XP
+                    </span>
                   </div>
                 </div>
               </div>
@@ -265,25 +291,30 @@ const GameificationPanel: React.FC<GameificationPanelProps> = ({
       </div>
 
       {/* Learning Stats */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="p-3 rounded-lg bg-white/5 border border-white/10">
-          <div className="flex items-center space-x-2">
-            <Target className="w-4 h-4 text-green-400" />
-            <span className="text-green-400 text-sm font-medium">Accuracy</span>
+      <div className='grid grid-cols-2 gap-3'>
+        <div className='rounded-lg border border-white/10 bg-white/5 p-3'>
+          <div className='flex items-center space-x-2'>
+            <Target className='h-4 w-4 text-green-400' />
+            <span className='text-sm font-medium text-green-400'>Accuracy</span>
           </div>
-          <div className="text-2xl font-bold text-white">
-            {userProgress.correct + userProgress.incorrect > 0 
-              ? Math.round((userProgress.correct / (userProgress.correct + userProgress.incorrect)) * 100)
-              : 0}%
+          <div className='text-2xl font-bold text-white'>
+            {userProgress.correct + userProgress.incorrect > 0
+              ? Math.round(
+                  (userProgress.correct /
+                    (userProgress.correct + userProgress.incorrect)) *
+                    100
+                )
+              : 0}
+            %
           </div>
         </div>
-        
-        <div className="p-3 rounded-lg bg-white/5 border border-white/10">
-          <div className="flex items-center space-x-2">
-            <Zap className="w-4 h-4 text-blue-400" />
-            <span className="text-blue-400 text-sm font-medium">Session</span>
+
+        <div className='rounded-lg border border-white/10 bg-white/5 p-3'>
+          <div className='flex items-center space-x-2'>
+            <Zap className='h-4 w-4 text-blue-400' />
+            <span className='text-sm font-medium text-blue-400'>Session</span>
           </div>
-          <div className="text-2xl font-bold text-white">
+          <div className='text-2xl font-bold text-white'>
             {Math.floor(sessionTime / 60)}m {sessionTime % 60}s
           </div>
         </div>

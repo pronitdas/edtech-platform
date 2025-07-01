@@ -81,7 +81,7 @@ interface InteractionContextState {
   session: {
     id: string | null
     isActive: boolean
-    metadata: Record<string, any>
+    metadata: Record<string, unknown>
   }
   events: {
     pending: InteractionEvent[]
@@ -130,7 +130,7 @@ type ActionType =
       payload: {
         eventType: string
         contentId?: string
-        metadata?: Record<string, any>
+        metadata?: Record<string, unknown>
       }
     }
   | { type: 'SET_EVENTS_PROCESSING'; payload: { events: InteractionEvent[] } }
@@ -192,7 +192,7 @@ const interactionReducer = (
       const newEvent: InteractionEvent = {
         id: generateId(),
         type: action.payload.eventType,
-        contentId: action.payload.contentId,
+        contentId: action.payload.contentId || undefined,
         timestamp: Date.now(),
         metadata: action.payload.metadata || {},
         persisted: false,
@@ -408,7 +408,7 @@ export const InteractionTrackerProvider: React.FC<
       // End the session when the component unmounts if it's active
       if (state.session.id && dataService.endUserSession) {
         console.log(`[InteractionTracker] Ending session: ${state.session.id}`)
-        dataService.endUserSession(state.session.id).catch(error => {
+        dataService.endUserSession(state.session.id).catch((error: unknown) => {
           console.error('[InteractionTracker] Error ending session:', error)
         })
       }
@@ -496,7 +496,7 @@ export const InteractionTrackerProvider: React.FC<
     (
       eventType: string,
       contentId?: number,
-      metadata: Record<string, any> = {}
+      metadata: Record<string, unknown> = {}
     ) => {
       dispatch({
         type: 'ADD_EVENT',

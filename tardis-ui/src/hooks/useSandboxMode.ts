@@ -20,10 +20,16 @@ export const useSandboxMode = (): UseSandboxModeReturn => {
       setIsEnabled(event.detail.enabled)
     }
 
-    window.addEventListener('sandbox-mode-changed', handleSandboxModeChange as EventListener)
+    window.addEventListener(
+      'sandbox-mode-changed',
+      handleSandboxModeChange as EventListener
+    )
 
     return () => {
-      window.removeEventListener('sandbox-mode-changed', handleSandboxModeChange as EventListener)
+      window.removeEventListener(
+        'sandbox-mode-changed',
+        handleSandboxModeChange as EventListener
+      )
     }
   }, [])
 
@@ -36,7 +42,7 @@ export const useSandboxMode = (): UseSandboxModeReturn => {
 
     // Dispatch event for other components
     const event = new CustomEvent('sandbox-mode-changed', {
-      detail: { enabled }
+      detail: { enabled },
     })
     window.dispatchEvent(event)
 

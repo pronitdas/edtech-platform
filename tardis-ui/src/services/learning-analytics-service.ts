@@ -1,5 +1,5 @@
-import { LearningAnalytics } from '@/types/database'
-import { analyticsService } from './analytics'
+import { LearningAnalytics } from '@/types/api'
+import { analyticsService } from './analytics-service'
 
 export interface LearningAnalyticsService {
   generateLearningAnalytics: (
@@ -31,27 +31,31 @@ class LocalLearningAnalyticsService implements LearningAnalyticsService {
       )
 
       // Get user sessions and interactions to generate analytics
-      const sessions = await analyticsService.getUserSessions(userId, {
-        knowledge_id: parseInt(knowledgeId)
-      })
-      
-      const interactions = await analyticsService.getUserInteractions(userId, {
-        knowledge_id: parseInt(knowledgeId)
-      })
+      const sessions = await analyticsService.getUserSessions(userId)
+      const interactions = await analyticsService.getUserInteractions(userId)
 
       // Generate basic analytics based on interactions
       const analytics: LearningAnalytics = {
         user_id: userId,
         knowledge_id: knowledgeId,
-        total_time: sessions.reduce((acc: number, session: any) => acc + (session.duration || 0), 0),
+        total_time: sessions.reduce(
+          (acc: number, session: unknown) => {
+            const sessionData = session as { duration?: number }
+            return acc + (sessionData.duration || 0)
+          },
+          0
+        ),
         engagement_score: this.calculateEngagementScore(interactions),
         understanding_level: this.calculateUnderstandingLevel(interactions),
         completion_rate: this.calculateCompletionRate(interactions),
         last_activity: new Date().toISOString(),
         analytics_data: {
           sessions: sessions.length,
-          interactions: interactions.length
-        }
+          interactions: interactions.length,
+        },
+        strengths: [],
+        weaknesses: [],
+        recommendations: []
       }
 
       return analytics
@@ -77,12 +81,13 @@ class LocalLearningAnalyticsService implements LearningAnalyticsService {
     knowledgeId: string
   ): Promise<number | null> {
     try {
-      const interactions = await analyticsService.getUserInteractions(userId, {
-        knowledge_id: parseInt(knowledgeId)
-      })
+      const interactions = await analyticsService.getKnowledgeInteractions(knowledgeId)
       return this.calculateEngagementScore(interactions)
     } catch (err) {
-      console.error('[LearningAnalyticsService] Failed to get engagement score:', err)
+      console.error(
+        '[LearningAnalyticsService] Failed to get engagement score:',
+        err
+      )
       return null
     }
   }
@@ -92,29 +97,30 @@ class LocalLearningAnalyticsService implements LearningAnalyticsService {
     knowledgeId: string
   ): Promise<string | null> {
     try {
-      const interactions = await analyticsService.getUserInteractions(userId, {
-        knowledge_id: parseInt(knowledgeId)
-      })
+      const interactions = await analyticsService.getKnowledgeInteractions(knowledgeId)
       return this.calculateUnderstandingLevel(interactions)
     } catch (err) {
-      console.error('[LearningAnalyticsService] Failed to get understanding level:', err)
+      console.error(
+        '[LearningAnalyticsService] Failed to get understanding level:',
+        err
+      )
       return null
     }
   }
 
-  private calculateEngagementScore(interactions: any[]): number {
+  private calculateEngagementScore(interactions: unknown[]): number {
     // Simple engagement calculation based on interaction count and types
     return Math.min(100, interactions.length * 10)
   }
 
-  private calculateUnderstandingLevel(interactions: any[]): string {
+  private calculateUnderstandingLevel(interactions: unknown[]): string {
     const score = interactions.length
     if (score > 20) return 'advanced'
     if (score > 10) return 'intermediate'
     return 'beginner'
   }
 
-  private calculateCompletionRate(interactions: any[]): number {
+  private calculateCompletionRate(interactions: unknown[]): number {
     // Simple completion rate calculation
     return Math.min(100, interactions.length * 5)
   }

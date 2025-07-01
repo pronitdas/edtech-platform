@@ -34,12 +34,12 @@ const LiquidationValueCalculator = () => {
     liquidationValues.fixed
 
   // Helper for formatting numbers with commas
-  const formatNumber = num => {
+  const formatNumber = (num: number): string => {
     return new Intl.NumberFormat('en-US').format(Math.round(num))
   }
 
   // Handle slider changes
-  const handleDiscountChange = (type, value) => {
+  const handleDiscountChange = (type: string, value: string | number): void => {
     setDiscounts(prev => ({
       ...prev,
       [type]: Number(value),
@@ -47,13 +47,14 @@ const LiquidationValueCalculator = () => {
   }
 
   // Canvas ref for p5.js sketch
-  const canvasRef = useRef(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
     // This effect runs the p5.js sketch
     if (!canvasRef.current) return
 
     const ctx = canvasRef.current.getContext('2d')
+    if (!ctx) return
     const canvas = canvasRef.current
     const width = canvas.width
     const height = canvas.height
@@ -68,16 +69,16 @@ const LiquidationValueCalculator = () => {
     const y = height - 50
 
     const drawBar = (
-      x,
-      yPos,
-      w,
-      cashVal,
-      arVal,
-      invVal,
-      fixedVal,
-      total,
-      lbl
-    ) => {
+      x: number,
+      yPos: number,
+      w: number,
+      cashVal: number,
+      arVal: number,
+      invVal: number,
+      fixedVal: number,
+      total: number,
+      lbl: string
+    ): void => {
       const scale = maxHeight / total
       let currentY = yPos
 

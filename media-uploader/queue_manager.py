@@ -536,12 +536,9 @@ class QueueManager:
             logger.info(f"Successfully processed knowledge {knowledge_id} with {len(processed_files)} files")
 
             # Check if this knowledge entry has automatic content generation flag
-            knowledge_metadata = self.db_manager.get_knowledge(knowledge_id).get("meta_data", {})
-            if isinstance(knowledge_metadata, str):
-                try:
-                    knowledge_metadata = json.loads(knowledge_metadata)
-                except:
-                    knowledge_metadata = {}
+            knowledge_metadata = self.db_manager.get_knowledge(knowledge_id).meta_data
+            if knowledge_metadata is None:
+                knowledge_metadata = {}
                     
             # If auto content generation is enabled, queue it
             if knowledge_metadata.get("auto_generate_content", False):

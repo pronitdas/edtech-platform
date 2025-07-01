@@ -16,14 +16,12 @@ export interface CustomProblemSolverProps {
   } | null
   onPointsChange: (points: Array<{ x: number; y: number }>) => void
   openaiClient?: OpenAIClient
-  language?: string
 }
 
 const CustomProblemSolver: React.FC<CustomProblemSolverProps> = ({
   lineData,
   onPointsChange,
   openaiClient,
-  language = 'en',
 }) => {
   // State for custom problem
   const [userPrompt, setUserPrompt] = useState('')

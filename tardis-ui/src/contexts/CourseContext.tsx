@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, ReactNode, useEffect } from 'react'
-import { ChapterContent, ChapterV1 } from '@/types/database'
+import { Chapter, ChapterContent } from '@/types/api'
 import { useCourseState } from '@/hooks/useCourseState'
 import { ContentType } from '@/services/edtech-api'
 
@@ -9,7 +9,7 @@ import { ContentType } from '@/services/edtech-api'
 export interface CourseState {
   // Course data
   content: ChapterContent
-  chapter: ChapterV1
+  chapter: Chapter
   language: string
 
   // UI state
@@ -39,7 +39,7 @@ const CourseContext = createContext<
 interface CourseProviderProps {
   children: ReactNode
   content: ChapterContent
-  chapter: ChapterV1
+  chapter: Chapter
   language?: string
   availableTabs: Array<{
     key: string

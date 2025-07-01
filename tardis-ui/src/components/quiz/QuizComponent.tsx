@@ -34,14 +34,21 @@ export const QuizComponent: React.FC<QuizProps> = ({
   useEffect(() => {
     // Track quiz start when component mounts
     trackQuizStart(quizId, {
-      totalQuestions: questions.length,
+      quizId: quizId.toString(),
+      quizTitle: 'Chapter Quiz',
+      questionCount: questions.length,
+      attemptNumber: 1,
+      knowledgeId: '', // Will need to be passed as prop
+      moduleId: quizId.toString(),
       timestamp: Date.now(),
     })
 
     // Initialize start time for first question
-    setStartTime({
-      [questions[0].id]: Date.now(),
-    })
+    if (questions[0]) {
+      setStartTime({
+        [questions[0].id]: Date.now(),
+      })
+    }
   }, [quizId, questions, trackQuizStart])
 
   const handleAnswerSelect = (questionId: string, answer: string) => {
@@ -49,10 +56,23 @@ export const QuizComponent: React.FC<QuizProps> = ({
     const timeTaken =
       (currentTime - (startTime[questionId] || currentTime)) / 1000 // Convert to seconds
     const currentQuestion = questions[currentQuestionIndex]
+    if (!currentQuestion) return
     const isCorrect = answer === currentQuestion.correctAnswer
 
     // Track the answer
-    trackQuizAnswer(quizId, questionId, answer, isCorrect, timeTaken)
+    trackQuizAnswer(quizId, questionId, {
+      quizId: quizId.toString(),
+      questionId,
+      questionType: 'multiple-choice',
+      isCorrect,
+      timeTaken,
+      userAnswer: answer,
+      correctAnswer: currentQuestion.correctAnswer,
+      knowledgeId: '',
+      moduleId: quizId.toString(),
+      timestamp: currentTime,
+      attemptId: `${quizId}-${Date.now()}`
+    })
 
     setSelectedAnswers(prev => ({
       ...prev,
@@ -61,7 +81,9 @@ export const QuizComponent: React.FC<QuizProps> = ({
 
     // If there are more questions, set up the next one
     if (currentQuestionIndex < questions.length - 1) {
-      const nextQuestionId = questions[currentQuestionIndex + 1].id
+      const nextQuestion = questions[currentQuestionIndex + 1]
+      if (!nextQuestion) return
+      const nextQuestionId = nextQuestion.id
       setStartTime(prev => ({
         ...prev,
         [nextQuestionId]: Date.now(),
@@ -81,12 +103,24 @@ export const QuizComponent: React.FC<QuizProps> = ({
       setIsCompleted(true)
 
       // Track quiz completion
-      trackQuizComplete(quizId, finalScore, 100, {
-        timeSpent:
-          Object.values(startTime).reduce(
-            (total, time) => total + (currentTime - time),
-            0
-          ) / 1000, // Convert to seconds
+      const durationSeconds = Object.values(startTime).reduce(
+        (total, time) => total + (currentTime - time),
+        0
+      ) / 1000 // Convert to seconds
+      
+      trackQuizComplete(quizId, {
+        quizId: quizId.toString(),
+        quizTitle: 'Chapter Quiz',
+        attemptId: `${quizId}-${Date.now()}`,
+        score: finalScore,
+        maxScore: 100,
+        durationSeconds,
+        correctAnswers: totalCorrect,
+        totalQuestions: questions.length,
+        attemptNumber: 1,
+        knowledgeId: '',
+        moduleId: quizId.toString(),
+        timestamp: currentTime,
       })
     }
   }
@@ -112,6 +146,10 @@ export const QuizComponent: React.FC<QuizProps> = ({
         </CardContent>
       </Card>
     )
+  }
+
+  if (!currentQuestion) {
+    return <div>No questions available</div>
   }
 
   return (

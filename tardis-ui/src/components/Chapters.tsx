@@ -3,14 +3,7 @@
 import React, { useState } from 'react'
 import { CheckCircleIcon, PlusCircleIcon } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-
-interface Chapter {
-  id: string
-  topic: string
-  chaptertitle: string
-  chapter: string
-  subtopic: string
-}
+import { Chapter } from '@/types/api'
 
 interface ChaptersProps {
   chapters: Chapter[]
@@ -80,7 +73,7 @@ const Chapters: React.FC<ChaptersProps> = ({
   )
 }
 
-const SearchBar = ({ value, onChange, compact = false }) => (
+const SearchBar = ({ value, onChange, compact = false }: { value: string; onChange: (value: string) => void; compact?: boolean }) => (
   <div className={`${compact ? 'mb-2' : 'mb-4'}`}>
     <div className='relative'>
       <input
@@ -110,7 +103,7 @@ const SearchBar = ({ value, onChange, compact = false }) => (
   </div>
 )
 
-const ChapterGrid = ({ chapters, chaptersMeta, onLessonClick }) => (
+const ChapterGrid = ({ chapters, chaptersMeta, onLessonClick }: { chapters: Chapter[]; chaptersMeta: any[]; onLessonClick: (chapter: Chapter) => void }) => (
   <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
     {chapters.length > 0 ? (
       chapters.map(chapter => (
@@ -129,7 +122,7 @@ const ChapterGrid = ({ chapters, chaptersMeta, onLessonClick }) => (
   </div>
 )
 
-const ChapterCard = ({ chapter, chapterMeta, onClick }) => (
+const ChapterCard = ({ chapter, chapterMeta, onClick }: { chapter: Chapter; chapterMeta: any; onClick: () => void }) => (
   <Card
     className='cursor-pointer transition-all duration-200 hover:shadow-lg'
     onClick={onClick}
@@ -141,14 +134,14 @@ const ChapterCard = ({ chapter, chapterMeta, onClick }) => (
     </CardHeader>
     <CardContent className='p-3'>
       <p className='h-[80px] overflow-hidden text-xs text-gray-600'>
-        {chapter.chapter.slice(0, 120)}...
+        {(chapter.chapter || chapter.content || '').slice(0, 120)}...
       </p>
       <ChapterMetaBadges chapterMeta={chapterMeta} />
     </CardContent>
   </Card>
 )
 
-const ChapterMetaBadges = ({ chapterMeta }) => (
+const ChapterMetaBadges = ({ chapterMeta }: { chapterMeta: any }) => (
   <div className='flex flex-wrap gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-red-500 p-2'>
     <MetaBadge available={chapterMeta?.has_quiz} label='Quiz' />
     <MetaBadge available={chapterMeta?.has_notes} label='Notes' />
@@ -156,7 +149,7 @@ const ChapterMetaBadges = ({ chapterMeta }) => (
   </div>
 )
 
-const MetaBadge = ({ available, label }) => (
+const MetaBadge = ({ available, label }: { available: boolean; label: string }) => (
   <div className='flex items-center space-x-1'>
     {available ? (
       <>
@@ -172,7 +165,7 @@ const MetaBadge = ({ available, label }) => (
   </div>
 )
 
-const ChapterList = ({ chapters, chaptersMeta, onLessonClick }) => (
+const ChapterList = ({ chapters, chaptersMeta, onLessonClick }: { chapters: Chapter[]; chaptersMeta: any[]; onLessonClick: (chapter: Chapter) => void }) => (
   <div className='mt-2 space-y-2'>
     {chapters.length > 0 ? (
       chapters.map(chapter => (
@@ -185,9 +178,9 @@ const ChapterList = ({ chapters, chaptersMeta, onLessonClick }) => (
             {chapter.chaptertitle}
           </h3>
           <p className='mt-1 truncate text-xs text-gray-300'>
-            {chapter.chapter.length > 60
-              ? `${chapter.chapter.slice(0, 60)}...`
-              : chapter.chapter}
+            {(chapter.chapter || chapter.content || '').length > 60
+              ? `${(chapter.chapter || chapter.content || '').slice(0, 60)}...`
+              : (chapter.chapter || chapter.content || '')}
           </p>
           <div className='mt-1 flex gap-1'>
             {chaptersMeta.find(cm => cm.chapter_id === chapter.id)
@@ -216,6 +209,11 @@ const SimplePagination = ({
   totalPages,
   onPageChange,
   compact = false,
+}: {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  compact?: boolean;
 }) => {
   const pageNumbers = []
   const maxVisiblePages = compact ? 3 : 5
@@ -268,6 +266,12 @@ const PageButton = ({
   active = false,
   label,
   compact = false,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  active?: boolean;
+  label: string | number;
+  compact?: boolean;
 }) => (
   <button
     onClick={onClick}

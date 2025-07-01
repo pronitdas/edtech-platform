@@ -36,20 +36,23 @@ const InteractiveModule = ({
 }: InteractiveModuleProps) => {
   const [selectedModule, setSelectedModule] = useState<Module | null>(null)
   const [showModuleList, setShowModuleList] = useState(true)
-  const { trackEvent } = useInteractionTracker() as any // Cast to access internal trackEvent
+  const interactionTracker = useInteractionTracker()
+  // Note: trackEvent is not exposed publicly but we can use other methods
 
   // Handle module selection
   const handleModuleSelect = (module: Module) => {
     setSelectedModule(module)
     setShowModuleList(false)
     // interactionTracker.trackAnimationView();
-    if (trackEvent) {
-      trackEvent('module_start', undefined, {
-        moduleTitle: module.title,
-        moduleType: module.type,
-        moduleComponent: module.component,
-      })
-    }
+    interactionTracker.trackContentView('interactive-module', {
+      knowledgeId: '',
+      moduleId: '',
+      contentTitle: module.title,
+      contentType: 'interactive_module',
+      moduleType: module.type,
+      moduleComponent: module.component,
+      timestamp: Date.now(),
+    })
   }
 
   // Handle module completion
@@ -58,13 +61,15 @@ const InteractiveModule = ({
       if (onModuleComplete) {
         onModuleComplete(selectedModule.title)
       }
-      if (trackEvent) {
-        trackEvent('module_complete', undefined, {
-          moduleTitle: selectedModule.title,
-          moduleType: selectedModule.type,
-          moduleComponent: selectedModule.component,
-        })
-      }
+      interactionTracker.trackContentView('interactive-module-complete', {
+        knowledgeId: '',
+        moduleId: '',
+        contentTitle: selectedModule.title,
+        contentType: 'interactive_module_complete',
+        moduleType: selectedModule.type,
+        moduleComponent: selectedModule.component,
+        timestamp: Date.now(),
+      })
     }
     setShowModuleList(true)
     setSelectedModule(null)
@@ -80,7 +85,7 @@ const InteractiveModule = ({
   const renderModuleComponent = () => {
     if (!selectedModule) return null
 
-    const componentMap = {
+    const componentMap: Record<string, React.ReactElement> = {
       PriceToEarningsModel: <PriceToEarningsModel />,
       PriceToCashFlowModel: <PriceToCashFlowModel />,
       PriceToDividendModel: <PriceToDividendModel />,

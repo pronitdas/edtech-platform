@@ -8,7 +8,7 @@ import ModernMarkdownSlideshow from '../slideshow/ModernMarkdownSlideshow' // Us
 import Quiz from '../Quiz' // Assuming path
 import EnhancedMindMap from '../EnhancedMindMap' // Assuming path
 import RoleplayComponent from '../RoleplayComponent' // Import RoleplayComponent
-import { ChapterContent, ChapterV1, QuizQuestion } from '@/types/database' // Removed RoleplayScenario
+import { Chapter, ChapterContent, QuizQuestion } from '@/types/api' // Removed RoleplayScenario
 import { ChevronLeft } from 'lucide-react'
 // Removed Supabase import - now using local API services
 import { useInteractionTracker } from '@/contexts/InteractionTrackerContext' // Import the hook
@@ -183,7 +183,8 @@ async function fetchPublicVideoUrl(filePath: string): Promise<string> {
       return filePath
     }
 
-    return null
+    // Return the file path as-is for relative paths
+    return filePath
   } catch (error) {
     console.error('Error processing video URL:', error)
     throw error
@@ -193,8 +194,8 @@ async function fetchPublicVideoUrl(filePath: string): Promise<string> {
 interface CourseContentRendererProps {
   activeTab: string
   content: ChapterContent
-  chapter: ChapterV1
-  chaptersMeta?: ChapterV1[]
+  chapter: Chapter
+  chaptersMeta?: Chapter[]
   isLoading: boolean
   showReport: boolean
   isFullscreenMindmap: boolean
@@ -215,11 +216,11 @@ const formatTime = (seconds: number): string => {
 // Add a combined video and notes view
 const CombinedVideoAndNotes: React.FC<{
   videoUrl: string
-  chapter: ChapterV1
-  chaptersMeta: ChapterV1[]
+  chapter: Chapter
+  chaptersMeta: Chapter[]
   content: ChapterContent
-  currentVideoChapter: ChapterV1 | null
-  setCurrentVideoChapter: (chapter: ChapterV1 | null) => void
+  currentVideoChapter: Chapter | null
+  setCurrentVideoChapter: (chapter: Chapter | null) => void
 }> = ({
   videoUrl,
   chapter,
@@ -330,8 +331,7 @@ const CombinedVideoAndNotes: React.FC<{
               ? {
                   title: currentVideoChapter.chaptertitle,
                   startTime: Number(currentVideoChapter.timestamp_start) || 0,
-                  endTime:
-                    Number(currentVideoChapter.timestamp_end) || undefined,
+                  ...(currentVideoChapter.timestamp_end ? { endTime: Number(currentVideoChapter.timestamp_end) } : {})
                 }
               : undefined
           }
@@ -440,7 +440,7 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
   }, [activeTab, chapter, chaptersMeta, content])
 
   const [currentVideoChapter, setCurrentVideoChapter] =
-    useState<ChapterV1 | null>(null)
+    useState<Chapter | null>(null)
   const [viewMode, setViewMode] = useState<'video' | 'notes' | 'combined'>(
     'combined'
   )
@@ -509,7 +509,7 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
         setSigningError(null)
         setSignedVideoUrl(null)
         try {
-          const url = await fetchPublicVideoUrl(content.video_url)
+          const url = await fetchPublicVideoUrl(content.video_url!)
           console.log('Ready to use URL:', url)
           if (isMounted) {
             setSignedVideoUrl(url)
@@ -518,7 +518,7 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
           console.error('Error processing video URL:', error)
           if (isMounted) {
             setSigningError(
-              `Could not load video: ${error.message || 'Unknown error'}`
+              `Could not load video: ${error instanceof Error ? error.message : 'Unknown error'}`
             )
           }
         } finally {
@@ -537,6 +537,7 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
       setSignedVideoUrl(null)
       setIsSigningUrl(false)
       setSigningError(null)
+      return () => {} // Empty cleanup function
     }
   }, [activeTab, content.video_url])
 

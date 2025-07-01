@@ -13,7 +13,7 @@ export class OpenAIService implements OpenAIClient {
 
   constructor(apiKey?: string) {
     // Made apiKey optional
-    this.apiKey = apiKey
+    this.apiKey = apiKey || undefined
   }
 
   async chatCompletion(
@@ -24,7 +24,7 @@ export class OpenAIService implements OpenAIClient {
     stream: boolean = false // Added stream
     // Removed jsonSchema parameter
   ): Promise<string> {
-    const body: any = {
+    const body: Record<string, unknown> = {
       model,
       messages,
       temperature, // Added temperature

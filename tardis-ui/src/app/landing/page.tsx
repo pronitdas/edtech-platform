@@ -9,9 +9,9 @@ const LandingPage = () => {
   useEffect(() => {
     // Smooth scroll to section when clicking navigation links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-      anchor.addEventListener('click', function (e) {
+      anchor.addEventListener('click', function (e: Event) {
         e.preventDefault()
-        const target = document.querySelector(this.getAttribute('href'))
+        const target = document.querySelector((e.target as HTMLAnchorElement).getAttribute('href')!)
         target?.scrollIntoView({
           behavior: 'smooth',
         })
@@ -214,7 +214,7 @@ const LandingPage = () => {
               </a>
               <Link to='/pricing'>
                 <Button
-                  variant='outline'
+                  variant='tertiary'
                   className='border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white'
                 >
                   Pricing
@@ -257,7 +257,7 @@ const LandingPage = () => {
             </Link>
             <a href='#features'>
               <Button
-                variant='outline'
+                variant='tertiary'
                 className='border-blue-600 px-8 py-3 text-lg text-blue-600 hover:bg-blue-50'
               >
                 Explore Features
@@ -626,7 +626,7 @@ const LandingPage = () => {
               </Link>
               <Link to='/pricing'>
                 <Button
-                  variant='outline'
+                  variant='tertiary'
                   className='border-white px-8 py-3 text-lg text-white hover:bg-blue-700'
                 >
                   View Pricing

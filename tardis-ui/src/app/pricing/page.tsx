@@ -3,12 +3,14 @@ import { Button } from '../../components/ui/button'
 import { Link } from 'react-router-dom'
 
 type ButtonVariant =
-  | 'default'
-  | 'destructive'
-  | 'outline'
+  | 'primary'
   | 'secondary'
+  | 'tertiary'
+  | 'danger'
   | 'ghost'
   | 'link'
+  | 'success'
+  | 'warning'
 
 interface PricingTier {
   name: string
@@ -39,7 +41,7 @@ const PricingPage = () => {
       ],
       highlighted: false,
       buttonText: 'Get Started',
-      buttonVariant: 'outline',
+      buttonVariant: 'tertiary',
     },
     {
       name: 'Pro',
@@ -56,7 +58,7 @@ const PricingPage = () => {
       ],
       highlighted: true,
       buttonText: 'Get Started',
-      buttonVariant: 'default',
+      buttonVariant: 'primary',
     },
     {
       name: 'Enterprise',
@@ -74,7 +76,7 @@ const PricingPage = () => {
       ],
       highlighted: false,
       buttonText: 'Contact Us',
-      buttonVariant: 'outline',
+      buttonVariant: 'tertiary',
     },
   ]
 
@@ -115,7 +117,7 @@ const PricingPage = () => {
             </Link>
           </div>
           <div className='md:hidden'>
-            <Button variant='outline' className='border-blue-600'>
+            <Button variant='tertiary' className='border-blue-600'>
               <svg
                 xmlns='http://www.w3.org/2000/svg'
                 className='h-6 w-6'
@@ -327,7 +329,7 @@ const PricingPage = () => {
             </Link>
             <Link to='/contact'>
               <Button
-                variant='outline'
+                variant='tertiary'
                 className='border-white px-8 py-3 text-lg text-white hover:bg-blue-700'
               >
                 Contact Sales

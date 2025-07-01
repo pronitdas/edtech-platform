@@ -52,6 +52,8 @@ const AnimatedSolution: React.FC<AnimatedSolutionProps> = ({
 
     const p1 = points[0]
     const p2 = points[1]
+    if (!p1 || !p2) return
+    
     const rise = p2.y - p1.y
     const run = p2.x - p1.x
 
@@ -118,7 +120,7 @@ const AnimatedSolution: React.FC<AnimatedSolutionProps> = ({
   const goToStep = useCallback(
     (step: number) => {
       setCurrentStep(step)
-      if (step < animationSteps.length) {
+      if (step < animationSteps.length && animationSteps[step]) {
         onPointsChange(animationSteps[step].points)
       }
     },
@@ -132,7 +134,7 @@ const AnimatedSolution: React.FC<AnimatedSolutionProps> = ({
   const reset = useCallback(() => {
     setCurrentStep(0)
     setIsPlaying(false)
-    if (animationSteps.length > 0) {
+    if (animationSteps.length > 0 && animationSteps[0]) {
       onPointsChange(animationSteps[0].points)
     }
   }, [animationSteps, onPointsChange])
@@ -147,24 +149,27 @@ const AnimatedSolution: React.FC<AnimatedSolutionProps> = ({
     )
   }
 
+  const currentStepData = animationSteps[currentStep]
+  if (!currentStepData) return null
+
   return (
     <div className='flex flex-col rounded-md bg-gray-800 p-4'>
       {/* Current step description */}
       <div
         className={`mb-4 rounded-md border-l-4 bg-gray-900 p-4 ${
-          animationSteps[currentStep].highlight === 'rise'
+          currentStepData.highlight === 'rise'
             ? 'border-blue-500'
-            : animationSteps[currentStep].highlight === 'run'
+            : currentStepData.highlight === 'run'
               ? 'border-green-500'
-              : animationSteps[currentStep].highlight === 'slope'
+              : currentStepData.highlight === 'slope'
                 ? 'border-yellow-500'
-                : animationSteps[currentStep].highlight === 'equation'
+                : currentStepData.highlight === 'equation'
                   ? 'border-purple-500'
                   : 'border-gray-700'
         }`}
       >
         <p className='text-gray-200'>
-          {animationSteps[currentStep].description}
+          {currentStepData.description}
         </p>
       </div>
 

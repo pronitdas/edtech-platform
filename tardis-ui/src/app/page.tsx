@@ -18,7 +18,7 @@ import { analyticsService } from '@/services/analytics-service'
 import { ChevronLeft, Menu, X } from 'lucide-react'
 import { useUser } from '@/contexts/UserContext'
 import { useNavigate } from 'react-router-dom'
-import { ChapterV1 } from '../types/database'
+import { Chapter, ChapterContent, QuizQuestion } from '@/types/api'
 
 // Enum for application views
 const VIEW_TYPES = {
@@ -58,7 +58,12 @@ function EdtechApp() {
 
   // Application state
   const [currentView, setCurrentView] = useState(VIEW_TYPES.KNOWLEDGE_SELECTION)
-  const [currentTopic, setCurrentTopic] = useState({
+  const [currentTopic, setCurrentTopic] = useState<{
+    knowledgeId: number | null
+    topicId: string | null
+    topic: Chapter | null
+    language: string
+  }>({
     knowledgeId: null,
     topicId: null,
     topic: null,
@@ -66,8 +71,8 @@ function EdtechApp() {
   })
 
   // Learning module content
-  const [videoContent, setVideoContent] = useState(null)
-  const [quizContent, setQuizContent] = useState(null)
+  const [videoContent, setVideoContent] = useState<any>(null)
+  const [quizContent, setQuizContent] = useState<any>(null)
 
   // Sidebar mobile toggle state
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -78,18 +83,19 @@ function EdtechApp() {
   }
 
   // Handle knowledge domain selection
-  const handleKnowledgeClick = async id => {
-    await fetchChapters(id, language)
-    setCurrentTopic({ ...currentTopic, knowledgeId: id, topic: null })
-    await fetchChapterMeta(id, language)
-    await fetchKnowledgeData(id)
+  const handleKnowledgeClick = async (id: string) => {
+    const numericId = parseInt(id)
+    await fetchChapters(numericId, language)
+    setCurrentTopic({ ...currentTopic, knowledgeId: numericId, topic: null })
+    await fetchChapterMeta(numericId, language)
+    await fetchKnowledgeData(numericId)
     setCurrentView(VIEW_TYPES.CHAPTER_SELECTION)
     setContent(null)
   }
 
   // Handle chapter/topic selection
   const handleChapterClick = useCallback(
-    async (chapter: ChapterV1) => {
+    async (chapter: Chapter) => {
       console.log('Chapter clicked:', chapter) // Debug log
       if (currentTopic.topic?.id !== chapter.id) {
         console.log('Loading chapter content for:', chapter) // Debug log
@@ -108,7 +114,7 @@ function EdtechApp() {
   )
 
   // Handle navigation to learning module (video, quiz, etc.)
-  const handleModuleSelect = (moduleType, moduleContent) => {
+  const handleModuleSelect = (moduleType: string, moduleContent: any) => {
     console.log(
       `handleModuleSelect called with type: ${moduleType}, content:`,
       moduleContent
@@ -127,11 +133,11 @@ function EdtechApp() {
       const keys = Object.keys(moduleContent).filter(k => k !== 'version')
       if (
         keys.length === 1 &&
-        typeof moduleContent[keys[0]] === 'object' &&
-        moduleContent[keys[0]] !== null
+        typeof moduleContent[keys[0]!] === 'object' &&
+        moduleContent[keys[0]!] !== null
       ) {
         console.log(`Extracting nested content under key: ${keys[0]}`)
-        actualContent = moduleContent[keys[0]]
+        actualContent = moduleContent[keys[0]!]
       } else if (keys.length > 1) {
         console.warn(
           "Module content has 'version' but multiple other keys, structure unclear:",
@@ -223,7 +229,7 @@ function EdtechApp() {
   }, [currentView, currentTopic.topic, language])
 
   return (
-    <InteractionTrackerProvider dataService={analyticsService} userId={userId}>
+    <InteractionTrackerProvider dataService={analyticsService} userId={userId || ''}>
       <div className='flex h-screen w-screen flex-col overflow-hidden bg-gray-900 shadow-lg'>
         {/* Main content area with sidebar */}
         <div className='flex flex-1 overflow-hidden'>
@@ -245,8 +251,8 @@ function EdtechApp() {
                 <div className='border-b border-gray-700 p-3 sm:p-4'>
                   <h3 className='mb-2 text-lg font-semibold'>Your Progress</h3>
                   <LearningDashboard
-                    userId={userId}
-                    courseId={currentTopic.knowledgeId}
+                    userId={userId || ''}
+                    courseId={currentTopic.knowledgeId?.toString() || ''}
                     compact={true}
                   />
                 </div>
@@ -265,7 +271,7 @@ function EdtechApp() {
                         handleChapterClick(chapter)
                         if (sidebarOpen) setSidebarOpen(false)
                       }}
-                      chapters={uploadedFiles}
+                      chapters={uploadedFiles as Chapter[]}
                       compact={true}
                     />
                   </div>
@@ -393,8 +399,8 @@ function EdtechApp() {
                     </h2>
                     <div className='overflow-hidden rounded-lg bg-gray-800 shadow-lg'>
                       <LearningDashboard
-                        userId={userId}
-                        courseId={currentTopic.knowledgeId}
+                        userId={userId || ''}
+                        courseId={currentTopic.knowledgeId?.toString() || ''}
                         compact={window.innerWidth < 1024}
                       />
                     </div>
@@ -412,7 +418,7 @@ function EdtechApp() {
   )
 }
 
-const LanguageSelector = ({ language, onChange }) => (
+const LanguageSelector = ({ language, onChange }: { language: string; onChange: (lang: string) => void }) => (
   <select
     value={language}
     onChange={e => onChange(e.target.value)}

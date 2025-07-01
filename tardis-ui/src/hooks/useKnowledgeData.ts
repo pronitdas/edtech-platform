@@ -1,20 +1,46 @@
 import { useState, useEffect } from 'react'
 import { getKnowledge, getKnowledgeMeta } from '@/services/edtech-content'
+import { Knowledge } from '@/types/api'
 
-export const useKnowledgeData = () => {
-  const [knowledge, setKnowledge] = useState([])
+export const useKnowledgeData = (initialKnowledgeId?: string) => {
+  const [knowledge, setKnowledge] = useState<Knowledge[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
   const fetchKnowledge = async () => {
-    const data = await getKnowledge()
-    console.log(data)
-    setKnowledge(data)
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await getKnowledge()
+      setKnowledge(data)
+    } catch (err) {
+      console.error('Error fetching knowledge:', err)
+      setError('Failed to load knowledge data.')
+    } finally {
+      setLoading(false)
+    }
   }
+
+  const fetchKnowledgeMeta = async (id: number) => {
+    try {
+      const meta = await getKnowledgeMeta(id)
+      return meta
+    } catch (err) {
+      console.error('Error fetching knowledge meta:', err)
+      return null
+    }
+  }
+
   useEffect(() => {
     fetchKnowledge()
   }, [])
 
-  const fetchKnowledgeMeta = async id => {
-    return await getKnowledgeMeta(id)
+  return {
+    knowledge,
+    loading,
+    error,
+    fetchKnowledge,
+    fetchKnowledgeMeta,
+    setKnowledge,
   }
-
-  return { knowledge, fetchKnowledge, fetchKnowledgeMeta, setKnowledge }
 }

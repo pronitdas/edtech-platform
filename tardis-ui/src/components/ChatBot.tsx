@@ -6,15 +6,17 @@ import { Textarea } from '@/components/ui/textarea'
 import { Mic, MicOff, Volume2, VolumeX, Send, Loader2 } from 'lucide-react'
 
 interface ChatbotProps {
-  topic: any
-  language: any
+  topic: string
+  language: string
   onQuestionAsked?: (question: string) => void
 }
 
 const VoiceChatbot = ({ topic, language, onQuestionAsked }: ChatbotProps) => {
   const [userResponse, setUserResponse] = useState('')
-  const { oAiKey } = useAuthState()
-  const [apiClient, setApiClient] = useState(null)
+  const authState = useAuthState()
+  // TODO: Get OpenAI key from proper source - currently not available in auth state
+  const oAiKey = import.meta.env.VITE_OPENAI_API_KEY || null
+  const [apiClient, setApiClient] = useState<OpenAIService | null>(null)
   const [mentorText, setMentorText] = useState(
     "Hello, I'm Mentor! Let's start your journey. What would you like to know about?"
   )
@@ -29,11 +31,11 @@ const VoiceChatbot = ({ topic, language, onQuestionAsked }: ChatbotProps) => {
     },
   ])
 
-  const speechQueueRef = useRef([])
-  const mediaRecorderRef = useRef(null)
-  const audioChunksRef = useRef([])
-  const mediaStreamRef = useRef(null)
-  const conversationEndRef = useRef(null)
+  const speechQueueRef = useRef<SpeechSynthesisUtterance[]>([])
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
+  const mediaStreamRef = useRef<MediaStream | null>(null)
+  const conversationEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleVoicesChanged = () => {
@@ -68,15 +70,15 @@ const VoiceChatbot = ({ topic, language, onQuestionAsked }: ChatbotProps) => {
     }
   }, [conversation])
 
-  const sanitizeText = text => text.replace(/\*/g, '')
+  const sanitizeText = (text: string): string => text.replace(/\*/g, '')
 
-  const speakTextInChunks = useCallback((rawText, langCode) => {
+  const speakTextInChunks = useCallback((rawText: string, langCode: string) => {
     window.speechSynthesis.cancel()
     speechQueueRef.current = []
     const sanitized = sanitizeText(rawText)
     const sentences = sanitized.split(/[.?!]\s+/)
 
-    sentences.forEach((sentence, idx) => {
+    sentences.forEach((sentence: string, idx: number) => {
       if (!sentence.trim()) return
       const chunk = sentence.trim() + '.'
       const utterance = new SpeechSynthesisUtterance(chunk)
@@ -106,7 +108,7 @@ const VoiceChatbot = ({ topic, language, onQuestionAsked }: ChatbotProps) => {
   }, [])
 
   const transcribeAudio = useCallback(
-    async audioBlob => {
+    async (audioBlob: Blob) => {
       if (!oAiKey) {
         alert('OpenAI API key is missing.')
         return ''

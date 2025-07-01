@@ -129,7 +129,8 @@ def start_processing(
     knowledge_id: int = Path(
         ..., 
         description="ID of the knowledge entry to process",
-        example=123
+        example=123,
+        ge=1 # Ensure knowledge_id is a positive integer
     ),
     queue_manager: QueueManager = Depends(get_queue_manager),
     db_manager: DatabaseManager = Depends(get_db_manager),
@@ -139,11 +140,14 @@ def start_processing(
     ),
     content_types: List[str] = Query(
         ["notes", "summary", "quiz", "mindmap"], 
-        description="Types of educational content to generate"
+        description="Types of educational content to generate",
+        min_length=1 # Ensure at least one content type is selected
     ),
     content_language: str = Query(
         "English", 
-        description="Language for content generation"
+        description="Language for content generation",
+        min_length=2, # e.g., "en", "es"
+        max_length=50
     )
 ):
     """Start processing a knowledge entry."""
@@ -151,20 +155,13 @@ def start_processing(
         # Check if knowledge exists
         try:
             knowledge = db_manager.get_unseeded_knowledge(knowledge_id)
-        except Exception as e:
-            raise HTTPException(404, "Knowledge not found or already seeded.")
+        except ValueError as e:
+            raise HTTPException(404, str(e))
 
         # Update metadata with content generation flags if requested
         if generate_content and content_types:
             # Get current metadata
-            current_metadata = knowledge.get("metadata", "{}")
-            if current_metadata is None:
-                current_metadata = {}
-            elif isinstance(current_metadata, str):
-                try:
-                    current_metadata = json.loads(current_metadata)
-                except:
-                    current_metadata = {}
+            current_metadata = knowledge.meta_data if knowledge.meta_data is not None else {}
 
             # Add content generation parameters
             current_metadata.update({
@@ -174,15 +171,15 @@ def start_processing(
             })
             
             # Update metadata in database
-            db_manager.update_knowledge_metadata(knowledge_id, current_metadata)
+            db_manager.update_knowledge_metadata(knowledge.id, current_metadata)
 
         # Add to queue
-        queue_manager.add_job(knowledge_id)
+        queue_manager.add_job(knowledge.id)
 
         # Return response with appropriate message
         if generate_content and content_types:
             return {
-                "knowledge_id": knowledge_id,
+                "knowledge_id": knowledge.id,
                 "status": "queued",
                 "message": "Knowledge processing has been queued with subsequent content generation.",
                 "content_generation": True,
@@ -191,7 +188,7 @@ def start_processing(
             }
 
         return {
-            "knowledge_id": knowledge_id,
+            "knowledge_id": knowledge.id,
             "status": "queued",
             "message": "Knowledge processing has been queued.",
         }
@@ -205,8 +202,8 @@ def start_processing(
 
 @router.post("/process/{knowledge_id}/retry")
 def retry_processing(
-    knowledge_id: int,
     retry_request: RetryRequest,
+    knowledge_id: int = Path(..., ge=1),
     queue_manager: QueueManager = Depends(get_queue_manager),
     db_manager: DatabaseManager = Depends(get_db_manager)
 ):
@@ -215,15 +212,15 @@ def retry_processing(
         # Check if knowledge exists
         try:
             knowledge = db_manager.get_knowledge(knowledge_id)
-        except Exception as e:
-            raise HTTPException(404, "Knowledge not found.")
+        except ValueError as e:
+            raise HTTPException(404, str(e))
             
         # Check if knowledge is in a failed state
-        if knowledge.get("status") != "failed" and not retry_request.force:
+        if knowledge.status != "failed" and not retry_request.force:
             raise HTTPException(400, "Knowledge is not in a failed state. Use force=true to retry anyway.")
             
         # Get current retry count
-        retry_count = knowledge.get("retry_count", 0)
+        retry_count = knowledge.retry_count
         
         # Check if max retries reached
         if retry_count >= queue_manager.max_retries and not retry_request.force:
@@ -234,17 +231,17 @@ def retry_processing(
             queue_manager.max_retries = retry_request.max_retries
             
         # Add to queue with current retry count
-        queue_manager.add_job(knowledge_id)
+        queue_manager.add_job(knowledge.id)
         
         # Add retry history entry
         db_manager.add_retry_history(
-            knowledge_id, 
+            knowledge.id, 
             "retry_manual", 
             f"Manual retry requested (force={retry_request.force})"
         )
         
         return {
-            "knowledge_id": knowledge_id,
+            "knowledge_id": knowledge.id,
             "status": "queued",
             "message": "Knowledge processing has been queued for retry.",
             "retry_count": retry_count + 1
@@ -267,8 +264,8 @@ def get_retry_history(
         # Check if knowledge exists
         try:
             knowledge = db_manager.get_knowledge(knowledge_id)
-        except Exception as e:
-            raise HTTPException(404, "Knowledge not found.")
+        except ValueError as e:
+            raise HTTPException(404, str(e))
             
         # Get retry history
         retry_history = db_manager.get_retry_history(knowledge_id)
@@ -338,26 +335,22 @@ def get_retry_history(
     tags=["Knowledge Processing"]
 )
 def get_processing_status(
-    knowledge_id: int = Path(
-        ..., 
-        description="ID of the knowledge entry to check",
-        example=123
-    ),
+    knowledge_id: int = Path(..., ge=1),
     db_manager: DatabaseManager = Depends(get_db_manager)
 ):
     """Get the current processing status."""
     try:
         try:
             knowledge = db_manager.get_knowledge(knowledge_id)
-        except Exception as e:
-            raise HTTPException(404, "Knowledge not found")
+        except ValueError as e:
+            raise HTTPException(404, str(e))
 
         return ProcessingStatus(
             knowledge_id=knowledge_id,
-            status=knowledge.get("status", "unknown"),
-            message=knowledge.get("message", ""),
-            retry_count=knowledge.get("retry_count", 0),
-            result=json.loads(knowledge.get("metadata", "{}")) if knowledge.get("metadata") else None
+            status=knowledge.status,
+            message=knowledge.message if hasattr(knowledge, 'message') else "",
+            retry_count=knowledge.retry_count,
+            result=knowledge.meta_data
         )
 
     except HTTPException as e:
@@ -369,7 +362,7 @@ def get_processing_status(
 
 @router.get("/process/{knowledge_id}/images")
 def get_image_status(
-    knowledge_id: int,
+    knowledge_id: int = Path(..., ge=1),
     db_manager: DatabaseManager = Depends(get_db_manager)
 ):
     """
@@ -387,9 +380,7 @@ def get_image_status(
         knowledge = db_manager.get_knowledge(knowledge_id)
         
         # Extract image information from metadata
-        metadata = knowledge.get("metadata", {})
-        if isinstance(metadata, str):
-            metadata = json.loads(metadata)
+        metadata = knowledge.meta_data if knowledge.meta_data is not None else {}
             
         images = metadata.get("images", {})
         total_images = len(images)
@@ -413,10 +404,10 @@ def get_image_status(
 
 @router.get("/generate-content/{knowledge_id}", response_model=ContentGenerationResponse)
 async def generate_content(
-    knowledge_id: int,
-    chapter_id: Optional[str] = None,
-    types: List[str] = Query(...),
-    language: str = "English",
+    knowledge_id: int = Path(..., ge=1),
+    chapter_id: Optional[str] = Query(None, min_length=1, max_length=64),
+    types: List[str] = Query(..., min_length=1),
+    language: str = Query("English", min_length=2, max_length=50),
     db_manager: DatabaseManager = Depends(get_db_manager),
     openai_client: OpenAIClient = Depends(get_openai_client)
 ):
@@ -442,7 +433,7 @@ async def generate_content(
         if not chapters or len(chapters) == 0:
             error_msg = f"No chapters found for knowledge_id={knowledge_id}" + (f", chapter_id={chapter_id}" if chapter_id else "")
             logger.error(error_msg)
-            raise Exception(error_msg)
+            raise HTTPException(status_code=404, detail=error_msg)
         
         logger.info(f"Found {len(chapters)} chapters to process")
         
@@ -473,7 +464,7 @@ async def generate_content(
         failed_chapters = 0
         # Process each chapter (all chapters, not just the first one)
         for chapter in chapters:
-            chapter_id = chapter.get("id")
+            chapter_id = chapter.id
             logger.info(f"Processing chapter {chapter_id} ({processed_chapters + 1}/{len(chapters)})")
             
             # Generate content for each requested type
@@ -487,11 +478,11 @@ async def generate_content(
                     logger.info(f"Generating {content_type} for chapter {chapter_id}")
                     # Call the appropriate generator function
                     if content_type == "mindmap":
-                        generated = await generator(openai_client, chapter.get("chapter", ""), language)
+                        generated = await generator(openai_client, chapter.content, language)
                     elif content_type == "quiz":
-                        generated = await generator(openai_client, chapter.get("chapter", ""), language)
+                        generated = await generator(openai_client, chapter.content, language)
                     else:
-                        generated = await generator(openai_client, chapter.get("chapter", ""), language)
+                        generated = await generator(openai_client, chapter.content, language)
                         # Join the chunked results with a delimiter for storage
                         generated = "|||||".join(generated) if isinstance(generated, list) else generated
                     
@@ -510,24 +501,34 @@ async def generate_content(
             results["generated_types"] = [t for t in types if t in results and not t.endswith("_error")]
             
             # Update content in the database using the table with language suffix
-            table_name = f"EdTechContent_{language}"
-            logger.info(f"Updating content in {table_name} for chapter {chapter_id}, knowledge_id {knowledge_id}")
+            logger.info(f"Updating content for chapter {chapter_id}, knowledge_id {knowledge_id}")
             
             try:
-                data = db_manager.supabase.from_(table_name).update(
-                    results
-                ).eq('chapter_id', chapter_id).eq('knowledge_id', knowledge_id).execute()
-                
-                # Fetch the updated record separately if needed
-                updated_record = db_manager.supabase.from_(table_name).select("*").eq('chapter_id', chapter_id).eq('knowledge_id', knowledge_id).execute()
-                
-                if hasattr(data, 'error') and data.error:
-                    logger.error(f"Error updating content for chapter {chapter_id}: {data.error}")
-                    failed_chapters += 1
-                    continue
-                
-                logger.info(f"Successfully updated content in {table_name} for chapter {chapter_id}")
-                all_results.extend(updated_record.data if hasattr(updated_record, 'data') and updated_record.data else [])
+                db_manager.update_edtech_content(
+                    chapter_id=chapter.id,
+                    language=language,
+                    content_data={
+                        "knowledge_id": knowledge_id,
+                        **results
+                    }
+                )
+                logger.info(f"Successfully updated content for chapter {chapter_id}")
+                # Retrieve the updated content to include in the response
+                updated_content = db_manager.get_edtech_content(chapter.id, language)
+                if updated_content:
+                    all_results.append({
+                        "id": updated_content.id,
+                        "knowledge_id": updated_content.knowledge_id,
+                        "chapter_id": updated_content.chapter_id,
+                        "language": updated_content.language,
+                        "notes": updated_content.notes,
+                        "summary": updated_content.summary,
+                        "quiz": updated_content.quiz,
+                        "mindmap": updated_content.mindmap,
+                        "meta_data": updated_content.meta_data,
+                        "created_at": updated_content.created_at,
+                        "updated_at": updated_content.updated_at
+                    })
                 processed_chapters += 1
             except Exception as e:
                 logger.error(f"Database error updating content for chapter {chapter_id}: {str(e)}")
@@ -562,10 +563,10 @@ async def generate_content(
 
 @router.get("/chapters/{knowledge_id}", response_model=ChapterDataResponse)
 async def get_chapter_data(
-    knowledge_id: int,
-    chapter_id: Optional[str] = None,
-    types: Optional[List[str]] = None,
-    language: str = "English",
+    knowledge_id: int = Path(..., ge=1),
+    chapter_id: Optional[str] = Query(None, min_length=1, max_length=64),
+    types: Optional[List[str]] = Query(None, min_length=1),
+    language: str = Query("English", min_length=2, max_length=50),
     db_manager: DatabaseManager = Depends(get_db_manager)
 ):
     """
@@ -591,15 +592,15 @@ async def get_chapter_data(
             filtered_chapters = []
             for chapter in chapters:
                 filtered_chapter = {
-                    "knowledge_id": chapter.get("knowledge_id"),
-                    "chapter_id": chapter.get("chapter_id"),
+                    "knowledge_id": chapter.knowledge_id,
+                    "chapter_id": chapter.id,
                     "language": language
                 }
                 
                 # Include only requested types
                 for content_type in types:
-                    if content_type in chapter:
-                        filtered_chapter[content_type] = chapter.get(content_type)
+                    if hasattr(chapter, content_type):
+                        filtered_chapter[content_type] = getattr(chapter, content_type)
                 
                 filtered_chapters.append(filtered_chapter)
             
@@ -621,11 +622,11 @@ async def get_chapter_data(
 
 @router.post("/test/video-process")
 async def test_video_process(
-    file: UploadFile = File(...),
-    knowledge_id: int = Form(...),
-    knowledge_name: str = Form(...),
-    whisper_model: str = Form("base"),
-    openai_model: str = Form("gpt-4o-mini"),
+    file: UploadFile = File(..., description="The video file to process"),
+    knowledge_id: int = Form(..., ge=1, description="ID to associate with the processed content"),
+    knowledge_name: str = Form(..., min_length=1, max_length=255, description="Name of the knowledge entry"),
+    whisper_model: str = Form("base", min_length=1, max_length=50, description="Whisper model to use (tiny, base, small, medium, large)"),
+    openai_model: str = Form("gpt-4o-mini", min_length=1, max_length=50, description="OpenAI model to use"),
     db_manager: DatabaseManager = Depends(get_db_manager)
 ):
     """
@@ -690,8 +691,8 @@ async def test_video_process(
 # Knowledge Graph endpoints
 @router.post("/knowledge-graph/{knowledge_id}/sync")
 async def sync_knowledge_graph(
-    knowledge_id: int,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    knowledge_id: int = Path(..., ge=1)
 ):
     """
     Synchronize a knowledge entry to the Neo4j knowledge graph.
@@ -743,7 +744,7 @@ async def sync_all_knowledge_graphs(
 
 @router.get("/knowledge-graph/{knowledge_id}")
 async def get_knowledge_graph(
-    knowledge_id: int
+    knowledge_id: int = Path(..., ge=1)
 ):
     """
     Get the knowledge graph for a specific knowledge entry.
@@ -768,7 +769,7 @@ async def get_knowledge_graph(
 
 @router.get("/knowledge-graph/{knowledge_id}/concepts")
 async def get_knowledge_concepts(
-    knowledge_id: int
+    knowledge_id: int = Path(..., ge=1)
 ):
     """
     Get all concepts in a knowledge entry.
@@ -874,7 +875,7 @@ async def get_graph_schema():
 
 @router.delete("/knowledge-graph/{knowledge_id}")
 async def delete_knowledge_from_graph(
-    knowledge_id: int
+    knowledge_id: int = Path(..., ge=1)
 ):
     """
     Delete a knowledge entry and all its related nodes from the graph.
@@ -1000,7 +1001,8 @@ async def upload_knowledge_file(
         import uuid
         
         # Create knowledge entry first
-        knowledge_id = db_manager.create_knowledge(name=name)
+        knowledge = db_manager.create_knowledge(name=name)
+        knowledge_id = knowledge.id
         
         uploaded_files = []
         failed_files = []
@@ -1046,7 +1048,7 @@ async def upload_knowledge_file(
                 
                 if upload_result["success"]:
                     # Add media record to database
-                    media_id = db_manager.add_media_file(
+                    media_file = db_manager.add_media_file(
                         knowledge_id=knowledge_id,
                         filename=unique_filename,
                         original_filename=file.filename,
@@ -1061,12 +1063,12 @@ async def upload_knowledge_file(
                     )
                     
                     uploaded_files.append({
-                        "media_id": media_id,
-                        "filename": file.filename,
-                        "unique_filename": unique_filename,
-                        "content_type": file.content_type,
-                        "file_size": file_size,
-                        "file_path": file_path,
+                        "media_id": media_file.id,
+                        "filename": media_file.filename,
+                        "unique_filename": media_file.filename,
+                        "content_type": media_file.content_type,
+                        "file_size": media_file.file_size,
+                        "file_path": media_file.file_path,
                         "status": "uploaded"
                     })
                 else:
@@ -1088,11 +1090,11 @@ async def upload_knowledge_file(
         else:
             content_type = "mixed"
             
-        db_manager.update_knowledge_metadata(knowledge_id, {"content_type": content_type})
+        db_manager.update_knowledge_metadata(knowledge.id, {"content_type": content_type})
         
         # Prepare response
         response = {
-            "knowledge_id": knowledge_id,
+            "knowledge_id": knowledge.id,
             "knowledge_name": name,
             "uploaded_files": uploaded_files,
             "failed_files": failed_files,
@@ -1194,10 +1196,26 @@ async def get_knowledge_files(
         media_files = db_manager.get_knowledge_media_files(knowledge_id)
         
         return {
-            "knowledge_id": knowledge_id,
-            "knowledge_name": knowledge["name"],
-            "content_type": knowledge["content_type"],
-            "files": media_files,
+            "knowledge_id": knowledge.id,
+            "knowledge_name": knowledge.name,
+            "content_type": knowledge.content_type,
+            "files": [
+                {
+                    "id": media.id,
+                    "filename": media.filename,
+                    "original_filename": media.original_filename,
+                    "content_type": media.content_type,
+                    "file_size": media.file_size,
+                    "file_path": media.file_path,
+                    "bucket_name": media.bucket_name,
+                    "upload_status": media.upload_status,
+                    "error_message": media.error_message,
+                    "meta_data": media.meta_data,
+                    "uploaded_by": media.uploaded_by,
+                    "created_at": media.created_at,
+                    "updated_at": media.updated_at
+                } for media in media_files
+            ],
             "total_files": len(media_files)
         }
         

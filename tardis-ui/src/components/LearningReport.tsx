@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 // import { interactionTracker } from '@/services/interaction-tracking';
 import { analyticsService } from '@/services/analytics-service'
-import { LearningAnalytics } from '@/types/database' // Import the type
+import { LearningAnalytics } from '@/types/api' // Import the type
 import {
   Chart as ChartJS,
   ArcElement,
@@ -101,6 +101,12 @@ const LearningReport = ({
           strengths: fetchedData.strengths || [],
           weaknesses: fetchedData.weaknesses || [],
           recommendations: fetchedData.recommendations || [],
+          user_id: userId,
+          knowledge_id: knowledgeId,
+          total_time: 0, // Placeholder
+          completion_rate: 0, // Placeholder
+          last_activity: new Date().toISOString(), // Placeholder
+          analytics_data: {}, // Placeholder
         }
 
         // setAnalyticsData(fetchedData as LearningAnalytics); // Use this once service returns correct type

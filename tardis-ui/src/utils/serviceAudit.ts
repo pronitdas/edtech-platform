@@ -55,7 +55,7 @@ export async function auditServices(): Promise<AuditResult> {
         /['"`][^'"`]*\/v2\/[^'"`]*['"`]/g
       )
       if (endpointMatches) {
-        status.endpoints = endpointMatches.map(match => match.slice(1, -1))
+        status.endpoints = endpointMatches.map((match: string) => match.slice(1, -1))
       }
     } catch (error) {
       status.issues.push(`Service not found: ${error}`)

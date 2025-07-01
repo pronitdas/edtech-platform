@@ -1,4 +1,4 @@
-import { InteractiveContent } from '@/types/database'
+import { InteractiveContent } from '@/types/api'
 import { OpenAIClient } from '@/services/openAi'
 
 // Define state types

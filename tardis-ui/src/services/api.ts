@@ -93,7 +93,8 @@ export class ApiClient {
 
   constructor(baseURL: string = API_BASE_URL) {
     this.baseURL = baseURL
-    this.sandboxMode = SANDBOX_MODE || localStorage.getItem('api_sandbox_mode') === 'true'
+    this.sandboxMode =
+      SANDBOX_MODE || localStorage.getItem('api_sandbox_mode') === 'true'
     this.loadToken()
   }
 
@@ -134,7 +135,7 @@ export class ApiClient {
     return {
       success: true,
       message: 'Mock response',
-      data: null
+      data: null,
     } as unknown as T
   }
 
@@ -189,7 +190,7 @@ export class ApiClient {
       if (SANDBOX_MODE) {
         const mockKey = `${options.method?.toUpperCase()}:${endpoint}`
         if (mockResponses[mockKey]) {
-          return new Promise((resolve) =>
+          return new Promise(resolve =>
             setTimeout(() => resolve(mockResponses[mockKey]), 500)
           ) as Promise<T>
         }

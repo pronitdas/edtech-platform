@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { learningAnalyticsService } from '@/services/learning-analytics-service'
-import { LearningAnalytics } from '@/types/database'
+import { LearningAnalytics } from '@/types/api'
 
 interface UseLearningAnalyticsResult {
   analytics: LearningAnalytics | null

@@ -17,7 +17,7 @@ import { ContentType } from '@/services/edtech-api'
 import { useInteractionTracker } from '@/contexts/InteractionTrackerContext'
 import { generateRoleplayScenarios } from '@/services/edtech-content'
 import useAuthState from '@/hooks/useAuth'
-import supabase from '@/services/supabase'
+
 import ChatbotFloatingButton from './ChatbotFloatingButton'
 import {
   BookOpen,
@@ -31,8 +31,9 @@ import {
   MessageSquare,
   Settings,
   RefreshCw,
+  type LucideIcon,
 } from 'lucide-react'
-import { ChapterContent, ChapterV1, QuizQuestion } from '@/types/database'
+import { Chapter, ChapterContent, QuizQuestion } from '@/types/api'
 import { useCourseState } from '@/hooks/useCourseState'
 import CourseHeader from './course/CourseHeader'
 import CourseSidebar from './course/CourseSidebar'
@@ -110,7 +111,7 @@ interface CourseState {
 }
 
 // Define a type for the icon map
-type IconMap = { [key: string]: React.ComponentType<{ className?: string }> }
+type IconMap = { [key: string]: LucideIcon }
 
 // Map icon identifiers to actual Lucide components
 const iconMap: IconMap = {
@@ -132,7 +133,7 @@ interface MainCourseProps {
   // Expect content and chapter to be potentially null/undefined initially
   content: ChapterContent | null | undefined
   language: string
-  chapter: ChapterV1 | null | undefined
+  chapter: Chapter | null | undefined
 }
 
 const MainCourse = ({
@@ -156,7 +157,7 @@ const MainCourse = ({
   const chapter =
     initialChapter ||
     ({
-      id: 0,
+      id: '0',
       chaptertitle: 'Loading...',
       chapter: '',
       knowledge_id: 0,
@@ -176,7 +177,7 @@ const MainCourse = ({
       timestamp_start: null,
       topic: null,
       type: null,
-    } satisfies ChapterV1)
+    } satisfies Chapter)
 
   console.log('MainCourse processed data:', {
     content,

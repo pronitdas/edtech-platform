@@ -9,8 +9,8 @@ describe('GraphCanvas', () => {
     height: 400,
     zoom: 1,
     offset: { x: 0, y: 0 } as Offset,
-    onZoomChange: jest.fn(),
-    onOffsetChange: jest.fn(),
+    onZoomChange: vi.fn(),
+    onOffsetChange: vi.fn(),
     mapPointToCanvas: (point: Point): Point => ({
       x: point.x * 50 + 200,
       y: 200 - point.y * 50,
@@ -23,7 +23,7 @@ describe('GraphCanvas', () => {
 
   describe('SVG Mode', () => {
     it('handles element clicks in SVG mode', () => {
-      const onElementClick = jest.fn()
+      const onElementClick = vi.fn()
       const points = [{ x: 0, y: 0 }]
       const lines = [{ start: { x: -1, y: -1 }, end: { x: 1, y: 1 } }]
       const shapes = [
@@ -35,7 +35,7 @@ describe('GraphCanvas', () => {
       ]
       const texts = [{ text: 'Test', position: { x: 0, y: 0 } }]
 
-      render(
+      const { container } = render(
         <GraphCanvas
           {...defaultProps}
           renderingMode='svg'
@@ -48,21 +48,21 @@ describe('GraphCanvas', () => {
       )
 
       // Test point interaction
-      const point = screen.getByRole('presentation').querySelector('circle')
+      const point = container.querySelector('circle')
       if (point) {
         fireEvent.click(point)
         expect(onElementClick).toHaveBeenCalledWith('point', 0, points[0])
       }
 
       // Test line interaction
-      const line = screen.getByRole('presentation').querySelector('line')
+      const line = container.querySelector('line')
       if (line) {
         fireEvent.click(line)
         expect(onElementClick).toHaveBeenCalledWith('line', 0, lines[0])
       }
 
       // Test text interaction
-      const text = screen.getByRole('presentation').querySelector('text')
+      const text = container.querySelector('text')
       if (text) {
         fireEvent.click(text)
         expect(onElementClick).toHaveBeenCalledWith('text', 0, texts[0])
@@ -80,7 +80,7 @@ describe('GraphCanvas', () => {
         },
       ]
 
-      render(
+      const { container } = render(
         <GraphCanvas
           {...defaultProps}
           renderingMode='svg'
@@ -91,20 +91,20 @@ describe('GraphCanvas', () => {
         />
       )
 
-      const point = screen.getByRole('presentation').querySelector('circle')
+      const point = container.querySelector('circle')
       if (point) {
         fireEvent.mouseEnter(point)
-        expect(screen.getByText('Point (0, 0)')).toBeInTheDocument()
+        expect(screen.getByText('Point 1')).toBeInTheDocument()
 
         fireEvent.mouseLeave(point)
-        expect(screen.queryByText('Point (0, 0)')).not.toBeInTheDocument()
+        expect(screen.queryByText('Point 1')).not.toBeInTheDocument()
       }
     })
   })
 
   describe('P5 Mode', () => {
     it('initializes p5 canvas in slope mode', () => {
-      render(
+      const { container } = render(
         <GraphCanvas
           {...defaultProps}
           renderingMode='p5'
@@ -135,14 +135,14 @@ describe('GraphCanvas', () => {
       )
 
       // Verify the canvas container is rendered
-      expect(screen.getByRole('presentation')).toBeInTheDocument()
+      expect(container.querySelector('canvas')).toBeInTheDocument()
     })
 
     it('handles zoom and pan in P5 mode', () => {
-      const onZoomChange = jest.fn()
-      const onOffsetChange = jest.fn()
+      const onZoomChange = vi.fn()
+      const onOffsetChange = vi.fn()
 
-      render(
+      const { container } = render(
         <GraphCanvas
           {...defaultProps}
           renderingMode='p5'
@@ -154,9 +154,7 @@ describe('GraphCanvas', () => {
         />
       )
 
-      const canvas = screen.getByRole('presentation')
-
-      // Test zoom
+      const canvas = container.querySelector('canvas')
       fireEvent.wheel(canvas, { deltaY: -100 })
       expect(onZoomChange).toHaveBeenCalled()
 

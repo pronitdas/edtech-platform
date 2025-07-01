@@ -8,7 +8,7 @@ from neo4j import GraphDatabase
 # Load test environment variables
 dotenv.load_dotenv(dotenv.find_dotenv('.env.test'))
 
-from database import Base
+from models import Base
 from seed_postgres import create_test_data
 from seed_neo4j import create_test_nodes, create_test_relationships
 from knowledge_graph import Neo4jGraphService

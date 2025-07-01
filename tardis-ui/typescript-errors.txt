@@ -1,0 +1,736 @@
+
+> tardis-ui@0.1.0 type-check /home/pronit/workspace/edtech-platform/tardis-ui
+> tsc --noEmit
+
+src/components/BookValueCalculator.tsx(30,28): error TS2339: Property 'remove' does not exist on type 'never'.
+src/components/BookValueCalculator.tsx(47,18): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/components/ChapterAdapter.tsx(27,7): error TS2322: Type '{ id: string; knowledge_id: number; title: string; content: string; summary?: string; notes?: string; quiz?: any; mindmap?: any; language: string; chapter?: string | null; chapter_type?: string | null; ... 14 more ...; type?: string | null; }[]' is not assignable to type 'Chapter[]'.
+  Type '{ id: string; knowledge_id: number; title: string; content: string; summary?: string; notes?: string; quiz?: any; mindmap?: any; language: string; chapter?: string | null; chapter_type?: string | null; ... 14 more ...; type?: string | null; }' is not assignable to type 'Chapter'.
+    Types of property 'topic' are incompatible.
+      Type 'string | null' is not assignable to type 'string'.
+        Type 'null' is not assignable to type 'string'.
+src/components/ChapterViewer.tsx(21,22): error TS2451: Cannot redeclare block-scoped variable 'loading'.
+src/components/ChapterViewer.tsx(22,11): error TS2339: Property 'chapters' does not exist on type '{ uploadedFiles: Chapter[]; chaptersMeta: EdTechChapter[]; fetchChapters: (knowledgeId: number, language: string) => Promise<Chapter[]>; setContent: (newContent: ChapterContent | null) => void; ... 15 more ...; error: Error | null; }'.
+src/components/ChapterViewer.tsx(22,21): error TS2339: Property 'chaptersLoading' does not exist on type '{ uploadedFiles: Chapter[]; chaptersMeta: EdTechChapter[]; fetchChapters: (knowledgeId: number, language: string) => Promise<Chapter[]>; setContent: (newContent: ChapterContent | null) => void; ... 15 more ...; error: Error | null; }'.
+src/components/ChapterViewer.tsx(22,53): error TS2554: Expected 0 arguments, but got 1.
+src/components/ChapterViewer.tsx(25,40): error TS7006: Parameter 'ch' implicitly has an 'any' type.
+src/components/ChapterViewer.tsx(26,9): error TS2451: Cannot redeclare block-scoped variable 'loading'.
+src/components/ChapterViewer.tsx(125,66): error TS2339: Property 'name' does not exist on type 'Knowledge[]'.
+src/components/ChapterViewer.tsx(177,27): error TS7006: Parameter 'content' implicitly has an 'any' type.
+src/components/ChapterViewer.tsx(178,19): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/ChapterViewer.tsx(199,27): error TS7006: Parameter 'content' implicitly has an 'any' type.
+src/components/ChapterViewer.tsx(200,19): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/ChapterViewer.tsx(221,27): error TS7006: Parameter 'content' implicitly has an 'any' type.
+src/components/ChapterViewer.tsx(222,19): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/ChapterViewer.tsx(242,21): error TS2322: Type '{ quiz: any; chapterId: string | undefined; editMode: boolean; onSave: (content: any) => Promise<void>; title: any; }' is not assignable to type 'IntrinsicAttributes & QuizProps'.
+  Property 'quiz' does not exist on type 'IntrinsicAttributes & QuizProps'.
+src/components/ChapterViewer.tsx(245,29): error TS7006: Parameter 'content' implicitly has an 'any' type.
+src/components/Chapters.tsx(50,19): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/components/Chapters.tsx(83,22): error TS7031: Binding element 'value' implicitly has an 'any' type.
+src/components/Chapters.tsx(83,29): error TS7031: Binding element 'onChange' implicitly has an 'any' type.
+src/components/Chapters.tsx(113,24): error TS7031: Binding element 'chapters' implicitly has an 'any' type.
+src/components/Chapters.tsx(113,34): error TS7031: Binding element 'chaptersMeta' implicitly has an 'any' type.
+src/components/Chapters.tsx(113,48): error TS7031: Binding element 'onLessonClick' implicitly has an 'any' type.
+src/components/Chapters.tsx(116,20): error TS7006: Parameter 'chapter' implicitly has an 'any' type.
+src/components/Chapters.tsx(120,42): error TS7006: Parameter 'cm' implicitly has an 'any' type.
+src/components/Chapters.tsx(132,24): error TS7031: Binding element 'chapter' implicitly has an 'any' type.
+src/components/Chapters.tsx(132,33): error TS7031: Binding element 'chapterMeta' implicitly has an 'any' type.
+src/components/Chapters.tsx(132,46): error TS7031: Binding element 'onClick' implicitly has an 'any' type.
+src/components/Chapters.tsx(151,30): error TS7031: Binding element 'chapterMeta' implicitly has an 'any' type.
+src/components/Chapters.tsx(159,22): error TS7031: Binding element 'available' implicitly has an 'any' type.
+src/components/Chapters.tsx(159,33): error TS7031: Binding element 'label' implicitly has an 'any' type.
+src/components/Chapters.tsx(175,24): error TS7031: Binding element 'chapters' implicitly has an 'any' type.
+src/components/Chapters.tsx(175,34): error TS7031: Binding element 'chaptersMeta' implicitly has an 'any' type.
+src/components/Chapters.tsx(175,48): error TS7031: Binding element 'onLessonClick' implicitly has an 'any' type.
+src/components/Chapters.tsx(178,20): error TS7006: Parameter 'chapter' implicitly has an 'any' type.
+src/components/Chapters.tsx(193,32): error TS7006: Parameter 'cm' implicitly has an 'any' type.
+src/components/Chapters.tsx(199,32): error TS7006: Parameter 'cm' implicitly has an 'any' type.
+src/components/Chapters.tsx(215,3): error TS7031: Binding element 'currentPage' implicitly has an 'any' type.
+src/components/Chapters.tsx(216,3): error TS7031: Binding element 'totalPages' implicitly has an 'any' type.
+src/components/Chapters.tsx(217,3): error TS7031: Binding element 'onPageChange' implicitly has an 'any' type.
+src/components/Chapters.tsx(266,3): error TS7031: Binding element 'onClick' implicitly has an 'any' type.
+src/components/Chapters.tsx(269,3): error TS7031: Binding element 'label' implicitly has an 'any' type.
+src/components/ChatBot.tsx(16,11): error TS2339: Property 'oAiKey' does not exist on type '{ user: User | null; loading: boolean; login: (email: string, password: string) => Promise<User>; register: (email: string, password: string, name?: string | undefined) => Promise<...>; logout: () => Promise<...>; isAuthenticated: boolean; }'.
+src/components/ChatBot.tsx(60,20): error TS2345: Argument of type 'OpenAIService' is not assignable to parameter of type 'SetStateAction<null>'.
+  Type 'OpenAIService' provides no match for the signature '(prevState: null): null'.
+src/components/ChatBot.tsx(67,34): error TS2339: Property 'scrollIntoView' does not exist on type 'never'.
+src/components/ChatBot.tsx(71,24): error TS7006: Parameter 'text' implicitly has an 'any' type.
+src/components/ChatBot.tsx(73,42): error TS7006: Parameter 'rawText' implicitly has an 'any' type.
+src/components/ChatBot.tsx(73,51): error TS7006: Parameter 'langCode' implicitly has an 'any' type.
+src/components/ChatBot.tsx(79,24): error TS7006: Parameter 'sentence' implicitly has an 'any' type.
+src/components/ChatBot.tsx(79,34): error TS7006: Parameter 'idx' implicitly has an 'any' type.
+src/components/ChatBot.tsx(100,35): error TS2345: Argument of type 'SpeechSynthesisUtterance' is not assignable to parameter of type 'never'.
+src/components/ChatBot.tsx(109,11): error TS7006: Parameter 'audioBlob' implicitly has an 'any' type.
+src/components/ChatBot.tsx(164,45): error TS2339: Property 'chatCompletion' does not exist on type 'never'.
+src/components/ChatBot.tsx(223,9): error TS2322: Type 'MediaStream' is not assignable to type 'null'.
+src/components/ChatBot.tsx(225,9): error TS2322: Type 'MediaRecorder' is not assignable to type 'null'.
+src/components/ChatBot.tsx(230,41): error TS2345: Argument of type 'Blob' is not assignable to parameter of type 'never'.
+src/components/ChatBot.tsx(237,36): error TS2339: Property 'getTracks' does not exist on type 'never'.
+src/components/ChatBot.tsx(237,56): error TS7006: Parameter 'track' implicitly has an 'any' type.
+src/components/ChatBot.tsx(258,34): error TS2339: Property 'state' does not exist on type 'never'.
+src/components/ChatBot.tsx(260,34): error TS2339: Property 'stop' does not exist on type 'never'.
+src/components/ChatBot.tsx(323,13): error TS2322: Type '"outline" | "destructive"' is not assignable to type '"link" | "success" | "primary" | "secondary" | "tertiary" | "danger" | "ghost" | "warning" | null | undefined'.
+  Type '"outline"' is not assignable to type '"link" | "success" | "primary" | "secondary" | "tertiary" | "danger" | "ghost" | "warning" | null | undefined'.
+src/components/ChatBot.tsx(358,13): error TS2322: Type '"secondary" | "destructive"' is not assignable to type '"link" | "success" | "primary" | "secondary" | "tertiary" | "danger" | "ghost" | "warning" | null | undefined'.
+  Type '"destructive"' is not assignable to type '"link" | "success" | "primary" | "secondary" | "tertiary" | "danger" | "ghost" | "warning" | null | undefined'.
+src/components/ContentToggle.tsx(144,26): error TS2532: Object is possibly 'undefined'.
+src/components/ContentToggle.tsx(179,12): error TS2375: Type '{ src: string; title: string; markers: TimelineMarker[]; onPlay: () => void; onPause: () => void; onSeek: () => void; onMarkerClick: (marker: TimelineMarker) => void; onTimeUpdate: (time: number) => void; activeChapterId: string | undefined; }' is not assignable to type 'VideoPlayerProps' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'activeChapterId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/components/Dashboard.tsx(207,12): error TS2375: Type '{ userId: string; courseId: string | undefined; }' is not assignable to type 'LearningDashboardProps' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'courseId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/components/DiscountRateModel.tsx(18,22): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/components/DiscountRateModel.tsx(31,27): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/components/DiscountRateModel.tsx(85,28): error TS2339: Property 'remove' does not exist on type 'never'.
+src/components/DiscountRateModel.tsx(94,15): error TS2345: Argument of type '(prev: { futureValue: number; discountRate: number; time: number; presentValue: number; }) => { presentValue: string; futureValue: number; discountRate: number; time: number; }' is not assignable to parameter of type 'SetStateAction<{ futureValue: number; discountRate: number; time: number; presentValue: number; }>'.
+  Type '(prev: { futureValue: number; discountRate: number; time: number; presentValue: number; }) => { presentValue: string; futureValue: number; discountRate: number; time: number; }' is not assignable to type '(prevState: { futureValue: number; discountRate: number; time: number; presentValue: number; }) => { futureValue: number; discountRate: number; time: number; presentValue: number; }'.
+    Call signature return types '{ presentValue: string; futureValue: number; discountRate: number; time: number; }' and '{ futureValue: number; discountRate: number; time: number; presentValue: number; }' are incompatible.
+      The types of 'presentValue' are incompatible between these types.
+        Type 'string' is not assignable to type 'number'.
+src/components/DiscountRateModel.tsx(97,30): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/DividendGrowthCalculator.tsx(2,23): error TS2307: Cannot find module 'mathjs' or its corresponding type declarations.
+src/components/DividendGrowthCalculator.tsx(11,13): error TS7030: Not all code paths return a value.
+src/components/DividendGrowthCalculator.tsx(23,20): error TS2339: Property 'MathJax' does not exist on type 'Window & typeof globalThis'.
+src/components/DividendGrowthCalculator.tsx(24,18): error TS2339: Property 'MathJax' does not exist on type 'Window & typeof globalThis'.
+src/components/DividendGrowthCalculator.tsx(24,55): error TS2339: Property 'MathJax' does not exist on type 'Window & typeof globalThis'.
+src/components/DividendGrowthCalculator.tsx(38,20): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/components/DividendGrowthCalculator.tsx(139,12): error TS2307: Cannot find module 'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js' or its corresponding type declarations.
+src/components/DividendGrowthCalculator.tsx(149,27): error TS2339: Property 'remove' does not exist on type 'never'.
+src/components/DividendGrowthCalculator.tsx(156,48): error TS2339: Property 'updateVis' does not exist on type 'never'.
+src/components/DividendGrowthCalculator.tsx(157,25): error TS2339: Property 'updateVis' does not exist on type 'never'.
+src/components/DividendGrowthModel.tsx(18,22): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/components/DividendGrowthModel.tsx(33,27): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/components/DividendGrowthModel.tsx(116,28): error TS2339: Property 'remove' does not exist on type 'never'.
+src/components/DividendGrowthModel.tsx(122,29): error TS7006: Parameter 'newValues' implicitly has an 'any' type.
+src/components/DividendGrowthModel.tsx(136,29): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/EnhancedMindMap.tsx(26,35): error TS2353: Object literal may only specify known properties, and 'type' does not exist in type 'ContentViewEvent'.
+src/components/FeedbackSystem.tsx(73,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/FileUploader.tsx(46,9): error TS2345: Argument of type 'User | null' is not assignable to parameter of type 'User'.
+  Type 'null' is not assignable to type 'User'.
+src/components/FileUploader.tsx(58,33): error TS2345: Argument of type '{ id: number; }' is not assignable to parameter of type 'number'.
+src/components/FileUploader.tsx(102,52): error TS2345: Argument of type 'File | undefined' is not assignable to parameter of type 'SetStateAction<File | null>'.
+  Type 'undefined' is not assignable to type 'SetStateAction<File | null>'.
+src/components/GraphCanvas.test.tsx(158,23): error TS2345: Argument of type 'HTMLCanvasElement | null' is not assignable to parameter of type 'Element | Node | Document | Window'.
+  Type 'null' is not assignable to type 'Element | Node | Document | Window'.
+src/components/GraphCanvas.test.tsx(162,27): error TS2345: Argument of type 'HTMLCanvasElement | null' is not assignable to parameter of type 'Element | Node | Document | Window'.
+  Type 'null' is not assignable to type 'Element | Node | Document | Window'.
+src/components/GraphCanvas.test.tsx(163,27): error TS2345: Argument of type 'HTMLCanvasElement | null' is not assignable to parameter of type 'Element | Node | Document | Window'.
+  Type 'null' is not assignable to type 'Element | Node | Document | Window'.
+src/components/GraphCanvas.test.tsx(164,25): error TS2345: Argument of type 'HTMLCanvasElement | null' is not assignable to parameter of type 'Element | Node | Document | Window'.
+  Type 'null' is not assignable to type 'Element | Node | Document | Window'.
+src/components/GraphCanvas.tsx(161,8): error TS2375: Type '{ width: number; height: number; drawingStrategy: BasicSvgDrawingStrategy; points: Point[]; lines: Line[]; shapes: Shape[]; texts: Text[]; onElementClick: ((type: string, index: number, data: any) => void) | undefined; }' is not assignable to type 'SvgGraphCanvasProps' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'onElementClick' are incompatible.
+    Type '((type: string, index: number, data: any) => void) | undefined' is not assignable to type '(type: string, index: number, data: any) => void'.
+      Type 'undefined' is not assignable to type '(type: string, index: number, data: any) => void'.
+src/components/GraphCanvas.tsx(183,9): error TS2322: Type 'DrawingStrategy | null' is not assignable to type 'DrawingStrategy'.
+  Type 'null' is not assignable to type 'DrawingStrategy'.
+src/components/GraphCanvas/CoreGraphCanvas.tsx(133,44): error TS2345: Argument of type 'Touch | undefined' is not assignable to parameter of type 'Touch'.
+  Type 'undefined' is not assignable to type 'Touch'.
+src/components/GraphCanvas/CoreGraphCanvas.tsx(134,44): error TS2345: Argument of type 'Touch | undefined' is not assignable to parameter of type 'Touch'.
+  Type 'undefined' is not assignable to type 'Touch'.
+src/components/GraphCanvas/CoreGraphCanvas.tsx(210,43): error TS2345: Argument of type 'Touch | undefined' is not assignable to parameter of type 'Touch'.
+  Type 'undefined' is not assignable to type 'Touch'.
+src/components/GraphCanvas/CoreGraphCanvas.tsx(232,45): error TS2345: Argument of type 'Touch | undefined' is not assignable to parameter of type 'Touch'.
+  Type 'undefined' is not assignable to type 'Touch'.
+src/components/GraphCanvas/CoreGraphCanvas.tsx(250,11): error TS2722: Cannot invoke an object which is possibly 'undefined'.
+src/components/GraphCanvas/strategies/GenericDrawingStrategy.ts(23,5): error TS2412: Type '((p: p5) => void) | undefined' is not assignable to type '(p: p5) => void' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+  Type 'undefined' is not assignable to type '(p: p5) => void'.
+src/components/GraphCanvas/strategies/GenericDrawingStrategy.ts(24,5): error TS2412: Type '((p: p5) => void) | undefined' is not assignable to type '(p: p5) => void' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+  Type 'undefined' is not assignable to type '(p: p5) => void'.
+src/components/GraphCanvas/strategies/GenericDrawingStrategy.ts(25,5): error TS2412: Type 'InteractiveMathConfig | undefined' is not assignable to type 'InteractiveMathConfig' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+  Type 'undefined' is not assignable to type 'InteractiveMathConfig'.
+src/components/GraphCanvas/strategies/SlopeDrawingStrategy.ts(172,48): error TS2345: Argument of type 'Point | undefined' is not assignable to parameter of type 'Point'.
+  Type 'undefined' is not assignable to type 'Point'.
+src/components/GraphCanvas/strategies/SlopeDrawingStrategy.ts(173,48): error TS2345: Argument of type 'Point | undefined' is not assignable to parameter of type 'Point'.
+  Type 'undefined' is not assignable to type 'Point'.
+src/components/GraphCanvas/strategies/SlopeDrawingStrategy.ts(245,49): error TS2345: Argument of type 'Point | undefined' is not assignable to parameter of type 'Point'.
+  Type 'undefined' is not assignable to type 'Point'.
+src/components/GraphCanvas/strategies/SlopeDrawingStrategy.ts(246,53): error TS2345: Argument of type 'Point | undefined' is not assignable to parameter of type 'Point'.
+  Type 'undefined' is not assignable to type 'Point'.
+src/components/GraphCanvas/strategies/SlopeDrawingStrategy.ts(293,49): error TS2345: Argument of type 'Point | undefined' is not assignable to parameter of type 'Point'.
+  Type 'undefined' is not assignable to type 'Point'.
+src/components/GraphCanvas/strategies/SlopeDrawingStrategy.ts(309,49): error TS2345: Argument of type 'Point | undefined' is not assignable to parameter of type 'Point'.
+  Type 'undefined' is not assignable to type 'Point'.
+src/components/GraphCanvas/strategies/SlopeDrawingStrategy.ts(326,43): error TS18048: 'line' is possibly 'undefined'.
+src/components/GraphCanvas/strategies/SlopeDrawingStrategy.ts(327,41): error TS18048: 'line' is possibly 'undefined'.
+src/components/GraphCanvas/strategies/SlopeDrawingStrategy.ts(344,11): error TS18048: 'shape' is possibly 'undefined'.
+src/components/GraphCanvas/strategies/SlopeDrawingStrategy.ts(344,41): error TS18048: 'shape' is possibly 'undefined'.
+src/components/GraphCanvas/strategies/SlopeDrawingStrategy.ts(344,58): error TS18048: 'shape' is possibly 'undefined'.
+src/components/GraphCanvas/strategies/SlopeDrawingStrategy.ts(345,47): error TS18048: 'shape' is possibly 'undefined'.
+src/components/GraphCanvas/strategies/SlopeDrawingStrategy.ts(346,51): error TS18048: 'shape' is possibly 'undefined'.
+src/components/GraphCanvas/strategies/SlopeDrawingStrategy.ts(366,47): error TS18048: 'textItem' is possibly 'undefined'.
+src/components/GraphCanvas/strategies/SlopeDrawingStrategy.ts(442,7): error TS18048: 'particle' is possibly 'undefined'.
+src/components/GraphCanvas/strategies/SlopeDrawingStrategy.ts(442,21): error TS18048: 'particle' is possibly 'undefined'.
+src/components/GraphCanvas/strategies/SlopeDrawingStrategy.ts(443,7): error TS18048: 'particle' is possibly 'undefined'.
+src/components/GraphCanvas/strategies/SlopeDrawingStrategy.ts(443,21): error TS18048: 'particle' is possibly 'undefined'.
+src/components/GraphCanvas/strategies/SlopeDrawingStrategy.ts(444,7): error TS18048: 'particle' is possibly 'undefined'.
+src/components/GraphCanvas/strategies/SlopeDrawingStrategy.ts(445,7): error TS18048: 'particle' is possibly 'undefined'.
+src/components/GraphCanvas/strategies/SlopeDrawingStrategy.ts(447,11): error TS18048: 'particle' is possibly 'undefined'.
+src/components/ImageSummary.tsx(4,10): error TS2614: Module '"./MarkDownViewer"' has no exported member 'MarkdownViewer'. Did you mean to use 'import MarkdownViewer from "./MarkDownViewer"' instead?
+src/components/InteractiveModule.tsx(101,10): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ PriceToEarningsModel: Element; PriceToCashFlowModel: Element; PriceToDividendModel: Element; BookValueCalculator: Element; StockValuationModel: Element; DividendGrowthCalculator: Element; DiscountRateModel: Element; }'.
+  No index signature with a parameter of type 'string' was found on type '{ PriceToEarningsModel: Element; PriceToCashFlowModel: Element; PriceToDividendModel: Element; BookValueCalculator: Element; StockValuationModel: Element; DividendGrowthCalculator: Element; DiscountRateModel: Element; }'.
+src/components/LearningReport.tsx(92,52): error TS2339: Property 'getUserCompletion' does not exist on type 'AnalyticsService'.
+src/components/LiquidationValueCalculator.tsx(37,24): error TS7006: Parameter 'num' implicitly has an 'any' type.
+src/components/LiquidationValueCalculator.tsx(42,33): error TS7006: Parameter 'type' implicitly has an 'any' type.
+src/components/LiquidationValueCalculator.tsx(42,39): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/components/LiquidationValueCalculator.tsx(56,35): error TS2339: Property 'getContext' does not exist on type 'never'.
+src/components/LiquidationValueCalculator.tsx(58,26): error TS2339: Property 'width' does not exist on type 'never'.
+src/components/LiquidationValueCalculator.tsx(59,27): error TS2339: Property 'height' does not exist on type 'never'.
+src/components/LiquidationValueCalculator.tsx(71,7): error TS7006: Parameter 'x' implicitly has an 'any' type.
+src/components/LiquidationValueCalculator.tsx(72,7): error TS7006: Parameter 'yPos' implicitly has an 'any' type.
+src/components/LiquidationValueCalculator.tsx(73,7): error TS7006: Parameter 'w' implicitly has an 'any' type.
+src/components/LiquidationValueCalculator.tsx(74,7): error TS7006: Parameter 'cashVal' implicitly has an 'any' type.
+src/components/LiquidationValueCalculator.tsx(75,7): error TS7006: Parameter 'arVal' implicitly has an 'any' type.
+src/components/LiquidationValueCalculator.tsx(76,7): error TS7006: Parameter 'invVal' implicitly has an 'any' type.
+src/components/LiquidationValueCalculator.tsx(77,7): error TS7006: Parameter 'fixedVal' implicitly has an 'any' type.
+src/components/LiquidationValueCalculator.tsx(78,7): error TS7006: Parameter 'total' implicitly has an 'any' type.
+src/components/LiquidationValueCalculator.tsx(79,7): error TS7006: Parameter 'lbl' implicitly has an 'any' type.
+src/components/MainCourse.tsx(117,3): error TS2322: Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'ComponentType<{ className?: string; }>'.
+  Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'FunctionComponent<{ className?: string; }>'.
+    Types of property 'defaultProps' are incompatible.
+      Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> | undefined' is not assignable to type 'Partial<{ className?: string; }> | undefined'.
+        Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'Partial<{ className?: string; }>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+          Types of property 'className' are incompatible.
+            Type 'string | undefined' is not assignable to type 'string'.
+              Type 'undefined' is not assignable to type 'string'.
+src/components/MainCourse.tsx(118,3): error TS2322: Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'ComponentType<{ className?: string; }>'.
+  Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'FunctionComponent<{ className?: string; }>'.
+    Types of property 'defaultProps' are incompatible.
+      Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> | undefined' is not assignable to type 'Partial<{ className?: string; }> | undefined'.
+        Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'Partial<{ className?: string; }>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+          Types of property 'className' are incompatible.
+            Type 'string | undefined' is not assignable to type 'string'.
+              Type 'undefined' is not assignable to type 'string'.
+src/components/MainCourse.tsx(119,3): error TS2322: Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'ComponentType<{ className?: string; }>'.
+  Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'FunctionComponent<{ className?: string; }>'.
+    Types of property 'defaultProps' are incompatible.
+      Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> | undefined' is not assignable to type 'Partial<{ className?: string; }> | undefined'.
+        Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'Partial<{ className?: string; }>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+          Types of property 'className' are incompatible.
+            Type 'string | undefined' is not assignable to type 'string'.
+              Type 'undefined' is not assignable to type 'string'.
+src/components/MainCourse.tsx(120,3): error TS2322: Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'ComponentType<{ className?: string; }>'.
+  Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'FunctionComponent<{ className?: string; }>'.
+    Types of property 'defaultProps' are incompatible.
+      Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> | undefined' is not assignable to type 'Partial<{ className?: string; }> | undefined'.
+        Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'Partial<{ className?: string; }>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+          Types of property 'className' are incompatible.
+            Type 'string | undefined' is not assignable to type 'string'.
+              Type 'undefined' is not assignable to type 'string'.
+src/components/MainCourse.tsx(121,3): error TS2322: Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'ComponentType<{ className?: string; }>'.
+  Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'FunctionComponent<{ className?: string; }>'.
+    Types of property 'defaultProps' are incompatible.
+      Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> | undefined' is not assignable to type 'Partial<{ className?: string; }> | undefined'.
+        Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'Partial<{ className?: string; }>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+          Types of property 'className' are incompatible.
+            Type 'string | undefined' is not assignable to type 'string'.
+              Type 'undefined' is not assignable to type 'string'.
+src/components/MainCourse.tsx(122,3): error TS2322: Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'ComponentType<{ className?: string; }>'.
+  Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'FunctionComponent<{ className?: string; }>'.
+    Types of property 'defaultProps' are incompatible.
+      Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> | undefined' is not assignable to type 'Partial<{ className?: string; }> | undefined'.
+        Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'Partial<{ className?: string; }>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+          Types of property 'className' are incompatible.
+            Type 'string | undefined' is not assignable to type 'string'.
+              Type 'undefined' is not assignable to type 'string'.
+src/components/MainCourse.tsx(163,7): error TS2353: Object literal may only specify known properties, and 'created_at' does not exist in type 'Chapter'.
+src/components/MainCourse.tsx(185,23): error TS2367: This comparison appears to be unintentional because the types 'string' and 'number' have no overlap.
+src/components/MainCourse.tsx(214,31): error TS2345: Argument of type 'Chapter | { id: string; chaptertitle: string; chapter: string; knowledge_id: number; created_at: string; chapter_type: string; context: string; k_id: number; level: number; lines: number; ... 9 more ...; type: null; }' is not assignable to parameter of type 'Chapter | null | undefined'.
+  Type '{ id: string; chaptertitle: string; chapter: string; knowledge_id: number; created_at: string; chapter_type: string; context: string; k_id: number; level: number; lines: number; metadata: null; needs_code: false; ... 7 more ...; type: null; }' is missing the following properties from type 'Chapter': title, content, language
+src/components/MainCourse.tsx(236,11): error TS2375: Type 'Chapter | { id: string; chaptertitle: string; chapter: string; knowledge_id: number; created_at: string; chapter_type: string; context: string; k_id: number; level: number; lines: number; ... 9 more ...; type: null; }' is not assignable to type 'Chapter' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Type '{ id: string; chaptertitle: string; chapter: string; knowledge_id: number; created_at: string; chapter_type: string; context: string; k_id: number; level: number; lines: number; metadata: null; needs_code: false; ... 7 more ...; type: null; }' is missing the following properties from type 'Chapter': title, content, language
+src/components/MainCourse.tsx(255,15): error TS2375: Type 'Chapter | { id: string; chaptertitle: string; chapter: string; knowledge_id: number; created_at: string; chapter_type: string; context: string; k_id: number; level: number; lines: number; ... 9 more ...; type: null; }' is not assignable to type 'Chapter' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Type '{ id: string; chaptertitle: string; chapter: string; knowledge_id: number; created_at: string; chapter_type: string; context: string; k_id: number; level: number; lines: number; metadata: null; needs_code: false; ... 7 more ...; type: null; }' is missing the following properties from type 'Chapter': title, content, language
+src/components/MainCourse.tsx(273,15): error TS2375: Type 'Chapter | { id: string; chaptertitle: string; chapter: string; knowledge_id: number; created_at: string; chapter_type: string; context: string; k_id: number; level: number; lines: number; ... 9 more ...; type: null; }' is not assignable to type 'Chapter' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Type '{ id: string; chaptertitle: string; chapter: string; knowledge_id: number; created_at: string; chapter_type: string; context: string; k_id: number; level: number; lines: number; metadata: null; needs_code: false; ... 7 more ...; type: null; }' is missing the following properties from type 'Chapter': title, content, language
+src/components/MarkDownViewer.tsx(44,15): error TS7006: Parameter 'props' implicitly has an 'any' type.
+src/components/MarkDownViewer.tsx(50,15): error TS7006: Parameter 'props' implicitly has an 'any' type.
+src/components/MarkDownViewer.tsx(56,15): error TS7006: Parameter 'props' implicitly has an 'any' type.
+src/components/MarkDownViewer.tsx(62,14): error TS7006: Parameter 'props' implicitly has an 'any' type.
+src/components/MarkDownViewer.tsx(68,15): error TS7006: Parameter 'props' implicitly has an 'any' type.
+src/components/MarkDownViewer.tsx(74,15): error TS7006: Parameter 'props' implicitly has an 'any' type.
+src/components/MarkDownViewer.tsx(80,15): error TS7006: Parameter 'props' implicitly has an 'any' type.
+src/components/MarkDownViewer.tsx(81,18): error TS7006: Parameter 'props' implicitly has an 'any' type.
+src/components/MarkDownViewer.tsx(89,15): error TS7006: Parameter 'props' implicitly has an 'any' type.
+src/components/MarkDownViewer.tsx(95,15): error TS7006: Parameter 'props' implicitly has an 'any' type.
+src/components/MarkDownViewer.tsx(98,23): error TS7006: Parameter 'props' implicitly has an 'any' type.
+src/components/MarkDownViewer.tsx(104,17): error TS7006: Parameter 'props' implicitly has an 'any' type.
+src/components/MarkDownViewer.tsx(110,19): error TS7031: Binding element 'src' implicitly has an 'any' type.
+src/components/MarkDownViewer.tsx(110,24): error TS7031: Binding element 'alt' implicitly has an 'any' type.
+src/components/MarkDownViewer.tsx(124,15): error TS7006: Parameter 'props' implicitly has an 'any' type.
+src/components/MarkdownSlideshow.tsx(51,11): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/MindMap.tsx(62,30): error TS7006: Parameter 'nodes' implicitly has an 'any' type.
+src/components/MindMap.tsx(62,37): error TS7006: Parameter 'edges' implicitly has an 'any' type.
+src/components/MindMap.tsx(72,17): error TS7006: Parameter 'edge' implicitly has an 'any' type.
+src/components/MindMap.tsx(73,17): error TS7006: Parameter 'node' implicitly has an 'any' type.
+src/components/MindMap.tsx(79,35): error TS7006: Parameter 'node' implicitly has an 'any' type.
+src/components/MindMap.tsx(96,22): error TS7006: Parameter 'props' implicitly has an 'any' type.
+src/components/MindMap.tsx(109,11): error TS2339: Property 'oAiKey' does not exist on type '{ user: User | null; loading: boolean; login: (email: string, password: string) => Promise<User>; register: (email: string, password: string, name?: string | undefined) => Promise<...>; logout: () => Promise<...>; isAuthenticated: boolean; }'.
+src/components/MindMap.tsx(122,5): error TS7006: Parameter 'connection' implicitly has an 'any' type.
+src/components/MindMap.tsx(129,16): error TS2345: Argument of type '(oldEdges: never[]) => any[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+  Type '(oldEdges: never[]) => any[]' is not assignable to type '(prevState: never[]) => never[]'.
+    Type 'any[]' is not assignable to type 'never[]'.
+      Type 'any' is not assignable to type 'never'.
+src/components/MindMap.tsx(134,36): error TS7006: Parameter 'event' implicitly has an 'any' type.
+src/components/MindMap.tsx(134,43): error TS7006: Parameter 'node' implicitly has an 'any' type.
+src/components/MindMap.tsx(182,7): error TS2698: Spread types may only be created from object types.
+src/components/MindMap.tsx(185,25): error TS2339: Property 'position' does not exist on type 'never'.
+src/components/MindMap.tsx(186,25): error TS2339: Property 'position' does not exist on type 'never'.
+src/components/MindMap.tsx(197,44): error TS2339: Property 'id' does not exist on type 'never'.
+src/components/MindMap.tsx(197,79): error TS2339: Property 'id' does not exist on type 'never'.
+src/components/MindMap.tsx(218,31): error TS2339: Property 'data' does not exist on type 'never'.
+src/components/MindMap.tsx(225,14): error TS2345: Argument of type '(nds: never[]) => any[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+  Type '(nds: never[]) => any[]' is not assignable to type '(prevState: never[]) => never[]'.
+    Type 'any[]' is not assignable to type 'never[]'.
+      Type 'any' is not assignable to type 'never'.
+src/components/MindMap.tsx(227,18): error TS2339: Property 'id' does not exist on type 'never'.
+src/components/MindMap.tsx(227,38): error TS2339: Property 'id' does not exist on type 'never'.
+src/components/MindMap.tsx(229,13): error TS2698: Spread types may only be created from object types.
+src/components/MindMap.tsx(231,23): error TS2339: Property 'data' does not exist on type 'never'.
+src/components/MindMap.tsx(247,20): error TS2345: Argument of type 'OpenAIService' is not assignable to parameter of type 'SetStateAction<null>'.
+  Type 'OpenAIService' provides no match for the signature '(prevState: null): null'.
+src/components/MindMap.tsx(259,39): error TS7006: Parameter 'node' implicitly has an 'any' type.
+src/components/MindMap.tsx(263,14): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ input: { background: string; color: string; }; default: { background: string; color: string; }; output: { background: string; color: string; }; common: { border: string; borderRadius: string; padding: string; ... 4 more ...; minWidth: string; }; }'.
+src/components/MindMap.tsx(267,39): error TS7006: Parameter 'edge' implicitly has an 'any' type.
+src/components/MindMap.tsx(282,16): error TS2345: Argument of type '"Failed to generate mind map"' is not assignable to parameter of type 'SetStateAction<null>'.
+src/components/MindMap.tsx(348,15): error TS2322: Type '"outline"' is not assignable to type '"link" | "success" | "primary" | "secondary" | "tertiary" | "danger" | "ghost" | "warning" | null | undefined'.
+src/components/MindMap.tsx(357,15): error TS2322: Type '"outline"' is not assignable to type '"link" | "success" | "primary" | "secondary" | "tertiary" | "danger" | "ghost" | "warning" | null | undefined'.
+src/components/MindMap.tsx(366,15): error TS2322: Type '"outline"' is not assignable to type '"link" | "success" | "primary" | "secondary" | "tertiary" | "danger" | "ghost" | "warning" | null | undefined'.
+src/components/MindMap.tsx(375,15): error TS2322: Type '"destructive"' is not assignable to type '"link" | "success" | "primary" | "secondary" | "tertiary" | "danger" | "ghost" | "warning" | null | undefined'.
+src/components/MindMap.tsx(398,15): error TS2322: Type '"outline"' is not assignable to type '"link" | "success" | "primary" | "secondary" | "tertiary" | "danger" | "ghost" | "warning" | null | undefined'.
+src/components/MindMap.tsx(411,17): error TS7006: Parameter 'props' implicitly has an 'any' type.
+src/components/ModelGenerator.tsx(29,13): error TS7030: Not all code paths return a value.
+src/components/ModelViewer.tsx(74,12): error TS2375: Type '{ url: string; textureUrl: string | undefined; }' is not assignable to type '{ url: string; textureUrl?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'textureUrl' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/components/PERatioCalculator.tsx(13,24): error TS2339: Property 'getContext' does not exist on type 'never'.
+src/components/PERatioCalculator.tsx(14,26): error TS2339: Property 'width' does not exist on type 'never'.
+src/components/PERatioCalculator.tsx(15,27): error TS2339: Property 'height' does not exist on type 'never'.
+src/components/PERatioVisualization.tsx(5,15): error TS7006: Parameter 'width' implicitly has an 'any' type.
+src/components/PERatioVisualization.tsx(5,22): error TS7006: Parameter 'height' implicitly has an 'any' type.
+src/components/PERatioVisualization.tsx(6,10): error TS2339: Property 'x' does not exist on type 'Company'.
+src/components/PERatioVisualization.tsx(7,10): error TS2339: Property 'y' does not exist on type 'Company'.
+src/components/PERatioVisualization.tsx(8,10): error TS2339: Property 'earnings' does not exist on type 'Company'.
+src/components/PERatioVisualization.tsx(9,10): error TS2339: Property 'volatility' does not exist on type 'Company'.
+src/components/PERatioVisualization.tsx(10,10): error TS2339: Property 'basePrice' does not exist on type 'Company'.
+src/components/PERatioVisualization.tsx(10,27): error TS2339: Property 'earnings' does not exist on type 'Company'.
+src/components/PERatioVisualization.tsx(13,10): error TS7006: Parameter 'risk' implicitly has an 'any' type.
+src/components/PERatioVisualization.tsx(13,16): error TS7006: Parameter 'frameCount' implicitly has an 'any' type.
+src/components/PERatioVisualization.tsx(13,28): error TS7006: Parameter 'width' implicitly has an 'any' type.
+src/components/PERatioVisualization.tsx(13,35): error TS7006: Parameter 'height' implicitly has an 'any' type.
+src/components/PERatioVisualization.tsx(16,10): error TS2339: Property 'currentPrice' does not exist on type 'Company'.
+src/components/PERatioVisualization.tsx(17,12): error TS2339: Property 'basePrice' does not exist on type 'Company'.
+src/components/PERatioVisualization.tsx(19,39): error TS2339: Property 'volatility' does not exist on type 'Company'.
+src/components/PERatioVisualization.tsx(20,10): error TS2339: Property 'pe' does not exist on type 'Company'.
+src/components/PERatioVisualization.tsx(20,32): error TS2339: Property 'currentPrice' does not exist on type 'Company'.
+src/components/PERatioVisualization.tsx(20,52): error TS2339: Property 'earnings' does not exist on type 'Company'.
+src/components/PERatioVisualization.tsx(24,10): error TS2339: Property 'x' does not exist on type 'Company'.
+src/components/PERatioVisualization.tsx(25,10): error TS2339: Property 'y' does not exist on type 'Company'.
+src/components/PERatioVisualization.tsx(28,10): error TS2339: Property 'x' does not exist on type 'Company'.
+src/components/PERatioVisualization.tsx(28,53): error TS2339: Property 'x' does not exist on type 'Company'.
+src/components/PERatioVisualization.tsx(29,10): error TS2339: Property 'y' does not exist on type 'Company'.
+src/components/PERatioVisualization.tsx(29,54): error TS2339: Property 'y' does not exist on type 'Company'.
+src/components/PERatioVisualization.tsx(42,30): error TS7006: Parameter 'risk' implicitly has an 'any' type.
+src/components/PERatioVisualization.tsx(51,17): error TS18047: 'canvas' is possibly 'null'.
+src/components/PERatioVisualization.tsx(52,19): error TS18047: 'canvas' is possibly 'null'.
+src/components/PERatioVisualization.tsx(53,20): error TS18047: 'canvas' is possibly 'null'.
+src/components/PERatioVisualization.tsx(57,7): error TS2322: Type 'Company[]' is not assignable to type 'never[]'.
+  Type 'Company' is not assignable to type 'never'.
+src/components/PERatioVisualization.tsx(86,17): error TS2339: Property 'update' does not exist on type 'never'.
+src/components/PERatioVisualization.tsx(87,28): error TS2339: Property 'pe' does not exist on type 'never'.
+src/components/PERatioVisualization.tsx(92,53): error TS2339: Property 'pe' does not exist on type 'never'.
+src/components/PERatioVisualization.tsx(98,25): error TS2339: Property 'x' does not exist on type 'never'.
+src/components/PERatioVisualization.tsx(98,36): error TS2339: Property 'y' does not exist on type 'never'.
+src/components/PERatioVisualization.tsx(103,41): error TS2339: Property 'x' does not exist on type 'never'.
+src/components/PERatioVisualization.tsx(104,41): error TS2339: Property 'y' does not exist on type 'never'.
+src/components/PERatioVisualization.tsx(108,13): error TS2353: Object literal may only specify known properties, and 'pe' does not exist in type '(prevState: null) => null'.
+src/components/PERatioVisualization.tsx(108,25): error TS2339: Property 'pe' does not exist on type 'never'.
+src/components/PERatioVisualization.tsx(109,28): error TS2339: Property 'currentPrice' does not exist on type 'never'.
+src/components/PERatioVisualization.tsx(110,31): error TS2339: Property 'earnings' does not exist on type 'never'.
+src/components/PERatioVisualization.tsx(111,24): error TS2339: Property 'x' does not exist on type 'never'.
+src/components/PERatioVisualization.tsx(112,24): error TS2339: Property 'y' does not exist on type 'never'.
+src/components/PERatioVisualization.tsx(132,7): error TS2322: Type 'number' is not assignable to type 'undefined'.
+src/components/PERatioVisualization.tsx(196,43): error TS2339: Property 'x' does not exist on type 'never'.
+src/components/PERatioVisualization.tsx(197,42): error TS2339: Property 'y' does not exist on type 'never'.
+src/components/PERatioVisualization.tsx(200,42): error TS2339: Property 'pe' does not exist on type 'never'.
+src/components/PERatioVisualization.tsx(201,46): error TS2339: Property 'price' does not exist on type 'never'.
+src/components/PERatioVisualization.tsx(202,49): error TS2339: Property 'earnings' does not exist on type 'never'.
+src/components/PriceToCashFlowCalculator.tsx(16,29): error TS7006: Parameter 'ratio' implicitly has an 'any' type.
+src/components/PriceToCashFlowCalculator.tsx(38,35): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/PriceToCashFlowCalculator.tsx(45,32): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/PriceToDividendCalculator.tsx(12,16): error TS2345: Argument of type 'string' is not assignable to parameter of type 'SetStateAction<number>'.
+src/components/PriceToDividendCalculator.tsx(27,24): error TS2339: Property 'getContext' does not exist on type 'never'.
+src/components/PriceToDividendCalculator.tsx(28,26): error TS2339: Property 'width' does not exist on type 'never'.
+src/components/PriceToDividendCalculator.tsx(29,27): error TS2339: Property 'height' does not exist on type 'never'.
+src/components/PriceToDividendCalculator.tsx(54,30): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/components/Quiz.tsx(137,18): error TS2532: Object is possibly 'undefined'.
+src/components/Quiz.tsx(139,21): error TS2532: Object is possibly 'undefined'.
+src/components/Quiz.tsx(140,21): error TS2532: Object is possibly 'undefined'.
+src/components/Quiz.tsx(147,18): error TS2532: Object is possibly 'undefined'.
+src/components/RoleplayComponent.tsx(133,132): error TS18048: 'activeScenario' is possibly 'undefined'.
+src/components/RoleplayComponent.tsx(141,48): error TS2339: Property 'startUserSession' does not exist on type 'AnalyticsService'.
+src/components/RoleplayComponent.tsx(150,13): error TS2353: Object literal may only specify known properties, and 'userId' does not exist in type 'UserEvent'.
+src/components/RoleplayComponent.tsx(174,30): error TS2551: Property 'endUserSession' does not exist on type 'AnalyticsService'. Did you mean 'getUserSessions'?
+src/components/RoleplayComponent.tsx(242,9): error TS2353: Object literal may only specify known properties, and 'userId' does not exist in type 'UserEvent'.
+src/components/RoleplayComponent.tsx(258,11): error TS2353: Object literal may only specify known properties, and 'userId' does not exist in type 'UserEvent'.
+src/components/RoleplayComponent.tsx(269,32): error TS2551: Property 'endUserSession' does not exist on type 'AnalyticsService'. Did you mean 'getUserSessions'?
+src/components/RoleplayComponent.tsx(289,32): error TS2551: Property 'endUserSession' does not exist on type 'AnalyticsService'. Did you mean 'getUserSessions'?
+src/components/RoleplayComponent.tsx(451,11): error TS2532: Object is possibly 'undefined'.
+src/components/RoleplayComponent.tsx(453,13): error TS2532: Object is possibly 'undefined'.
+src/components/StockValuationModel.tsx(21,21): error TS2345: Argument of type 'null' is not assignable to parameter of type 'SetStateAction<number>'.
+src/components/StockValuationModel.tsx(27,21): error TS2345: Argument of type '(prev: never[]) => number[]' is not assignable to parameter of type 'SetStateAction<never[]>'.
+  Type '(prev: never[]) => number[]' is not assignable to type '(prevState: never[]) => never[]'.
+    Type 'number[]' is not assignable to type 'never[]'.
+      Type 'number' is not assignable to type 'never'.
+src/components/StockValuationModel.tsx(35,17): error TS18047: 'canvas' is possibly 'null'.
+src/components/StockValuationModel.tsx(40,5): error TS18047: 'canvas' is possibly 'null'.
+src/components/StockValuationModel.tsx(41,5): error TS18047: 'canvas' is possibly 'null'.
+src/components/StockValuationModel.tsx(43,5): error TS18047: 'canvas' is possibly 'null'.
+src/components/StockValuationModel.tsx(44,5): error TS18047: 'canvas' is possibly 'null'.
+src/components/SvgGraphCanvas.tsx(302,8): error TS18048: 'touch' is possibly 'undefined'.
+src/components/SvgGraphCanvas.tsx(303,8): error TS18048: 'touch' is possibly 'undefined'.
+src/components/SvgGraphCanvas.tsx(428,38): error TS2379: Argument of type '{ points: Point[]; lines: Line[]; shapes: Shape[]; texts: Text[]; config: InteractiveMathConfig | undefined; zoom: number; offset: Offset; }' is not assignable to parameter of type '{ points: Point[]; lines: Line[]; shapes: Shape[]; texts: Text[]; config?: InteractiveMathConfig; zoom?: number; offset?: Offset; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'config' are incompatible.
+    Type 'InteractiveMathConfig | undefined' is not assignable to type 'InteractiveMathConfig'.
+      Type 'undefined' is not assignable to type 'InteractiveMathConfig'.
+src/components/SvgGraphCanvas.tsx(542,7): error TS2375: Type '{ accentColor?: Property.AccentColor | undefined; alignContent?: Property.AlignContent | undefined; alignItems?: Property.AlignItems | undefined; ... 821 more ...; vectorEffect?: Property.VectorEffect | undefined; }' is not assignable to type 'MotionStyle' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Type '{ accentColor?: Property.AccentColor | undefined; alignContent?: Property.AlignContent | undefined; alignItems?: Property.AlignItems | undefined; ... 821 more ...; vectorEffect?: Property.VectorEffect | undefined; }' is not assignable to type 'MakeCustomValueType<{ x?: string | number | MotionValue<number> | MotionValue<string> | MotionValue<any>; y?: string | number | MotionValue<number> | MotionValue<...> | MotionValue<...>; ... 19 more ...; transformPerspective?: string | ... 3 more ... | MotionValue<...>; }>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'rotate' are incompatible.
+      Type 'Rotate | undefined' is not assignable to type 'string | number | CustomValueType | MotionValue<number> | MotionValue<string> | MotionValue<any>'.
+        Type 'undefined' is not assignable to type 'string | number | CustomValueType | MotionValue<number> | MotionValue<string> | MotionValue<any>'.
+src/components/Teacher.tsx(38,23): error TS7006: Parameter 'messages' implicitly has an 'any' type.
+src/components/Teacher.tsx(53,25): error TS2345: Argument of type 'AgentManager' is not assignable to parameter of type 'SetStateAction<null>'.
+  Type 'AgentManager' provides no match for the signature '(prevState: null): null'.
+src/components/Teacher.tsx(63,22): error TS2339: Property 'disconnect' does not exist on type 'never'.
+src/components/Teacher.tsx(76,20): error TS2339: Property 'speak' does not exist on type 'never'.
+src/components/Teacher.tsx(86,9): error TS2322: Type '(text?: string) => void' is not assignable to type 'MouseEventHandler<HTMLButtonElement>'.
+  Types of parameters 'text' and 'event' are incompatible.
+    Type 'MouseEvent<HTMLButtonElement, MouseEvent>' is not assignable to type 'string'.
+src/components/Video.tsx(4,31): error TS7031: Binding element 'videoId' implicitly has an 'any' type.
+src/components/analytics/InteractionHistoryChart.tsx(39,48): error TS2551: Property 'getKnowledgeInteractionSummary' does not exist on type 'AnalyticsService'. Did you mean 'getKnowledgeInteractions'?
+src/components/analytics/LearningAnalyticsDashboard.tsx(57,13): error TS2322: Type '"outline"' is not assignable to type '"link" | "success" | "primary" | "secondary" | "tertiary" | "danger" | "ghost" | "warning" | null | undefined'.
+src/components/analytics/LearningAnalyticsDashboard.tsx(69,13): error TS2322: Type '"outline"' is not assignable to type '"link" | "success" | "primary" | "secondary" | "tertiary" | "danger" | "ghost" | "warning" | null | undefined'.
+src/components/analytics/LearningAnalyticsDashboard.tsx(78,13): error TS2322: Type '"outline"' is not assignable to type '"link" | "success" | "primary" | "secondary" | "tertiary" | "danger" | "ghost" | "warning" | null | undefined'.
+src/components/analytics/LearningDashboard.tsx(54,51): error TS2339: Property 'getUserCompletion' does not exist on type 'AnalyticsService'.
+src/components/course/CourseContentRenderer.tsx(186,5): error TS2322: Type 'null' is not assignable to type 'string'.
+src/components/course/CourseContentRenderer.tsx(328,11): error TS2412: Type '{ title: string; startTime: number; endTime: number | undefined; } | undefined' is not assignable to type 'ChapterInfo | undefined' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+src/components/course/CourseContentRenderer.tsx(502,13): error TS7030: Not all code paths return a value.
+src/components/course/CourseContentRenderer.tsx(512,49): error TS2345: Argument of type 'string | null | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/course/CourseContentRenderer.tsx(521,40): error TS18046: 'error' is of type 'unknown'.
+src/components/course/CourseContentRenderer.tsx(599,35): error TS2345: Argument of type 'string | null | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/course/CourseHeader.tsx(21,3): error TS2322: Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'ComponentType<{ className?: string; }>'.
+  Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'FunctionComponent<{ className?: string; }>'.
+    Types of property 'defaultProps' are incompatible.
+      Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> | undefined' is not assignable to type 'Partial<{ className?: string; }> | undefined'.
+        Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'Partial<{ className?: string; }>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+          Types of property 'className' are incompatible.
+            Type 'string | undefined' is not assignable to type 'string'.
+              Type 'undefined' is not assignable to type 'string'.
+src/components/course/CourseHeader.tsx(22,3): error TS2322: Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'ComponentType<{ className?: string; }>'.
+  Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'FunctionComponent<{ className?: string; }>'.
+    Types of property 'defaultProps' are incompatible.
+      Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> | undefined' is not assignable to type 'Partial<{ className?: string; }> | undefined'.
+        Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'Partial<{ className?: string; }>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+          Types of property 'className' are incompatible.
+            Type 'string | undefined' is not assignable to type 'string'.
+              Type 'undefined' is not assignable to type 'string'.
+src/components/course/CourseHeader.tsx(23,3): error TS2322: Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'ComponentType<{ className?: string; }>'.
+  Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'FunctionComponent<{ className?: string; }>'.
+    Types of property 'defaultProps' are incompatible.
+      Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> | undefined' is not assignable to type 'Partial<{ className?: string; }> | undefined'.
+        Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'Partial<{ className?: string; }>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+          Types of property 'className' are incompatible.
+            Type 'string | undefined' is not assignable to type 'string'.
+              Type 'undefined' is not assignable to type 'string'.
+src/components/course/CourseHeader.tsx(24,3): error TS2322: Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'ComponentType<{ className?: string; }>'.
+  Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'FunctionComponent<{ className?: string; }>'.
+    Types of property 'defaultProps' are incompatible.
+      Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> | undefined' is not assignable to type 'Partial<{ className?: string; }> | undefined'.
+        Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'Partial<{ className?: string; }>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+          Types of property 'className' are incompatible.
+            Type 'string | undefined' is not assignable to type 'string'.
+              Type 'undefined' is not assignable to type 'string'.
+src/components/course/CourseHeader.tsx(25,3): error TS2322: Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'ComponentType<{ className?: string; }>'.
+  Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'FunctionComponent<{ className?: string; }>'.
+    Types of property 'defaultProps' are incompatible.
+      Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> | undefined' is not assignable to type 'Partial<{ className?: string; }> | undefined'.
+        Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'Partial<{ className?: string; }>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+          Types of property 'className' are incompatible.
+            Type 'string | undefined' is not assignable to type 'string'.
+              Type 'undefined' is not assignable to type 'string'.
+src/components/course/CourseHeader.tsx(26,3): error TS2322: Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'ComponentType<{ className?: string; }>'.
+  Type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'FunctionComponent<{ className?: string; }>'.
+    Types of property 'defaultProps' are incompatible.
+      Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> | undefined' is not assignable to type 'Partial<{ className?: string; }> | undefined'.
+        Type 'Partial<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>' is not assignable to type 'Partial<{ className?: string; }>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+          Types of property 'className' are incompatible.
+            Type 'string | undefined' is not assignable to type 'string'.
+              Type 'undefined' is not assignable to type 'string'.
+src/components/course/CourseMain.tsx(209,7): error TS2322: Type '{ label: string; key: string; iconIdentifier: string; }[]' is not assignable to type '{ key: string; label: string; icon: ReactNode; }[]'.
+  Property 'icon' is missing in type '{ label: string; key: string; iconIdentifier: string; }' but required in type '{ key: string; label: string; icon: ReactNode; }'.
+src/components/interactive/slope/SlopeDrawing.tsx(12,6): error TS2375: Type '{ children: Element; interactiveContent: InteractiveContent; userId: string | undefined; knowledgeId: string | undefined; language: string | undefined; onUpdateProgress: ((progress: number) => void) | undefined; openaiClient: OpenAIClient | undefined; }' is not assignable to type 'SlopeDrawingProviderProps' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'userId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/components/interactive/slope/components/AITutor.tsx(161,25): error TS2345: Argument of type 'AIInsight | undefined' is not assignable to parameter of type 'SetStateAction<AIInsight | null>'.
+  Type 'undefined' is not assignable to type 'SetStateAction<AIInsight | null>'.
+src/components/interactive/slope/components/AnimatedSolution.tsx(55,18): error TS18048: 'p2' is possibly 'undefined'.
+src/components/interactive/slope/components/AnimatedSolution.tsx(55,25): error TS18048: 'p1' is possibly 'undefined'.
+src/components/interactive/slope/components/AnimatedSolution.tsx(56,17): error TS18048: 'p2' is possibly 'undefined'.
+src/components/interactive/slope/components/AnimatedSolution.tsx(56,24): error TS18048: 'p1' is possibly 'undefined'.
+src/components/interactive/slope/components/AnimatedSolution.tsx(60,18): error TS2322: Type '{ x: number; y: number; } | undefined' is not assignable to type '{ x: number; y: number; }'.
+  Type 'undefined' is not assignable to type '{ x: number; y: number; }'.
+src/components/interactive/slope/components/AnimatedSolution.tsx(61,53): error TS18048: 'p1' is possibly 'undefined'.
+src/components/interactive/slope/components/AnimatedSolution.tsx(61,62): error TS18048: 'p1' is possibly 'undefined'.
+src/components/interactive/slope/components/AnimatedSolution.tsx(65,47): error TS18048: 'p2' is possibly 'undefined'.
+src/components/interactive/slope/components/AnimatedSolution.tsx(65,56): error TS18048: 'p2' is possibly 'undefined'.
+src/components/interactive/slope/components/AnimatedSolution.tsx(69,59): error TS18048: 'p2' is possibly 'undefined'.
+src/components/interactive/slope/components/AnimatedSolution.tsx(69,69): error TS18048: 'p1' is possibly 'undefined'.
+src/components/interactive/slope/components/AnimatedSolution.tsx(74,58): error TS18048: 'p2' is possibly 'undefined'.
+src/components/interactive/slope/components/AnimatedSolution.tsx(74,68): error TS18048: 'p1' is possibly 'undefined'.
+src/components/interactive/slope/components/AnimatedSolution.tsx(122,24): error TS2532: Object is possibly 'undefined'.
+src/components/interactive/slope/components/AnimatedSolution.tsx(136,22): error TS2532: Object is possibly 'undefined'.
+src/components/interactive/slope/components/AnimatedSolution.tsx(155,11): error TS2532: Object is possibly 'undefined'.
+src/components/interactive/slope/components/AnimatedSolution.tsx(157,15): error TS2532: Object is possibly 'undefined'.
+src/components/interactive/slope/components/AnimatedSolution.tsx(159,17): error TS2532: Object is possibly 'undefined'.
+src/components/interactive/slope/components/AnimatedSolution.tsx(161,19): error TS2532: Object is possibly 'undefined'.
+src/components/interactive/slope/components/AnimatedSolution.tsx(167,12): error TS2532: Object is possibly 'undefined'.
+src/components/interactive/slope/components/BottomControls.tsx(2,10): error TS2459: Module '"../types"' declares 'LineData' locally, but it is not exported.
+src/components/interactive/slope/components/ConceptExplanation.tsx(118,14): error TS18048: 'selectedConcept.examples.length' is possibly 'undefined'.
+src/components/interactive/slope/components/ConceptExplanation.tsx(124,20): error TS18048: 'selectedConcept.examples' is possibly 'undefined'.
+src/components/interactive/slope/components/CustomProblemSolver.tsx(5,10): error TS2614: Module '"./PracticeProblem"' has no exported member 'ProblemData'. Did you mean to use 'import ProblemData from "./PracticeProblem"' instead?
+src/components/interactive/slope/components/CustomProblemSolver.tsx(77,43): error TS2339: Property 'chatCompletion' does not exist on type 'OpenAIClient'.
+src/components/interactive/slope/components/CustomProblemSolver.tsx(158,43): error TS2339: Property 'chatCompletion' does not exist on type 'OpenAIClient'.
+src/components/interactive/slope/components/PracticeProblem.tsx(172,49): error TS18048: 'currentProblem.hints' is possibly 'undefined'.
+src/components/interactive/slope/components/SlopeDrawingLayout.tsx(409,24): error TS2375: Type '{ concepts: Concept[]; selectedConceptId: string | null; onSelectConcept: (id: string | null) => void; lineData: LineData | undefined; }' is not assignable to type 'ConceptExplanationProps' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'lineData' are incompatible.
+    Type 'LineData | undefined' is not assignable to type '{ slope: number | null; yIntercept: number | null; equation: string; point1: { x: number; y: number; }; point2: { x: number; y: number; }; rise: number; run: number; } | null'.
+      Type 'undefined' is not assignable to type '{ slope: number | null; yIntercept: number | null; equation: string; point1: { x: number; y: number; }; point2: { x: number; y: number; }; rise: number; run: number; } | null'.
+src/components/interactive/slope/components/SlopeDrawingLayout.tsx(419,24): error TS2375: Type '{ problems: Problem[]; currentProblemId: string | null; difficulty: "medium" | "easy" | "hard"; setDifficulty: (difficulty: "medium" | "easy" | "hard") => void; onSelectProblem: (problemId: string) => void; ... 8 more ...; onHintRequest: () => void; }' is not assignable to type 'PracticeProblemProps' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'lineData' are incompatible.
+    Type 'LineData | undefined' is not assignable to type 'LineData | null'.
+      Type 'undefined' is not assignable to type 'LineData | null'.
+src/components/interactive/slope/components/SlopeDrawingLayout.tsx(445,25): error TS2375: Type '{ lineData: LineData | undefined; onPointsChange: (coordinates: Point[]) => void; openaiClient: OpenAIClient | undefined; language: string; }' is not assignable to type 'IntrinsicAttributes & CustomProblemSolverProps' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Property 'language' does not exist on type 'IntrinsicAttributes & CustomProblemSolverProps'.
+src/components/interactive/slope/components/SlopeDrawingLayout.tsx(451,24): error TS2375: Type '{ lineData: LineData | undefined; onPointsChange: (coordinates: Point[]) => void; openaiClient: OpenAIClient | undefined; language: string; difficulty: "medium" | ... 1 more ... | "hard"; }' is not assignable to type 'WordProblemProps' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'lineData' are incompatible.
+    Type 'LineData | undefined' is not assignable to type '{ slope: number | null; yIntercept: number | null; equation: string; point1: { x: number; y: number; }; point2: { x: number; y: number; }; rise: number; run: number; } | null'.
+      Type 'undefined' is not assignable to type '{ slope: number | null; yIntercept: number | null; equation: string; point1: { x: number; y: number; }; point2: { x: number; y: number; }; rise: number; run: number; } | null'.
+src/components/interactive/slope/components/SlopeDrawingLayout.tsx(472,25): error TS2353: Object literal may only specify known properties, and 'streakCount' does not exist in type '{ correct: number; incorrect: number; difficulty: "medium" | "easy" | "hard"; }'.
+src/components/interactive/slope/components/WordProblem.tsx(73,41): error TS2339: Property 'chatCompletion' does not exist on type 'OpenAIClient'.
+src/components/interactive/slope/components/WordProblem.tsx(124,41): error TS2339: Property 'chatCompletion' does not exist on type 'OpenAIClient'.
+src/components/interactive/slope/components/index.ts(2,40): error TS2307: Cannot find module './GraphCanvas' or its corresponding type declarations.
+src/components/interactive/slope/components/index.ts(9,15): error TS2614: Module '"./PracticeProblem"' has no exported member 'ProblemData'. Did you mean to use 'import ProblemData from "./PracticeProblem"' instead?
+src/components/interactive/slope/contexts/SlopeDrawingContext.tsx(147,11): error TS2532: Object is possibly 'undefined'.
+src/components/interactive/slope/contexts/SlopeDrawingContext.tsx(275,5): error TS2322: Type '{ slope: number | null; yIntercept: number | null; equation: string; point1: Point | undefined; point2: Point | undefined; rise: number; run: number; } | null' is not assignable to type 'LineData'.
+  Type 'null' is not assignable to type 'LineData'.
+src/components/interactive/slope/hooks/useGraphManagement.ts(131,27): error TS2532: Object is possibly 'undefined'.
+src/components/interactive/slope/hooks/useGraphManagement.ts(214,34): error TS2345: Argument of type 'Point | undefined' is not assignable to parameter of type 'Point'.
+  Type 'undefined' is not assignable to type 'Point'.
+src/components/interactive/slope/hooks/useGraphManagement.ts(215,44): error TS2345: Argument of type 'Point | undefined' is not assignable to parameter of type 'Point'.
+  Type 'undefined' is not assignable to type 'Point'.
+src/components/interactive/slope/hooks/useGraphManagement.ts(224,13): error TS18048: 'p2' is possibly 'undefined'.
+src/components/interactive/slope/hooks/useGraphManagement.ts(224,20): error TS18048: 'p1' is possibly 'undefined'.
+src/components/interactive/slope/hooks/useGraphManagement.ts(225,12): error TS18048: 'p2' is possibly 'undefined'.
+src/components/interactive/slope/hooks/useGraphManagement.ts(225,19): error TS18048: 'p1' is possibly 'undefined'.
+src/components/interactive/slope/hooks/usePerformanceMonitoring.ts(190,14): error TS2686: 'React' refers to a UMD global, but the current file is a module. Consider adding an import instead.
+src/components/interactive/slope/hooks/useProblemGeneration.ts(70,16): error TS18048: 'problem.categories' is possibly 'undefined'.
+src/components/interactive/slope/hooks/useProblemGeneration.ts(74,16): error TS18048: 'problem.categories' is possibly 'undefined'.
+src/components/interactive/slope/hooks/useProblemGeneration.ts(78,16): error TS18048: 'problem.categories' is possibly 'undefined'.
+src/components/interactive/slope/hooks/useProblemGeneration.ts(580,27): error TS2532: Object is possibly 'undefined'.
+src/components/quiz/QuizComponent.tsx(37,7): error TS2353: Object literal may only specify known properties, and 'totalQuestions' does not exist in type 'QuizStartEvent'.
+src/components/quiz/QuizComponent.tsx(43,8): error TS2532: Object is possibly 'undefined'.
+src/components/quiz/QuizComponent.tsx(52,34): error TS18048: 'currentQuestion' is possibly 'undefined'.
+src/components/quiz/QuizComponent.tsx(55,49): error TS2554: Expected 3 arguments, but got 5.
+src/components/quiz/QuizComponent.tsx(64,30): error TS2532: Object is possibly 'undefined'.
+src/components/quiz/QuizComponent.tsx(84,45): error TS2554: Expected 2 arguments, but got 4.
+src/components/quiz/QuizComponent.tsx(127,49): error TS18048: 'currentQuestion' is possibly 'undefined'.
+src/components/quiz/QuizComponent.tsx(129,14): error TS18048: 'currentQuestion' is possibly 'undefined'.
+src/components/quiz/QuizComponent.tsx(132,51): error TS18048: 'currentQuestion' is possibly 'undefined'.
+src/components/quiz/QuizComponent.tsx(134,35): error TS18048: 'currentQuestion' is possibly 'undefined'.
+src/components/slideshow/ModernMarkdownSlideshow.tsx(86,13): error TS7030: Not all code paths return a value.
+src/components/slideshow/ModernMarkdownSlideshow.tsx(177,13): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/ui/Card.test.tsx(4,22): error TS1149: File name '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/ui/Card.tsx' differs from already included file name '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/ui/card.tsx' only in casing.
+  The file is in the program because:
+    Imported via '@/components/ui/card' from file '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/quiz/QuizComponent.tsx'
+    Imported via '@/components/ui/card' from file '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/analytics/EngagementScoreCard.tsx'
+    Imported via '@/components/ui/card' from file '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/analytics/UnderstandingLevelDisplay.tsx'
+    Imported via '@/components/ui/card' from file '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/analytics/StrengthsWeaknessesPanel.tsx'
+    Imported via '@/components/ui/card' from file '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/analytics/RecommendationsSection.tsx'
+    Imported via '@/components/ui/card' from file '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/analytics/InteractionHistoryChart.tsx'
+    Imported via '@/components/ui/card' from file '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/MindMap.tsx'
+    Imported via '@/components/ui/card' from file '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/Chapters.tsx'
+    Imported via '@/components/ui/card' from file '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/analytics/LearningDashboard.tsx'
+    Imported via './ui/card' from file '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/Dashboard.tsx'
+    Imported via '@/components/ui/card' from file '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/DiscountRateModel.tsx'
+    Imported via '@/components/ui/card' from file '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/DividendGrowthModel.tsx'
+    Imported via '@/components/ui/card' from file '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/PERatioCalculator.tsx'
+    Imported via '@/components/ui/card' from file '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/PriceToCashFlowCalculator.tsx'
+    Imported via '@/components/ui/card' from file '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/StockValuationModel.tsx'
+    Imported via '@/components/ui/card' from file '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/PERatioVisualization.tsx'
+    Matched by include pattern 'src/**/*' in '/home/pronit/workspace/edtech-platform/tardis-ui/tsconfig.json'
+    Imported via './Card' from file '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/ui/Card.test.tsx'
+src/components/ui/Dialog.test.tsx(4,24): error TS1149: File name '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/ui/Dialog.tsx' differs from already included file name '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/ui/dialog.tsx' only in casing.
+  The file is in the program because:
+    Imported via '@/components/ui/dialog' from file '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/MindMap.tsx'
+    Matched by include pattern 'src/**/*' in '/home/pronit/workspace/edtech-platform/tardis-ui/tsconfig.json'
+    Imported via './Dialog' from file '/home/pronit/workspace/edtech-platform/tardis-ui/src/components/ui/Dialog.test.tsx'
+src/components/ui/form-label.tsx(2,33): error TS2307: Cannot find module '@radix-ui/react-label' or its corresponding type declarations.
+src/components/utils.ts(1,29): error TS7006: Parameter 'markdown' implicitly has an 'any' type.
+src/components/utils.ts(9,22): error TS2532: Object is possibly 'undefined'.
+src/components/utils.ts(16,31): error TS7006: Parameter 'array' implicitly has an 'any' type.
+src/components/utils.ts(16,38): error TS7006: Parameter 'size' implicitly has an 'any' type.
+src/components/utils.ts(28,30): error TS7006: Parameter 'text' implicitly has an 'any' type.
+src/components/video/VideoPlayer.tsx(43,9): error TS2353: Object literal may only specify known properties, and 'videoPosition' does not exist in type 'VideoPlayEvent'.
+src/components/video/VideoPlayer.tsx(50,47): error TS2554: Expected 2 arguments, but got 3.
+src/components/video/VideoPlayer.tsx(60,9): error TS2353: Object literal may only specify known properties, and 'totalDuration' does not exist in type 'VideoCompleteEvent'.
+src/contexts/AuthContext.tsx(48,49): error TS2379: Argument of type '{ email: string; password: string; name: string | undefined; }' is not assignable to parameter of type 'RegisterData' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'name' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/contexts/InteractionTrackerContext.tsx(192,13): error TS2375: Type '{ id: string; type: string; contentId: string | undefined; timestamp: number; metadata: Record<string, any>; persisted: false; }' is not assignable to type 'InteractionEvent' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'contentId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/contexts/InteractionTrackerContext.tsx(344,33): error TS2339: Property 'startUserSession' does not exist on type 'AnalyticsService'.
+src/contexts/InteractionTrackerContext.tsx(352,51): error TS2339: Property 'startUserSession' does not exist on type 'AnalyticsService'.
+src/contexts/InteractionTrackerContext.tsx(409,43): error TS2551: Property 'endUserSession' does not exist on type 'AnalyticsService'. Did you mean 'getUserSessions'?
+src/contexts/InteractionTrackerContext.tsx(411,21): error TS2551: Property 'endUserSession' does not exist on type 'AnalyticsService'. Did you mean 'getUserSessions'?
+src/contexts/InteractionTrackerContext.tsx(411,60): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/contexts/InteractionTrackerContext.tsx(419,13): error TS7030: Not all code paths return a value.
+src/contexts/InteractionTrackerContext.tsx(472,62): error TS2345: Argument of type '{ userId: string; eventType: string; contentId: string | null; timestamp: number; sessionId: string | null; }' is not assignable to parameter of type 'UserEvent'.
+  Property 'event_type' is missing in type '{ userId: string; eventType: string; contentId: string | null; timestamp: number; sessionId: string | null; }' but required in type 'UserEvent'.
+src/contexts/InteractionTrackerContext.tsx(503,9): error TS2322: Type '{ eventType: string; contentId: string | undefined; metadata: { timestamp: number; userId: string; }; }' is not assignable to type 'boolean | { eventType: string; contentId?: string; metadata?: Record<string, any>; } | { events: InteractionEvent[]; } | { processedIds: string[]; } | { events: InteractionEvent[]; } | { ...; } | Partial<...>'.
+  Type '{ eventType: string; contentId: string | undefined; metadata: { timestamp: number; userId: string; }; }' is not assignable to type '{ eventType: string; contentId?: string; metadata?: Record<string, any>; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+    Types of property 'contentId' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+src/contexts/UserContext.tsx(34,19): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<User | null>'.
+src/contexts/UserContext.tsx(97,15): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<User | null>'.
+src/hooks/useAuth.ts(35,45): error TS2379: Argument of type '{ email: string; password: string; name: string | undefined; }' is not assignable to parameter of type 'RegisterData' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'name' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/hooks/useChapters.ts(21,17): error TS2304: Cannot find name 'EdTechChapter'.
+src/hooks/useChapters.ts(164,54): error TS2345: Argument of type 'Chapter' is not assignable to parameter of type '{ knowledge_id: number; id: number; }'.
+  Types of property 'id' are incompatible.
+    Type 'string' is not assignable to type 'number'.
+src/hooks/useChapters.ts(169,28): error TS2352: Conversion of type 'Chapter | undefined' to type 'ChapterContent' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'Chapter' is not comparable to type 'ChapterContent'.
+    Types of property 'id' are incompatible.
+      Type 'string' is not comparable to type 'number'.
+src/hooks/useChapters.ts(232,11): error TS18048: 'generationResponse.data.chapters.length' is possibly 'undefined'.
+src/hooks/useChapters.ts(234,30): error TS18048: 'generationResponse.data' is possibly 'undefined'.
+src/hooks/useChapters.ts(242,22): error TS2345: Argument of type '(prev: ChaptersState) => { content: ChapterContent; isGeneratingContent: false; generationProgress: { total: number; completed: number; failed: number; }; ... 6 more ...; isCheckingStatus: boolean; }' is not assignable to parameter of type 'SetStateAction<ChaptersState>'.
+  Type '(prev: ChaptersState) => { content: ChapterContent; isGeneratingContent: false; generationProgress: { total: number; completed: number; failed: number; }; ... 6 more ...; isCheckingStatus: boolean; }' is not assignable to type '(prevState: ChaptersState) => ChaptersState'.
+    Call signature return types '{ content: ChapterContent; isGeneratingContent: false; generationProgress: { total: number; completed: number; failed: number; }; lastGenerationError: string | undefined; ... 5 more ...; isCheckingStatus: boolean; }' and 'ChaptersState' are incompatible.
+      The types of 'lastGenerationError' are incompatible between these types.
+        Type 'string | undefined' is not assignable to type 'string | null'.
+          Type 'undefined' is not assignable to type 'string | null'.
+src/hooks/useChapters.ts(248,28): error TS18048: 'generationResponse.data' is possibly 'undefined'.
+src/hooks/useChapters.ts(249,25): error TS18048: 'generationResponse.data' is possibly 'undefined'.
+src/hooks/useContentViewAnalytics.ts(46,13): error TS2375: Type '{ contentId: string; contentType: string; contentTitle: string | undefined; viewDuration: number | undefined; referrer: string | undefined; knowledgeId: string; moduleId: string; }' is not assignable to type 'ContentViewEvent' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'contentTitle' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/hooks/useCourseState.ts(211,11): error TS2339: Property 'oAiKey' does not exist on type '{ user: User | null; loading: boolean; login: (email: string, password: string) => Promise<User>; register: (email: string, password: string, name?: string | undefined) => Promise<...>; logout: () => Promise<...>; isAuthenticated: boolean; }'.
+src/hooks/useCourseState.ts(270,57): error TS2532: Object is possibly 'undefined'.
+src/hooks/useCourseState.ts(298,15): error TS2353: Object literal may only specify known properties, and 'chapterTitle' does not exist in type 'QuizStartEvent'.
+src/hooks/useCourseState.ts(303,13): error TS2353: Object literal may only specify known properties, and 'chapterTitle' does not exist in type 'ContentViewEvent'.
+src/hooks/useCourseState.ts(309,13): error TS2353: Object literal may only specify known properties, and 'chapterTitle' does not exist in type 'ContentViewEvent'.
+src/hooks/useCourseState.ts(315,13): error TS2353: Object literal may only specify known properties, and 'chapterTitle' does not exist in type 'ContentViewEvent'.
+src/hooks/useCourseState.ts(323,17): error TS2353: Object literal may only specify known properties, and 'chapterTitle' does not exist in type 'VideoPlayEvent'.
+src/hooks/useCourseState.ts(328,13): error TS2353: Object literal may only specify known properties, and 'chapterTitle' does not exist in type 'ContentViewEvent'.
+src/hooks/useCourseState.ts(397,9): error TS2353: Object literal may only specify known properties, and 'chapterTitle' does not exist in type 'ContentViewEvent'.
+src/hooks/useCourseState.ts(399,36): error TS2339: Property 'length' does not exist on type 'RoleplayScenario'.
+src/hooks/useCourseState.ts(459,5): error TS2322: Type '(contentData: ChapterContent | null) => ContentType[]' is not assignable to type '(content: ChapterContent | null | undefined) => ContentType[]'.
+  Types of parameters 'contentData' and 'content' are incompatible.
+    Type 'ChapterContent | null | undefined' is not assignable to type 'ChapterContent | null'.
+      Type 'undefined' is not assignable to type 'ChapterContent | null'.
+src/hooks/useKnowledgeAnalytics.ts(23,46): error TS2551: Property 'getKnowledgeInteractionSummary' does not exist on type 'AnalyticsService'. Did you mean 'getKnowledgeInteractions'?
+src/hooks/useKnowledgeAnalytics.ts(35,44): error TS2339: Property 'getKnowledgeVideoStats' does not exist on type 'AnalyticsService'.
+src/hooks/useKnowledgeAnalytics.ts(47,44): error TS2339: Property 'getKnowledgeQuizStats' does not exist on type 'AnalyticsService'.
+src/hooks/useMindMapAnalytics.ts(121,34): error TS2379: Argument of type '{ nodeId: string | undefined; nodeTitle: string | undefined; }' is not assignable to parameter of type '{ nodeId?: string; nodeTitle?: string; zoomLevel?: number; expandedNodes?: number; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'nodeId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/hooks/useNavigationAnalytics.ts(41,13): error TS2375: Type '{ fromRoute: string; toRoute: string; navigationMethod: string; durationOnPreviousPage: number | undefined; knowledgeId: string; moduleId: string; }' is not assignable to type 'NavigationEvent' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'durationOnPreviousPage' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+src/hooks/useQuizAnalytics.ts(54,13): error TS2375: Type '{ quizId: string; questionCount: number; difficulty: string | undefined; timeLimit: number | undefined; attemptNumber: number; knowledgeId: string; moduleId: string; quizTitle?: string; }' is not assignable to type 'QuizStartEvent' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'difficulty' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/hooks/useQuizAnalytics.ts(159,13): error TS2375: Type '{ quizId: string; attemptId: string; score: number; maxScore: number; durationSeconds: number; correctAnswers: number; totalQuestions: number; attemptNumber: number; passingScore: number | undefined; passed: boolean | undefined; knowledgeId: string; moduleId: string; quizTitle?: string; }' is not assignable to type 'QuizSubmitEvent' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'passingScore' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+src/hooks/useRoleplayAnalytics.ts(61,37): error TS2379: Argument of type '{ knowledgeId: string; moduleId: string; scenarioId: string; step: number; studentName: string; studentPersonality: string; question: string; response: string; responseTime: number; feedbackProvided: string | undefined; }' is not assignable to parameter of type 'RoleplayResponseEvent' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'feedbackProvided' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/hooks/useUserAnalytics.ts(23,44): error TS2551: Property 'getUserSessionStats' does not exist on type 'AnalyticsService'. Did you mean 'getUserSessions'?
+src/hooks/useUserAnalytics.ts(32,46): error TS2551: Property 'getUserInteractionSummary' does not exist on type 'AnalyticsService'. Did you mean 'getUserInteractions'?
+src/hooks/useUserAnalytics.ts(45,48): error TS2339: Property 'summarizeNumericEventData' does not exist on type 'AnalyticsService'.
+src/hooks/useVideoAnalytics.ts(56,13): error TS2375: Type '{ currentTime: number; totalDuration: number; progressPercent: number; videoId: string; quality: string | undefined; knowledgeId: string; moduleId: string; videoTitle?: string; }' is not assignable to type 'VideoPlayEvent' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'quality' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/hooks/useVideoAnalytics.ts(102,13): error TS2375: Type '{ currentTime: number; totalDuration: number; progressPercent: number; videoId: string; pauseReason: string | undefined; timeWatched: number; knowledgeId: string; moduleId: string; videoTitle?: string; }' is not assignable to type 'VideoPauseEvent' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'pauseReason' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/pages/AnalyticsPage.tsx(113,41): error TS2339: Property 'name' does not exist on type 'Knowledge[]'.
+src/services/edtech-api.ts(63,5): error TS2412: Type 'string | undefined' is not assignable to type 'string' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/learning-analytics-service.ts(34,63): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+src/services/learning-analytics-service.ts(36,51): error TS2339: Property 'getUserInteractions' does not exist on type 'AnalyticsService'.
+src/services/learning-analytics-service.ts(82,51): error TS2339: Property 'getUserInteractions' does not exist on type 'AnalyticsService'.
+src/services/learning-analytics-service.ts(98,51): error TS2339: Property 'getUserInteractions' does not exist on type 'AnalyticsService'.
+src/services/markdown-utils.ts(1,30): error TS7006: Parameter 'markdownContent' implicitly has an 'any' type.
+src/services/markdown-utils.ts(4,10): error TS7006: Parameter 'line' implicitly has an 'any' type.
+src/services/markdown-utils.ts(5,14): error TS7006: Parameter 'line' implicitly has an 'any' type.
+src/services/markdown-utils.ts(5,20): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/services/markdown-utils.ts(5,27): error TS7006: Parameter 'array' implicitly has an 'any' type.
+src/services/markdown-utils.ts(9,32): error TS7006: Parameter 'mdContent' implicitly has an 'any' type.
+src/services/markdown-utils.ts(17,9): error TS7034: Variable 'headings' implicitly has type 'any[]' in some locations where its type cannot be determined.
+src/services/markdown-utils.ts(20,18): error TS7006: Parameter 'line' implicitly has an 'any' type.
+src/services/markdown-utils.ts(20,24): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/services/markdown-utils.ts(24,36): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/services/markdown-utils.ts(25,37): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/services/markdown-utils.ts(29,34): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/services/markdown-utils.ts(30,35): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/services/markdown-utils.ts(34,37): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/services/markdown-utils.ts(35,38): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/services/markdown-utils.ts(41,3): error TS7005: Variable 'headings' implicitly has an 'any[]' type.
+src/services/markdown-utils.ts(43,37): error TS7005: Variable 'headings' implicitly has an 'any[]' type.
+src/services/markdown-utils.ts(47,36): error TS2345: Argument of type 'number' is not assignable to parameter of type 'never'.
+src/services/markdown-utils.ts(49,34): error TS2345: Argument of type 'number' is not assignable to parameter of type 'never'.
+src/services/markdown-utils.ts(51,37): error TS2345: Argument of type 'number' is not assignable to parameter of type 'never'.
+src/services/markdown-utils.ts(57,33): error TS7006: Parameter 'markdown' implicitly has an 'any' type.
+src/services/markdown-utils.ts(57,43): error TS7006: Parameter 'images' implicitly has an 'any' type.
+src/services/markdown-utils.ts(59,34): error TS7006: Parameter 'line' implicitly has an 'any' type.
+src/services/markdown-utils.ts(60,31): error TS7006: Parameter 'img' implicitly has an 'any' type.
+src/services/openAi.ts(16,5): error TS2412: Type 'string | undefined' is not assignable to type 'string' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the type of the target.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/openAiFns.ts(84,39): error TS2339: Property 'chatCompletion' does not exist on type 'OpenAIClient'.
+src/services/openAiFns.ts(137,41): error TS2339: Property 'chatCompletion' does not exist on type 'OpenAIClient'.
+src/services/openAiFns.ts(187,37): error TS2339: Property 'chatCompletion' does not exist on type 'OpenAIClient'.
+src/services/openAiFns.ts(255,41): error TS2339: Property 'chatCompletion' does not exist on type 'OpenAIClient'.
+src/services/openAiFns.ts(327,39): error TS2339: Property 'chatCompletion' does not exist on type 'OpenAIClient'.
+src/services/utils.ts(7,22): error TS2532: Object is possibly 'undefined'.
+src/utils/serviceAudit.ts(58,48): error TS7006: Parameter 'match' implicitly has an 'any' type.
+ ELIFECYCLE  Command failed with exit code 1.

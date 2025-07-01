@@ -12,7 +12,7 @@ import {
   BarChart2,
 } from 'lucide-react'
 import { ContentType } from '@/services/edtech-api'
-import { ChapterV1 } from '@/types/database'
+import { Chapter } from '@/types/api'
 
 // --- Icon Mapping Logic (moved here or imported) ---
 type IconMap = { [key: string]: React.ComponentType<{ className?: string }> }
@@ -40,7 +40,7 @@ interface TabConfig {
 }
 
 interface CourseHeaderProps {
-  chapter: ChapterV1
+  chapter: Chapter
   activeTab: string
   sidebarOpen: boolean
   // showSettings: boolean; // No longer needed directly if logic is self-contained

@@ -4,20 +4,10 @@ set -e
 # Enhanced database initialization for Kratos
 echo "Starting enhanced database initialization..."
 
-# Function to check if database exists
-database_exists() {
-    local db_name=$1
-    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" -tAc "SELECT 1 FROM pg_database WHERE datname='$db_name'" 2>/dev/null | grep -q 1 || return 1
-}
-
-# Create kratos database if it doesn't exist
-if database_exists "kratos"; then
-    echo "Kratos database already exists, skipping creation..."
-else
-    echo "Creating kratos database..."
-    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" -c "CREATE DATABASE kratos;"
-    echo "Kratos database created successfully!"
-fi
+# Create kratos database
+echo "Creating kratos database..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" -c "CREATE DATABASE kratos;"
+echo "Kratos database created successfully!"
 
 # Grant permissions
 echo "Setting up permissions..."

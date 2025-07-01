@@ -1,37 +1,117 @@
-version: '3.8'
 services:
-  backend:
-    build: ./backend
+  media-uploader:
+    build: ./media-uploader
     ports:
-      - "3000:3000"
+      - "8000:8000" # Assuming FastAPI runs on 8000
     environment:
-      DATABASE_URL: postgresql://user:password@postgres:5432/edtech
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5433/development # Updated to match media-uploader's postgres
       REDIS_URL: redis://redis:6379
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USERNAME: neo4j
+      NEO4J_PASSWORD: development
+      MINIO_URL: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      KRATOS_PUBLIC_URL: http://kratos:4433
     depends_on:
-      - postgres
-      - redis
-
-  frontend:
-    build: ./frontend
-    ports:
-      - "3001:3000"
-    depends_on:
-      - backend
-
-  postgres:
-    image: pgvector/pgvector:pg17
-    ports:
-      - "5433:5432"
-    volumes:
-      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: edtech_dev
-      POSTGRES_HOST_AUTH_METHOD: md5
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      neo4j:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      kratos:
+        condition: service_started
 
   redis:
     image: redis:alpine
     volumes:
       - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
     command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
+
+  kratos:
+    image: oryd/kratos:v1.0
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DSN=postgres://postgres:postgres@postgres:5432/kratos?sslmode=disable&max_conns=20&max_idle_conns=4
+      - LOG_LEVEL=trace
+      - SECRETS_DEFAULT=youReallyNeedToChangeThis
+      - DB_TIMEOUT=30s
+      - KRATOS_CONFIG_PATH=/etc/config/kratos/kratos.yml
+    ports:
+      - "4433:4433" # public
+      - "4434:4434" # admin
+    volumes:
+      - type: bind
+        source: ./media-uploader/config/kratos
+        target: /etc/config/kratos
+    command: serve -c /etc/config/kratos/kratos.yml --dev
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: development
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./media-uploader/scripts/init-db-enhanced.sh:/docker-entrypoint-initdb.d/01-init-db-enhanced.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d development && pg_isready -U postgres -d kratos"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  neo4j:
+    image: neo4j:5
+    environment:
+      NEO4J_AUTH: neo4j/development
+      NEO4J_apoc_export_file_enabled: true
+      NEO4J_apoc_import_file_enabled: true
+      NEO4J_apoc_import_file_use__neo4j__config: true
+    ports:
+      - "7476:7474"  # HTTP
+      - "7687:7687"  # Bolt
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - neo4j_import:/import
+      - neo4j_plugins:/plugins
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  neo4j_data:
+  neo4j_logs:
+  neo4j_import:
+  neo4j_plugins:
+  minio_data:

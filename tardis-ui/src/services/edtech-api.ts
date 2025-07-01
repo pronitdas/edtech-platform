@@ -4,7 +4,7 @@ export type ProcessingStatus = {
   status: 'queued' | 'processing' | 'completed' | 'failed' | 'unknown'
   message: string
   retry_count: number
-  result: Record<string, any> | null
+  result: Record<string, unknown> | null
 }
 
 export type RetryRequest = {
@@ -33,7 +33,7 @@ export type ImageUploadStatus = {
 export type ContentGenerationResponse = {
   success: boolean
   data?: {
-    chapters: Record<string, any>[]
+    chapters: Record<string, unknown>[]
     processed_chapters?: number
     failed_chapters?: number
   }
@@ -43,7 +43,7 @@ export type ContentGenerationResponse = {
 
 export type ChapterDataResponse = {
   success: boolean
-  data?: Record<string, any>[]
+  data?: Record<string, unknown>[]
   error?: string
 }
 
@@ -71,7 +71,7 @@ export class EdTechAPI {
     endpoint: string,
     method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
     params?: URLSearchParams,
-    body?: any
+    body?: unknown
   ): Promise<T> {
     const url = new URL(`${this.baseURL}${endpoint}`, window.location.origin)
 

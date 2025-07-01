@@ -1,8 +1,26 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 
-class Company {
-  constructor(width, height) {
+interface CompanyData {
+  x: number;
+  y: number;
+  earnings: number;
+  volatility: number;
+  basePrice: number;
+  currentPrice: number;
+  pe: number;
+}
+
+class Company implements CompanyData {
+  x: number;
+  y: number;
+  earnings: number;
+  volatility: number;
+  basePrice: number;
+  currentPrice: number = 0;
+  pe: number = 0;
+
+  constructor(width: number, height: number) {
     this.x = Math.random() * (width - 100) + 50
     this.y = Math.random() * (height - 100) + 50
     this.earnings = Math.random() * 90 + 10 // 10 to 100
@@ -10,7 +28,7 @@ class Company {
     this.basePrice = this.earnings * (Math.random() * 12 + 8) // 8 to 20 multiplier
   }
 
-  update(risk, frameCount, width, height) {
+  update(risk: number, frameCount: number, width: number, height: number): void {
     const riskFactor = risk / 50
     const priceMultiplier = 1.5 - riskFactor
     this.currentPrice =
@@ -32,14 +50,14 @@ class Company {
 
 const PERatioVisualization = () => {
   const [riskLevel, setRiskLevel] = useState(50)
-  const canvasRef = useRef(null)
-  const companiesRef = useRef([])
-  const frameCountRef = useRef(0)
-  const animationFrameRef = useRef()
-  const [hoveredCompany, setHoveredCompany] = useState(null)
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const companiesRef = useRef<Company[]>([])
+  const frameCountRef = useRef<number>(0)
+  const animationFrameRef = useRef<number>()
+  const [hoveredCompany, setHoveredCompany] = useState<Company | null>(null)
+  const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
 
-  const getRiskDescription = risk => {
+  const getRiskDescription = (risk: number): string => {
     if (risk < 30)
       return 'Low Risk Environment: Investors are confident, willing to pay premium prices (Higher P/E)'
     if (risk < 70) return 'Moderate Risk: Balanced market sentiment'
@@ -48,7 +66,9 @@ const PERatioVisualization = () => {
 
   useEffect(() => {
     const canvas = canvasRef.current
+    if (!canvas) return
     const ctx = canvas.getContext('2d')
+    if (!ctx) return
     const width = canvas.width
     const height = canvas.height
 
@@ -60,7 +80,7 @@ const PERatioVisualization = () => {
       )
     }
 
-    const draw = () => {
+    const draw = (): void => {
       ctx.fillStyle = '#223344'
       ctx.fillRect(0, 0, width, height)
 
@@ -82,7 +102,7 @@ const PERatioVisualization = () => {
 
       // Update and draw companies
       let totalPE = 0
-      companiesRef.current.forEach((company, index) => {
+      companiesRef.current.forEach((company: Company, index: number) => {
         company.update(riskLevel, frameCountRef.current, width, height)
         totalPE += company.pe
 
@@ -104,13 +124,7 @@ const PERatioVisualization = () => {
         const dy = mousePos.y - company.y
         if (dx * dx + dy * dy < 225) {
           // 15^2
-          setHoveredCompany({
-            pe: company.pe,
-            price: company.currentPrice,
-            earnings: company.earnings,
-            x: company.x,
-            y: company.y,
-          })
+          setHoveredCompany(company)
         }
       })
 
@@ -165,7 +179,7 @@ const PERatioVisualization = () => {
               min='0'
               max='100'
               value={riskLevel}
-              onChange={e => setRiskLevel(parseInt(e.target.value))}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRiskLevel(parseInt(e.target.value))}
             />
             <div>{getRiskDescription(riskLevel)}</div>
           </div>
@@ -176,7 +190,7 @@ const PERatioVisualization = () => {
               width={800}
               height={300}
               className='h-full w-full'
-              onMouseMove={e => {
+              onMouseMove={(e: React.MouseEvent<HTMLCanvasElement>) => {
                 const rect = e.currentTarget.getBoundingClientRect()
                 setMousePos({
                   x:
@@ -198,7 +212,7 @@ const PERatioVisualization = () => {
                 }}
               >
                 <div>PE: {hoveredCompany.pe.toFixed(1)}</div>
-                <div>Price: ${hoveredCompany.price.toFixed(0)}</div>
+                <div>Price: ${hoveredCompany.currentPrice.toFixed(0)}</div>
                 <div>Earnings: ${hoveredCompany.earnings.toFixed(0)}</div>
               </div>
             )}

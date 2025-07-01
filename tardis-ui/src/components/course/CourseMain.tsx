@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useEffect, useMemo } from 'react'
-import { ChapterContent, ChapterV1 } from '@/types/database'
+import React, { useMemo } from 'react'
+import { Chapter, ChapterContent } from '@/types/api'
 import { CourseProvider } from '@/contexts/CourseContext'
 import { useCourse } from '@/contexts/CourseContext'
 import CourseHeader from './CourseHeader'
@@ -11,29 +11,19 @@ import ChatbotFloatingButton from '@/components/ChatbotFloatingButton'
 import LearningReport from '@/components/LearningReport'
 import { useChapters } from '@/hooks/useChapters'
 import { useInteractionTracker } from '@/contexts/InteractionTrackerContext'
-import {
-  BookOpen,
-  FileText,
-  PieChart,
-  Video,
-  Brain,
-  Play,
-  BarChart2,
-  MessageSquare,
-} from 'lucide-react'
-import { ContentType } from '@/services/edtech-api'
+
 import Loader from '@/components/ui/Loader'
 
 interface CourseMainProps {
   content: ChapterContent
   language: string
-  chapter: ChapterV1
+  chapter: Chapter
 }
 
 // Add props interface for CourseContent
 interface CourseContentProps {
   content: ChapterContent
-  chapter: ChapterV1
+  chapter: Chapter
   language: string
 }
 
@@ -172,7 +162,7 @@ const CourseMain: React.FC<CourseMainProps> = ({
       tabs.push({
         label: 'Notes',
         key: 'notes',
-        icon: <FileText className='h-4 w-4' />,
+        iconIdentifier: 'FileText',
       })
     }
 
@@ -180,7 +170,7 @@ const CourseMain: React.FC<CourseMainProps> = ({
       tabs.push({
         label: 'Summary',
         key: 'summary',
-        icon: <BookOpen className='h-4 w-4' />,
+        iconIdentifier: 'BookOpen',
       })
     }
 
@@ -188,15 +178,7 @@ const CourseMain: React.FC<CourseMainProps> = ({
       tabs.push({
         label: 'Quiz',
         key: 'quiz',
-        icon: <PieChart className='h-4 w-4' />,
-      })
-    }
-
-    if (content.mindmap) {
-      tabs.push({
-        label: 'Mindmap',
-        key: 'mindmap',
-        icon: <Brain className='h-4 w-4' />,
+        iconIdentifier: 'PieChart',
       })
     }
 
@@ -204,7 +186,7 @@ const CourseMain: React.FC<CourseMainProps> = ({
       tabs.push({
         label: 'Video',
         key: 'video',
-        icon: <Video className='h-4 w-4' />,
+        iconIdentifier: 'Video',
       })
     }
 
@@ -212,7 +194,7 @@ const CourseMain: React.FC<CourseMainProps> = ({
       tabs.push({
         label: 'Roleplay',
         key: 'roleplay',
-        icon: <MessageSquare className='h-4 w-4' />,
+        iconIdentifier: 'MessageSquare',
       })
     }
 

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { MarkdownViewer } from './MarkDownViewer'
+import MarkdownViewer from './MarkDownViewer'
 
 interface ImageCarouselProps {
   slides: string[] // Array of summary slide content

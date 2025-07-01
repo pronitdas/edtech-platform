@@ -44,6 +44,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
     
     async def dispatch(self, request: Request, call_next):
         start_time = time.time()
+        client_ip = "unknown"
         
         try:
             # 1. IP filtering

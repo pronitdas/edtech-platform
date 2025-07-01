@@ -30,7 +30,7 @@ const SPECIAL_CONTENT_MAP = {
  * @returns React component if a match is found, null otherwise
  */
 export const getSpecialComponent = (
-  content: string | any
+  content: string | unknown
 ): React.ReactNode | null => {
   if (!content || typeof content !== 'string') return null
 

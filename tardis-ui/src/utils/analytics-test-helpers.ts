@@ -17,5 +17,5 @@ export const analyticsTestHelpers = {
   async cleanupTestData(): Promise<boolean> {
     console.warn('Analytics test helpers disabled - migrate to local API')
     return false
-  }
+  },
 }

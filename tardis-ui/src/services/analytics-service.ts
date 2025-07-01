@@ -5,7 +5,7 @@ export interface UserEvent {
   knowledge_id?: string
   chapter_id?: string
   content_id?: string
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 }
 
 export interface UserProgress {
@@ -30,11 +30,28 @@ export interface QuizStats {
   completion_rate: number
 }
 
+export interface SessionResponse {
+  id: string
+}
+
 export class AnalyticsService {
   async trackEvent(event: UserEvent): Promise<void> {
     return apiClient.request('/v2/analytics/track-event', {
       method: 'POST',
       body: JSON.stringify(event),
+    })
+  }
+
+  async startUserSession(userId: string): Promise<SessionResponse> {
+    return apiClient.request('/v2/analytics/sessions/start', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: userId }),
+    })
+  }
+
+  async endUserSession(sessionId: string): Promise<void> {
+    return apiClient.request(`/v2/analytics/sessions/${sessionId}/end`, {
+      method: 'POST',
     })
   }
 
@@ -92,14 +109,17 @@ export class AnalyticsService {
   async trackChapterView(
     knowledgeId: string,
     chapterId: string,
-    data?: Record<string, any>
+    data?: Record<string, unknown>
   ) {
-    return this.trackEvent({
+    const event: UserEvent = {
       event_type: 'chapter_view',
       knowledge_id: knowledgeId,
       chapter_id: chapterId,
-      data,
-    })
+    }
+    if (data !== undefined) {
+      event.data = data
+    }
+    return this.trackEvent(event)
   }
 
   async trackVideoWatch(
@@ -108,12 +128,13 @@ export class AnalyticsService {
     duration: number,
     progress: number
   ) {
-    return this.trackEvent({
+    const event: UserEvent = {
       event_type: 'video_watch',
       knowledge_id: knowledgeId,
       chapter_id: chapterId,
-      data: { duration, progress },
-    })
+    }
+    event.data = { duration, progress }
+    return this.trackEvent(event)
   }
 
   async trackQuizAttempt(
@@ -122,12 +143,13 @@ export class AnalyticsService {
     score: number,
     answers: any[]
   ) {
-    return this.trackEvent({
+    const event: UserEvent = {
       event_type: 'quiz_attempt',
       knowledge_id: knowledgeId,
       chapter_id: chapterId,
-      data: { score, answers },
-    })
+    }
+    event.data = { score, answers }
+    return this.trackEvent(event)
   }
 
   async trackContentGeneration(
@@ -135,11 +157,12 @@ export class AnalyticsService {
     contentType: string,
     success: boolean
   ) {
-    return this.trackEvent({
+    const event: UserEvent = {
       event_type: 'content_generation',
       knowledge_id: knowledgeId,
-      data: { content_type: contentType, success },
-    })
+    }
+    event.data = { content_type: contentType, success }
+    return this.trackEvent(event)
   }
 }
 

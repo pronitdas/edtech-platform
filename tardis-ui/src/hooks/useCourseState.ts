@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { ContentType } from '@/services/edtech-api'
-import { ChapterContent, ChapterV1 } from '@/types/database'
+import { ChapterContent, Chapter } from '@/types/api'
 import { useInteractionTracker } from '@/contexts/InteractionTrackerContext'
 import { useChapters } from '@/hooks/useChapters'
 import useAuthState from '@/hooks/useAuth'
@@ -172,7 +172,7 @@ const getInitialActiveTab = (
 
 export const useCourseState = (
   initialContent: ChapterContent | null | undefined,
-  chapter: ChapterV1 | null | undefined,
+  chapter: Chapter | null | undefined,
   language = 'English'
 ): UseCourseStateReturn => {
   console.log('useCourseState called with:', {
@@ -208,7 +208,7 @@ export const useCourseState = (
     getMissingContentTypes,
     isGeneratingContent: isChapterHookGenerating,
   } = useChapters()
-  const { oAiKey } = useAuthState()
+  const oAiKey = import.meta.env.VITE_OPENAI_API_KEY
 
   // Determine initial active tab based on chapter.chapter presence
   const determineInitialTab = () => {
@@ -267,7 +267,7 @@ export const useCourseState = (
       tab => tab.key === state.activeTab
     )
     if (!currentTabIsAvailable && availableTabs.length > 0) {
-      setState(prevState => ({ ...prevState, activeTab: availableTabs[0].key }))
+      setState(prevState => ({ ...prevState, activeTab: availableTabs[0]?.key || 'chapter' }))
     }
   }, [availableTabs, state.activeTab])
 
@@ -295,19 +295,32 @@ export const useCourseState = (
         case 'quiz':
           interactionTracker.trackQuizStart(
             parseInt(chapter.id.toString(), 10),
-            { chapterTitle: chapter.chaptertitle }
+            { 
+              quizId: chapter.id.toString(),
+              quizTitle: chapter.chaptertitle,
+              questionCount: 5, // Default question count
+              attemptNumber: 1, // Default attempt number
+              knowledgeId: chapter.knowledge_id?.toString() || '',
+              moduleId: chapter.id.toString()
+            }
           )
           break
         case 'notes':
           interactionTracker.trackContentView('notes', {
-            chapterTitle: chapter.chaptertitle,
+            knowledgeId: chapter.knowledge_id?.toString() || '',
+            moduleId: chapter.id.toString(),
+            contentTitle: chapter.chaptertitle,
             contentType: 'notes',
+            timestamp: Date.now(),
           })
           break
         case 'summary':
           interactionTracker.trackContentView('summary', {
-            chapterTitle: chapter.chaptertitle,
+            knowledgeId: chapter.knowledge_id?.toString() || '',
+            moduleId: chapter.id.toString(),
+            contentTitle: chapter.chaptertitle,
             contentType: 'summary',
+            timestamp: Date.now(),
           })
           break
         case 'mindmap':

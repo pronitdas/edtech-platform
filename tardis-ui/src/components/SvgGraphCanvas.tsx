@@ -351,7 +351,10 @@ const SvgGraphCanvas: React.FC<SvgGraphCanvasProps> = ({
     []
   )
 
-  // Event handlers for elements
+  const handleMouseLeave = useCallback(() => {
+    updateTooltip({ ...tooltipRef.current, visible: false })
+  }, [updateTooltip])
+
   const createHandlers = (type: string): ElementEventHandlers => ({
     onMouseEnter: (e: React.MouseEvent<SVGElement>, index: number) => {
       const rect = e.currentTarget.getBoundingClientRect()
@@ -420,10 +423,6 @@ const SvgGraphCanvas: React.FC<SvgGraphCanvasProps> = ({
     const centerY = height / 2
     return `${-centerX} ${-centerY} ${width} ${height}`
   }, [width, height])
-
-  const handleMouseLeave = useCallback(() => {
-    updateTooltip({ ...tooltipRef.current, visible: false })
-  }, [updateTooltip])
 
   const svgContent = useMemo(() => {
     return drawingStrategy.renderSvg({
@@ -549,186 +548,7 @@ const SvgGraphCanvas: React.FC<SvgGraphCanvasProps> = ({
       <motion.g transform={`translate(${width / 2},${height / 2})`}>
         <motion.g transform={`translate(${width / 2},${height / 2})`}>
           {renderContent()}
-
-          {lines.map((line, index) => (
-            <LineElement
-              key={`line-${index}`}
-              line={line}
-              index={index}
-              onMouseEnter={(e, idx) => {
-                const rect = e.currentTarget.getBoundingClientRect()
-                const pos = handleMouse(rect)
-                updateTooltip({
-                  visible: true,
-                  content: `Line ${idx + 1}`,
-                  x: pos.x,
-                  y: pos.y,
-                })
-              }}
-              onTouchStart={(e, idx) => {
-                const rect = e.currentTarget.getBoundingClientRect()
-                const pos = handleTouch(e, rect)
-                updateTooltip({
-                  visible: true,
-                  content: `Line ${idx + 1}`,
-                  x: pos.x,
-                  y: pos.y,
-                })
-              }}
-              onMouseLeave={handleMouseLeave}
-              onClick={idx => onElementClick?.('line', idx, line)}
-            />
-          ))}
-
-          {points.map((point, index) => (
-            <PointElement
-              key={`point-${index}`}
-              point={point}
-              index={index}
-              onMouseEnter={(e, idx) => {
-                const rect = e.currentTarget.getBoundingClientRect()
-                const pos = handleMouse(rect)
-                updateTooltip({
-                  visible: true,
-                  content: `Point ${idx + 1}`,
-                  x: pos.x,
-                  y: pos.y,
-                })
-              }}
-              onTouchStart={(e, idx) => {
-                const rect = e.currentTarget.getBoundingClientRect()
-                const pos = handleTouch(e, rect)
-                updateTooltip({
-                  visible: true,
-                  content: `Point ${idx + 1}`,
-                  x: pos.x,
-                  y: pos.y,
-                })
-              }}
-              onMouseLeave={handleMouseLeave}
-              onClick={idx => onElementClick?.('point', idx, point)}
-            />
-          ))}
-
-          {texts.map((text, index) => (
-            <TextElement
-              key={`text-${index}`}
-              text={text}
-              index={index}
-              onMouseEnter={(e, idx) => {
-                const rect = e.currentTarget.getBoundingClientRect()
-                const pos = handleMouse(rect)
-                updateTooltip({
-                  visible: true,
-                  content: `Text ${idx + 1}`,
-                  x: pos.x,
-                  y: pos.y,
-                })
-              }}
-              onTouchStart={(e, idx) => {
-                const rect = e.currentTarget.getBoundingClientRect()
-                const pos = handleTouch(e, rect)
-                updateTooltip({
-                  visible: true,
-                  content: `Text ${idx + 1}`,
-                  x: pos.x,
-                  y: pos.y,
-                })
-              }}
-              onMouseLeave={handleMouseLeave}
-              onClick={idx => onElementClick?.('text', idx, text)}
-            />
-          ))}
         </motion.g>
-        <ShapeElement
-          key={`shape-${index}`}
-          shape={shape}
-          index={index}
-          onMouseEnter={(e, idx) => {
-            const touchOrMouseEvent = e.touches ? e.touches[0] : e
-            const rect = (e.currentTarget as SVGElement).getBoundingClientRect()
-            const isMobile = window.matchMedia('(max-width: 768px)').matches
-            const scaleFactor = isMobile ? 1.5 : 1
-
-            let tooltipX = rect.left + (rect.width * scaleFactor) / 2
-            let tooltipY = rect.top - (isMobile ? 44 : 0)
-
-            // Adjust position for touch events
-            if ('touches' in e) {
-              const touch = e.touches[0]
-              tooltipX = touch.clientX
-              tooltipY = touch.clientY - (isMobile ? 60 : 40)
-            }
-
-            updateTooltip({
-              visible: true,
-              content: `${shape.type} ${idx + 1}`,
-              x: tooltipX,
-              y: tooltipY,
-            })
-          }}
-          onMouseLeave={handleMouseLeave}
-          onClick={idx => onElementClick?.('shape', idx, shape)}
-        />
-
-        {lines.map((line, index) => (
-          <LineElement
-            key={`line-${index}`}
-            line={line}
-            index={index}
-            onMouseEnter={(e, idx) => {
-              const rect = (
-                e.currentTarget as SVGElement
-              ).getBoundingClientRect()
-              updateTooltip({
-                visible: true,
-                content: `Line ${idx + 1}`,
-                x: rect.left + rect.width / 2,
-                y: rect.top,
-              })
-            }}
-            onMouseLeave={handleMouseLeave}
-            onClick={idx => onElementClick?.('line', idx, line)}
-          />
-        ))}
-
-        {points.map((point, index) => (
-          <PointElement
-            key={`point-${index}`}
-            point={point}
-            index={index}
-            onMouseEnter={(e, idx) => {
-              const rect = (e.target as SVGElement).getBoundingClientRect()
-              updateTooltip({
-                visible: true,
-                content: `Point (${point.x}, ${point.y})`,
-                x: rect.left + rect.width / 2,
-                y: rect.top,
-              })
-            }}
-            onMouseLeave={handleMouseLeave}
-            onClick={idx => onElementClick?.('point', idx, point)}
-          />
-        ))}
-
-        {texts.map((text, index) => (
-          <TextElement
-            key={`text-${index}`}
-            text={text}
-            index={index}
-            onMouseEnter={(e, idx) => {
-              const rect = (e.target as SVGElement).getBoundingClientRect()
-              updateTooltip({
-                visible: true,
-                content: text.text,
-                x: rect.left + rect.width / 2,
-                y: rect.top,
-              })
-            }}
-            onMouseLeave={handleMouseLeave}
-            onClick={idx => onElementClick?.('text', idx, text)}
-          />
-        ))}
       </motion.g>
 
       <AnimatePresence>

@@ -10,7 +10,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { ContentType } from '@/services/edtech-api'
-import { ChapterV1 } from '@/types/database'
+import { Chapter } from '@/types/api'
 
 interface ContentTypeInfo {
   type: ContentType
@@ -95,7 +95,7 @@ const ContentTypeCard: React.FC<ContentTypeCardProps> = ({
 )
 
 interface ContentGenerationPanelProps {
-  chapter: ChapterV1
+  chapter: Chapter
   language: string
   missingTypes: ContentType[]
   generatingTypes: ContentType[]

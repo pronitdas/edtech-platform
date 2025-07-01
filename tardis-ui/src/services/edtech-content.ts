@@ -1,13 +1,26 @@
 import { apiClient } from './api-client'
-import { Chapter } from '../types/api'
+import { Chapter, QuizQuestion, User } from '../types/api'
 import { knowledgeService } from './knowledge'
 import { roleplayService } from './roleplay'
+
+interface MindMapStructure {
+  nodes: Array<{
+    id: string
+    type?: 'input' | 'default' | 'output'
+    data: { label: string }
+  }>
+  edges: Array<{
+    id: string
+    source: string
+    target: string
+  }>
+}
 
 interface ChapterUpdate {
   notes?: string
   summary?: string
-  quiz?: any
-  mindmap?: any
+  quiz?: QuizQuestion[]
+  mindmap?: MindMapStructure
 }
 
 export class ContentService {
@@ -38,7 +51,7 @@ export class ContentService {
 export const contentService = new ContentService()
 
 // Legacy function replacements that now use the new API
-export const getEdTechContent = async (chapter: any, language = 'English') => {
+export const getEdTechContent = async (chapter: { knowledge_id: number; id: number }, _language = 'English') => {
   try {
     const content = await contentService.getChapter(
       chapter.knowledge_id,
@@ -46,28 +59,28 @@ export const getEdTechContent = async (chapter: any, language = 'English') => {
     )
     return [content] // Maintain legacy array format
   } catch (error) {
-    console.error('Error getting EdTech content:', error)
+    // Error getting EdTech content
     return []
   }
 }
 
 export const getChapterMetaDataByLanguage = async (
   knowledgeId: number,
-  language: string
+  _language: string
 ) => {
   try {
     return await contentService.getChapters(knowledgeId)
   } catch (error) {
-    console.error('Error getting chapter metadata:', error)
+    // Error getting chapter metadata
     return []
   }
 }
 
-export const getChapters = async (knowledgeId: number, language: string) => {
+export const getChapters = async (knowledgeId: number, _language: string) => {
   try {
     return await contentService.getChapters(knowledgeId)
   } catch (error) {
-    console.error('Error getting chapters:', error)
+    // Error getting chapters
     return []
   }
 }
@@ -77,7 +90,7 @@ export const updateEdtechContent = async (
   edtechId: string,
   chapterId: string,
   knowledgeId: number,
-  language = 'English'
+  _language = 'English'
 ) => {
   try {
     return await contentService.updateChapter(
@@ -86,7 +99,7 @@ export const updateEdtechContent = async (
       updateObject
     )
   } catch (error) {
-    console.error('Error updating EdTech content:', error)
+    // Error updating EdTech content
     return null
   }
 }
@@ -95,7 +108,7 @@ export const getKnowledge = async () => {
   try {
     return await knowledgeService.getKnowledgeList()
   } catch (error) {
-    console.error('Error getting knowledge:', error)
+    // Error getting knowledge
     return []
   }
 }
@@ -105,7 +118,7 @@ export const getKnowledgeMeta = async (id: number) => {
     const knowledge = await knowledgeService.getKnowledge(id)
     return [{ id: knowledge.id, name: knowledge.name }]
   } catch (error) {
-    console.error('Error getting knowledge meta:', error)
+    // Error getting knowledge meta
     return []
   }
 }
@@ -115,7 +128,7 @@ export const getRoleplayData = async (knowledgeId: number) => {
     const scenarios = await roleplayService.getScenarios(knowledgeId)
     return scenarios
   } catch (error) {
-    console.error('Error getting roleplay data:', error)
+    // Error getting roleplay data
     return null
   }
 }
@@ -124,7 +137,7 @@ export const generateRoleplayScenarios = async (
   knowledgeId: number,
   topic: string,
   content: string,
-  apiKey: string,
+  _apiKey: string,
   language: string = 'English'
 ) => {
   try {
@@ -132,22 +145,30 @@ export const generateRoleplayScenarios = async (
       knowledge_id: knowledgeId,
       topic,
       content,
-      language
+      language,
     })
     return response
   } catch (error) {
-    console.error('Error generating roleplay scenarios:', error)
+    // Error generating roleplay scenarios
     return null
   }
 }
 
 // Legacy functions for compatibility
-export const insertKnowledge = async (name: string, user: any, fileName: string) => {
-  console.warn('insertKnowledge is deprecated, use knowledgeService.uploadFiles instead')
+export const insertKnowledge = async (
+  _name: string,
+  _user: User,
+  _fileName: string
+) => {
+  // insertKnowledge is deprecated, use knowledgeService.uploadFiles instead
   return { id: Date.now() } // Mock response
 }
 
-export const uploadFiles = async (files: File[], knowledge_id: number, fileType: string) => {
-  console.warn('uploadFiles is deprecated, use knowledgeService.uploadFiles instead')
+export const uploadFiles = async (
+  _files: File[],
+  _knowledge_id: number,
+  _fileType: string
+) => {
+  // uploadFiles is deprecated, use knowledgeService.uploadFiles instead
   return [] // Mock response
 }

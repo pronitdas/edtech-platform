@@ -1,4 +1,18 @@
 import { apiClient } from './api'
+import { QuizQuestion } from '../types/api'
+
+interface MindMapStructure {
+  nodes: Array<{
+    id: string
+    type?: 'input' | 'default' | 'output'
+    data: { label: string }
+  }>
+  edges: Array<{
+    id: string
+    source: string
+    target: string
+  }>
+}
 
 export interface ContentGenerationRequest {
   chapter_id?: string
@@ -35,8 +49,8 @@ export class ContentService {
       content?: string
       notes?: string
       summary?: string
-      quiz?: any
-      mindmap?: any
+      quiz?: QuizQuestion[]
+      mindmap?: MindMapStructure
       language?: string
     }
   ) {

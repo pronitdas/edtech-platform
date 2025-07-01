@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useKnowledgeData, useChapters } from '../hooks/useKnowledgeData'
+import { useKnowledgeData } from '../hooks/useKnowledgeData'
+import { useChapters } from '../hooks/useChapters'
 import { useLanguage } from '../hooks/useLanguage'
-import MarkdownViewer from './MarkdownViewer'
+import MarkdownViewer from './MarkDownViewer'
 import VideoPlayer from './VideoPlayer'
-import QuizComponent from './QuizComponent'
-import MindmapViewer from './MindmapViewer'
+import { QuizComponent } from './quiz/QuizComponent'
 
 type TabType = 'content' | 'notes' | 'summary' | 'quiz' | 'mindmap'
 
@@ -19,11 +19,11 @@ export default function ChapterViewer() {
   const [editMode, setEditMode] = useState(false)
 
   const { knowledge, loading: knowledgeLoading } = useKnowledgeData(knowledgeId)
-  const { chapters, loading: chaptersLoading } = useChapters(knowledgeId)
+  const { uploadedFiles: chapters, fetchChapters } = useChapters()
   const { language } = useLanguage()
 
-  const currentChapter = chapters.find(ch => ch.id === chapterId)
-  const loading = knowledgeLoading || chaptersLoading
+  const currentChapter = chapters.find((ch: any) => ch.id.toString() === chapterId)
+  const loading = knowledgeLoading
 
   useEffect(() => {
     if (!loading && !currentChapter) {
@@ -103,7 +103,6 @@ export default function ChapterViewer() {
     { key: 'notes', label: 'Notes', icon: '📝' },
     { key: 'summary', label: 'Summary', icon: '📋' },
     { key: 'quiz', label: 'Quiz', icon: '❓' },
-    { key: 'mindmap', label: 'Mind Map', icon: '🧠' },
   ]
 
   return (
@@ -121,9 +120,14 @@ export default function ChapterViewer() {
               </button>
               <div>
                 <h1 className='text-xl font-semibold text-gray-900'>
-                  {currentChapter.title}
+                  {currentChapter.chaptertitle}
                 </h1>
-                <p className='text-sm text-gray-500'>{knowledge?.name}</p>
+                <p className='text-sm text-gray-500'>
+                  {Array.isArray(knowledge) && knowledge.length > 0 
+                    ? knowledge[0]?.name 
+                    : (knowledge as any)?.name || 'Unknown Knowledge'
+                  }
+                </p>
               </div>
             </div>
             <div className='flex items-center space-x-2'>
@@ -169,13 +173,12 @@ export default function ChapterViewer() {
                 {currentChapter.video_url && (
                   <VideoPlayer
                     src={currentChapter.video_url}
-                    title={currentChapter.title}
+                    title={currentChapter.chaptertitle}
                   />
                 )}
                 <MarkdownViewer
                   content={currentChapter.content || ''}
-                  editMode={editMode}
-                  onSave={content => handleSaveContent(content, 'content')}
+                  knowledge_id={knowledgeId || ''}
                 />
               </div>
             )}
@@ -195,8 +198,7 @@ export default function ChapterViewer() {
                 </div>
                 <MarkdownViewer
                   content={currentChapter.notes || 'No notes available'}
-                  editMode={editMode}
-                  onSave={content => handleSaveContent(content, 'notes')}
+                  knowledge_id={knowledgeId || ''}
                 />
               </div>
             )}
@@ -216,8 +218,7 @@ export default function ChapterViewer() {
                 </div>
                 <MarkdownViewer
                   content={currentChapter.summary || 'No summary available'}
-                  editMode={editMode}
-                  onSave={content => handleSaveContent(content, 'summary')}
+                  knowledge_id={knowledgeId || ''}
                 />
               </div>
             )}
@@ -237,38 +238,12 @@ export default function ChapterViewer() {
                 </div>
                 {currentChapter.quiz ? (
                   <QuizComponent
-                    quiz={currentChapter.quiz}
-                    chapterId={chapterId}
-                    editMode={editMode}
-                    onSave={content => handleSaveContent(content, 'quiz')}
+                    quizId={parseInt(chapterId || '0')}
+                    title={currentChapter.chaptertitle}
+                    questions={currentChapter.quiz || []}
                   />
                 ) : (
                   <p className='text-gray-500'>No quiz available</p>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'mindmap' && (
-              <div>
-                <div className='mb-4 flex items-center justify-between'>
-                  <h3 className='text-lg font-medium'>Mind Map</h3>
-                  {!currentChapter.mindmap && (
-                    <button
-                      onClick={() => handleGenerateContent('mindmap')}
-                      className='rounded bg-green-600 px-3 py-1 text-sm text-white hover:bg-green-700'
-                    >
-                      Generate Mind Map
-                    </button>
-                  )}
-                </div>
-                {currentChapter.mindmap ? (
-                  <MindmapViewer
-                    data={currentChapter.mindmap}
-                    editMode={editMode}
-                    onSave={content => handleSaveContent(content, 'mindmap')}
-                  />
-                ) : (
-                  <p className='text-gray-500'>No mind map available</p>
                 )}
               </div>
             )}
