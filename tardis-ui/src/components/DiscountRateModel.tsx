@@ -82,7 +82,7 @@ const DiscountRateCalculator = () => {
 
     return () => {
       if (p5Instance.current) {
-        ; (p5Instance.current as p5).remove()
+        ;(p5Instance.current as p5).remove()
         p5Instance.current = null
       }
     }

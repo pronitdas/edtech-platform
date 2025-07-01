@@ -129,7 +129,11 @@ const CoreGraphCanvas: React.FC<CoreGraphCanvasProps> = ({
 
       // Handler for pinch-to-zoom gestures
       const handleTouchZoom = (event: TouchEvent): void => {
-        if (event.touches.length === 2) {
+        if (
+          event.touches.length === 2 &&
+          event.touches[0] &&
+          event.touches[1]
+        ) {
           const touch1 = getPointFromTouch(event.touches[0])
           const touch2 = getPointFromTouch(event.touches[1])
 
@@ -207,6 +211,7 @@ const CoreGraphCanvas: React.FC<CoreGraphCanvasProps> = ({
         // Touch event handlers
         canvasElement.addEventListener('touchstart', (e: TouchEvent) => {
           e.preventDefault()
+          if (!e.touches[0]) return
           const touch = getPointFromTouch(e.touches[0])
           prevMouseX = touch.x
           prevMouseY = touch.y
@@ -228,7 +233,12 @@ const CoreGraphCanvas: React.FC<CoreGraphCanvasProps> = ({
 
           if (e.touches.length === 2) {
             handleTouchZoom(e)
-          } else if (e.touches.length === 1 && isDragging && !isMultiTouch) {
+          } else if (
+            e.touches.length === 1 &&
+            isDragging &&
+            !isMultiTouch &&
+            e.touches[0]
+          ) {
             const touch = getPointFromTouch(e.touches[0])
             throttledDrag(p, prevMouseX, prevMouseY)
             prevMouseX = touch.x
@@ -247,7 +257,9 @@ const CoreGraphCanvas: React.FC<CoreGraphCanvasProps> = ({
         // Increase hit areas for touch on mobile
         if (window.matchMedia('(max-width: 768px)').matches) {
           p.strokeWeight(3) // Thicker lines
-          drawingStrategy.setMobileMode(true)
+          if (drawingStrategy?.setMobileMode) {
+            drawingStrategy.setMobileMode(true)
+          }
         }
       }
 

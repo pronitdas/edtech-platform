@@ -5,6 +5,8 @@ import base64
 from typing import Dict, Optional
 from datetime import datetime
 
+# Load environment variables from .env file
+
 import fitz  # PyMuPDF
 from PIL import Image
 
@@ -30,9 +32,12 @@ from src.api.v2 import v2_router
 from knowledge_graph import Neo4jGraphService
 from config import redis_client, logger
 import redis
+import os
 
 # Initialize Neo4jGraphService
 neo4j_graph_service = Neo4jGraphService()
+
+
 
 class JWTMiddleware(BaseHTTPMiddleware):
     """Middleware to validate JWT tokens on protected endpoints."""
@@ -192,12 +197,13 @@ app.add_middleware(SecurityMiddleware)
 # Add JWT middleware (after security)
 app.add_middleware(JWTMiddleware)
 
-# CORS configuration
+# CORS configuration - more restrictive for security
+allow_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allow_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 

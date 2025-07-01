@@ -4,12 +4,12 @@ const PriceToDividendCalculator = () => {
   const [price, setPrice] = useState(50)
   const [dividend, setDividend] = useState(2)
   const [pdRatio, setPdRatio] = useState(25)
-  const canvasRef = useRef(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
     // Update the ratio when price or dividend changes
     const ratio = (price / dividend).toFixed(2)
-    setPdRatio(ratio)
+    setPdRatio(parseFloat(ratio))
 
     // Draw the visualization
     drawVisualization()
@@ -25,6 +25,8 @@ const PriceToDividendCalculator = () => {
     if (!canvas) return
 
     const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
     const width = canvas.width
     const height = canvas.height
 
@@ -51,7 +53,7 @@ const PriceToDividendCalculator = () => {
     // Scale values for visualization
     const scaledPrice = price * 1.5
     const scaledDividend = dividend * 15
-    const ratio = parseFloat(pdRatio)
+    const ratio = pdRatio
     const ratioHeight = ratio * 3
 
     // Price bar (blue)

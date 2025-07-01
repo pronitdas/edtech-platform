@@ -11,7 +11,9 @@ const LandingPage = () => {
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function (e: Event) {
         e.preventDefault()
-        const target = document.querySelector((e.target as HTMLAnchorElement).getAttribute('href')!)
+        const target = document.querySelector(
+          (e.target as HTMLAnchorElement).getAttribute('href')!
+        )
         target?.scrollIntoView({
           behavior: 'smooth',
         })

@@ -158,7 +158,7 @@ const AITutor: React.FC<AITutorProps> = ({
         const priorityWeights = { high: 3, medium: 2, low: 1 }
         return priorityWeights[b.priority] - priorityWeights[a.priority]
       })
-      setCurrentInsight(sortedInsights[0])
+      setCurrentInsight(sortedInsights[0] || null)
     }
   }, [insights])
 

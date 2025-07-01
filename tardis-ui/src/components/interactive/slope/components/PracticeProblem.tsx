@@ -169,7 +169,9 @@ const PracticeProblem: React.FC<PracticeProblemProps> = ({
 
               {showHint && (
                 <div className='mt-2 rounded-md border-l-4 border-purple-500 bg-gray-900 p-3'>
-                  <p className='text-gray-300'>{currentProblem.hints[0]}</p>
+                  <p className='text-gray-300'>
+                    {currentProblem.hints?.[0] || 'No hint available'}
+                  </p>
                 </div>
               )}
             </div>

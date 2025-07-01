@@ -39,6 +39,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       setIsPlaying(true)
       lastPlayTime.current = video.currentTime
       trackVideoPlay(contentId, {
+        knowledgeId: 'unknown', // TODO: Pass actual knowledgeId
+        moduleId: 'unknown', // TODO: Pass actual moduleId
+        currentTime: video.currentTime,
+        totalDuration: video.duration || 0,
+        progressPercent: video.duration ? (video.currentTime / video.duration) * 100 : 0,
+        videoId: contentId.toString(),
         timestamp: Date.now(),
         videoPosition: video.currentTime,
       })
@@ -47,7 +53,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const handlePause = () => {
       setIsPlaying(false)
       const elapsedTime = video.currentTime - lastPlayTime.current
-      trackVideoPause(contentId, elapsedTime, {
+      trackVideoPause(contentId, {
+        knowledgeId: 'unknown', // TODO: Pass actual knowledgeId
+        moduleId: 'unknown', // TODO: Pass actual moduleId
+        currentTime: video.currentTime,
+        totalDuration: video.duration || 0,
+        progressPercent: video.duration ? (video.currentTime / video.duration) * 100 : 0,
+        videoId: contentId.toString(),
+        timeWatched: elapsedTime,
         timestamp: Date.now(),
         videoPosition: video.currentTime,
       })
@@ -56,6 +69,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const handleEnded = () => {
       setIsPlaying(false)
       trackVideoComplete(contentId, {
+        knowledgeId: 'unknown', // TODO: Pass actual knowledgeId
+        moduleId: 'unknown', // TODO: Pass actual moduleId
+        videoId: contentId.toString(),
+        watchedSegments: [[0, video.currentTime]], // Simplified - should track actual segments
+        totalWatchedTime: video.currentTime,
+        completePercent: 100,
+        watchCount: 1,
         timestamp: Date.now(),
         totalDuration: video.duration,
       })

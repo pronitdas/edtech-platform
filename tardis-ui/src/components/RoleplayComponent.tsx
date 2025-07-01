@@ -130,7 +130,7 @@ const RoleplayComponent: React.FC<RoleplayComponentProps> = ({
         responses: [
           {
             type: 'teacher',
-            content: `Hello! I am ${selectedPersona.name}. ${selectedPersona.description} How can I help you with the scenario: '${activeScenario.title}'?`,
+            content: `Hello! I am ${selectedPersona.name}. ${selectedPersona.description} How can I help you with the scenario: '${activeScenario?.title}'?`,
           },
         ],
       }))
@@ -147,6 +147,8 @@ const RoleplayComponent: React.FC<RoleplayComponentProps> = ({
           console.log('Analytics session started:', session.id)
 
           await analyticsService.trackEvent({
+            event_type: 'roleplay_start',
+            content_id: activeScenario.title,
             userId,
             eventType: 'roleplay_start',
             contentId: activeScenario.title,
@@ -239,11 +241,13 @@ const RoleplayComponent: React.FC<RoleplayComponentProps> = ({
       const isComplete = nextStep >= maxSteps
 
       await analyticsService.trackEvent({
+        event_type: 'roleplay_student_response',
+        content_id: activeScenario.title,
         userId,
         eventType: 'roleplay_student_response',
         contentId: activeScenario.title,
         timestamp: Date.now(),
-        sessionId: currentSessionId,
+        sessionId: currentSessionId || '',
         step: nextStep,
         teacherPersona: selectedPersona.name,
         studentResponse: currentInput,
@@ -255,18 +259,22 @@ const RoleplayComponent: React.FC<RoleplayComponentProps> = ({
       if (isComplete) {
         console.log('Roleplay Complete.')
         await analyticsService.trackEvent({
+          event_type: 'roleplay_complete',
+          content_id: activeScenario.title,
           userId,
           eventType: 'roleplay_complete',
           contentId: activeScenario.title,
           timestamp: Date.now(),
-          sessionId: currentSessionId,
+          sessionId: currentSessionId || '',
           totalSteps: nextStep,
           language: language,
           interactionType: 'completion',
         })
 
         console.log('Ending analytics session on completion:', currentSessionId)
-        await analyticsService.endUserSession(currentSessionId)
+        if (currentSessionId) {
+          await analyticsService.endUserSession(currentSessionId)
+        }
       }
 
       setRoleplayState(prevState => ({
@@ -448,9 +456,9 @@ const RoleplayComponent: React.FC<RoleplayComponentProps> = ({
 
     const currentTeacherMessage =
       roleplayState.responses.length > 0
-        ? roleplayState.responses[roleplayState.responses.length - 1].type ===
+        ? roleplayState.responses[roleplayState.responses.length - 1]?.type ===
           'teacher'
-          ? roleplayState.responses[roleplayState.responses.length - 1].content
+          ? roleplayState.responses[roleplayState.responses.length - 1]?.content
           : 'Waiting for your input...'
         : ''
 
@@ -489,7 +497,9 @@ const RoleplayComponent: React.FC<RoleplayComponentProps> = ({
         <div className='flex-grow space-y-4 overflow-y-auto p-4'>
           <BlackboardDisplay
             title={`Scenario: ${activeScenario.title}`}
-            currentQuestion={currentTeacherMessage}
+            {...(currentTeacherMessage && {
+              currentQuestion: currentTeacherMessage,
+            })}
           />
 
           <div className='space-y-4'>

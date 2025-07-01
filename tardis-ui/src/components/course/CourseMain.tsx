@@ -6,6 +6,13 @@ import { CourseProvider } from '@/contexts/CourseContext'
 import { useCourse } from '@/contexts/CourseContext'
 import CourseHeader from './CourseHeader'
 import CourseContentRenderer from './CourseContentRenderer'
+import {
+  FileText,
+  BookOpen,
+  PieChart,
+  Video,
+  MessageSquare,
+} from 'lucide-react'
 import { ContentGenerationPanel } from '@/components/content/ContentGenerationPanel'
 import ChatbotFloatingButton from '@/components/ChatbotFloatingButton'
 import LearningReport from '@/components/LearningReport'
@@ -55,7 +62,10 @@ const CourseContent: React.FC<CourseContentProps> = ({
     useChapters()
 
   const { session } = useInteractionTracker()
-  const userId = session?.metadata?.userId
+  const userId =
+    typeof session?.metadata?.userId === 'string'
+      ? session.metadata.userId
+      : 'anonymous'
 
   // Create chaptersMeta array from the current chapter
   const chaptersMeta = useMemo(() => {
@@ -154,6 +164,18 @@ const CourseMain: React.FC<CourseMainProps> = ({
     )
   }
 
+  // Helper function to get icon component
+  const getIconComponent = (iconIdentifier: string) => {
+    const iconMap = {
+      FileText: <FileText className='h-4 w-4' />,
+      BookOpen: <BookOpen className='h-4 w-4' />,
+      PieChart: <PieChart className='h-4 w-4' />,
+      Video: <Video className='h-4 w-4' />,
+      MessageSquare: <MessageSquare className='h-4 w-4' />,
+    }
+    return iconMap[iconIdentifier as keyof typeof iconMap] || null
+  }
+
   // Create availableTabs from content
   const getAvailableTabs = () => {
     const tabs = []
@@ -162,7 +184,7 @@ const CourseMain: React.FC<CourseMainProps> = ({
       tabs.push({
         label: 'Notes',
         key: 'notes',
-        iconIdentifier: 'FileText',
+        icon: getIconComponent('FileText'),
       })
     }
 
@@ -170,7 +192,7 @@ const CourseMain: React.FC<CourseMainProps> = ({
       tabs.push({
         label: 'Summary',
         key: 'summary',
-        iconIdentifier: 'BookOpen',
+        icon: getIconComponent('BookOpen'),
       })
     }
 
@@ -178,7 +200,7 @@ const CourseMain: React.FC<CourseMainProps> = ({
       tabs.push({
         label: 'Quiz',
         key: 'quiz',
-        iconIdentifier: 'PieChart',
+        icon: getIconComponent('PieChart'),
       })
     }
 
@@ -186,7 +208,7 @@ const CourseMain: React.FC<CourseMainProps> = ({
       tabs.push({
         label: 'Video',
         key: 'video',
-        iconIdentifier: 'Video',
+        icon: getIconComponent('Video'),
       })
     }
 
@@ -194,7 +216,7 @@ const CourseMain: React.FC<CourseMainProps> = ({
       tabs.push({
         label: 'Roleplay',
         key: 'roleplay',
-        iconIdentifier: 'MessageSquare',
+        icon: getIconComponent('MessageSquare'),
       })
     }
 

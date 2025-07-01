@@ -71,7 +71,12 @@ const ModelViewer: React.FC<ModelViewerProps> = ({ data }) => {
         <ambientLight intensity={0.3} />
         <directionalLight position={[10, 10, 5]} intensity={1} />
         <React.Suspense fallback={<div>Loading...</div>}>
-          <Model url={modelUrl} textureUrl={textureUrls[0]?.colorMapUrl} />
+          <Model
+            url={modelUrl}
+            {...(textureUrls[0]?.colorMapUrl && {
+              textureUrl: textureUrls[0].colorMapUrl,
+            })}
+          />
           <Environment preset='studio' />
         </React.Suspense>
         <OrbitControls enableZoom={true} />

@@ -51,6 +51,8 @@ const ModelGenerator: React.FC<ModelGeneratorProps> = ({ prompt }) => {
 
       return () => clearInterval(interval) // Clear interval on component unmount
     }
+    // Return undefined for the else case
+    return undefined
   }, [taskId, status])
 
   return (

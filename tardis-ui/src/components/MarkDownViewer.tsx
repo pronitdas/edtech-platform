@@ -84,7 +84,9 @@ const MarkdownViewer: React.FC<{
               {...props}
             />
           ),
-          li: (props: MarkdownComponentProps) => <li className='ml-2' {...props} />,
+          li: (props: MarkdownComponentProps) => (
+            <li className='ml-2' {...props} />
+          ),
           table: (props: MarkdownComponentProps) => (
             <div className='my-6 overflow-x-auto'>
               <table
@@ -114,7 +116,7 @@ const MarkdownViewer: React.FC<{
               {...props}
             />
           ),
-          img: ({ src, alt }) => {
+          img: ({ src, alt }: { src?: string; alt?: string }) => {
             const resolvedSrc = src ? getImageSrc(src, knowledge_id) : ''
             return (
               <img

@@ -31,7 +31,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         apiClient.setToken(token)
         try {
           const profile = await apiClient.getProfile()
-          setUser(profile)
+          setUser(profile as User)
         } catch (error) {
           // Token invalid, clear it
           console.warn('Invalid token, clearing session:', error)
@@ -94,7 +94,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const updatedUser = await apiClient.updateProfile(data)
-      setUser(updatedUser)
+      setUser(updatedUser as User)
     } catch (error) {
       console.error('Profile update error:', error)
       throw new Error(

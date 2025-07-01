@@ -41,7 +41,19 @@ const CustomNode = ({ data }: { data: any }) => (
     <Handle type='source' position={Position.Bottom} id='b' />
   </>
 )
-const CustomEdge = ({ id, sourceX, sourceY, targetX, targetY }: { id: string; sourceX: number; sourceY: number; targetX: number; targetY: number }) => {
+const CustomEdge = ({
+  id,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+}: {
+  id: string
+  sourceX: number
+  sourceY: number
+  targetX: number
+  targetY: number
+}) => {
   const [edgePath] = getStraightPath({
     sourceX,
     sourceY,

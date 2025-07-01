@@ -76,6 +76,8 @@ export interface ProblemGenerationStats {
 
 import { LineData } from '@/types/geometry'
 
+export type { LineData }
+
 export interface SolutionResult {
   problemId: string
   isCorrect: boolean

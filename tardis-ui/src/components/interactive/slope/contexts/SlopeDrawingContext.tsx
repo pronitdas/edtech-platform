@@ -40,7 +40,7 @@ interface SlopeDrawingContextValue {
   setPointsFromCoordinates: (coordinates: Point[]) => void
   mapPointToCanvas: (point: Point) => { x: number; y: number }
   mapCanvasToPoint: (canvasPoint: { x: number; y: number }) => Point
-  lineData?: LineData
+  lineData?: LineData | null | undefined
   canvasWidth: number
   canvasHeight: number
   customPoints: Point[] // Added missing prop
@@ -144,7 +144,7 @@ export const SlopeDrawingProvider: React.FC<SlopeDrawingProviderProps> = ({
       // Initialize with first concept if available
       return interactiveContent.concepts &&
         interactiveContent.concepts.length > 0
-        ? interactiveContent.concepts[0].id
+        ? interactiveContent.concepts[0]?.id || null
         : null
     }
   )
@@ -215,21 +215,21 @@ export const SlopeDrawingProvider: React.FC<SlopeDrawingProviderProps> = ({
   } = useProblemGeneration({
     predefinedProblems: interactiveContent.problems
       ? interactiveContent.problems.map(p => {
-          // Ensure solution is not undefined
-          const solution = p.solution === undefined ? '' : p.solution
-          const targetPoints =
-            p.targetPoints === undefined ? [] : p.targetPoints
-          const startPoints = p.startPoints === undefined ? [] : p.startPoints
-          return {
-            id: p.id,
-            question: p.question,
-            difficulty: p.difficulty || 'medium',
-            hints: p.hints || ['Try using the slope formula: (y₂-y₁)/(x₂-x₁)'],
-            solution: solution,
-            targetPoints: targetPoints,
-            startPoints: startPoints,
-          }
-        })
+        // Ensure solution is not undefined
+        const solution = p.solution === undefined ? '' : p.solution
+        const targetPoints =
+          p.targetPoints === undefined ? [] : p.targetPoints
+        const startPoints = p.startPoints === undefined ? [] : p.startPoints
+        return {
+          id: p.id,
+          question: p.question,
+          difficulty: p.difficulty || 'medium',
+          hints: p.hints || ['Try using the slope formula: (y₂-y₁)/(x₂-x₁)'],
+          solution: solution,
+          targetPoints: targetPoints,
+          startPoints: startPoints,
+        }
+      })
       : [],
     learningContext: {
       // Pass learning context

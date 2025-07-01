@@ -110,7 +110,9 @@ export default function AnalyticsPage() {
               </button>
               <div>
                 <h1 className='text-xl font-semibold text-gray-900'>
-                  Analytics: {knowledge.find(k => k.id.toString() === knowledgeId)?.name || 'Unknown'}
+                  Analytics:{' '}
+                  {knowledge.find(k => k.id.toString() === knowledgeId)?.name ||
+                    'Unknown'}
                 </h1>
                 <p className='text-sm text-gray-500'>
                   Learning progress and insights
@@ -236,8 +238,8 @@ export default function AnalyticsPage() {
                         <div className='relative pb-8'>
                           {idx !==
                             analytics.interactions.slice(0, 10).length - 1 && (
-                              <span className='absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200' />
-                            )}
+                            <span className='absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200' />
+                          )}
                           <div className='relative flex space-x-3'>
                             <div className='flex h-8 w-8 items-center justify-center rounded-full bg-gray-400'>
                               <span className='text-xs text-white'>

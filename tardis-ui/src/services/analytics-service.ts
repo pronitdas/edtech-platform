@@ -6,6 +6,13 @@ export interface UserEvent {
   chapter_id?: string
   content_id?: string
   data?: Record<string, unknown>
+  // Additional properties used by components
+  userId?: string
+  eventType?: string // Alternative to event_type for compatibility
+  contentId?: string | null
+  timestamp?: number
+  sessionId?: string | null
+  [key: string]: any // Allow additional properties
 }
 
 export interface UserProgress {
@@ -106,20 +113,36 @@ export class AnalyticsService {
   }
 
   // Missing methods that are being called
-  async getUserCompletion(userId: string): Promise<any> {
-    return apiClient.request(`/v2/analytics/user/${userId}/completion`)
+  async getUserCompletion(userId: string, courseId?: string): Promise<any> {
+    const params = courseId ? `?course_id=${courseId}` : ''
+    return apiClient.request(`/v2/analytics/user/${userId}/completion${params}`)
   }
 
-  async getKnowledgeInteractionSummary(knowledgeId: string): Promise<any> {
-    return apiClient.request(`/v2/analytics/knowledge/${knowledgeId}/interaction-summary`)
+  async getKnowledgeInteractionSummary(
+    userId: string,
+    knowledgeId: string
+  ): Promise<any> {
+    return apiClient.request(
+      `/v2/analytics/user/${userId}/knowledge/${knowledgeId}/interaction-summary`
+    )
   }
 
-  async getKnowledgeVideoStats(knowledgeId: string): Promise<VideoStats> {
-    return this.getVideoStats(knowledgeId)
+  async getKnowledgeVideoStats(
+    userId: string,
+    knowledgeId: string
+  ): Promise<VideoStats> {
+    return apiClient.request(
+      `/v2/analytics/user/${userId}/knowledge/${knowledgeId}/video-stats`
+    )
   }
 
-  async getKnowledgeQuizStats(knowledgeId: string): Promise<QuizStats> {
-    return this.getQuizStats(knowledgeId)
+  async getKnowledgeQuizStats(
+    userId: string,
+    knowledgeId: string
+  ): Promise<QuizStats> {
+    return apiClient.request(
+      `/v2/analytics/user/${userId}/knowledge/${knowledgeId}/quiz-stats`
+    )
   }
 
   async getUserSessionStats(userId: string): Promise<any> {
@@ -130,7 +153,11 @@ export class AnalyticsService {
     return apiClient.request(`/v2/analytics/user/${userId}/interaction-summary`)
   }
 
-  async summarizeNumericEventData(userId: string, eventType: string, jsonKey: string): Promise<any> {
+  async summarizeNumericEventData(
+    userId: string,
+    eventType: string,
+    jsonKey: string
+  ): Promise<any> {
     return this.getNumericSummary(userId, eventType, jsonKey)
   }
 

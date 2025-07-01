@@ -229,7 +229,10 @@ function EdtechApp() {
   }, [currentView, currentTopic.topic, language])
 
   return (
-    <InteractionTrackerProvider dataService={analyticsService} userId={userId || ''}>
+    <InteractionTrackerProvider
+      dataService={analyticsService}
+      userId={userId || ''}
+    >
       <div className='flex h-screen w-screen flex-col overflow-hidden bg-gray-900 shadow-lg'>
         {/* Main content area with sidebar */}
         <div className='flex flex-1 overflow-hidden'>
@@ -418,7 +421,13 @@ function EdtechApp() {
   )
 }
 
-const LanguageSelector = ({ language, onChange }: { language: string; onChange: (lang: string) => void }) => (
+const LanguageSelector = ({
+  language,
+  onChange,
+}: {
+  language: string
+  onChange: (lang: string) => void
+}) => (
   <select
     value={language}
     onChange={e => onChange(e.target.value)}

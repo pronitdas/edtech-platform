@@ -41,11 +41,18 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onTextProcessed }) => {
       setStatus({ message: '', type: null })
 
       // Insert knowledge and get ID
-      const knowledge_id = await insertKnowledge(
+      if (!user) {
+        throw new Error('User not authenticated')
+      }
+      const knowledgeResult = await insertKnowledge(
         knowledgeName.trim(),
-        user,
+        user as any, // Type compatibility fix
         file.name
       )
+      const knowledge_id =
+        typeof knowledgeResult === 'object'
+          ? knowledgeResult.id
+          : knowledgeResult
 
       // Determine file type
       const fileType = file.type.startsWith('image/')
@@ -99,7 +106,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onTextProcessed }) => {
         <input
           id='fileUpload'
           type='file'
-          onChange={e => e.target.files && setFile(e.target.files[0])}
+          onChange={e => e.target.files && setFile(e.target.files[0] || null)}
           className='w-full rounded border p-2'
         />
       </div>

@@ -25,7 +25,7 @@ import {
 interface InteractionEvent {
   id: string
   type: string
-  contentId?: string
+  contentId?: string | undefined
   timestamp: number
   metadata: Record<string, any>
   persisted: boolean
@@ -126,25 +126,25 @@ interface InteractionContextValue
 // Action types for the reducer
 type ActionType =
   | {
-      type: 'ADD_EVENT'
-      payload: {
-        eventType: string
-        contentId?: string
-        metadata?: Record<string, unknown>
-      }
+    type: 'ADD_EVENT'
+    payload: {
+      eventType: string
+      contentId?: string | undefined
+      metadata?: Record<string, unknown>
     }
+  }
   | { type: 'SET_EVENTS_PROCESSING'; payload: { events: InteractionEvent[] } }
   | { type: 'SET_EVENTS_PERSISTED'; payload: { processedIds: string[] } }
   | { type: 'SET_EVENTS_FAILED'; payload: { events: InteractionEvent[] } }
   | {
-      type: 'SET_SESSION'
-      payload: { sessionId: string | null; metadata?: Record<string, any> }
-    }
+    type: 'SET_SESSION'
+    payload: { sessionId: string | null; metadata?: Record<string, any> }
+  }
   | { type: 'SET_TRACKING_ENABLED'; payload: boolean }
   | {
-      type: 'UPDATE_CONFIG'
-      payload: Partial<InteractionContextState['config']>
-    }
+    type: 'UPDATE_CONFIG'
+    payload: Partial<InteractionContextState['config']>
+  }
 
 // Create context
 const InteractionTrackerContext = createContext<
@@ -326,434 +326,436 @@ export const InteractionTrackerProvider: React.FC<
   batchSize = 10,
   flushInterval = 30000,
 }) => {
-  const [state, dispatch] = useReducer(interactionReducer, {
-    ...initialState,
-    config: {
-      ...initialState.config,
-      isTrackingEnabled: Boolean(userId),
-      batchSize,
-      flushInterval,
-    },
-  })
-
-  // Initialize session when userId changes
-  useEffect(() => {
-    let isMounted = true // Flag to prevent state updates on unmounted component
-
-    const initializeSession = async () => {
-      if (userId && dataService.startUserSession) {
-        console.log(
-          `[InteractionTracker] Attempting to start session for userId: ${userId}`
-        )
-        dispatch({ type: 'SET_TRACKING_ENABLED', payload: false }) // Disable tracking until session is ready
-        dispatch({ type: 'SET_SESSION', payload: { sessionId: null } }) // Clear old session ID
-
-        try {
-          const sessionResult = await dataService.startUserSession(userId)
-
-          if (isMounted && sessionResult && sessionResult.id) {
-            console.log(
-              `[InteractionTracker] Session started successfully. Session ID: ${sessionResult.id}`
-            )
-            // Store the DB-generated session ID and enable tracking
-            dispatch({
-              type: 'SET_SESSION',
-              payload: {
-                sessionId: sessionResult.id,
-                metadata: {
-                  userId,
-                  startedAt: new Date().toISOString(),
-                },
-              },
-            })
-            dispatch({ type: 'SET_TRACKING_ENABLED', payload: true })
-          } else if (isMounted) {
-            console.error(
-              '[InteractionTracker] Failed to start session or get session ID from service.'
-            )
-            // Keep tracking disabled and session null
-            dispatch({ type: 'SET_SESSION', payload: { sessionId: null } })
-            dispatch({ type: 'SET_TRACKING_ENABLED', payload: false })
-          }
-        } catch (error) {
-          console.error(
-            '[InteractionTracker] Error during session initialization:',
-            error
-          )
-          if (isMounted) {
-            dispatch({ type: 'SET_SESSION', payload: { sessionId: null } })
-            dispatch({ type: 'SET_TRACKING_ENABLED', payload: false })
-          }
-        }
-      } else {
-        // No userId or service method, disable tracking
-        console.log(
-          '[InteractionTracker] No userId or startUserSession method, disabling tracking.'
-        )
-        dispatch({ type: 'SET_SESSION', payload: { sessionId: null } })
-        dispatch({ type: 'SET_TRACKING_ENABLED', payload: false })
-      }
-    }
-
-    initializeSession()
-
-    return () => {
-      isMounted = false // Cleanup function to set flag on unmount
-    }
-  }, [userId, dataService])
-
-  // Create a separate useEffect for handling session termination
-  useEffect(() => {
-    return () => {
-      // End the session when the component unmounts if it's active
-      if (state.session.id && dataService.endUserSession) {
-        console.log(`[InteractionTracker] Ending session: ${state.session.id}`)
-        dataService.endUserSession(state.session.id).catch((error: unknown) => {
-          console.error('[InteractionTracker] Error ending session:', error)
-        })
-      }
-    }
-  }, [state.session.id, dataService])
-
-  // Set up interval for flushing events
-  useEffect(() => {
-    if (state.config.isTrackingEnabled && state.session.isActive) {
-      const interval = setInterval(() => {
-        if (state.events.pending.length > 0) {
-          flushEvents()
-        }
-      }, state.config.flushInterval)
-
-      return () => clearInterval(interval)
-    }
-  }, [
-    state.config.isTrackingEnabled,
-    state.session.isActive,
-    state.config.flushInterval,
-    state.events.pending.length,
-  ])
-
-  // Flush events to persistence
-  const flushEvents = useCallback(async () => {
-    // Capture pending events *before* any state changes
-    const eventsToProcess = [...state.events.pending]
-
-    // Exit if there's nothing to process in the captured array
-    if (eventsToProcess.length === 0) return
-
-    console.log(
-      `[InteractionTracker] Flushing ${eventsToProcess.length} pending events...`
-    )
-
-    // Dispatch action to move these specific events from pending to processing state
-    dispatch({
-      type: 'SET_EVENTS_PROCESSING',
-      payload: { events: eventsToProcess },
+    const [state, dispatch] = useReducer(interactionReducer, {
+      ...initialState,
+      config: {
+        ...initialState.config,
+        isTrackingEnabled: Boolean(userId),
+        batchSize,
+        flushInterval,
+      },
     })
 
-    try {
-      // Convert the *captured* events (eventsToProcess) to the format expected by the analytics service
-      const eventsToSend = eventsToProcess.map(event => ({
-        userId,
-        eventType: event.type,
-        contentId: event.contentId || null,
-        timestamp: event.timestamp,
-        sessionId: state.session.id,
-        ...event.metadata,
-      }))
+    // Initialize session when userId changes
+    useEffect(() => {
+      let isMounted = true // Flag to prevent state updates on unmounted component
+
+      const initializeSession = async () => {
+        if (userId && dataService.startUserSession) {
+          console.log(
+            `[InteractionTracker] Attempting to start session for userId: ${userId}`
+          )
+          dispatch({ type: 'SET_TRACKING_ENABLED', payload: false }) // Disable tracking until session is ready
+          dispatch({ type: 'SET_SESSION', payload: { sessionId: null } }) // Clear old session ID
+
+          try {
+            const sessionResult = await dataService.startUserSession(userId)
+
+            if (isMounted && sessionResult && sessionResult.id) {
+              console.log(
+                `[InteractionTracker] Session started successfully. Session ID: ${sessionResult.id}`
+              )
+              // Store the DB-generated session ID and enable tracking
+              dispatch({
+                type: 'SET_SESSION',
+                payload: {
+                  sessionId: sessionResult.id,
+                  metadata: {
+                    userId,
+                    startedAt: new Date().toISOString(),
+                  },
+                },
+              })
+              dispatch({ type: 'SET_TRACKING_ENABLED', payload: true })
+            } else if (isMounted) {
+              console.error(
+                '[InteractionTracker] Failed to start session or get session ID from service.'
+              )
+              // Keep tracking disabled and session null
+              dispatch({ type: 'SET_SESSION', payload: { sessionId: null } })
+              dispatch({ type: 'SET_TRACKING_ENABLED', payload: false })
+            }
+          } catch (error) {
+            console.error(
+              '[InteractionTracker] Error during session initialization:',
+              error
+            )
+            if (isMounted) {
+              dispatch({ type: 'SET_SESSION', payload: { sessionId: null } })
+              dispatch({ type: 'SET_TRACKING_ENABLED', payload: false })
+            }
+          }
+        } else {
+          // No userId or service method, disable tracking
+          console.log(
+            '[InteractionTracker] No userId or startUserSession method, disabling tracking.'
+          )
+          dispatch({ type: 'SET_SESSION', payload: { sessionId: null } })
+          dispatch({ type: 'SET_TRACKING_ENABLED', payload: false })
+        }
+      }
+
+      initializeSession()
+
+      return () => {
+        isMounted = false // Cleanup function to set flag on unmount
+      }
+    }, [userId, dataService])
+
+    // Create a separate useEffect for handling session termination
+    useEffect(() => {
+      return () => {
+        // End the session when the component unmounts if it's active
+        if (state.session.id && dataService.endUserSession) {
+          console.log(`[InteractionTracker] Ending session: ${state.session.id}`)
+          dataService.endUserSession(state.session.id).catch((error: unknown) => {
+            console.error('[InteractionTracker] Error ending session:', error)
+          })
+        }
+      }
+    }, [state.session.id, dataService])
+
+    // Set up interval for flushing events
+    useEffect(() => {
+      if (state.config.isTrackingEnabled && state.session.isActive) {
+        const interval = setInterval(() => {
+          if (state.events.pending.length > 0) {
+            flushEvents()
+          }
+        }, state.config.flushInterval)
+
+        return () => clearInterval(interval)
+      }
+      // Return undefined for the else case
+      return undefined
+    }, [
+      state.config.isTrackingEnabled,
+      state.session.isActive,
+      state.config.flushInterval,
+      state.events.pending.length,
+    ])
+
+    // Flush events to persistence
+    const flushEvents = useCallback(async () => {
+      // Capture pending events *before* any state changes
+      const eventsToProcess = [...state.events.pending]
+
+      // Exit if there's nothing to process in the captured array
+      if (eventsToProcess.length === 0) return
 
       console.log(
-        '[InteractionTracker] Events mapped for sending:',
-        eventsToSend
+        `[InteractionTracker] Flushing ${eventsToProcess.length} pending events...`
       )
 
-      // Persist events in batches using the captured array
-      await Promise.all(
-        eventsToSend.map(eventData => dataService.trackEvent(eventData))
-      )
-
-      console.log(
-        `[InteractionTracker] Successfully persisted ${eventsToProcess.length} events.`
-      )
-      // Mark these specific events as persisted by sending their IDs
+      // Dispatch action to move these specific events from pending to processing state
       dispatch({
-        type: 'SET_EVENTS_PERSISTED',
-        payload: { processedIds: eventsToProcess.map(e => e.id) },
-      })
-    } catch (error) {
-      console.error('Failed to persist events:', error)
-      // Mark these specific events (from the captured array) as failed
-      dispatch({
-        type: 'SET_EVENTS_FAILED',
+        type: 'SET_EVENTS_PROCESSING',
         payload: { events: eventsToProcess },
       })
-    }
-    // Ensure dispatch is included in dependencies if reducer relies on external scope
-  }, [dataService, state.events.pending, userId, dispatch])
 
-  // Track an event (internal function)
-  const trackEvent = useCallback(
-    (
-      eventType: string,
-      contentId?: number,
-      metadata: Record<string, unknown> = {}
-    ) => {
-      dispatch({
-        type: 'ADD_EVENT',
-        payload: {
-          eventType,
-          contentId: contentId?.toString(),
-          metadata: {
-            ...metadata,
-            timestamp: Date.now(),
-            userId,
+      try {
+        // Convert the *captured* events (eventsToProcess) to the format expected by the analytics service
+        const eventsToSend = eventsToProcess.map(event => ({
+          userId,
+          event_type: event.type, // Use event_type as expected by analytics service
+          contentId: event.contentId || null,
+          timestamp: event.timestamp,
+          sessionId: state.session.id,
+          ...event.metadata,
+        }))
+
+        console.log(
+          '[InteractionTracker] Events mapped for sending:',
+          eventsToSend
+        )
+
+        // Persist events in batches using the captured array
+        await Promise.all(
+          eventsToSend.map(eventData => dataService.trackEvent(eventData))
+        )
+
+        console.log(
+          `[InteractionTracker] Successfully persisted ${eventsToProcess.length} events.`
+        )
+        // Mark these specific events as persisted by sending their IDs
+        dispatch({
+          type: 'SET_EVENTS_PERSISTED',
+          payload: { processedIds: eventsToProcess.map(e => e.id) },
+        })
+      } catch (error) {
+        console.error('Failed to persist events:', error)
+        // Mark these specific events (from the captured array) as failed
+        dispatch({
+          type: 'SET_EVENTS_FAILED',
+          payload: { events: eventsToProcess },
+        })
+      }
+      // Ensure dispatch is included in dependencies if reducer relies on external scope
+    }, [dataService, state.events.pending, userId, dispatch])
+
+    // Track an event (internal function)
+    const trackEvent = useCallback(
+      (
+        eventType: string,
+        contentId?: number,
+        metadata: Record<string, unknown> = {}
+      ) => {
+        dispatch({
+          type: 'ADD_EVENT',
+          payload: {
+            eventType,
+            contentId: contentId?.toString(),
+            metadata: {
+              ...metadata,
+              timestamp: Date.now(),
+              userId,
+            },
           },
-        },
-      })
-    },
-    [userId]
-  )
+        })
+      },
+      [userId]
+    )
 
-  // Specialized tracking methods (memoized)
-  const trackVideoPlay = useCallback(
-    (contentId: number, data: VideoPlayEvent) => {
-      // Ensure required fields are present
-      if (!data.knowledgeId || !data.moduleId) {
-        console.warn(
-          'Missing required fields in trackVideoPlay event data. Required: knowledgeId, moduleId'
-        )
-      }
+    // Specialized tracking methods (memoized)
+    const trackVideoPlay = useCallback(
+      (contentId: number, data: VideoPlayEvent) => {
+        // Ensure required fields are present
+        if (!data.knowledgeId || !data.moduleId) {
+          console.warn(
+            'Missing required fields in trackVideoPlay event data. Required: knowledgeId, moduleId'
+          )
+        }
 
-      trackEvent('video_play', contentId, {
-        ...data,
-        timestamp: data.timestamp || Date.now(),
-      })
-    },
-    [trackEvent]
-  )
+        trackEvent('video_play', contentId, {
+          ...data,
+          timestamp: data.timestamp || Date.now(),
+        })
+      },
+      [trackEvent]
+    )
 
-  const trackVideoPause = useCallback(
-    (contentId: number, data: VideoPauseEvent) => {
-      // Ensure required fields are present
-      if (!data.knowledgeId || !data.moduleId) {
-        console.warn(
-          'Missing required fields in trackVideoPause event data. Required: knowledgeId, moduleId'
-        )
-      }
+    const trackVideoPause = useCallback(
+      (contentId: number, data: VideoPauseEvent) => {
+        // Ensure required fields are present
+        if (!data.knowledgeId || !data.moduleId) {
+          console.warn(
+            'Missing required fields in trackVideoPause event data. Required: knowledgeId, moduleId'
+          )
+        }
 
-      trackEvent('video_pause', contentId, {
-        ...data,
-        timestamp: data.timestamp || Date.now(),
-      })
-    },
-    [trackEvent]
-  )
+        trackEvent('video_pause', contentId, {
+          ...data,
+          timestamp: data.timestamp || Date.now(),
+        })
+      },
+      [trackEvent]
+    )
 
-  const trackVideoComplete = useCallback(
-    (contentId: number, data: VideoCompleteEvent) => {
-      // Ensure required fields are present
-      if (!data.knowledgeId || !data.moduleId) {
-        console.warn(
-          'Missing required fields in trackVideoComplete event data. Required: knowledgeId, moduleId'
-        )
-      }
+    const trackVideoComplete = useCallback(
+      (contentId: number, data: VideoCompleteEvent) => {
+        // Ensure required fields are present
+        if (!data.knowledgeId || !data.moduleId) {
+          console.warn(
+            'Missing required fields in trackVideoComplete event data. Required: knowledgeId, moduleId'
+          )
+        }
 
-      trackEvent('video_complete', contentId, {
-        ...data,
-        timestamp: data.timestamp || Date.now(),
-      })
-    },
-    [trackEvent]
-  )
+        trackEvent('video_complete', contentId, {
+          ...data,
+          timestamp: data.timestamp || Date.now(),
+        })
+      },
+      [trackEvent]
+    )
 
-  const trackVideoProgress = useCallback(
-    (contentId: number, data: VideoProgressEvent) => {
-      // Ensure required fields are present
-      if (!data.knowledgeId || !data.moduleId) {
-        console.warn(
-          'Missing required fields in trackVideoProgress event data. Required: knowledgeId, moduleId'
-        )
-      }
+    const trackVideoProgress = useCallback(
+      (contentId: number, data: VideoProgressEvent) => {
+        // Ensure required fields are present
+        if (!data.knowledgeId || !data.moduleId) {
+          console.warn(
+            'Missing required fields in trackVideoProgress event data. Required: knowledgeId, moduleId'
+          )
+        }
 
-      trackEvent('video_progress', contentId, {
-        ...data,
-        timestamp: data.timestamp || Date.now(),
-      })
-    },
-    [trackEvent]
-  )
+        trackEvent('video_progress', contentId, {
+          ...data,
+          timestamp: data.timestamp || Date.now(),
+        })
+      },
+      [trackEvent]
+    )
 
-  const trackQuizStart = useCallback(
-    (quizId: number, data: QuizStartEvent) =>
-      trackEvent('quiz_start', quizId, data),
-    [trackEvent]
-  )
+    const trackQuizStart = useCallback(
+      (quizId: number, data: QuizStartEvent) =>
+        trackEvent('quiz_start', quizId, data),
+      [trackEvent]
+    )
 
-  const trackQuizAnswer = useCallback(
-    (quizId: number, questionId: string, data: QuizQuestionAnswerEvent) =>
-      trackEvent('quiz_answer', quizId, { ...data, questionId }),
-    [trackEvent]
-  )
+    const trackQuizAnswer = useCallback(
+      (quizId: number, questionId: string, data: QuizQuestionAnswerEvent) =>
+        trackEvent('quiz_answer', quizId, { ...data, questionId }),
+      [trackEvent]
+    )
 
-  const trackQuizComplete = useCallback(
-    (quizId: number, data: QuizSubmitEvent) =>
-      trackEvent('quiz_complete', quizId, data),
-    [trackEvent]
-  )
+    const trackQuizComplete = useCallback(
+      (quizId: number, data: QuizSubmitEvent) =>
+        trackEvent('quiz_complete', quizId, data),
+      [trackEvent]
+    )
 
-  const trackContentView = useCallback(
-    (contentId: string, data: ContentViewEvent) =>
-      trackEvent('content_view', parseInt(contentId, 10) || 0, data),
-    [trackEvent]
-  )
+    const trackContentView = useCallback(
+      (contentId: string, data: ContentViewEvent) =>
+        trackEvent('content_view', parseInt(contentId, 10) || 0, data),
+      [trackEvent]
+    )
 
-  // Specialized roleplay tracking methods
-  const trackRoleplayStart = useCallback(
-    (data: RoleplayStartEvent) => {
-      const { knowledgeId, moduleId, scenarioId, ...restData } = data
-      trackEvent('roleplay_start', parseInt(scenarioId, 10) || 0, {
-        knowledgeId,
-        moduleId,
-        scenarioId,
-        ...restData,
-        interactionType: 'scenario_selection',
-      })
-    },
-    [trackEvent]
-  )
+    // Specialized roleplay tracking methods
+    const trackRoleplayStart = useCallback(
+      (data: RoleplayStartEvent) => {
+        const { knowledgeId, moduleId, scenarioId, ...restData } = data
+        trackEvent('roleplay_start', parseInt(scenarioId, 10) || 0, {
+          knowledgeId,
+          moduleId,
+          scenarioId,
+          ...restData,
+          interactionType: 'scenario_selection',
+        })
+      },
+      [trackEvent]
+    )
 
-  const trackRoleplayResponse = useCallback(
-    (data: RoleplayResponseEvent) => {
-      const { knowledgeId, moduleId, scenarioId, ...restData } = data
-      trackEvent('roleplay_response', parseInt(scenarioId, 10) || 0, {
-        knowledgeId,
-        moduleId,
-        scenarioId,
-        ...restData,
-        interactionType: 'teacher_response',
-      })
-    },
-    [trackEvent]
-  )
+    const trackRoleplayResponse = useCallback(
+      (data: RoleplayResponseEvent) => {
+        const { knowledgeId, moduleId, scenarioId, ...restData } = data
+        trackEvent('roleplay_response', parseInt(scenarioId, 10) || 0, {
+          knowledgeId,
+          moduleId,
+          scenarioId,
+          ...restData,
+          interactionType: 'teacher_response',
+        })
+      },
+      [trackEvent]
+    )
 
-  const trackRoleplayComplete = useCallback(
-    (data: RoleplayCompleteEvent) => {
-      const { knowledgeId, moduleId, scenarioId, ...restData } = data
-      trackEvent('roleplay_complete', parseInt(scenarioId, 10) || 0, {
-        knowledgeId,
-        moduleId,
-        scenarioId,
-        ...restData,
-        interactionType: 'completion',
-      })
-    },
-    [trackEvent]
-  )
+    const trackRoleplayComplete = useCallback(
+      (data: RoleplayCompleteEvent) => {
+        const { knowledgeId, moduleId, scenarioId, ...restData } = data
+        trackEvent('roleplay_complete', parseInt(scenarioId, 10) || 0, {
+          knowledgeId,
+          moduleId,
+          scenarioId,
+          ...restData,
+          interactionType: 'completion',
+        })
+      },
+      [trackEvent]
+    )
 
-  // Add new navigation tracking method
-  const trackNavigation = useCallback(
-    (data: NavigationEvent) => {
-      // Ensure required fields are present
-      if (!data.knowledgeId || !data.moduleId) {
-        console.warn(
-          'Missing required fields in trackNavigation event data. Required: knowledgeId, moduleId'
-        )
-      }
+    // Add new navigation tracking method
+    const trackNavigation = useCallback(
+      (data: NavigationEvent) => {
+        // Ensure required fields are present
+        if (!data.knowledgeId || !data.moduleId) {
+          console.warn(
+            'Missing required fields in trackNavigation event data. Required: knowledgeId, moduleId'
+          )
+        }
 
-      trackEvent('navigation', 0, {
-        ...data,
-        timestamp: data.timestamp || Date.now(),
-      })
-    },
-    [trackEvent]
-  )
+        trackEvent('navigation', 0, {
+          ...data,
+          timestamp: data.timestamp || Date.now(),
+        })
+      },
+      [trackEvent]
+    )
 
-  // Add new mindmap interaction tracking method
-  const trackMindMapInteraction = useCallback(
-    (mapId: string, data: MindMapInteractionEvent) => {
-      // Ensure required fields are present
-      if (!data.knowledgeId || !data.moduleId) {
-        console.warn(
-          'Missing required fields in trackMindMapInteraction event data. Required: knowledgeId, moduleId'
-        )
-      }
+    // Add new mindmap interaction tracking method
+    const trackMindMapInteraction = useCallback(
+      (mapId: string, data: MindMapInteractionEvent) => {
+        // Ensure required fields are present
+        if (!data.knowledgeId || !data.moduleId) {
+          console.warn(
+            'Missing required fields in trackMindMapInteraction event data. Required: knowledgeId, moduleId'
+          )
+        }
 
-      trackEvent('mindmap_interaction', parseInt(mapId, 10) || 0, {
-        ...data,
-        timestamp: data.timestamp || Date.now(),
-      })
-    },
-    [trackEvent]
-  )
+        trackEvent('mindmap_interaction', parseInt(mapId, 10) || 0, {
+          ...data,
+          timestamp: data.timestamp || Date.now(),
+        })
+      },
+      [trackEvent]
+    )
 
-  // Memoized counts
-  const pendingEventsCount = useMemo(
-    () => state.events.pending.length,
-    [state.events.pending.length]
-  )
+    // Memoized counts
+    const pendingEventsCount = useMemo(
+      () => state.events.pending.length,
+      [state.events.pending.length]
+    )
 
-  const totalEventsCount = useMemo(
-    () =>
-      state.events.pending.length +
-      state.events.processing.length +
-      state.events.failed.length,
-    [
-      state.events.pending.length,
-      state.events.processing.length,
-      state.events.failed.length,
-    ]
-  )
+    const totalEventsCount = useMemo(
+      () =>
+        state.events.pending.length +
+        state.events.processing.length +
+        state.events.failed.length,
+      [
+        state.events.pending.length,
+        state.events.processing.length,
+        state.events.failed.length,
+      ]
+    )
 
-  // Memoized context value
-  const contextValue = useMemo(
-    () => ({
-      session: state.session,
-      config: state.config,
-      trackVideoPlay,
-      trackVideoPause,
-      trackVideoComplete,
-      trackVideoProgress,
-      trackQuizStart,
-      trackQuizAnswer,
-      trackQuizComplete,
-      trackContentView,
-      trackNavigation,
-      trackMindMapInteraction,
-      trackRoleplayStart,
-      trackRoleplayResponse,
-      trackRoleplayComplete,
-      pendingEventsCount,
-      totalEventsCount,
-      flushEvents,
-    }),
-    [
-      state.session,
-      state.config,
-      trackVideoPlay,
-      trackVideoPause,
-      trackVideoComplete,
-      trackVideoProgress,
-      trackQuizStart,
-      trackQuizAnswer,
-      trackQuizComplete,
-      trackContentView,
-      trackNavigation,
-      trackMindMapInteraction,
-      trackRoleplayStart,
-      trackRoleplayResponse,
-      trackRoleplayComplete,
-      pendingEventsCount,
-      totalEventsCount,
-      flushEvents,
-    ]
-  )
+    // Memoized context value
+    const contextValue = useMemo(
+      () => ({
+        session: state.session,
+        config: state.config,
+        trackVideoPlay,
+        trackVideoPause,
+        trackVideoComplete,
+        trackVideoProgress,
+        trackQuizStart,
+        trackQuizAnswer,
+        trackQuizComplete,
+        trackContentView,
+        trackNavigation,
+        trackMindMapInteraction,
+        trackRoleplayStart,
+        trackRoleplayResponse,
+        trackRoleplayComplete,
+        pendingEventsCount,
+        totalEventsCount,
+        flushEvents,
+      }),
+      [
+        state.session,
+        state.config,
+        trackVideoPlay,
+        trackVideoPause,
+        trackVideoComplete,
+        trackVideoProgress,
+        trackQuizStart,
+        trackQuizAnswer,
+        trackQuizComplete,
+        trackContentView,
+        trackNavigation,
+        trackMindMapInteraction,
+        trackRoleplayStart,
+        trackRoleplayResponse,
+        trackRoleplayComplete,
+        pendingEventsCount,
+        totalEventsCount,
+        flushEvents,
+      ]
+    )
 
-  return (
-    <InteractionTrackerContext.Provider value={contextValue}>
-      {children}
-    </InteractionTrackerContext.Provider>
-  )
-}
+    return (
+      <InteractionTrackerContext.Provider value={contextValue}>
+        {children}
+      </InteractionTrackerContext.Provider>
+    )
+  }
 
 // Custom hook with proper error handling
 export const useInteractionTracker = (): InteractionContextValue => {

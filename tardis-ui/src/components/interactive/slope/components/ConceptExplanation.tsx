@@ -115,52 +115,53 @@ const ConceptExplanation: React.FC<ConceptExplanationProps> = ({
             )}
 
             {/* Examples */}
-            {selectedConcept.examples?.length > 0 && (
-              <div className='mt-4'>
-                <h4 className='text-md mb-2 font-medium text-white'>
-                  Examples
-                </h4>
-                <div className='space-y-3'>
-                  {selectedConcept.examples.map(example => (
-                    <div
-                      key={example.id}
-                      className='rounded-md bg-gray-900 p-3'
-                    >
-                      <ReactMarkdown
-                        className='text-gray-300'
-                        remarkPlugins={[remarkMath]}
-                        rehypePlugins={[rehypeKatex]}
+            {selectedConcept.examples &&
+              selectedConcept.examples.length > 0 && (
+                <div className='mt-4'>
+                  <h4 className='text-md mb-2 font-medium text-white'>
+                    Examples
+                  </h4>
+                  <div className='space-y-3'>
+                    {selectedConcept.examples.map(example => (
+                      <div
+                        key={example.id}
+                        className='rounded-md bg-gray-900 p-3'
                       >
-                        {example.description}
-                      </ReactMarkdown>
+                        <ReactMarkdown
+                          className='text-gray-300'
+                          remarkPlugins={[remarkMath]}
+                          rehypePlugins={[rehypeKatex]}
+                        >
+                          {example.description}
+                        </ReactMarkdown>
 
-                      {/* Example Formula */}
-                      {example.formula && (
-                        <div className='mt-2 text-center'>
-                          <ReactMarkdown
-                            className='text-gray-100'
-                            remarkPlugins={[remarkMath]}
-                            rehypePlugins={[rehypeKatex]}
-                          >
-                            {example.formula}
-                          </ReactMarkdown>
-                        </div>
-                      )}
+                        {/* Example Formula */}
+                        {example.formula && (
+                          <div className='mt-2 text-center'>
+                            <ReactMarkdown
+                              className='text-gray-100'
+                              remarkPlugins={[remarkMath]}
+                              rehypePlugins={[rehypeKatex]}
+                            >
+                              {example.formula}
+                            </ReactMarkdown>
+                          </div>
+                        )}
 
-                      {example.illustration && (
-                        <div className='mt-2 flex justify-center'>
-                          <img
-                            src={example.illustration}
-                            alt='Example illustration'
-                            className='h-auto max-w-full rounded-md'
-                          />
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                        {example.illustration && (
+                          <div className='mt-2 flex justify-center'>
+                            <img
+                              src={example.illustration}
+                              alt='Example illustration'
+                              className='h-auto max-w-full rounded-md'
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Line Information Display */}
             {lineData && (

@@ -118,7 +118,10 @@ export const useMindMapAnalytics = (params: MindMapAnalyticsParams) => {
    */
   const trackSearch = useCallback(
     (nodeId?: string, nodeTitle?: string) => {
-      trackInteraction('search', { nodeId, nodeTitle })
+      trackInteraction('search', {
+        ...(nodeId && { nodeId }),
+        ...(nodeTitle && { nodeTitle })
+      })
     },
     [trackInteraction]
   )

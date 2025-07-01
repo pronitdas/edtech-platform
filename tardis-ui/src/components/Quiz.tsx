@@ -153,10 +153,11 @@ const Quiz: React.FC<QuizProps> = ({
                       onClick={() =>
                         handleAnswerSelect(currentQuestionIndex, option)
                       }
-                      className={`w-full rounded-md p-3 text-left transition-all duration-200 ${isSelected
-                        ? 'border border-blue-400 bg-blue-600'
-                        : 'bg-gray-600 hover:bg-gray-500'
-                        }`}
+                      className={`w-full rounded-md p-3 text-left transition-all duration-200 ${
+                        isSelected
+                          ? 'border border-blue-400 bg-blue-600'
+                          : 'bg-gray-600 hover:bg-gray-500'
+                      }`}
                     >
                       {option}
                     </button>

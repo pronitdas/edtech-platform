@@ -66,7 +66,11 @@ const reactFlowStyles: React.CSSProperties = {
   background: '#1f2937',
 }
 
-const getLayoutedElements = (nodes: ReactFlowNode[], edges: ReactFlowEdge[], direction: string = 'TB') => {
+const getLayoutedElements = (
+  nodes: ReactFlowNode[],
+  edges: ReactFlowEdge[],
+  direction: string = 'TB'
+) => {
   const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}))
   g.setGraph({
     rankdir: direction,
@@ -101,7 +105,7 @@ const getLayoutedElements = (nodes: ReactFlowNode[], edges: ReactFlowEdge[], dir
 }
 
 interface MindMapInnerProps {
-  markdown: string;
+  markdown: string
 }
 
 const MindMapInner: React.FC<MindMapInnerProps> = ({ markdown }) => {
@@ -143,9 +147,12 @@ const MindMapInner: React.FC<MindMapInnerProps> = ({ markdown }) => {
     [setEdges]
   )
 
-  const onNodeClick = useCallback((event: React.MouseEvent, node: ReactFlowNode) => {
-    setSelectedNode(node)
-  }, [])
+  const onNodeClick = useCallback(
+    (event: React.MouseEvent, node: ReactFlowNode) => {
+      setSelectedNode(node)
+    },
+    []
+  )
 
   const handleAddNode = useCallback(() => {
     const newNodeId = `node-${getNodes().length + 1}`
@@ -268,13 +275,17 @@ const MindMapInner: React.FC<MindMapInnerProps> = ({ markdown }) => {
     setIsLoading(true)
 
     try {
-      const styledNodes = ogNodes.map((node: { type?: string; [key: string]: unknown }) => ({
-        ...node,
-        style: {
-          ...NODE_STYLES.common,
-          ...NODE_STYLES[node.type as keyof typeof NODE_STYLES || 'default'],
-        },
-      }))
+      const styledNodes = ogNodes.map(
+        (node: { type?: string; [key: string]: unknown }) => ({
+          ...node,
+          style: {
+            ...NODE_STYLES.common,
+            ...NODE_STYLES[
+              (node.type as keyof typeof NODE_STYLES) || 'default'
+            ],
+          },
+        })
+      )
 
       const styledEdges = ogEdges.map((edge: Record<string, unknown>) => ({
         ...edge,
@@ -420,7 +431,7 @@ const MindMapInner: React.FC<MindMapInnerProps> = ({ markdown }) => {
   )
 }
 
-const MindMap: React.FC<MindMapInnerProps> = (props) => {
+const MindMap: React.FC<MindMapInnerProps> = props => {
   const rfWrapper: React.CSSProperties = {
     width: '100%',
     height: 'calc(100vh - 200px)', // Adjust for header and padding

@@ -155,13 +155,17 @@ describe('GraphCanvas', () => {
       )
 
       const canvas = container.querySelector('canvas')
-      fireEvent.wheel(canvas, { deltaY: -100 })
+      if (canvas) {
+        fireEvent.wheel(canvas, { deltaY: -100 })
+      }
       expect(onZoomChange).toHaveBeenCalled()
 
       // Test pan
-      fireEvent.mouseDown(canvas)
-      fireEvent.mouseMove(canvas, { clientX: 50, clientY: 50 })
-      fireEvent.mouseUp(canvas)
+      if (canvas) {
+        fireEvent.mouseDown(canvas)
+        fireEvent.mouseMove(canvas, { clientX: 50, clientY: 50 })
+        fireEvent.mouseUp(canvas)
+      }
       expect(onOffsetChange).toHaveBeenCalled()
     })
   })

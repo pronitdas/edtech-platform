@@ -47,10 +47,10 @@ const InteractiveModule = ({
     interactionTracker.trackContentView('interactive-module', {
       knowledgeId: '',
       moduleId: '',
+      contentId: module.title,
       contentTitle: module.title,
       contentType: 'interactive_module',
       moduleType: module.type,
-      moduleComponent: module.component,
       timestamp: Date.now(),
     })
   }
@@ -64,10 +64,10 @@ const InteractiveModule = ({
       interactionTracker.trackContentView('interactive-module-complete', {
         knowledgeId: '',
         moduleId: '',
+        contentId: selectedModule.title,
         contentTitle: selectedModule.title,
         contentType: 'interactive_module_complete',
         moduleType: selectedModule.type,
-        moduleComponent: selectedModule.component,
         timestamp: Date.now(),
       })
     }

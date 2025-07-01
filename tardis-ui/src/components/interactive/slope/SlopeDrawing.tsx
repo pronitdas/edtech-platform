@@ -11,11 +11,13 @@ const SlopeDrawing: React.FC<SlopeDrawingProps> = props => {
   return (
     <SlopeDrawingProvider
       interactiveContent={props.interactiveContent}
-      userId={props.userId}
-      knowledgeId={props.knowledgeId}
-      language={props.language}
-      onUpdateProgress={props.onUpdateProgress}
-      openaiClient={props.openaiClient}
+      {...(props.userId && { userId: props.userId })}
+      {...(props.knowledgeId && { knowledgeId: props.knowledgeId })}
+      {...(props.language && { language: props.language })}
+      {...(props.onUpdateProgress && {
+        onUpdateProgress: props.onUpdateProgress,
+      })}
+      {...(props.openaiClient && { openaiClient: props.openaiClient })}
     >
       <SlopeDrawingLayout />
     </SlopeDrawingProvider>

@@ -5,6 +5,7 @@ This directory contains the refactored components for the course module, followi
 ## Overview
 
 The original `MainCourse.tsx` component was refactored into smaller, focused components with improved:
+
 - State management
 - Type safety
 - Accessibility
@@ -37,14 +38,10 @@ The original `MainCourse.tsx` component was refactored into smaller, focused com
 ## Usage
 
 ```tsx
-import CourseMain from '@/components/course/CourseMain';
+import CourseMain from "@/components/course/CourseMain"
 
 // Then in your component
-<CourseMain
-  content={content}
-  language={language}
-  chapter={chapter}
-/>
+;<CourseMain content={content} language={language} chapter={chapter} />
 ```
 
 ## Migration Guide
@@ -52,6 +49,7 @@ import CourseMain from '@/components/course/CourseMain';
 If upgrading from previous version:
 
 1. Replace imports:
+
    ```diff
    - import MainCourse from '@/components/MainCourse';
    + import CourseMain from '@/components/course/CourseMain';
@@ -61,4 +59,4 @@ If upgrading from previous version:
    ```diff
    - <MainCourse content={content} language={language} chapter={chapter} />
    + <CourseMain content={content} language={language} chapter={chapter} />
-   ``` 
+   ```

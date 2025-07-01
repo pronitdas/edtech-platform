@@ -7,6 +7,24 @@ serve:
     base_url: http://127.0.0.1:4433/
     cors:
       enabled: true
+      allowed_origins:
+        - http://localhost:3000
+        - http://localhost:3001
+        - http://localhost:8000
+      allowed_methods:
+        - POST
+        - GET
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      allowed_headers:
+        - Authorization
+        - Content-Type
+        - X-Session-Token
+      exposed_headers:
+        - Content-Type
+        - Set-Cookie
   admin:
     base_url: http://127.0.0.1:4434/
 
@@ -32,39 +50,45 @@ courier:
   smtp:
     connection_uri: smtps://test:test@mailslurper:1025/?skip_ssl_verify=true
 
+session:
+  cookie:
+    same_site: Lax
+    domain: localhost
+  lifespan: 24h
+
 selfservice:
-  default_browser_return_url: http://127.0.0.1:4455/
+  default_browser_return_url: http://localhost:3000/
   allowed_return_urls:
-    - http://127.0.0.1:4455
+    - http://localhost:3000
+    - http://localhost:3001
+    - http://localhost:8000
 
   methods:
     password:
+      enabled: true
+    profile:
       enabled: true
     
   flows:
     registration:
       lifespan: 1h
-      ui_url: http://127.0.0.1:4455/registration
     login:
       lifespan: 1h
-      ui_url: http://127.0.0.1:4455/login
     settings:
       lifespan: 1h
       privileged_session_max_age: 1h
       required_aal: highest_available
-      ui_url: http://127.0.0.1:4455/settings
     recovery:
       lifespan: 1h
       notify_unknown_recipients: false
-      ui_url: http://127.0.0.1:4455/recovery
       use: code
     verification:
       lifespan: 1h
       notify_unknown_recipients: false
-      ui_url: http://127.0.0.1:4455/verification
       use: code
-    error:
-      ui_url: http://127.0.0.1:4455/error
+    logout:
+      after:
+        default_browser_return_url: http://localhost:3000/
 
 log:
   level: debug

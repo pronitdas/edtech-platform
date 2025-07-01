@@ -71,7 +71,7 @@ export const QuizComponent: React.FC<QuizProps> = ({
       knowledgeId: '',
       moduleId: quizId.toString(),
       timestamp: currentTime,
-      attemptId: `${quizId}-${Date.now()}`
+      attemptId: `${quizId}-${Date.now()}`,
     })
 
     setSelectedAnswers(prev => ({
@@ -103,11 +103,12 @@ export const QuizComponent: React.FC<QuizProps> = ({
       setIsCompleted(true)
 
       // Track quiz completion
-      const durationSeconds = Object.values(startTime).reduce(
-        (total, time) => total + (currentTime - time),
-        0
-      ) / 1000 // Convert to seconds
-      
+      const durationSeconds =
+        Object.values(startTime).reduce(
+          (total, time) => total + (currentTime - time),
+          0
+        ) / 1000 // Convert to seconds
+
       trackQuizComplete(quizId, {
         quizId: quizId.toString(),
         quizTitle: 'Chapter Quiz',

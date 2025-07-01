@@ -80,6 +80,7 @@ export interface UserEvent {
   chapter_id?: string
   content_id?: string
   data?: any
+  userId?: string // User identifier
 }
 
 export interface AnalyticsData {

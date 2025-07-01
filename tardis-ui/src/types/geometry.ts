@@ -13,8 +13,8 @@ export interface Offset {
 export interface LineData {
   point1: Point
   point2: Point
-  slope: number
-  yIntercept: number
+  slope: number | null
+  yIntercept: number | null
   equation: string
   rise: number
   run: number

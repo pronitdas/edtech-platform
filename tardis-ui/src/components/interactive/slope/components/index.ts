@@ -5,4 +5,4 @@ export { default as CustomProblemSolver } from './CustomProblemSolver'
 
 // Also export types from components
 export type { Concept } from './ConceptExplanation'
-export type { ProblemData } from './PracticeProblem'
+export type { Problem } from '@/types/interactive'

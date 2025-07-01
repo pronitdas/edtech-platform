@@ -22,7 +22,9 @@ export default function ChapterViewer() {
   const { uploadedFiles: chapters, fetchChapters } = useChapters()
   const { language } = useLanguage()
 
-  const currentChapter = chapters.find((ch: any) => ch.id.toString() === chapterId)
+  const currentChapter = chapters.find(
+    (ch: any) => ch.id.toString() === chapterId
+  )
   const loading = knowledgeLoading
 
   useEffect(() => {
@@ -123,10 +125,9 @@ export default function ChapterViewer() {
                   {currentChapter.chaptertitle}
                 </h1>
                 <p className='text-sm text-gray-500'>
-                  {Array.isArray(knowledge) && knowledge.length > 0 
-                    ? knowledge[0]?.name 
-                    : (knowledge as any)?.name || 'Unknown Knowledge'
-                  }
+                  {Array.isArray(knowledge) && knowledge.length > 0
+                    ? knowledge[0]?.name
+                    : (knowledge as any)?.name || 'Unknown Knowledge'}
                 </p>
               </div>
             </div>

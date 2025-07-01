@@ -15,7 +15,7 @@ import { ContentType } from '@/services/edtech-api'
 import { Chapter } from '@/types/api'
 
 // --- Icon Mapping Logic (moved here or imported) ---
-type IconMap = { [key: string]: React.ComponentType<{ className?: string }> }
+type IconMap = { [key: string]: React.ComponentType<any> }
 
 const iconMap: IconMap = {
   FileText,

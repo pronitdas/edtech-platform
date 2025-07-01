@@ -127,7 +127,7 @@ export function useGraphManagement({
   const generateEquation = useCallback(
     (slope: number | null, yIntercept: number | null): string => {
       if (slope === null) {
-        if (points.length > 0) {
+        if (points.length > 0 && points[0]) {
           return 'x = ' + points[0].x.toFixed(2) // Vertical line
         }
         return '' // No equation available
@@ -211,6 +211,9 @@ export function useGraphManagement({
 
     const p1 = points[0]
     const p2 = points[1]
+
+    if (!p1 || !p2) return null
+
     const slope = calculateSlope(p1, p2)
     const yIntercept = calculateYIntercept(p1, slope)
     const equation = generateEquation(slope, yIntercept)

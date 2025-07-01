@@ -94,6 +94,8 @@ const ModernMarkdownSlideshow: React.FC<ModernMarkdownSlideshowProps> = ({
     } else {
       setThemeClass(theme)
     }
+    // Return undefined for the else case
+    return undefined
   }, [theme])
 
   // Sync with external control
@@ -174,7 +176,7 @@ const ModernMarkdownSlideshow: React.FC<ModernMarkdownSlideshowProps> = ({
         >
           <MarkdownViewer
             key={currentSlide}
-            content={content[currentSlide]}
+            content={content[currentSlide] || ''}
             images={images}
             knowledge_id={knowledge_id}
           />

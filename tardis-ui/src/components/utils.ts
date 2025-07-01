@@ -6,14 +6,20 @@ function extractSubheadings(markdown: string, level = 2) {
 
   // Iterate over all matches
   while ((match = regex.exec(markdown)) !== null) {
-    subheadings.push(match[1].trim()) // Capture the subheading text
+    if (match[1]) {
+      subheadings.push(match[1].trim()) // Capture the subheading text
+    }
   }
   if (subheadings.length == 0 && level < 5) {
     extractSubheadings(markdown, level + 1)
   }
   return subheadings
 }
-export const windowedChunk = (array: any[], size: number, overlap = 0) => {
+export const windowedChunk = <T>(
+  array: T[],
+  size: number,
+  overlap = 0
+): T[][] => {
   if (size <= overlap) {
     throw new Error('Size must be greater than overlap.')
   }

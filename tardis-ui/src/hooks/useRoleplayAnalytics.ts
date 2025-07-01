@@ -68,7 +68,7 @@ export const useRoleplayAnalytics = (knowledgeId: string, moduleId: string) => {
         question,
         response,
         responseTime,
-        feedbackProvided: feedback,
+        feedbackProvided: feedback || undefined,
       })
     },
     [tracker, knowledgeId, moduleId]

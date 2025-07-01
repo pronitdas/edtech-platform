@@ -410,7 +410,7 @@ const SlopeDrawingLayout: React.FC = () => {
                         concepts={concepts}
                         selectedConceptId={selectedConceptId}
                         onSelectConcept={setSelectedConceptId}
-                        lineData={lineData}
+                        {...(lineData && { lineData })}
                       />
                     )}
 
@@ -425,9 +425,9 @@ const SlopeDrawingLayout: React.FC = () => {
                           console.log('Select problem:', problemId)
                         }}
                         onGenerateNewProblem={generateProblem}
-                        lineData={lineData}
+                        {...(lineData && { lineData })}
                         onSubmitAnswer={handleSubmitAnswer}
-                        isCorrect={isCorrect}
+                        {...(isCorrect !== undefined && { isCorrect })}
                         showSolution={showSolution}
                         onToggleSolution={handleSolutionReveal}
                         onNextProblem={nextProblem}
@@ -439,9 +439,9 @@ const SlopeDrawingLayout: React.FC = () => {
                     {/* Custom Problem Solver Mode */}
                     {activeMode === 'custom' && (
                       <CustomProblemSolver
-                        lineData={lineData}
+                        {...(lineData && { lineData })}
                         onPointsChange={setPointsFromCoordinates}
-                        openaiClient={openaiClient}
+                        {...(openaiClient && { openaiClient })}
                         language={language}
                       />
                     )}
@@ -449,9 +449,9 @@ const SlopeDrawingLayout: React.FC = () => {
                     {/* Word Problem Mode */}
                     {activeMode === 'word' && (
                       <WordProblem
-                        lineData={lineData}
+                        {...(lineData && { lineData })}
                         onPointsChange={setPointsFromCoordinates}
-                        openaiClient={openaiClient}
+                        {...(openaiClient && { openaiClient })}
                         language={language}
                         difficulty={difficulty}
                       />
@@ -469,7 +469,6 @@ const SlopeDrawingLayout: React.FC = () => {
                         correct: stats.correct,
                         incorrect: stats.incorrect,
                         difficulty: difficulty,
-                        streakCount: stats.streakCount,
                       }}
                       onHint={hint => {
                         console.log('AI Hint:', hint)
@@ -735,7 +734,7 @@ const SlopeDrawingLayout: React.FC = () => {
       {/* Bottom Controls */}
       <div className='relative z-10 border-t border-white/10 bg-white/5 shadow-2xl backdrop-blur-xl'>
         <BottomControls
-          lineData={lineData}
+          {...(lineData && { lineData })}
           resetView={resetView}
           clearPoints={clearPoints}
           onShowAnimation={() => setShowAnimation(true)} // Pass setShowAnimation to trigger animation

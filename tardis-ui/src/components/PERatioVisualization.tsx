@@ -2,23 +2,23 @@ import React, { useEffect, useState, useRef } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 
 interface CompanyData {
-  x: number;
-  y: number;
-  earnings: number;
-  volatility: number;
-  basePrice: number;
-  currentPrice: number;
-  pe: number;
+  x: number
+  y: number
+  earnings: number
+  volatility: number
+  basePrice: number
+  currentPrice: number
+  pe: number
 }
 
 class Company implements CompanyData {
-  x: number;
-  y: number;
-  earnings: number;
-  volatility: number;
-  basePrice: number;
-  currentPrice: number = 0;
-  pe: number = 0;
+  x: number
+  y: number
+  earnings: number
+  volatility: number
+  basePrice: number
+  currentPrice: number = 0
+  pe: number = 0
 
   constructor(width: number, height: number) {
     this.x = Math.random() * (width - 100) + 50
@@ -28,7 +28,12 @@ class Company implements CompanyData {
     this.basePrice = this.earnings * (Math.random() * 12 + 8) // 8 to 20 multiplier
   }
 
-  update(risk: number, frameCount: number, width: number, height: number): void {
+  update(
+    risk: number,
+    frameCount: number,
+    width: number,
+    height: number
+  ): void {
     const riskFactor = risk / 50
     const priceMultiplier = 1.5 - riskFactor
     this.currentPrice =
@@ -55,7 +60,10 @@ const PERatioVisualization = () => {
   const frameCountRef = useRef<number>(0)
   const animationFrameRef = useRef<number>()
   const [hoveredCompany, setHoveredCompany] = useState<Company | null>(null)
-  const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
+  const [mousePos, setMousePos] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  })
 
   const getRiskDescription = (risk: number): string => {
     if (risk < 30)
@@ -179,7 +187,9 @@ const PERatioVisualization = () => {
               min='0'
               max='100'
               value={riskLevel}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRiskLevel(parseInt(e.target.value))}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setRiskLevel(parseInt(e.target.value))
+              }
             />
             <div>{getRiskDescription(riskLevel)}</div>
           </div>

@@ -267,7 +267,10 @@ export const useCourseState = (
       tab => tab.key === state.activeTab
     )
     if (!currentTabIsAvailable && availableTabs.length > 0) {
-      setState(prevState => ({ ...prevState, activeTab: availableTabs[0]?.key || 'chapter' }))
+      setState(prevState => ({
+        ...prevState,
+        activeTab: availableTabs[0]?.key || 'chapter',
+      }))
     }
   }, [availableTabs, state.activeTab])
 
@@ -295,18 +298,19 @@ export const useCourseState = (
         case 'quiz':
           interactionTracker.trackQuizStart(
             parseInt(chapter.id.toString(), 10),
-            { 
+            {
               quizId: chapter.id.toString(),
               quizTitle: chapter.chaptertitle,
               questionCount: 5, // Default question count
               attemptNumber: 1, // Default attempt number
               knowledgeId: chapter.knowledge_id?.toString() || '',
-              moduleId: chapter.id.toString()
+              moduleId: chapter.id.toString(),
             }
           )
           break
         case 'notes':
           interactionTracker.trackContentView('notes', {
+            contentId: 'notes',
             knowledgeId: chapter.knowledge_id?.toString() || '',
             moduleId: chapter.id.toString(),
             contentTitle: chapter.chaptertitle,
@@ -316,6 +320,7 @@ export const useCourseState = (
           break
         case 'summary':
           interactionTracker.trackContentView('summary', {
+            contentId: 'summary',
             knowledgeId: chapter.knowledge_id?.toString() || '',
             moduleId: chapter.id.toString(),
             contentTitle: chapter.chaptertitle,
@@ -325,6 +330,9 @@ export const useCourseState = (
           break
         case 'mindmap':
           interactionTracker.trackContentView('mindmap', {
+            contentId: 'mindmap',
+            knowledgeId: chapter.knowledge_id?.toString() || '',
+            moduleId: chapter.id.toString(),
             chapterTitle: chapter.chaptertitle,
             contentType: 'mindmap',
           })
@@ -333,11 +341,23 @@ export const useCourseState = (
           if (video_url)
             interactionTracker.trackVideoPlay(
               parseInt(chapter.id.toString(), 10),
-              { chapterTitle: chapter.chaptertitle, videoUrl: video_url }
+              {
+                knowledgeId: chapter.knowledge_id?.toString() || '',
+                moduleId: chapter.id.toString(),
+                currentTime: 0,
+                totalDuration: 0,
+                progressPercent: 0,
+                videoId: chapter.id.toString(),
+                chapterTitle: chapter.chaptertitle,
+                videoUrl: video_url
+              }
             )
           break
         case 'og':
           interactionTracker.trackContentView('og', {
+            contentId: 'og',
+            knowledgeId: chapter.knowledge_id?.toString() || '',
+            moduleId: chapter.id.toString(),
             chapterTitle: chapter.chaptertitle,
             contentType: 'original',
           })
@@ -407,9 +427,11 @@ export const useCourseState = (
       )
       interactionTrackerRef.current.trackContentView('roleplay', {
         // Use ref
+        contentId: 'roleplay',
+        knowledgeId: chapter.knowledge_id?.toString() || '',
+        moduleId: chapter.id.toString(),
         chapterTitle: chapter.chaptertitle,
         contentType: 'roleplay',
-        scenariosCount: scenarios?.length || 0,
       })
       // TODO: Update state or trigger refetch to show new roleplay content
       console.log('Generated Roleplay Scenarios:', scenarios) // Placeholder

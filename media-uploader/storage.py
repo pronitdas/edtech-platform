@@ -14,18 +14,20 @@ class MinIOStorage:
     """MinIO client wrapper for handling file storage operations."""
     
     def __init__(self):
-        self.endpoint = os.getenv("MINIO_ENDPOINT", "localhost:9000")
+        self.endpoint = os.getenv("MINIO_ENDPOINT", "localhost:9002")
         self.access_key = os.getenv("MINIO_ACCESS_KEY", "minioadmin")
         self.secret_key = os.getenv("MINIO_SECRET_KEY", "minioadmin")
         self.secure = os.getenv("MINIO_SECURE", "false").lower() == "true"
         self.bucket_name = os.getenv("MINIO_BUCKET_NAME", "edtech-media")
         
-        # Initialize MinIO client
+        # Initialize MinIO client with timeout
+        import urllib3
         self.client = Minio(
             self.endpoint,
             access_key=self.access_key,
             secret_key=self.secret_key,
-            secure=self.secure
+            secure=self.secure,
+            http_client=urllib3.PoolManager(timeout=urllib3.Timeout(connect=5.0, read=10.0))
         )
         
         # Ensure bucket exists
@@ -37,9 +39,9 @@ class MinIOStorage:
             if not self.client.bucket_exists(self.bucket_name):
                 self.client.make_bucket(self.bucket_name)
                 logger.info(f"Created bucket: {self.bucket_name}")
-        except S3Error as e:
-            logger.error(f"Error creating bucket {self.bucket_name}: {e}")
-            raise
+        except Exception as e:
+            logger.warning(f"Could not connect to MinIO at startup (timeout after 5s): {e}")
+            logger.info("MinIO connection will be retried when needed")
     
     def upload_file(
         self, 

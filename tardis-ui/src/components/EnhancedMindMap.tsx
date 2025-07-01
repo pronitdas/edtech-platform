@@ -23,7 +23,13 @@ const EnhancedMindMap = ({
   // Track mindmap interaction
   useEffect(() => {
     // interactionTracker.trackMindmapClick();
-    trackContentView('mindmap', { type: 'mindmap_view' })
+    trackContentView('mindmap', {
+      contentId: 'mindmap',
+      contentType: 'mindmap',
+      knowledgeId: 'mindmap',
+      moduleId: 'mindmap',
+      type: 'mindmap_view',
+    })
   }, [trackContentView])
 
   // Update state when prop changes

@@ -22,7 +22,7 @@ const ChapterAdapter: React.FC<ChapterAdapterProps> = ({
   // Convert ChapterV1[] to Chapter[] by ensuring id is a string and topic is not null
   const adaptedChapters: Chapter[] = chapters.map(chapter => ({
     ...chapter,
-    topic: chapter.topic || chapter.subtopic || 'General'
+    topic: chapter.topic || chapter.subtopic || 'General',
   }))
 
   return (

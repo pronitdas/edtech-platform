@@ -48,7 +48,7 @@ const MarkdownSlideshow: React.FC<{
       <div className='max-h-[calc(100vh-10rem)] w-full overflow-auto rounded-lg bg-gray-800 p-3 shadow'>
         <MarkdownViewer
           key={currentSlide}
-          content={content[currentSlide]}
+          content={content[currentSlide] || ''}
           images={images}
           knowledge_id={knowledge_id}
         />

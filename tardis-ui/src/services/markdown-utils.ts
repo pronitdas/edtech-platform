@@ -2,15 +2,33 @@ export const cleanMarkdown = (markdownContent: string): string => {
   return markdownContent
     .split('\n') // Split the content into lines
     .map((line: string) => line.trimEnd()) // Trim trailing spaces from each line
-    .filter((line: string, index: number, array: string[]) => !(line === '' && array[index - 1] === '')) // Remove consecutive blank lines
+    .filter(
+      (line: string, index: number, array: string[]) =>
+        !(line === '' && array[index - 1] === '')
+    ) // Remove consecutive blank lines
     .join('\n') // Join lines back into a single string
 }
 
 export const analyzeMarkdown = (mdContent: string) => {
   const analysis = {
-    chapters: { count: 0, lines: [] as number[], titles: [] as string[], spans: [] as number[] },
-    topics: { count: 0, lines: [] as number[], titles: [] as string[], spans: [] as number[] },
-    subtopics: { count: 0, lines: [] as number[], titles: [] as string[], spans: [] as number[] },
+    chapters: {
+      count: 0,
+      lines: [] as number[],
+      titles: [] as string[],
+      spans: [] as number[],
+    },
+    topics: {
+      count: 0,
+      lines: [] as number[],
+      titles: [] as string[],
+      spans: [] as number[],
+    },
+    subtopics: {
+      count: 0,
+      lines: [] as number[],
+      titles: [] as string[],
+      spans: [] as number[],
+    },
   }
 
   const lines = mdContent.split('\n')
@@ -40,7 +58,9 @@ export const analyzeMarkdown = (mdContent: string) => {
   // Calculate spans (number of lines for each heading)
   headings.forEach((heading, index) => {
     const endLine =
-      index < headings.length - 1 ? (headings[index + 1]?.line ?? lines.length) - 1 : lines.length
+      index < headings.length - 1
+        ? (headings[index + 1]?.line ?? lines.length) - 1
+        : lines.length
     const span = endLine - heading.line + 1
 
     if (heading.type === 'chapter') {

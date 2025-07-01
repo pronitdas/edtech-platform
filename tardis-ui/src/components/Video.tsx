@@ -1,7 +1,7 @@
 import React from 'react'
 import ReactPlayer from 'react-player/youtube'
 
-const YouTubePlaceholder = ({ videoId }) => {
+const YouTubePlaceholder = ({ videoId }: { videoId: string }) => {
   const containerStyle = {
     display: 'flex',
     justifyContent: 'center',

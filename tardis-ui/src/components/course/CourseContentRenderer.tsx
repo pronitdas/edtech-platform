@@ -328,11 +328,16 @@ const CombinedVideoAndNotes: React.FC<{
           showChapterOverlay={true}
           currentChapter={
             currentVideoChapter
-              ? {
-                  title: currentVideoChapter.chaptertitle,
-                  startTime: Number(currentVideoChapter.timestamp_start) || 0,
-                  ...(currentVideoChapter.timestamp_end ? { endTime: Number(currentVideoChapter.timestamp_end) } : {})
-                }
+              ? (() => {
+                  const chapter: any = {
+                    title: currentVideoChapter.chaptertitle,
+                    startTime: Number(currentVideoChapter.timestamp_start) || 0,
+                  }
+                  if (currentVideoChapter.timestamp_end) {
+                    chapter.endTime = Number(currentVideoChapter.timestamp_end)
+                  }
+                  return chapter
+                })()
               : undefined
           }
         />
@@ -427,7 +432,10 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
   onGenerateContentRequest,
 }) => {
   const { session } = useInteractionTracker() // Get session context
-  const userId = session?.metadata?.userId // Extract userId
+  const userId =
+    typeof session?.metadata?.userId === 'string'
+      ? session.metadata.userId
+      : 'anonymous' // Extract userId with fallback
 
   // Add debug logging for props
   useEffect(() => {
@@ -597,7 +605,7 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
             onClick={() => {
               setSigningError(null)
               setIsSigningUrl(true)
-              fetchPublicVideoUrl(content.video_url)
+              fetchPublicVideoUrl(content.video_url || '')
                 .then(url => setSignedVideoUrl(url))
                 .catch(err => setSigningError(err.message))
                 .finally(() => setIsSigningUrl(false))
@@ -960,7 +968,7 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
           scenarios={validatedScenarios as any}
           onRegenerate={onGenerateContentRequest}
           openaiApiKey={''}
-          userId={userId || 'anonymous'}
+          userId={userId}
           language={language}
         />
       </div>
@@ -1030,7 +1038,7 @@ const CourseContentRenderer: React.FC<CourseContentRendererProps> = ({
       <div className='h-full overflow-y-auto p-4 md:p-6'>
         <SlopeDrawing
           interactiveContent={interactiveContent}
-          userId={userId || 'anonymous'}
+          userId={userId}
           knowledgeId={chapter.knowledge_id?.toString()}
           language={language}
           onUpdateProgress={progress => {

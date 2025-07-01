@@ -159,9 +159,11 @@ const MainCourse = ({
     ({
       id: '0',
       chaptertitle: 'Loading...',
+      title: 'Loading...',
+      content: '',
+      language: language || 'en',
       chapter: '',
       knowledge_id: 0,
-      created_at: new Date().toISOString(),
       chapter_type: 'text',
       context: '',
       k_id: 0,
@@ -254,6 +256,7 @@ const MainCourse = ({
               activeTab={activeTab}
               content={content}
               chapter={chapter}
+              language={language}
               isLoading={isLoading}
               showReport={showReport}
               isFullscreenMindmap={isFullscreenMindmap}

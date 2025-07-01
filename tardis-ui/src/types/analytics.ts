@@ -13,8 +13,12 @@ export interface VideoPlayEvent extends BaseAnalyticsEvent {
   totalDuration: number // Total video duration in seconds
   progressPercent: number // Percentage of video watched (0-100)
   videoId: string // Identifier for the specific video
-  videoTitle?: string // Title of the video
-  quality?: string // Video quality (e.g., "720p", "1080p")
+  videoTitle?: string | undefined // Title of the video
+  quality?: string | undefined // Video quality (e.g., "720p", "1080p")
+  // Additional properties used in components
+  videoPosition?: number | undefined // Current video position
+  chapterTitle?: string | undefined // Title of the chapter
+  videoUrl?: string | undefined // URL of the video
 }
 
 export interface VideoPauseEvent extends VideoPlayEvent {
@@ -24,11 +28,13 @@ export interface VideoPauseEvent extends VideoPlayEvent {
 
 export interface VideoCompleteEvent extends BaseAnalyticsEvent {
   videoId: string // Identifier for the specific video
-  videoTitle?: string // Title of the video
+  videoTitle?: string | undefined // Title of the video
   watchedSegments: [number, number][] // Segments of video watched [[start1, end1], [start2, end2], ...]
   totalWatchedTime: number // Total time watched in seconds
   completePercent: number // Percentage of video watched in total (0-100)
   watchCount: number // Number of times video was started
+  // Additional properties used in components
+  totalDuration?: number | undefined // Total video duration
 }
 
 export interface VideoProgressEvent extends VideoPlayEvent {
@@ -38,11 +44,12 @@ export interface VideoProgressEvent extends VideoPlayEvent {
 // Quiz Events
 export interface QuizStartEvent extends BaseAnalyticsEvent {
   quizId: string // Identifier for the quiz
-  quizTitle?: string // Title of the quiz
+  quizTitle?: string | undefined // Title of the quiz
   questionCount: number // Total number of questions
-  difficulty?: string // Quiz difficulty level
-  timeLimit?: number // Time limit in seconds (if applicable)
+  difficulty?: string | undefined // Quiz difficulty level
+  timeLimit?: number | undefined // Time limit in seconds (if applicable)
   attemptNumber: number // Which attempt this is (1, 2, 3, etc.)
+  [key: string]: unknown // Allow additional properties
 }
 
 export interface QuizQuestionAnswerEvent extends BaseAnalyticsEvent {
@@ -58,7 +65,7 @@ export interface QuizQuestionAnswerEvent extends BaseAnalyticsEvent {
 
 export interface QuizSubmitEvent extends BaseAnalyticsEvent {
   quizId: string // Identifier for the quiz
-  quizTitle?: string // Title of the quiz
+  quizTitle?: string | undefined // Title of the quiz
   attemptId: string // Unique identifier for this attempt
   score: number // Score achieved
   maxScore: number // Maximum possible score
@@ -66,17 +73,23 @@ export interface QuizSubmitEvent extends BaseAnalyticsEvent {
   correctAnswers: number // Number of correct answers
   totalQuestions: number // Total number of questions
   attemptNumber: number // Which attempt this is (1, 2, 3, etc.)
-  passingScore?: number // Passing score threshold (if applicable)
-  passed?: boolean // Whether the user passed
+  passingScore?: number | undefined // Passing score threshold (if applicable)
+  passed?: boolean | undefined // Whether the user passed
+  [key: string]: unknown // Allow additional properties
 }
 
 // Content View Events
 export interface ContentViewEvent extends BaseAnalyticsEvent {
   contentId: string // Identifier for the content
   contentType: string // Type of content (article, video, mindmap, etc.)
-  contentTitle?: string // Title of the content
-  viewDuration?: number // How long the content was viewed (in seconds)
-  referrer?: string // Where the user came from
+  contentTitle?: string | undefined // Title of the content
+  viewDuration?: number | undefined // How long the content was viewed (in seconds)
+  referrer?: string | undefined // Where the user came from
+  // Additional properties used in components
+  moduleType?: string | undefined // Type of module being viewed
+  chapterTitle?: string | undefined // Title of the chapter
+  type?: string | undefined // Generic type field
+  [key: string]: unknown // Allow additional properties
 }
 
 // Navigation Events
@@ -84,15 +97,28 @@ export interface NavigationEvent extends BaseAnalyticsEvent {
   fromRoute: string // Previous route
   toRoute: string // Current route
   navigationMethod: string // How navigation occurred (link, button, back, etc.)
-  durationOnPreviousPage?: number // Time spent on previous page in seconds
+  durationOnPreviousPage?: number | undefined // Time spent on previous page in seconds
 }
 
 // MindMap Events
 export interface MindMapInteractionEvent extends BaseAnalyticsEvent {
   mapId: string // Identifier for the mind map
   interactionType: string // Type of interaction (zoom, pan, click, expand, collapse)
-  nodeId?: string // Identifier for the node being interacted with
-  nodeTitle?: string // Title of the node
-  zoomLevel?: number // Current zoom level
-  expandedNodes?: number // Number of expanded nodes
+  nodeId?: string | undefined // Identifier for the node being interacted with
+  nodeTitle?: string | undefined // Title of the node
+  zoomLevel?: number | undefined // Current zoom level
+  expandedNodes?: number | undefined // Number of expanded nodes
+  [key: string]: unknown // Allow additional properties
+}
+
+// Roleplay Events
+export interface RoleplayResponseEvent extends BaseAnalyticsEvent {
+  scenarioId: string // Identifier for the roleplay scenario
+  step: number // Current step in the roleplay
+  studentName: string // Name of the student
+  studentPersonality: string // Personality of the student
+  question: string // Question asked
+  response: string // Response given
+  responseTime: number // Time taken to respond
+  feedbackProvided?: string | undefined // Feedback provided
 }

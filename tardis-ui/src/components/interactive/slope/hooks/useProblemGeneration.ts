@@ -67,15 +67,15 @@ export function useProblemGeneration({
       const incorrectAttempts = recentHistory.filter(item => !item.isCorrect)
       const undefinedSlopeAttempts = incorrectAttempts.filter(item => {
         const problem = problems.find(p => p.id === item.problemId)
-        return problem?.categories.includes('undefined-slope')
+        return problem?.categories?.includes('undefined-slope') || false
       }).length
       const zeroSlopeAttempts = incorrectAttempts.filter(item => {
         const problem = problems.find(p => p.id === item.problemId)
-        return problem?.categories.includes('zero-slope')
+        return problem?.categories?.includes('zero-slope') || false
       }).length
       const fractionalCoordinateAttempts = incorrectAttempts.filter(item => {
         const problem = problems.find(p => p.id === item.problemId)
-        return problem?.categories.includes('fractional-coordinates')
+        return problem?.categories?.includes('fractional-coordinates')
       }).length
 
       // If the user is struggling with a specific type, generate more of that type
@@ -128,7 +128,7 @@ export function useProblemGeneration({
       if (
         context &&
         context.stats.difficultyStats[diff].attempted >=
-          minAttemptsForAdaptation
+        minAttemptsForAdaptation
       ) {
         const difficultyStats = context.stats.difficultyStats[diff]
         const successRate = difficultyStats.correct / difficultyStats.attempted
@@ -575,7 +575,7 @@ Step 4: The equation of the line is ${equationText}`
   useEffect(() => {
     if (problems.length === 0) {
       generateProblem()
-    } else if (!currentProblemId && problems.length > 0) {
+    } else if (!currentProblemId && problems.length > 0 && problems[0]) {
       // If problems are loaded (e.g., from predefined), set the first one as current
       setCurrentProblemId(problems[0].id)
     }

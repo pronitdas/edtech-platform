@@ -51,7 +51,10 @@ export class ContentService {
 export const contentService = new ContentService()
 
 // Legacy function replacements that now use the new API
-export const getEdTechContent = async (chapter: { knowledge_id: number; id: number }, _language = 'English') => {
+export const getEdTechContent = async (
+  chapter: { knowledge_id: number; id: number },
+  _language = 'English'
+) => {
   try {
     const content = await contentService.getChapter(
       chapter.knowledge_id,

@@ -21,7 +21,10 @@ const DividendGrowthCalculator = () => {
       script.onload = () => {
         // Initialize MathJax after it's loaded
         if ((window as any).MathJax) {
-          (window as any).MathJax.Hub.Queue(['Typeset', (window as any).MathJax.Hub])
+          ;(window as any).MathJax.Hub.Queue([
+            'Typeset',
+            (window as any).MathJax.Hub,
+          ])
         }
       }
 
@@ -30,12 +33,15 @@ const DividendGrowthCalculator = () => {
         document.body.removeChild(script)
       }
     }
+    // Return undefined for the else case
+    return undefined
   }, [])
 
   useEffect(() => {
     if (!canvasContainerRef.current) return
 
-    const sketch = (p: any) => { // TODO: Install p5.js types
+    const sketch = (p: any) => {
+      // TODO: Install p5.js types
       const paddingLeft = 80
       const paddingRight = 50
       const paddingTop = 50
@@ -140,7 +146,7 @@ const DividendGrowthCalculator = () => {
     interface P5Constructor {
       new (sketch: (p: unknown) => void): { remove(): void; updateVis?(): void }
     }
-    
+
     const p5 = (window as any).p5 as P5Constructor | undefined
     if (p5) {
       const instance = new p5(sketch)

@@ -20,9 +20,15 @@ export class GenericDrawingStrategy implements DrawingStrategy {
   private drawingMode: 'generic' | 'interactiveMath'
 
   constructor(config: GenericDrawingStrategyConfig) {
-    this.p5Setup = config.p5Setup
-    this.p5Drawing = config.p5Drawing
-    this.interactiveMathConfig = config.interactiveMathConfig
+    if (config.p5Setup !== undefined) {
+      this.p5Setup = config.p5Setup
+    }
+    if (config.p5Drawing !== undefined) {
+      this.p5Drawing = config.p5Drawing
+    }
+    if (config.interactiveMathConfig !== undefined) {
+      this.interactiveMathConfig = config.interactiveMathConfig
+    }
     this.drawingMode = config.drawingMode
   }
 

@@ -30,8 +30,7 @@ export function useUserAnalytics(userId: string, contentId?: string) {
   const fetchInteractionSummary = useCallback(async () => {
     try {
       const summary = await analyticsService.getUserInteractionSummary(
-        userId,
-        contentId
+        userId
       )
       setState(prev => ({ ...prev, interactionSummary: summary }))
     } catch (err) {

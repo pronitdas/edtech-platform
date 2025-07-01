@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from 'react'
 import { OpenAIClient } from '@/services/openAi'
-import { ProblemData } from './PracticeProblem'
+import { Problem } from '@/types/interactive'
 
 export interface CustomProblemSolverProps {
   lineData?: {
@@ -16,18 +16,18 @@ export interface CustomProblemSolverProps {
   } | null
   onPointsChange: (points: Array<{ x: number; y: number }>) => void
   openaiClient?: OpenAIClient
+  language?: string
 }
 
 const CustomProblemSolver: React.FC<CustomProblemSolverProps> = ({
   lineData,
   onPointsChange,
   openaiClient,
+  language = 'English',
 }) => {
   // State for custom problem
   const [userPrompt, setUserPrompt] = useState('')
-  const [generatedProblem, setGeneratedProblem] = useState<ProblemData | null>(
-    null
-  )
+  const [generatedProblem, setGeneratedProblem] = useState<Problem | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [solution, setShowSolution] = useState(false)
@@ -51,7 +51,7 @@ const CustomProblemSolver: React.FC<CustomProblemSolverProps> = ({
     try {
       if (!openaiClient) {
         // Create a simple problem if no AI client
-        const newProblem: ProblemData = {
+        const newProblem: Problem = {
           id: `custom-${Date.now()}`,
           question: userPrompt,
           difficulty: 'medium',
@@ -90,7 +90,7 @@ const CustomProblemSolver: React.FC<CustomProblemSolverProps> = ({
         // Parse the AI response
         try {
           const parsedResult = JSON.parse(result)
-          const newProblem: ProblemData = {
+          const newProblem: Problem = {
             id: `custom-${Date.now()}`,
             question: parsedResult.question,
             difficulty: parsedResult.difficulty || 'medium',
@@ -308,7 +308,9 @@ const CustomProblemSolver: React.FC<CustomProblemSolverProps> = ({
             <div className='rounded-md border-l-4 border-green-500 bg-gray-900 p-3'>
               <h4 className='text-md mb-1 font-medium text-white'>Solution</h4>
               <p className='whitespace-pre-line text-gray-300'>
-                {generatedProblem.solution}
+                {typeof generatedProblem.solution === 'string'
+                  ? generatedProblem.solution
+                  : JSON.stringify(generatedProblem.solution)}
               </p>
             </div>
           )}

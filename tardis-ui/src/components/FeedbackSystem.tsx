@@ -70,7 +70,7 @@ export const FeedbackSystem: React.FC<FeedbackSystemProps> = ({
     setUsedHints([...usedHints, nextHintIndex])
     setFeedback({
       type: 'info',
-      message: hints[nextHintIndex],
+      message: hints[nextHintIndex] || 'No hint available',
     })
 
     // Notify parent that a hint was used

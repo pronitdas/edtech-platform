@@ -53,7 +53,7 @@ const AnimatedSolution: React.FC<AnimatedSolutionProps> = ({
     const p1 = points[0]
     const p2 = points[1]
     if (!p1 || !p2) return
-    
+
     const rise = p2.y - p1.y
     const run = p2.x - p1.x
 
@@ -168,9 +168,7 @@ const AnimatedSolution: React.FC<AnimatedSolutionProps> = ({
                   : 'border-gray-700'
         }`}
       >
-        <p className='text-gray-200'>
-          {currentStepData.description}
-        </p>
+        <p className='text-gray-200'>{currentStepData.description}</p>
       </div>
 
       {/* Progress bar */}

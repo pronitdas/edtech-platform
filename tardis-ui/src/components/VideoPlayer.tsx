@@ -368,8 +368,9 @@ const VideoPlayer = ({
       return (
         <button
           key={`marker-${index}`}
-          className={`absolute -mt-1.5 h-3 w-3 rounded-full ${getMarkerColor(marker)} ${isActive ? 'ring-2 ring-white ring-offset-1' : ''
-            } transition-transform hover:scale-150 hover:transform`}
+          className={`absolute -mt-1.5 h-3 w-3 rounded-full ${getMarkerColor(marker)} ${
+            isActive ? 'ring-2 ring-white ring-offset-1' : ''
+          } transition-transform hover:scale-150 hover:transform`}
           style={{ left: calculateMarkerPosition(marker.time) }}
           onClick={() => handleMarkerClick(marker)}
           onMouseEnter={e => handleMarkerMouseEnter(marker, e)}
@@ -425,10 +426,11 @@ const VideoPlayer = ({
 
       {/* Controls */}
       <div
-        className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4 transition-opacity duration-300 ${showControls || !isPlaying
+        className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4 transition-opacity duration-300 ${
+          showControls || !isPlaying
             ? 'opacity-100'
             : 'pointer-events-none opacity-0'
-          }`}
+        }`}
       >
         {/* Time and Timeline */}
         <div className='group relative mb-2 w-full'>

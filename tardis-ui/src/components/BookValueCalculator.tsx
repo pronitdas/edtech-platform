@@ -382,12 +382,13 @@ const BookValueCalculator = () => {
                 </span>
               </div>
               <div
-                className={`mt-4 rounded-lg p-4 ${ratio > 1.2
-                  ? 'bg-red-800 text-red-300'
-                  : ratio < 0.8
-                    ? 'bg-green-800 text-green-300'
-                    : 'bg-blue-800 text-blue-300'
-                  }`}
+                className={`mt-4 rounded-lg p-4 ${
+                  ratio > 1.2
+                    ? 'bg-red-800 text-red-300'
+                    : ratio < 0.8
+                      ? 'bg-green-800 text-green-300'
+                      : 'bg-blue-800 text-blue-300'
+                }`}
               >
                 {getAnalysis()}
               </div>

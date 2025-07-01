@@ -130,7 +130,7 @@ const DividendGrowthCalculator = () => {
       stockValue = (newValues.dividend / (returnRate - growthRate)).toFixed(2)
     }
 
-    setValues({ ...newValues, stockValue })
+    setValues({ ...newValues, stockValue: parseFloat(stockValue) })
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

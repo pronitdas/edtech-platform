@@ -7,12 +7,14 @@ interface ImageCarouselProps {
   slides: string[] // Array of summary slide content
   imageUrls: string[] // Array of image URLs corresponding to each slide
   isVertical?: boolean // Option to choose vertical or horizontal layout
+  knowledge_id?: string // Knowledge ID for image resolution
 }
 
 const ImageCarousel: React.FC<ImageCarouselProps> = ({
   slides,
   imageUrls,
   isVertical = false,
+  knowledge_id = '',
 }) => {
   const [currentPage, setCurrentPage] = useState<number>(0)
 
@@ -59,7 +61,11 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
                 className='h-64 w-64 rounded-lg object-cover shadow-lg'
               />
             )}
-            <MarkdownViewer key={index} content={slide} />
+            <MarkdownViewer
+              key={index}
+              content={slide}
+              knowledge_id={knowledge_id}
+            />
           </div>
         ))}
       </div>

@@ -166,10 +166,13 @@ const GraphCanvas: React.FC<GraphCanvasProps> = props => {
         lines={lines}
         shapes={shapes}
         texts={texts}
-        onElementClick={onElementClick}
+        {...(onElementClick && { onElementClick })}
       />
     )
   } else {
+    if (!p5DrawingStrategy) {
+      return <div>Error: Drawing strategy not available</div>
+    }
     return (
       <CoreGraphCanvas
         width={width}
@@ -181,7 +184,7 @@ const GraphCanvas: React.FC<GraphCanvasProps> = props => {
         mapPointToCanvas={mapPointToCanvas}
         mapCanvasToPoint={mapCanvasToPoint}
         drawingStrategy={p5DrawingStrategy}
-        onElementClick={onElementClick}
+        {...(onElementClick && { onElementClick })}
       />
     )
   }

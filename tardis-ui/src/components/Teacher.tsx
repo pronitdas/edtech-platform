@@ -20,7 +20,7 @@ const streamOptions: { compatibilityMode: 'auto'; streamWarmup: boolean } = {
 }
 
 const Teacher = () => {
-  const [agentManager, setAgentManager] = useState(null)
+  const [agentManager, setAgentManager] = useState<any>(null)
   const [connectionState, setConnectionState] = useState('Disconnected')
   const [srcObject, setSrcObject] = useState<MediaStream | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -35,9 +35,11 @@ const Teacher = () => {
           setConnectionState(state)
           console.log('Connection State Changed: ', state)
         },
-        onNewMessage: (messages: Array<{ role: string, content: string }>) => {
+        onNewMessage: (messages: any[], type: string) => {
           const msg = messages[messages.length - 1]
-          console.log(`[${msg.role}] : ${msg.content}`)
+          if (msg) {
+            console.log(`[${msg.role || 'unknown'}] : ${msg.content || ''}`)
+          }
         },
         onError: (error: Error) => {
           console.error('Error:', error)
@@ -83,7 +85,7 @@ const Teacher = () => {
         <video id='videoElement' ref={videoRef} autoPlay playsInline />
       </div>
       <button
-        onClick={speakText}
+        onClick={() => speakText()}
         className={`${connectionState == 'connected' ? 'bg-blue-500' : 'bg-red-500'} w-48 rounded py-2 font-bold text-white hover:bg-blue-700`}
         disabled={!agentManager || connectionState == 'connected'}
       >

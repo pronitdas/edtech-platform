@@ -297,6 +297,8 @@ const handleTouch = (
   rect: DOMRect
 ): { x: number; y: number } => {
   const touch = e.touches[0]
+  if (!touch) return { x: 0, y: 0 }
+
   const isMobile = window.matchMedia('(max-width: 768px)').matches
   return {
     x: touch.clientX,
@@ -430,26 +432,29 @@ const SvgGraphCanvas: React.FC<SvgGraphCanvasProps> = ({
       lines,
       shapes,
       texts,
-      config,
-      zoom,
-      offset,
+      ...(config && { config }),
+      ...(zoom !== undefined && { zoom }),
+      ...(offset !== undefined && { offset }),
     })
   }, [drawingStrategy, points, lines, shapes, texts, config, zoom, offset])
 
   // Mobile-optimized styles
-  const styles = useMemo(
-    () => ({
+  const styles = useMemo(() => {
+    const baseStyles: React.CSSProperties = {
       background: 'white',
-      ...(isMobile
-        ? ({
-            '--touch-target-size': '44px',
-            '--tooltip-offset': '20px',
-            strokeWidth: '3px',
-          } as React.CSSProperties)
-        : {}),
-    }),
-    [isMobile]
-  )
+    }
+
+    if (isMobile) {
+      return {
+        ...baseStyles,
+        '--touch-target-size': '44px',
+        '--tooltip-offset': '20px',
+        strokeWidth: '3px',
+      } as React.CSSProperties
+    }
+
+    return baseStyles
+  }, [isMobile])
 
   // Handler for touch event tooltips
   const handleTooltipTouch = useCallback(
@@ -539,7 +544,7 @@ const SvgGraphCanvas: React.FC<SvgGraphCanvasProps> = ({
       width={width}
       height={height}
       viewBox={viewBox}
-      style={styles}
+      style={styles as any}
       preserveAspectRatio='xMidYMid meet'
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}

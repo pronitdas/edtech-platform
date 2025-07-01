@@ -73,7 +73,15 @@ const Chapters: React.FC<ChaptersProps> = ({
   )
 }
 
-const SearchBar = ({ value, onChange, compact = false }: { value: string; onChange: (value: string) => void; compact?: boolean }) => (
+const SearchBar = ({
+  value,
+  onChange,
+  compact = false,
+}: {
+  value: string
+  onChange: (value: string) => void
+  compact?: boolean
+}) => (
   <div className={`${compact ? 'mb-2' : 'mb-4'}`}>
     <div className='relative'>
       <input
@@ -103,7 +111,15 @@ const SearchBar = ({ value, onChange, compact = false }: { value: string; onChan
   </div>
 )
 
-const ChapterGrid = ({ chapters, chaptersMeta, onLessonClick }: { chapters: Chapter[]; chaptersMeta: any[]; onLessonClick: (chapter: Chapter) => void }) => (
+const ChapterGrid = ({
+  chapters,
+  chaptersMeta,
+  onLessonClick,
+}: {
+  chapters: Chapter[]
+  chaptersMeta: any[]
+  onLessonClick: (chapter: Chapter) => void
+}) => (
   <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
     {chapters.length > 0 ? (
       chapters.map(chapter => (
@@ -122,7 +138,15 @@ const ChapterGrid = ({ chapters, chaptersMeta, onLessonClick }: { chapters: Chap
   </div>
 )
 
-const ChapterCard = ({ chapter, chapterMeta, onClick }: { chapter: Chapter; chapterMeta: any; onClick: () => void }) => (
+const ChapterCard = ({
+  chapter,
+  chapterMeta,
+  onClick,
+}: {
+  chapter: Chapter
+  chapterMeta: any
+  onClick: () => void
+}) => (
   <Card
     className='cursor-pointer transition-all duration-200 hover:shadow-lg'
     onClick={onClick}
@@ -149,7 +173,13 @@ const ChapterMetaBadges = ({ chapterMeta }: { chapterMeta: any }) => (
   </div>
 )
 
-const MetaBadge = ({ available, label }: { available: boolean; label: string }) => (
+const MetaBadge = ({
+  available,
+  label,
+}: {
+  available: boolean
+  label: string
+}) => (
   <div className='flex items-center space-x-1'>
     {available ? (
       <>
@@ -165,7 +195,15 @@ const MetaBadge = ({ available, label }: { available: boolean; label: string }) 
   </div>
 )
 
-const ChapterList = ({ chapters, chaptersMeta, onLessonClick }: { chapters: Chapter[]; chaptersMeta: any[]; onLessonClick: (chapter: Chapter) => void }) => (
+const ChapterList = ({
+  chapters,
+  chaptersMeta,
+  onLessonClick,
+}: {
+  chapters: Chapter[]
+  chaptersMeta: any[]
+  onLessonClick: (chapter: Chapter) => void
+}) => (
   <div className='mt-2 space-y-2'>
     {chapters.length > 0 ? (
       chapters.map(chapter => (
@@ -180,21 +218,21 @@ const ChapterList = ({ chapters, chaptersMeta, onLessonClick }: { chapters: Chap
           <p className='mt-1 truncate text-xs text-gray-300'>
             {(chapter.chapter || chapter.content || '').length > 60
               ? `${(chapter.chapter || chapter.content || '').slice(0, 60)}...`
-              : (chapter.chapter || chapter.content || '')}
+              : chapter.chapter || chapter.content || ''}
           </p>
           <div className='mt-1 flex gap-1'>
             {chaptersMeta.find(cm => cm.chapter_id === chapter.id)
               ?.has_quiz && (
-                <span className='rounded bg-blue-500/20 px-1.5 py-0.5 text-xs text-blue-300'>
-                  Quiz
-                </span>
-              )}
+              <span className='rounded bg-blue-500/20 px-1.5 py-0.5 text-xs text-blue-300'>
+                Quiz
+              </span>
+            )}
             {chaptersMeta.find(cm => cm.chapter_id === chapter.id)
               ?.has_notes && (
-                <span className='rounded bg-green-500/20 px-1.5 py-0.5 text-xs text-green-300'>
-                  Notes
-                </span>
-              )}
+              <span className='rounded bg-green-500/20 px-1.5 py-0.5 text-xs text-green-300'>
+                Notes
+              </span>
+            )}
           </div>
         </div>
       ))
@@ -210,10 +248,10 @@ const SimplePagination = ({
   onPageChange,
   compact = false,
 }: {
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-  compact?: boolean;
+  currentPage: number
+  totalPages: number
+  onPageChange: (page: number) => void
+  compact?: boolean
 }) => {
   const pageNumbers = []
   const maxVisiblePages = compact ? 3 : 5
@@ -267,21 +305,22 @@ const PageButton = ({
   label,
   compact = false,
 }: {
-  onClick: () => void;
-  disabled?: boolean;
-  active?: boolean;
-  label: string | number;
-  compact?: boolean;
+  onClick: () => void
+  disabled?: boolean
+  active?: boolean
+  label: string | number
+  compact?: boolean
 }) => (
   <button
     onClick={onClick}
     disabled={disabled}
-    className={`${compact ? 'px-2 py-0.5 text-xs' : 'px-3 py-1'} rounded ${active
+    className={`${compact ? 'px-2 py-0.5 text-xs' : 'px-3 py-1'} rounded ${
+      active
         ? 'bg-blue-500 text-white'
         : disabled
           ? 'cursor-not-allowed bg-gray-300 text-gray-500'
           : 'bg-gray-200 hover:bg-gray-300'
-      }`}
+    }`}
   >
     {label}
   </button>

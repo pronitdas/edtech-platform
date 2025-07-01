@@ -38,13 +38,10 @@ class LocalLearningAnalyticsService implements LearningAnalyticsService {
       const analytics: LearningAnalytics = {
         user_id: userId,
         knowledge_id: knowledgeId,
-        total_time: sessions.reduce(
-          (acc: number, session: unknown) => {
-            const sessionData = session as { duration?: number }
-            return acc + (sessionData.duration || 0)
-          },
-          0
-        ),
+        total_time: sessions.reduce((acc: number, session: unknown) => {
+          const sessionData = session as { duration?: number }
+          return acc + (sessionData.duration || 0)
+        }, 0),
         engagement_score: this.calculateEngagementScore(interactions),
         understanding_level: this.calculateUnderstandingLevel(interactions),
         completion_rate: this.calculateCompletionRate(interactions),
@@ -55,7 +52,7 @@ class LocalLearningAnalyticsService implements LearningAnalyticsService {
         },
         strengths: [],
         weaknesses: [],
-        recommendations: []
+        recommendations: [],
       }
 
       return analytics
@@ -81,7 +78,8 @@ class LocalLearningAnalyticsService implements LearningAnalyticsService {
     knowledgeId: string
   ): Promise<number | null> {
     try {
-      const interactions = await analyticsService.getKnowledgeInteractions(knowledgeId)
+      const interactions =
+        await analyticsService.getKnowledgeInteractions(knowledgeId)
       return this.calculateEngagementScore(interactions)
     } catch (err) {
       console.error(
@@ -97,7 +95,8 @@ class LocalLearningAnalyticsService implements LearningAnalyticsService {
     knowledgeId: string
   ): Promise<string | null> {
     try {
-      const interactions = await analyticsService.getKnowledgeInteractions(knowledgeId)
+      const interactions =
+        await analyticsService.getKnowledgeInteractions(knowledgeId)
       return this.calculateUnderstandingLevel(interactions)
     } catch (err) {
       console.error(

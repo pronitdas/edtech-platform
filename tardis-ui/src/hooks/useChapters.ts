@@ -161,10 +161,13 @@ export const useChapters = () => {
           return null
         }
 
-        const contentResult = await getEdTechContent({ 
-          knowledge_id: Number(chapter.knowledgeId), 
-          id: Number(chapter.id) 
-        }, language)
+        const contentResult = await getEdTechContent(
+          {
+            knowledge_id: Number(chapter.knowledge_id),
+            id: Number(chapter.id),
+          },
+          language
+        )
         console.log('Raw EdTech content result:', contentResult)
 
         let chapterContent: ChapterContent | null = null
@@ -232,10 +235,10 @@ export const useChapters = () => {
 
         if (
           generationResponse.success &&
-          generationResponse.data?.chapters?.length > 0
+          (generationResponse.data?.chapters?.length ?? 0) > 0
         ) {
           const newContent = generationResponse.data
-            .chapters[0] as ChapterContent
+            ?.chapters?.[0] as ChapterContent
 
           // Check if we have partial success (some content types failed)
           if (
@@ -248,10 +251,10 @@ export const useChapters = () => {
               isGeneratingContent: false,
               generationProgress: {
                 total: contentTypes.length,
-                completed: generationResponse.data.processed_chapters || 0,
-                failed: generationResponse.data.failed_chapters || 0,
+                completed: generationResponse.data?.processed_chapters || 0,
+                failed: generationResponse.data?.failed_chapters || 0,
               },
-              lastGenerationError: generationResponse.message,
+              lastGenerationError: generationResponse.message || null,
             }))
           } else {
             // Complete success
@@ -340,7 +343,7 @@ export const useChapters = () => {
 
   // Memoized utility function for identifying missing content types
   const getMissingContentTypes = useCallback(
-    (contentData: ChapterContent | null): ContentType[] => {
+    (contentData: ChapterContent | null | undefined): ContentType[] => {
       if (!contentData) return []
 
       const missingTypes: ContentType[] = []

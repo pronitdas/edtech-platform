@@ -11,6 +11,8 @@ const PERatioCalculator = () => {
     if (!canvas) return
 
     const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
     const width = canvas.width
     const height = canvas.height
 
@@ -100,7 +102,9 @@ const PERatioCalculator = () => {
                   min='1'
                   max='200'
                   value={price}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPrice(Number(e.target.value))}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setPrice(Number(e.target.value))
+                  }
                   className='mt-2 w-full'
                 />
               </label>
@@ -114,7 +118,9 @@ const PERatioCalculator = () => {
                   max='10'
                   step='0.1'
                   value={eps}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEps(Number(e.target.value))}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setEps(Number(e.target.value))
+                  }
                   className='mt-2 w-full'
                 />
               </label>

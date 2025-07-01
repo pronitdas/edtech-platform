@@ -11,31 +11,31 @@ The `MockInteractionTrackerProvider` is a mock implementation of the `Interactio
 If your component uses the `useInteractionTracker` hook, you'll need to wrap it with the `MockInteractionTrackerProvider` in your Storybook stories:
 
 ```tsx
-import { MockInteractionTrackerProvider } from '../stories/MockInteractionTrackerProvider';
+import { MockInteractionTrackerProvider } from "../stories/MockInteractionTrackerProvider"
 
 // In your story decorator
 export const yourStory: Story = {
   decorators: [
-    (Story) => (
+    Story => (
       <MockInteractionTrackerProvider>
         <Story />
       </MockInteractionTrackerProvider>
     ),
   ],
   // ...other story properties
-};
+}
 
 // Or in your Meta configuration
 const meta: Meta<typeof YourComponent> = {
   decorators: [
-    (Story) => (
+    Story => (
       <MockInteractionTrackerProvider>
         <Story />
       </MockInteractionTrackerProvider>
     ),
   ],
   // ...other meta properties
-};
+}
 ```
 
 ### Error Handling
@@ -55,8 +55,11 @@ If you need to customize the behavior of the mock tracker, you can modify the `m
 For example, if you need to capture calls to a specific tracking function, you can access the `calls` array on the mock function:
 
 ```tsx
-import { MockInteractionTrackerProvider, mockTrackerContext } from '../stories/MockInteractionTrackerProvider';
+import {
+  MockInteractionTrackerProvider,
+  mockTrackerContext,
+} from "../stories/MockInteractionTrackerProvider"
 
 // After your story runs
-console.log(mockTrackerContext.trackContentView.calls); // Access the recorded calls
-``` 
+console.log(mockTrackerContext.trackContentView.calls) // Access the recorded calls
+```

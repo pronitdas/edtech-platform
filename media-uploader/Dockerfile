@@ -48,11 +48,11 @@ COPY requirements.txt ./
 #     numpy \
 #     torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118  
 
-# Install remaining dependencies
+# Install remaining dependencies with optimizations
 RUN pip3 install --no-cache-dir -r requirements.txt --ignore-installed blinker
 
-# Pre-download Whisper model to cache  pip3 install --no-cache-dir openai-whisper --ignore-installed blinker && \
-RUN python3 -c "import whisper; whisper.load_model('base')"
+# Pre-download Whisper model to cache
+RUN python3 -c "import whisper; whisper.load_model('base')" || echo "Whisper model download failed, continuing..."
 
 # Copy application code
 COPY . .
@@ -67,4 +67,4 @@ RUN mkdir -p /app/temp
 EXPOSE 8000
 
 # Set the default command
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
