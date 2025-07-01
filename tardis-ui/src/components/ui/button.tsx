@@ -22,6 +22,10 @@ const buttonVariants = cva(
           'hover:bg-success-600 dark:bg-success-600 dark:active:bg-success-800 bg-success-500 text-white active:bg-success-700 dark:hover:bg-success-700',
         warning:
           'hover:bg-warning-600 dark:bg-warning-600 dark:active:bg-warning-800 bg-warning-500 text-white active:bg-warning-700 dark:hover:bg-warning-700',
+        outline:
+          'border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800',
+        destructive:
+          'hover:bg-red-600 dark:bg-red-600 dark:active:bg-red-800 bg-red-500 text-white active:bg-red-700 dark:hover:bg-red-700',
       },
       size: {
         sm: 'h-8 px-3 text-xs',
@@ -43,7 +47,7 @@ const buttonVariants = cva(
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  VariantProps<typeof buttonVariants> {
   /**
    * Is the button currently loading
    */

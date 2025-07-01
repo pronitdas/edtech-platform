@@ -13,7 +13,7 @@ const PriceToCashFlowCalculator = () => {
     }
   }, [marketPrice, cashFlow])
 
-  const getInterpretation = ratio => {
+  const getInterpretation = (ratio: number) => {
     if (ratio < 10) {
       return {
         message:
@@ -35,14 +35,14 @@ const PriceToCashFlowCalculator = () => {
 
   const interpretation = getInterpretation(pcfRatio)
 
-  const handleMarketPriceChange = e => {
+  const handleMarketPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value)
     if (!isNaN(value) && value >= 0) {
       setMarketPrice(value)
     }
   }
 
-  const handleCashFlowChange = e => {
+  const handleCashFlowChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value)
     if (!isNaN(value) && value > 0) {
       setCashFlow(value)

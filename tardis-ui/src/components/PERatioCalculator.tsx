@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 const PERatioCalculator = () => {
   const [price, setPrice] = useState(50)
   const [eps, setEps] = useState(2)
-  const canvasRef = useRef(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
 
   const drawVisualization = () => {
     const canvas = canvasRef.current
@@ -100,7 +100,7 @@ const PERatioCalculator = () => {
                   min='1'
                   max='200'
                   value={price}
-                  onChange={e => setPrice(Number(e.target.value))}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPrice(Number(e.target.value))}
                   className='mt-2 w-full'
                 />
               </label>
@@ -114,7 +114,7 @@ const PERatioCalculator = () => {
                   max='10'
                   step='0.1'
                   value={eps}
-                  onChange={e => setEps(Number(e.target.value))}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEps(Number(e.target.value))}
                   className='mt-2 w-full'
                 />
               </label>

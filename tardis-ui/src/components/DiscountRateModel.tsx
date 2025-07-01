@@ -3,8 +3,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import p5 from 'p5'
 
 const DiscountRateCalculator = () => {
-  const canvasRef = useRef(null)
-  const p5Instance = useRef(null)
+  const canvasRef = useRef<HTMLDivElement>(null)
+  const p5Instance = useRef<p5 | null>(null)
 
   const [values, setValues] = useState({
     futureValue: 5000,
@@ -15,7 +15,7 @@ const DiscountRateCalculator = () => {
 
   useEffect(() => {
     if (canvasRef.current && !p5Instance.current) {
-      const sketch = p => {
+      const sketch = (p: p5) => {
         const canvasW = 600
         const canvasH = 300
 
@@ -28,7 +28,7 @@ const DiscountRateCalculator = () => {
           drawGraph(p)
         }
 
-        const drawGraph = p => {
+        const drawGraph = (p: p5) => {
           const fixedMax = 12000
 
           // Draw axes
@@ -82,7 +82,7 @@ const DiscountRateCalculator = () => {
 
     return () => {
       if (p5Instance.current) {
-        p5Instance.current.remove()
+        ; (p5Instance.current as p5).remove()
         p5Instance.current = null
       }
     }
@@ -91,10 +91,10 @@ const DiscountRateCalculator = () => {
   useEffect(() => {
     const pv =
       values.futureValue / Math.pow(1 + values.discountRate / 100, values.time)
-    setValues(prev => ({ ...prev, presentValue: pv.toFixed(2) }))
+    setValues(prev => ({ ...prev, presentValue: parseFloat(pv.toFixed(2)) }))
   }, [values.futureValue, values.discountRate, values.time])
 
-  const handleSliderChange = e => {
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setValues(prev => ({
       ...prev,
       [e.target.name]: parseFloat(e.target.value),

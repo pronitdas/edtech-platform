@@ -105,6 +105,35 @@ export class AnalyticsService {
     )
   }
 
+  // Missing methods that are being called
+  async getUserCompletion(userId: string): Promise<any> {
+    return apiClient.request(`/v2/analytics/user/${userId}/completion`)
+  }
+
+  async getKnowledgeInteractionSummary(knowledgeId: string): Promise<any> {
+    return apiClient.request(`/v2/analytics/knowledge/${knowledgeId}/interaction-summary`)
+  }
+
+  async getKnowledgeVideoStats(knowledgeId: string): Promise<VideoStats> {
+    return this.getVideoStats(knowledgeId)
+  }
+
+  async getKnowledgeQuizStats(knowledgeId: string): Promise<QuizStats> {
+    return this.getQuizStats(knowledgeId)
+  }
+
+  async getUserSessionStats(userId: string): Promise<any> {
+    return apiClient.request(`/v2/analytics/user/${userId}/session-stats`)
+  }
+
+  async getUserInteractionSummary(userId: string): Promise<any> {
+    return apiClient.request(`/v2/analytics/user/${userId}/interaction-summary`)
+  }
+
+  async summarizeNumericEventData(userId: string, eventType: string, jsonKey: string): Promise<any> {
+    return this.getNumericSummary(userId, eventType, jsonKey)
+  }
+
   // Helper methods for common tracking scenarios
   async trackChapterView(
     knowledgeId: string,

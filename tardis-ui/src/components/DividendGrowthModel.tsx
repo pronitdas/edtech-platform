@@ -3,8 +3,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import p5 from 'p5'
 
 const DividendGrowthCalculator = () => {
-  const canvasRef = useRef(null)
-  const p5Instance = useRef(null)
+  const canvasRef = useRef<HTMLDivElement>(null)
+  const p5Instance = useRef<p5 | null>(null)
 
   const [values, setValues] = React.useState({
     dividend: 2,
@@ -15,7 +15,7 @@ const DividendGrowthCalculator = () => {
 
   useEffect(() => {
     if (canvasRef.current && !p5Instance.current) {
-      const sketch = p => {
+      const sketch = (p: p5) => {
         const canvasW = 400
         const canvasH = 300
         const margin = 40
@@ -30,7 +30,7 @@ const DividendGrowthCalculator = () => {
           drawGraph(p)
         }
 
-        const drawGraph = p => {
+        const drawGraph = (p: p5) => {
           // Draw axes
           p.stroke(200)
           p.line(margin, canvasH - margin, canvasW - margin, canvasH - margin)
@@ -119,7 +119,7 @@ const DividendGrowthCalculator = () => {
     }
   }, [values])
 
-  const updateCalculation = newValues => {
+  const updateCalculation = (newValues: typeof values) => {
     const returnRate = newValues.returnRate / 100
     const growthRate = newValues.growthRate / 100
 
@@ -133,7 +133,7 @@ const DividendGrowthCalculator = () => {
     setValues({ ...newValues, stockValue })
   }
 
-  const handleInputChange = e => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValues = {
       ...values,
       [e.target.name]: parseFloat(e.target.value),

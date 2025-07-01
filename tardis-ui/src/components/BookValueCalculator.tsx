@@ -8,8 +8,8 @@ const BookValueCalculator = () => {
   const [marketPrice, setMarketPrice] = useState(70)
   const [bookValue, setBookValue] = useState(0)
   const [ratio, setRatio] = useState(0)
-  const canvasRef = useRef(null)
-  const p5Instance = useRef(null)
+  const canvasRef = useRef<HTMLDivElement>(null)
+  const p5Instance = useRef<p5 | null>(null)
 
   useEffect(() => {
     // Calculate book value whenever inputs change
@@ -44,7 +44,7 @@ const BookValueCalculator = () => {
   }
 
   // P5.js sketch definition
-  const sketch = p => {
+  const sketch = (p: p5) => {
     let targetBookValueHeight = 0
     let targetMarketPriceHeight = 0
     let currentBookValueHeight = 0
@@ -382,13 +382,12 @@ const BookValueCalculator = () => {
                 </span>
               </div>
               <div
-                className={`mt-4 rounded-lg p-4 ${
-                  ratio > 1.2
-                    ? 'bg-red-800 text-red-300'
-                    : ratio < 0.8
-                      ? 'bg-green-800 text-green-300'
-                      : 'bg-blue-800 text-blue-300'
-                }`}
+                className={`mt-4 rounded-lg p-4 ${ratio > 1.2
+                  ? 'bg-red-800 text-red-300'
+                  : ratio < 0.8
+                    ? 'bg-green-800 text-green-300'
+                    : 'bg-blue-800 text-blue-300'
+                  }`}
               >
                 {getAnalysis()}
               </div>

@@ -140,7 +140,7 @@ const ContentToggle = ({
     setActiveNoteIndex(index)
 
     // Find corresponding marker for this note index
-    if (markers.length > index) {
+    if (markers.length > index && markers[index]?.id) {
       setActiveChapterId(markers[index].id)
     }
   }
@@ -170,11 +170,10 @@ const ContentToggle = ({
       <div className='relative h-full w-full'>
         {/* Video Player */}
         <div
-          className={`absolute inset-0 h-full w-full transition-all duration-300 ease-in-out ${
-            showVideo
+          className={`absolute inset-0 h-full w-full transition-all duration-300 ease-in-out ${showVideo
               ? 'translate-x-0 opacity-100'
               : 'pointer-events-none -translate-x-full opacity-0'
-          }`}
+            }`}
         >
           <VideoPlayer
             src={videoSrc}
@@ -191,11 +190,10 @@ const ContentToggle = ({
 
         {/* Notes */}
         <div
-          className={`absolute inset-0 h-full w-full bg-white transition-all duration-300 ease-in-out ${
-            !showVideo
+          className={`absolute inset-0 h-full w-full bg-white transition-all duration-300 ease-in-out ${!showVideo
               ? 'translate-x-0 opacity-100'
               : 'pointer-events-none translate-x-full opacity-0'
-          }`}
+            }`}
         >
           <div className='h-full overflow-auto'>
             <MarkdownSlideshow

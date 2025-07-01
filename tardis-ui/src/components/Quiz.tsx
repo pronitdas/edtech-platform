@@ -134,17 +134,17 @@ const Quiz: React.FC<QuizProps> = ({
           <div className='flex flex-grow flex-col'>
             <div className='mb-4 flex-grow rounded-lg bg-gray-700 p-4'>
               <p className='mb-4 text-lg font-semibold'>
-                {questions[currentQuestionIndex].question}
+                {questions[currentQuestionIndex]?.question}
                 <span className='ml-2 text-sm text-gray-300'>
-                  ({questions[currentQuestionIndex].points || 1} point
-                  {(questions[currentQuestionIndex].points || 1) !== 1
+                  ({questions[currentQuestionIndex]?.points || 1} point
+                  {(questions[currentQuestionIndex]?.points || 1) !== 1
                     ? 's'
                     : ''}
                   )
                 </span>
               </p>
               <div className='space-y-3'>
-                {questions[currentQuestionIndex].options.map((option, i) => {
+                {questions[currentQuestionIndex]?.options?.map((option, i) => {
                   const isSelected =
                     selectedAnswers[currentQuestionIndex] === option
                   return (
@@ -153,11 +153,10 @@ const Quiz: React.FC<QuizProps> = ({
                       onClick={() =>
                         handleAnswerSelect(currentQuestionIndex, option)
                       }
-                      className={`w-full rounded-md p-3 text-left transition-all duration-200 ${
-                        isSelected
-                          ? 'border border-blue-400 bg-blue-600'
-                          : 'bg-gray-600 hover:bg-gray-500'
-                      }`}
+                      className={`w-full rounded-md p-3 text-left transition-all duration-200 ${isSelected
+                        ? 'border border-blue-400 bg-blue-600'
+                        : 'bg-gray-600 hover:bg-gray-500'
+                        }`}
                     >
                       {option}
                     </button>

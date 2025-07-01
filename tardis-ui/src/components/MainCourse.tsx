@@ -175,7 +175,7 @@ const MainCourse = ({
       subtopic: '',
       timestamp_end: null,
       timestamp_start: null,
-      topic: null,
+      topic: 'General',
       type: null,
     } satisfies Chapter)
 
@@ -183,7 +183,7 @@ const MainCourse = ({
     content,
     chapter,
     isContentEmpty: Object.keys(content).length === 0,
-    isChapterDefault: chapter.id === 0,
+    isChapterDefault: chapter.id === '0',
   })
 
   // Use the custom hook for state management

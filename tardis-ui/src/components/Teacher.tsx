@@ -35,7 +35,7 @@ const Teacher = () => {
           setConnectionState(state)
           console.log('Connection State Changed: ', state)
         },
-        onNewMessage: messages => {
+        onNewMessage: (messages: Array<{ role: string, content: string }>) => {
           const msg = messages[messages.length - 1]
           console.log(`[${msg.role}] : ${msg.content}`)
         },

@@ -52,7 +52,7 @@ export type ContentType = 'notes' | 'summary' | 'quiz' | 'mindmap'
 // API Client Class
 export class EdTechAPI {
   private baseURL: string
-  private apiKey?: string
+  private apiKey: string | undefined
   private headers: Record<string, string>
 
   constructor(

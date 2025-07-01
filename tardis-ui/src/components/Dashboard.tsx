@@ -204,7 +204,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
       <div className='mb-8 grid grid-cols-1 gap-6 lg:grid-cols-3'>
         {/* Learning Dashboard (Course Progress) */}
         <div className='lg:col-span-2'>
-          <LearningDashboard userId={userId} courseId={courseId} />
+          <LearningDashboard
+            userId={userId}
+            {...(courseId !== undefined && { courseId })}
+          />
         </div>
 
         {/* Recent Activity */}

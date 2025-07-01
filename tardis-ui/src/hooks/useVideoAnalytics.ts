@@ -59,7 +59,7 @@ export const useVideoAnalytics = (params: VideoAnalyticsParams) => {
         totalDuration,
         progressPercent,
         videoId: params.videoId,
-        quality,
+        ...(quality !== undefined && { quality }),
       }
 
       // Track the event
@@ -105,8 +105,8 @@ export const useVideoAnalytics = (params: VideoAnalyticsParams) => {
         totalDuration,
         progressPercent,
         videoId: params.videoId,
-        pauseReason,
         timeWatched,
+        ...(pauseReason !== undefined && { pauseReason }),
       }
 
       // Track the event

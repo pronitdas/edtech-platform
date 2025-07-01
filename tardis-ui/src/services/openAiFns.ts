@@ -93,9 +93,7 @@ export async function generateMindMapStructure(
         },
       ],
       'gpt-4o-2024-08-06',
-      800,
-      undefined,
-      jsonSchema
+      800
     )
 
     return JSON.parse(result)
@@ -258,9 +256,7 @@ export async function generateQuestions(
           { role: 'user', content: chunk.join(' ') },
         ],
         'gpt-4o-2024-08-06',
-        4096,
-        undefined,
-        jsonSchema
+        4096
       )
 
       const parsed = JSON.parse(result)

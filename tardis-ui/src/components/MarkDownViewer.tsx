@@ -128,7 +128,7 @@ const MarkdownViewer: React.FC<{
               />
             )
           },
-          hr: props => (
+          hr: (props: React.HTMLProps<HTMLHRElement>) => (
             <hr className='my-8 border-t border-green-700' {...props} />
           ),
         }}

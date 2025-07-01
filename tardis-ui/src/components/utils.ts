@@ -1,4 +1,4 @@
-function extractSubheadings(markdown, level = 2) {
+function extractSubheadings(markdown: string, level = 2) {
   // Create a regex for headings of the specified level (e.g., ## for level 2)
   const regex = new RegExp(`^#{${level}}\\s+(.*)`, 'gm')
   const subheadings = []
@@ -13,7 +13,7 @@ function extractSubheadings(markdown, level = 2) {
   }
   return subheadings
 }
-export const windowedChunk = (array, size, overlap = 0) => {
+export const windowedChunk = (array: any[], size: number, overlap = 0) => {
   if (size <= overlap) {
     throw new Error('Size must be greater than overlap.')
   }
@@ -25,7 +25,7 @@ export const windowedChunk = (array, size, overlap = 0) => {
   return chunks
 }
 
-export const stripMarkdown = text => {
+export const stripMarkdown = (text: string) => {
   return text
     .replace(/([*_~`]|#+\s*|>|\[|\]\(.*?\)|!\[.*?\]\(.*?\))/g, '') // remove Markdown symbols
     .replace(/\n+/g, ' ') // replace newlines with a space

@@ -45,7 +45,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const register = async (email: string, password: string, name?: string) => {
-    const userData = await authService.register({ email, password, name })
+    const registerData = { email, password, ...(name !== undefined && { name }) }
+    const userData = await authService.register(registerData)
     setUser(userData)
   }
 

@@ -25,7 +25,7 @@ const Chapters: React.FC<ChaptersProps> = ({
   const filteredChapters = chapters.filter(
     chapter =>
       chapter.chaptertitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      chapter.chapter.toLowerCase().includes(searchQuery.toLowerCase())
+      chapter.chapter?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   // Pagination
@@ -185,16 +185,16 @@ const ChapterList = ({ chapters, chaptersMeta, onLessonClick }: { chapters: Chap
           <div className='mt-1 flex gap-1'>
             {chaptersMeta.find(cm => cm.chapter_id === chapter.id)
               ?.has_quiz && (
-              <span className='rounded bg-blue-500/20 px-1.5 py-0.5 text-xs text-blue-300'>
-                Quiz
-              </span>
-            )}
+                <span className='rounded bg-blue-500/20 px-1.5 py-0.5 text-xs text-blue-300'>
+                  Quiz
+                </span>
+              )}
             {chaptersMeta.find(cm => cm.chapter_id === chapter.id)
               ?.has_notes && (
-              <span className='rounded bg-green-500/20 px-1.5 py-0.5 text-xs text-green-300'>
-                Notes
-              </span>
-            )}
+                <span className='rounded bg-green-500/20 px-1.5 py-0.5 text-xs text-green-300'>
+                  Notes
+                </span>
+              )}
           </div>
         </div>
       ))
@@ -276,13 +276,12 @@ const PageButton = ({
   <button
     onClick={onClick}
     disabled={disabled}
-    className={`${compact ? 'px-2 py-0.5 text-xs' : 'px-3 py-1'} rounded ${
-      active
+    className={`${compact ? 'px-2 py-0.5 text-xs' : 'px-3 py-1'} rounded ${active
         ? 'bg-blue-500 text-white'
         : disabled
           ? 'cursor-not-allowed bg-gray-300 text-gray-500'
           : 'bg-gray-200 hover:bg-gray-300'
-    }`}
+      }`}
   >
     {label}
   </button>

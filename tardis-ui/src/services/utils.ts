@@ -4,7 +4,9 @@ export function extractSubheadings(markdown: string, level = 2): string[] {
   const subheadings = []
   let match
   while ((match = regex.exec(markdown)) !== null) {
-    subheadings.push(match[1].trim())
+    if (match[1]) {
+      subheadings.push(match[1].trim())
+    }
   }
 
   if (subheadings.length === 0 && level < 5) {

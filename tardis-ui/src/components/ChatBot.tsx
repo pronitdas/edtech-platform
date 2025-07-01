@@ -5,6 +5,11 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Mic, MicOff, Volume2, VolumeX, Send, Loader2 } from 'lucide-react'
 
+interface ConversationMessage {
+  role: 'system' | 'user' | 'assistant'
+  content: string
+}
+
 interface ChatbotProps {
   topic: string
   language: string
@@ -23,7 +28,7 @@ const VoiceChatbot = ({ topic, language, onQuestionAsked }: ChatbotProps) => {
   const [isListening, setIsListening] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [conversation, setConversation] = useState([
+  const [conversation, setConversation] = useState<ConversationMessage[]>([
     {
       role: 'assistant',
       content:
@@ -173,7 +178,7 @@ const VoiceChatbot = ({ topic, language, onQuestionAsked }: ChatbotProps) => {
             role: msg.role,
             content: msg.content,
           })),
-          { role: 'user', content: userResponse },
+          { role: 'user' as const, content: userResponse },
         ],
         'o1-mini',
         200

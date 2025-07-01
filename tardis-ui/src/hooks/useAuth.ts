@@ -32,7 +32,8 @@ const useAuthState = () => {
   }
 
   const register = async (email: string, password: string, name?: string) => {
-    const user = await authService.register({ email, password, name })
+    const registerData = { email, password, ...(name !== undefined && { name }) }
+    const user = await authService.register(registerData)
     setUser(user)
     return user
   }

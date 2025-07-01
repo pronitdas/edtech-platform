@@ -6,14 +6,21 @@ interface OpenAIMessage {
 
 export interface OpenAIClient {
   generateResponse: (prompt: string) => Promise<string>
+  chatCompletion: (
+    messages: OpenAIMessage[],
+    model?: string,
+    max_tokens?: number,
+    temperature?: number,
+    stream?: boolean
+  ) => Promise<string>
 }
 
 export class OpenAIService implements OpenAIClient {
-  private apiKey?: string // Made apiKey optional
+  private apiKey: string | undefined // Made apiKey optional
 
   constructor(apiKey?: string) {
     // Made apiKey optional
-    this.apiKey = apiKey || undefined
+    this.apiKey = apiKey
   }
 
   async chatCompletion(
