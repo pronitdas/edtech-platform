@@ -16,20 +16,13 @@ import {
 } from 'lucide-react'
 import { useUser } from '@/contexts/UserContext'
 import { apiClient } from '@/services/api-client'
+import type { DashboardStats, RecentActivityResponse } from '@/types/dashboard'
 
-interface DashboardStats {
+interface LocalDashboardStats {
   totalCourses: number
   completedLessons: number
   studyTimeThisWeek: number
   achievementsEarned: number
-}
-
-interface RecentActivity {
-  id: string
-  type: 'lesson' | 'quiz' | 'upload'
-  title: string
-  timestamp: string
-  progress?: number
 }
 
 interface PersonalizedDashboardProps {
@@ -38,57 +31,59 @@ interface PersonalizedDashboardProps {
 
 const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({ onNavigateToLearning }) => {
   const { user } = useUser()
-  const [stats, setStats] = useState<DashboardStats>({
+  const [stats, setStats] = useState<LocalDashboardStats>({
     totalCourses: 0,
     completedLessons: 0,
     studyTimeThisWeek: 0,
     achievementsEarned: 0
   })
-  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
+  const [recentActivity, setRecentActivity] = useState<RecentActivityResponse[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      try {
-        // Mock data for now - in a real app, fetch from API
-        setStats({
-          totalCourses: 3,
-          completedLessons: 12,
-          studyTimeThisWeek: 240, // minutes
-          achievementsEarned: 5
-        })
+      if (!user?.id) {
+        setLoading(false)
+        return
+      }
 
-        setRecentActivity([
-          {
-            id: '1',
-            type: 'lesson',
-            title: 'Introduction to Mathematics',
-            timestamp: '2 hours ago',
-            progress: 85
-          },
-          {
-            id: '2',
-            type: 'quiz',
-            title: 'Science Quiz Chapter 3',
-            timestamp: '1 day ago',
-            progress: 92
-          },
-          {
-            id: '3',
-            type: 'upload',
-            title: 'Uploaded History textbook',
-            timestamp: '2 days ago'
-          }
-        ])
+      try {
+        // Fetch real dashboard statistics
+        const statsResponse = await apiClient.get<DashboardStats>(`/dashboard/user/${user.id}/dashboard-stats`)
+        
+        if (statsResponse.success && statsResponse.data) {
+          setStats({
+            totalCourses: statsResponse.data.total_courses || 0,
+            completedLessons: statsResponse.data.completed_lessons || 0,
+            studyTimeThisWeek: statsResponse.data.study_time_this_week || 0,
+            achievementsEarned: statsResponse.data.achievements_earned || 0
+          })
+        }
+
+        // Fetch recent activity
+        const activityResponse = await apiClient.get<RecentActivityResponse[]>(`/dashboard/user/${user.id}/recent-activity`)
+        
+        if (activityResponse.success && activityResponse.data) {
+          setRecentActivity(activityResponse.data)
+        }
+
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error)
+        // Set default values on error
+        setStats({
+          totalCourses: 0,
+          completedLessons: 0,
+          studyTimeThisWeek: 0,
+          achievementsEarned: 0
+        })
+        setRecentActivity([])
       } finally {
         setLoading(false)
       }
     }
 
     fetchDashboardData()
-  }, [])
+  }, [user?.id])
 
   const getGreeting = () => {
     const hour = new Date().getHours()

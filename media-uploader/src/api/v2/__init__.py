@@ -10,6 +10,7 @@ from .search import router as search_router
 from .admin import router as admin_router
 from .media import router as media_router
 from .llm import router as llm_router
+from .dashboard import router as dashboard_router
 
 v2_router = APIRouter(prefix="/v2")
 
@@ -24,3 +25,4 @@ v2_router.include_router(search_router, prefix="/search", tags=["search"])
 v2_router.include_router(admin_router, prefix="/admin", tags=["admin"])
 v2_router.include_router(media_router, prefix="/media", tags=["media"])
 v2_router.include_router(llm_router, prefix="/llm", tags=["llm"])
+v2_router.include_router(dashboard_router, tags=["dashboard"])
