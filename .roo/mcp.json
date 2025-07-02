@@ -13,7 +13,8 @@
         "create_entities",
         "create_relations",
         "add_observations",
-        "read_graph"
+        "read_graph",
+        "search_nodes"
       ]
     }
   }

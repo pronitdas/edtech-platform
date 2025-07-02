@@ -1,0 +1,26 @@
+# Mathematics Learning Guide
+
+## Chapter 1: Basic Algebra
+Algebra is the branch of mathematics that uses letters and symbols to represent numbers and quantities in formulas and equations.
+
+### Key Concepts:
+- Variables: Letters that represent unknown numbers
+- Coefficients: Numbers that multiply variables
+- Constants: Numbers that don't change
+
+### Example Problems:
+1. Solve for x: 2x + 5 = 15
+   Solution: x = 5
+
+2. Simplify: 3x + 2x - 4
+   Solution: 5x - 4
+
+## Chapter 2: Linear Equations
+Linear equations are equations where the highest power of the variable is 1.
+
+### Practice Problems:
+- 4x - 8 = 12 (Answer: x = 5)
+- -2x + 6 = 0 (Answer: x = 3)
+- 7x + 14 = 35 (Answer: x = 3)
+
+This content is designed to test the complete knowledge upload and learning workflow.
