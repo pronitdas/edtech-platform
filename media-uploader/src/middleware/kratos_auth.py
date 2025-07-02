@@ -29,10 +29,16 @@ class KratosAuthMiddleware(BaseHTTPMiddleware):
         self.client = httpx.AsyncClient(timeout=10.0)
         
     async def dispatch(self, request: Request, call_next):
-        # Skip authentication for public endpoints
+        # Skip authentication for public endpoints and OPTIONS requests
         path = request.url.path
-        logger.info(f"KratosAuthMiddleware: Processing path: {path}")
-        
+        method = request.method
+        logger.info(f"KratosAuthMiddleware: Processing {method} {path}")
+
+        # Always allow OPTIONS requests (CORS preflight)
+        if method == "OPTIONS":
+            logger.info(f"KratosAuthMiddleware: OPTIONS request, skipping auth: {path}")
+            return await call_next(request)
+
         if not self.should_validate_session(path):
             logger.info(f"KratosAuthMiddleware: Public path, skipping auth: {path}")
             return await call_next(request)
@@ -191,6 +197,7 @@ class KratosAuthMiddleware(BaseHTTPMiddleware):
             "/v2/auth/simple-login",
             "/v2/auth/simple-onboard-student",
             "/v2/auth/simple-onboard-teacher",
+            "/v2/auth/demo-login",
             "/v2/auth/onboard/student",
             "/v2/auth/onboard/teacher",
             # Admin health checks

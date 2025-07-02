@@ -5,6 +5,7 @@ import { CheckCircle, AlertCircle } from 'lucide-react'
 import RoleSelection from './RoleSelection'
 import StudentOnboarding from './StudentOnboarding'
 import TeacherOnboarding from './TeacherOnboarding'
+import ErrorBoundary from './ErrorBoundary'
 import { apiClient } from '@/services/api-client'
 
 type OnboardingStep = 'role-selection' | 'student-onboarding' | 'teacher-onboarding' | 'completion'
@@ -22,8 +23,10 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   const navigate = useNavigate()
 
   const handleRoleSelection = (role: 'student' | 'teacher') => {
+    console.log('Role selected:', role) // Debug log
     setSelectedRole(role)
     setCurrentStep(role === 'student' ? 'student-onboarding' : 'teacher-onboarding')
+    console.log('Current step set to:', role === 'student' ? 'student-onboarding' : 'teacher-onboarding') // Debug log
   }
 
   const handleBackToRoleSelection = () => {
@@ -243,11 +246,15 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   }
 
   const renderCurrentStep = () => {
+    console.log('Rendering step:', currentStep, 'Selected role:', selectedRole) // Debug log
+    
     switch (currentStep) {
       case 'role-selection':
+        console.log('Rendering RoleSelection component') // Debug log
         return <RoleSelection onRoleSelect={handleRoleSelection} />
 
       case 'student-onboarding':
+        console.log('Rendering StudentOnboarding component') // Debug log
         return (
           <StudentOnboarding
             onComplete={handleStudentOnboardingComplete}
@@ -256,6 +263,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         )
 
       case 'teacher-onboarding':
+        console.log('Rendering TeacherOnboarding component') // Debug log
         return (
           <TeacherOnboarding
             onComplete={handleTeacherOnboardingComplete}
@@ -264,19 +272,30 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         )
 
       case 'completion':
+        console.log('Rendering completion screen') // Debug log
         return renderCompletionScreen()
 
       default:
+        console.log('Rendering default RoleSelection component') // Debug log
         return <RoleSelection onRoleSelect={handleRoleSelection} />
     }
   }
 
   return (
-    <div className="relative" data-testid="onboarding-flow">
-      {renderCurrentStep()}
-      {renderLoadingOverlay()}
-      {renderErrorOverlay()}
-    </div>
+    <ErrorBoundary>
+      <div className="relative" data-testid="onboarding-flow">
+        {/* Debug indicator (only in development) */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="fixed top-4 right-4 bg-black bg-opacity-75 text-white p-3 rounded-lg text-sm font-mono z-50">
+            <div>Step: {currentStep}</div>
+            <div>Role: {selectedRole || 'none'}</div>
+          </div>
+        )}
+        {renderCurrentStep()}
+        {renderLoadingOverlay()}
+        {renderErrorOverlay()}
+      </div>
+    </ErrorBoundary>
   )
 }
 

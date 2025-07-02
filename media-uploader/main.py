@@ -107,13 +107,7 @@ app = FastAPI(
     openapi_url="/openapi.json"
 )
 
-# Add security middleware (first, for all requests)
-app.add_middleware(SecurityMiddleware)
-
-# Add Kratos authentication middleware (after security)
-app.add_middleware(KratosAuthMiddleware)
-
-# CORS configuration - more restrictive for security
+# CORS configuration - must be first to handle preflight requests
 allow_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001,http://localhost:5173,http://localhost:5174").split(",")
 app.add_middleware(
     CORSMiddleware,
@@ -122,6 +116,12 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+# Add security middleware (after CORS)
+app.add_middleware(SecurityMiddleware)
+
+# Add Kratos authentication middleware (after security)
+app.add_middleware(KratosAuthMiddleware)
 
 # Include API routes with tags
 app.include_router(router, tags=["Knowledge Processing"])

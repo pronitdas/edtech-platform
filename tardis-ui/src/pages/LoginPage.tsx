@@ -29,6 +29,41 @@ export default function LoginPage() {
     }
   }
 
+  const handleDemoLogin = async () => {
+    setLoading(true)
+    setError('')
+
+    try {
+      // Call the demo login endpoint directly
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+      const response = await fetch(`${baseUrl}/v2/auth/demo-login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Demo login failed')
+      }
+
+      const data = await response.json()
+
+      // Store the token and user data
+      localStorage.setItem('auth_token', data.access_token)
+
+      // Navigate to the app
+      navigate(from, { replace: true })
+
+      // Reload to update auth state
+      window.location.reload()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Demo login failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className='flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8'>
       <div className='w-full max-w-md space-y-8'>
@@ -96,13 +131,31 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          <div>
+          <div className='space-y-3'>
             <button
               type='submit'
               disabled={loading}
               className='group relative flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50'
             >
               {loading ? 'Signing in...' : 'Sign in'}
+            </button>
+
+            <div className='relative'>
+              <div className='absolute inset-0 flex items-center'>
+                <div className='w-full border-t border-gray-300' />
+              </div>
+              <div className='relative flex justify-center text-sm'>
+                <span className='bg-gray-50 px-2 text-gray-500'>Or</span>
+              </div>
+            </div>
+
+            <button
+              type='button'
+              onClick={handleDemoLogin}
+              disabled={loading}
+              className='group relative flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50'
+            >
+              {loading ? 'Signing in...' : 'Try Demo User'}
             </button>
           </div>
         </form>

@@ -97,7 +97,12 @@ const RoleSelection: React.FC<RoleSelectionProps> = ({ onRoleSelect }) => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.3 + index * 0.1 }}
                 className={`relative group cursor-pointer ${role.bgColor} rounded-2xl border-2 ${role.borderColor} ${role.hoverBorderColor} transition-all duration-300 hover:shadow-xl hover:scale-105`}
-                onClick={() => onRoleSelect(role.id)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log(`Clicking ${role.id} role`); // Debug log
+                  onRoleSelect(role.id);
+                }}
                 data-testid={`role-selection-${role.id}`}
               >
                 <div className="p-8">
