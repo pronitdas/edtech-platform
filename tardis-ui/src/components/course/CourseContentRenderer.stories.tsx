@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import CourseContentRenderer from './CourseContentRenderer'
 import { ChapterContent, ChapterV1 } from '@/types/database'
-import { MockInteractionTrackerProvider } from '../../stories/MockInteractionTrackerProvider'
+import { InteractionTrackerProvider } from '../../stories/InteractionTrackerContextMock'
 
 const mockChapter: ChapterV1 = {
   id: 1,
@@ -107,9 +107,9 @@ const meta: Meta<typeof CourseContentRenderer> = {
   decorators: [
     Story => (
       <div className='min-h-screen bg-gray-900'>
-        <MockInteractionTrackerProvider>
+        <InteractionTrackerProvider>
           <Story />
-        </MockInteractionTrackerProvider>
+        </InteractionTrackerProvider>
       </div>
     ),
   ],

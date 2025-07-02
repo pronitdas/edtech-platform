@@ -14,7 +14,7 @@ from routes.auth import get_current_user
 from database import get_db
 from sqlalchemy.orm import Session
 
-router = APIRouter(prefix="/v2/llm", tags=["llm-v2"])
+router = APIRouter(tags=["llm-v2"])
 
 # Redis for caching and rate limiting
 redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))

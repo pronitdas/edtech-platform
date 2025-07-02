@@ -105,8 +105,8 @@ interface SlopeDrawingContextValue {
   userId: string
   knowledgeId: string
   language: string
-  onUpdateProgress?: (progress: number) => void
-  openaiClient?: OpenAIClient
+  onUpdateProgress?: ((progress: number) => void) | undefined
+  openaiClient?: OpenAIClient | undefined
 
   // Problem history
   problemHistory: ProblemHistoryEntry[]

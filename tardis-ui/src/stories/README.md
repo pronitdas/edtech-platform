@@ -2,24 +2,39 @@
 
 This directory contains utility components and helpers for use in Storybook stories.
 
-## MockInteractionTrackerProvider
+## InteractionTracker Mock
 
-The `MockInteractionTrackerProvider` is a mock implementation of the `InteractionTrackerProvider` used in the application. It provides a mock context that satisfies the requirements of components that use the `useInteractionTracker` hook.
+The InteractionTracker mock provides a complete mock implementation of the `InteractionTrackerProvider` and `useInteractionTracker` hook used in the application.
 
-### Usage
+### Automatic Mock Resolution
 
-If your component uses the `useInteractionTracker` hook, you'll need to wrap it with the `MockInteractionTrackerProvider` in your Storybook stories:
+**✅ All stories automatically have access to the InteractionTracker context!**
+
+The Storybook configuration includes a Vite alias that automatically redirects all imports of `@/contexts/InteractionTrackerContext` to use the mock implementation (`InteractionTrackerContextMock.tsx`). This means:
+
+- No individual story decorators needed
+- No manual provider wrapping required
+- All components using `useInteractionTracker` work out of the box
+
+### Available Mock Files
+
+- `InteractionTrackerContextMock.tsx` - Complete mock implementation used by the alias
+- `mockHooks.tsx` - Original mock implementation (legacy)
+
+### Manual Usage (Usually Not Needed)
+
+Since the alias handles everything automatically, you typically don't need to manually add providers. However, if you need custom mock behavior for a specific story, you can still use individual decorators:
 
 ```tsx
-import { MockInteractionTrackerProvider } from "../stories/MockInteractionTrackerProvider"
+import { InteractionTrackerProvider } from "../stories/InteractionTrackerContextMock"
 
 // In your story decorator
 export const yourStory: Story = {
   decorators: [
     Story => (
-      <MockInteractionTrackerProvider>
+      <InteractionTrackerProvider>
         <Story />
-      </MockInteractionTrackerProvider>
+      </InteractionTrackerProvider>
     ),
   ],
   // ...other story properties
@@ -29,9 +44,9 @@ export const yourStory: Story = {
 const meta: Meta<typeof YourComponent> = {
   decorators: [
     Story => (
-      <MockInteractionTrackerProvider>
+      <InteractionTrackerProvider>
         <Story />
-      </MockInteractionTrackerProvider>
+      </InteractionTrackerProvider>
     ),
   ],
   // ...other meta properties
@@ -46,7 +61,11 @@ If you see an error like:
 Error: useInteractionTracker must be used within an InteractionTrackerProvider
 ```
 
-It means your component is using the `useInteractionTracker` hook but isn't wrapped with a provider. Add the `MockInteractionTrackerProvider` to your story as shown above.
+This should no longer happen since the Vite alias automatically redirects to the mock. If you still see this error, check that:
+
+1. The alias for `@/contexts/InteractionTrackerContext` is properly configured in `.storybook/main.ts`
+2. The `InteractionTrackerContextMock.tsx` file exists and exports the correct functions
+3. Try restarting Storybook to clear any cached imports
 
 ### Customizing the Mock
 

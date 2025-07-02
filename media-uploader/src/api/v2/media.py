@@ -15,7 +15,7 @@ from routes.auth import get_current_user
 from database import get_db
 from sqlalchemy.orm import Session
 
-router = APIRouter(prefix="/v2/media", tags=["media-v2"])
+router = APIRouter(tags=["media-v2"])
 
 # Redis for caching
 redis_client = redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379"))

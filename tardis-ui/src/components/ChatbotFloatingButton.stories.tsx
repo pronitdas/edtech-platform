@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import ChatbotFloatingButton from './ChatbotFloatingButton'
-import { MockInteractionTrackerProvider } from '../stories/MockInteractionTrackerProvider'
 
 const meta: Meta<typeof ChatbotFloatingButton> = {
   title: 'Course/ChatbotFloatingButton',
@@ -14,9 +13,7 @@ const meta: Meta<typeof ChatbotFloatingButton> = {
   decorators: [
     Story => (
       <div className='flex h-[400px] w-[400px] items-end justify-start bg-gray-900 p-4'>
-        <MockInteractionTrackerProvider>
-          <Story />
-        </MockInteractionTrackerProvider>
+        <Story />
       </div>
     ),
   ],

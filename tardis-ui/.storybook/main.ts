@@ -27,7 +27,7 @@ const config: StorybookConfig = {
     name: '@storybook/react-vite',
     options: {
       builder: {
-        viteConfigPath: '../vite.config.ts',
+        viteConfigPath: './vite.config.ts',
       },
     },
   },
@@ -48,13 +48,23 @@ const config: StorybookConfig = {
     },
   },
   async viteFinal(config, { configType }) {
-    return mergeConfig(config, {
+    // Ensure we have a clean alias configuration
+    const customConfig = mergeConfig(config, {
       resolve: {
-        alias: {
-          '@': path.resolve(__dirname, '../src'),
-          // Mock implementations for Storybook
-          '@/contexts/InteractionTrackerContext': path.resolve(__dirname, '../src/stories/mockHooks.tsx'),
-        },
+        alias: [
+          {
+            find: '@',
+            replacement: path.resolve(__dirname, '../src'),
+          },
+          {
+            find: '@/contexts/InteractionTrackerContext',
+            replacement: path.resolve(__dirname, '../src/stories/InteractionTrackerContextMock.tsx'),
+          },
+          {
+            find: /^@\/contexts\/InteractionTrackerContext$/,
+            replacement: path.resolve(__dirname, '../src/stories/InteractionTrackerContextMock.tsx'),
+          },
+        ],
       },
       define: {
         global: 'window',
@@ -69,6 +79,8 @@ const config: StorybookConfig = {
         ],
       },
     })
+
+    return customConfig
   },
 }
 

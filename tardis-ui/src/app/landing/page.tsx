@@ -1,12 +1,16 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Button } from '../../components/ui/button'
-import { Link, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
+import { motion, useScroll, useTransform } from 'framer-motion'
 
 const LandingPage = () => {
-  const navigate = useNavigate()
+  const [isVisible, setIsVisible] = useState(false)
+  const { scrollY } = useScroll()
+  const y1 = useTransform(scrollY, [0, 300], [0, -50])
+  const y2 = useTransform(scrollY, [0, 300], [0, 50])
 
   useEffect(() => {
+    setIsVisible(true)
     // Smooth scroll to section when clicking navigation links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function (e: Event) {
@@ -187,104 +191,224 @@ const LandingPage = () => {
   ]
 
   return (
-    <div className='min-h-screen bg-gradient-to-b from-blue-50 to-white'>
+    <div className='min-h-screen relative overflow-x-hidden' style={{
+      background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)'
+    }}>
+      {/* Dotted pattern background */}
+      <div className='absolute inset-0' style={{
+        backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px)',
+        backgroundSize: '20px 20px'
+      }}></div>
+      
+      {/* Top announcement banner */}
+      <div className='w-full py-3 text-center' style={{
+        background: 'linear-gradient(90deg, #8b5cf6 0%, #a855f7 100%)'
+      }}>
+        <p className='text-white text-sm'>
+          🚀 The AI Learning System for Students: New Knowledge Graph Features Coming Soon! <a href="#" className='underline'>Get Notified →</a>
+        </p>
+      </div>
+
       {/* Navigation */}
-      <nav className='fixed z-50 w-full bg-white/80 shadow-sm backdrop-blur-md'>
-        <div className='container mx-auto px-6 py-4'>
+      <nav className='relative z-50 w-full py-4' style={{
+        backgroundColor: 'transparent'
+      }}>
+        <div className='container mx-auto px-6'>
           <div className='flex items-center justify-between'>
-            <div className='text-3xl font-bold text-blue-600'>
-              Ai Study Tools
-            </div>
-            <div className='hidden items-center space-x-8 md:flex'>
-              <a
-                href='#features'
-                className='text-gray-700 transition-colors hover:text-blue-600'
-              >
-                Features
-              </a>
-              <a
-                href='#testimonials'
-                className='text-gray-700 transition-colors hover:text-blue-600'
-              >
-                Testimonials
-              </a>
-              <a
-                href='#about'
-                className='text-gray-700 transition-colors hover:text-blue-600'
-              >
-                About Us
-              </a>
-              <Link to='/pricing'>
-                <Button
-                  variant='tertiary'
-                  className='border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white'
-                >
-                  Pricing
-                </Button>
-              </Link>
-              <Link to='/login'>
-                <Button className='bg-blue-600 text-white hover:bg-blue-700'>
-                  Login
-                </Button>
-              </Link>
-            </div>
+            <motion.div
+              className='flex items-center space-x-2'
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: isVisible ? 1 : 0, x: isVisible ? 0 : -20 }}
+              transition={{ duration: 0.8 }}
+            >
+              <div className='w-10 h-10 rounded-lg bg-white flex items-center justify-center'>
+                <span className='text-2xl'>🏛️</span>
+              </div>
+              <span className='text-2xl font-bold text-white'>TARDIS</span>
+            </motion.div>
+            
+            <motion.div
+              className='hidden items-center space-x-8 md:flex'
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : -20 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+            >
+              <div className='flex items-center space-x-6'>
+                <a href='#features' className='text-white hover:text-white/80 transition-colors'>Our Solutions ↓</a>
+                <a href='#community' className='text-white hover:text-white/80 transition-colors'>Community ↓</a>
+                <a href='#resources' className='text-white hover:text-white/80 transition-colors'>Resources ↓</a>
+                <a href='#about' className='text-white hover:text-white/80 transition-colors'>About ↓</a>
+                <a href='#pricing' className='text-white hover:text-white/80 transition-colors'>Pricing</a>
+              </div>
+              <div className='flex items-center space-x-4'>
+                <Link to='/login' className='text-white hover:text-white/80 transition-colors'>Login</Link>
+                <Link to='/signup'>
+                  <button className='bg-white text-purple-600 px-6 py-2 rounded-full font-medium hover:bg-white/90 transition-colors'>
+                    Sign up free →
+                  </button>
+                </Link>
+              </div>
+            </motion.div>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className='container mx-auto flex flex-col items-center px-6 pb-20 pt-32 md:flex-row'
-      >
-        <div className='mb-12 md:mb-0 md:w-1/2'>
-          <h1 className='mb-6 text-5xl font-bold leading-tight text-gray-800 md:text-7xl'>
-            Transform Your
-            <span className='text-blue-600'> Learning</span>
-            <br />
-            Experience
-          </h1>
-          <p className='mb-8 text-xl leading-relaxed text-gray-600'>
-            Experience the future of education with our AI-powered platform.
-            Master new skills through interactive learning, real-time analytics,
-            and personalized guidance.
-          </p>
-          <div className='flex space-x-4'>
-            <Link to='/signup'>
-              <Button className='bg-blue-600 px-8 py-3 text-lg text-white hover:bg-blue-700'>
-                Start Learning
-              </Button>
-            </Link>
-            <a href='#features'>
-              <Button
-                variant='tertiary'
-                className='border-blue-600 px-8 py-3 text-lg text-blue-600 hover:bg-blue-50'
-              >
-                Explore Features
-              </Button>
-            </a>
+      <section className='relative py-20'>
+        <div className='container mx-auto px-6'>
+          <div className='grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[80vh]'>
+            {/* Left Content */}
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: isVisible ? 1 : 0, x: isVisible ? 0 : -50 }}
+              transition={{ duration: 0.8 }}
+              className='relative z-10'
+            >
+              <h1 className='text-5xl md:text-7xl font-bold text-white mb-8 leading-tight'>
+                The magic of AI to help
+                <br />
+                students with
+                <br />
+                <span className='text-white'>saving time.</span>
+              </h1>
+              
+              <p className='text-xl text-white/90 mb-8 max-w-lg leading-relaxed'>
+                The most loved, secure, and trusted AI platform for students and educators.
+              </p>
+
+              <div className='flex flex-col sm:flex-row gap-4'>
+                <Link to='/signup'>
+                  <button className='bg-white text-purple-600 px-8 py-4 rounded-full font-semibold text-lg hover:bg-white/90 transition-all duration-300 transform hover:scale-105'>
+                    Students sign up free →
+                  </button>
+                </Link>
+                <a href='#features'>
+                  <button className='border-2 border-white text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-white/10 transition-all duration-300 transform hover:scale-105'>
+                    Schools learn more →
+                  </button>
+                </a>
+              </div>
+            </motion.div>
+
+            {/* Right Content - Platform Preview */}
+            <motion.div
+              initial={{ opacity: 0, x: 50, scale: 0.8 }}
+              animate={{ opacity: isVisible ? 1 : 0, x: isVisible ? 0 : 50, scale: isVisible ? 1 : 0.8 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className='relative'
+            >
+              {/* Main Dashboard Mockup */}
+              <div className='relative bg-white rounded-2xl shadow-2xl overflow-hidden' style={{
+                transform: 'perspective(1000px) rotateY(-5deg) rotateX(5deg)'
+              }}>
+                {/* Browser Bar */}
+                <div className='bg-gray-200 px-4 py-3 flex items-center space-x-2'>
+                  <div className='flex space-x-2'>
+                    <div className='w-3 h-3 bg-red-400 rounded-full'></div>
+                    <div className='w-3 h-3 bg-yellow-400 rounded-full'></div>
+                    <div className='w-3 h-3 bg-green-400 rounded-full'></div>
+                  </div>
+                  <div className='flex-1 bg-white rounded-lg px-3 py-1 text-sm text-gray-600'>
+                    tardis.ai/dashboard
+                  </div>
+                </div>
+                
+                {/* Dashboard Content */}
+                <div className='p-6 bg-gradient-to-br from-blue-50 to-purple-50 min-h-[400px]'>
+                  <div className='flex items-center justify-between mb-6'>
+                    <h2 className='text-2xl font-bold text-gray-800'>Learning Dashboard</h2>
+                    <div className='bg-purple-600 text-white px-4 py-2 rounded-lg text-sm'>
+                      🧠 Knowledge Graph
+                    </div>
+                  </div>
+                  
+                  {/* Interactive Elements */}
+                  <div className='grid grid-cols-2 gap-4 mb-6'>
+                    <div className='bg-white rounded-lg p-4 shadow-sm'>
+                      <h3 className='font-semibold text-gray-700 mb-2'>📊 Progress Analytics</h3>
+                      <div className='w-full bg-gray-200 rounded-full h-2'>
+                        <div className='bg-purple-600 h-2 rounded-full' style={{ width: '75%' }}></div>
+                      </div>
+                    </div>
+                    <div className='bg-white rounded-lg p-4 shadow-sm'>
+                      <h3 className='font-semibold text-gray-700 mb-2'>🎯 AI Recommendations</h3>
+                      <div className='text-sm text-gray-600'>Next: Calculus Chapter 3</div>
+                    </div>
+                  </div>
+                  
+                  <div className='bg-white rounded-lg p-4 shadow-sm'>
+                    <h3 className='font-semibold text-gray-700 mb-3'>🔗 Knowledge Connections</h3>
+                    <div className='flex flex-wrap gap-2'>
+                      <span className='bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm'>Linear Algebra</span>
+                      <span className='bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm'>Calculus</span>
+                      <span className='bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm'>Statistics</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating Elements */}
+              <div className='absolute -top-6 -left-6 bg-yellow-400 rounded-full p-3'>
+                <span className='text-2xl'>⭐</span>
+              </div>
+              <div className='absolute -bottom-6 -right-6 bg-pink-400 rounded-full p-3'>
+                <span className='text-2xl'>🎓</span>
+              </div>
+              <div className='absolute top-1/2 -right-8 bg-blue-400 rounded-full p-3'>
+                <span className='text-2xl'>⚡</span>
+              </div>
+            </motion.div>
           </div>
         </div>
-        <motion.div
-          className='flex justify-center md:w-1/2'
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-        >
-          {/* Placeholder for hero image */}
-          <div className='relative flex h-96 w-full items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-blue-100 to-blue-50 shadow-2xl'>
-            <div className='absolute inset-0 bg-blue-600/5'></div>
-            <p className='text-lg text-gray-500'>
-              Interactive Learning Platform Preview
-            </p>
+
+      </section>
+
+      {/* Trust Section */}
+      <section className='py-16 bg-white'>
+        <div className='container mx-auto px-6'>
+          <div className='text-center mb-12'>
+            <h2 className='text-2xl font-bold text-gray-800 mb-4'>
+              Trusted Partner of <span className='text-purple-600'>13,000+</span>
+            </h2>
+            <p className='text-xl text-gray-600'>Schools & Universities Worldwide</p>
           </div>
-        </motion.div>
-      </motion.section>
+          
+          <div className='flex flex-wrap justify-center items-center gap-8 opacity-60'>
+            <div className='bg-gray-100 rounded-lg px-6 py-4 text-center'>
+              <div className='text-2xl font-bold text-gray-700'>MIT</div>
+              <div className='text-sm text-gray-500'>University</div>
+            </div>
+            <div className='bg-gray-100 rounded-lg px-6 py-4 text-center'>
+              <div className='text-2xl font-bold text-gray-700'>Stanford</div>
+              <div className='text-sm text-gray-500'>University</div>
+            </div>
+            <div className='bg-gray-100 rounded-lg px-6 py-4 text-center'>
+              <div className='text-2xl font-bold text-gray-700'>Harvard</div>
+              <div className='text-sm text-gray-500'>University</div>
+            </div>
+            <div className='bg-gray-100 rounded-lg px-6 py-4 text-center'>
+              <div className='text-2xl font-bold text-gray-700'>Oxford</div>
+              <div className='text-sm text-gray-500'>University</div>
+            </div>
+            <div className='bg-gray-100 rounded-lg px-6 py-4 text-center'>
+              <div className='text-2xl font-bold text-gray-700'>Cambridge</div>
+              <div className='text-sm text-gray-500'>University</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Love Section */}
+      <section className='py-20 bg-gradient-to-r from-purple-50 to-pink-50'>
+        <div className='container mx-auto px-6 text-center'>
+          <h2 className='text-4xl md:text-5xl font-bold text-gray-800 mb-8'>
+            AI for students loved 🖤 by over <span className='text-purple-600'>5 million</span> educators
+          </h2>
+        </div>
+      </section>
 
       {/* Features Section */}
-      <section id='features' className='bg-white py-20'>
+      <section id='features' className='py-32 relative bg-gradient-to-b from-transparent to-black/20'>
         <div className='container mx-auto px-6'>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -293,53 +417,65 @@ const LandingPage = () => {
             viewport={{ once: true }}
             className='mb-20 text-center'
           >
-            <h2 className='mb-6 text-4xl font-bold text-gray-800 md:text-5xl'>
-              Powerful Learning Features
+            <span className='inline-block px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-white/20 text-white/80 text-sm mb-6'>
+              🎯 Platform Features
+            </span>
+            <h2 className='mb-6 text-5xl md:text-6xl font-bold text-white'>
+              Everything You Need to
+              <br />
+              <span className='bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent'>
+                Excel in Learning
+              </span>
             </h2>
-            <p className='mx-auto max-w-3xl text-xl text-gray-600'>
-              Our platform combines cutting-edge technology with proven learning
-              methodologies to deliver an unparalleled educational experience.
+            <p className='mx-auto max-w-3xl text-xl text-white/70'>
+              Cutting-edge AI technology meets proven educational methodologies to create the ultimate learning experience.
             </p>
           </motion.div>
 
-          <div className='grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-3'>
-            {features.map((feature, index) => (
+          <div className='grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3'>
+            {features.slice(0, 6).map((feature, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 50 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                transition={{
+                  duration: 0.6,
+                  delay: index * 0.1,
+                }}
                 viewport={{ once: true }}
-                className='rounded-xl border border-gray-100 bg-white p-8 shadow-lg transition-shadow hover:shadow-xl'
+                className='group relative bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg rounded-3xl p-8 border border-white/20 hover:border-white/40 transition-all duration-300 hover:transform hover:scale-105'
               >
-                <div className='mb-6 flex h-16 w-16 items-center justify-center rounded-lg bg-blue-100'>
+                <div className='absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300' />
+                
+                <motion.div
+                  className='relative mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20'
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                >
                   {feature.icon}
-                </div>
-                <h3 className='mb-4 text-2xl font-bold text-gray-800'>
+                </motion.div>
+                
+                <h3 className='relative mb-4 text-2xl font-bold text-white group-hover:text-blue-300 transition-colors duration-300'>
                   {feature.title}
                 </h3>
-                <p className='mb-4 text-gray-600'>{feature.description}</p>
-                <ul className='space-y-3'>
-                  {feature.items.map((item, itemIndex) => (
-                    <li
+                
+                <p className='relative mb-6 text-white/70 group-hover:text-white/80 transition-colors duration-300'>
+                  {feature.description}
+                </p>
+                
+                <ul className='relative space-y-3'>
+                  {feature.items.slice(0, 3).map((item, itemIndex) => (
+                    <motion.li
                       key={itemIndex}
-                      className='flex items-center text-gray-600'
+                      className='flex items-center text-white/60 group-hover:text-white/80 transition-colors duration-300'
+                      initial={{ opacity: 0, x: -20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      transition={{ delay: (index * 0.1) + (itemIndex * 0.05) }}
+                      viewport={{ once: true }}
                     >
-                      <svg
-                        className='mr-2 h-5 w-5 text-green-500'
-                        fill='none'
-                        stroke='currentColor'
-                        viewBox='0 0 24 24'
-                      >
-                        <path
-                          strokeLinecap='round'
-                          strokeLinejoin='round'
-                          strokeWidth='2'
-                          d='M5 13l4 4L19 7'
-                        ></path>
-                      </svg>
+                      <div className='mr-3 h-2 w-2 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full' />
                       {item}
-                    </li>
+                    </motion.li>
                   ))}
                 </ul>
               </motion.div>
@@ -348,204 +484,117 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Statistics Section */}
-      <section className='bg-blue-600 py-20'>
-        <div className='container mx-auto px-6'>
-          <div className='grid grid-cols-1 gap-8 md:grid-cols-4'>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-              className='text-center'
-            >
-              <div className='mb-2 text-5xl font-bold text-white'>50K+</div>
-              <div className='text-blue-100'>Active Learners</div>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              viewport={{ once: true }}
-              className='text-center'
-            >
-              <div className='mb-2 text-5xl font-bold text-white'>1000+</div>
-              <div className='text-blue-100'>Interactive Courses</div>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              viewport={{ once: true }}
-              className='text-center'
-            >
-              <div className='mb-2 text-5xl font-bold text-white'>95%</div>
-              <div className='text-blue-100'>Completion Rate</div>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              viewport={{ once: true }}
-              className='text-center'
-            >
-              <div className='mb-2 text-5xl font-bold text-white'>4.9/5</div>
-              <div className='text-blue-100'>User Satisfaction</div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
 
       {/* Testimonials Section */}
-      <section id='testimonials' className='bg-gray-50 py-20'>
+      <section id='testimonials' className='py-32 relative'>
         <div className='container mx-auto px-6'>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className='mb-16 text-center'
+            className='mb-20 text-center'
           >
-            <h2 className='mb-6 text-4xl font-bold text-gray-800 md:text-5xl'>
-              Success Stories
+            <span className='inline-block px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-white/20 text-white/80 text-sm mb-6'>
+              💬 Success Stories
+            </span>
+            <h2 className='mb-6 text-5xl md:text-6xl font-bold text-white'>
+              Loved by
+              <br />
+              <span className='bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent'>
+                Thousands of Learners
+              </span>
             </h2>
-            <p className='mx-auto max-w-3xl text-xl text-gray-600'>
-              Join thousands of satisfied learners who have transformed their
-              careers through our platform.
+            <p className='mx-auto max-w-3xl text-xl text-white/70'>
+              Real stories from real students who transformed their careers with our platform.
             </p>
           </motion.div>
 
           <div className='grid grid-cols-1 gap-8 md:grid-cols-3'>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-              viewport={{ once: true }}
-              className='rounded-xl bg-white p-8 shadow-lg'
-            >
-              <div className='mb-6 flex items-center'>
-                <div className='mr-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-xl font-bold text-white'>
-                  JS
+            {[
+              {
+                name: 'Jane Smith',
+                role: 'Software Engineer at Google',
+                avatar: 'JS',
+                quote: 'The AI-powered learning paths and real-time feedback transformed my learning journey. I went from basic coding knowledge to landing my dream job at Google in just 6 months!'
+              },
+              {
+                name: 'Michael Rodriguez',
+                role: 'Data Scientist at Tesla',
+                avatar: 'MR',
+                quote: 'The interactive projects and AI assistant helped me master complex concepts quickly. The platform\'s analytics showed me exactly where to focus my efforts.'
+              },
+              {
+                name: 'Sarah Kim',
+                role: 'Product Manager at Microsoft',
+                avatar: 'SK',
+                quote: 'The collaborative features and real-world projects gave me practical experience. I could learn at my own pace while getting feedback from industry experts.'
+              }
+            ].map((testimonial, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.9, rotateY: -10 }}
+                whileInView={{ opacity: 1, scale: 1, rotateY: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                className='floating-card glass-effect rounded-xl p-8 quantum-border perspective-card'
+              >
+                <div className='mb-6 flex items-center'>
+                  <motion.div
+                    className='mr-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-xl font-bold text-white cyber-glow'
+                    whileHover={{ scale: 1.1, rotateZ: 5 }}
+                  >
+                    {testimonial.avatar}
+                  </motion.div>
+                  <div>
+                    <h4 className='text-xl font-bold text-white'>
+                      {testimonial.name}
+                    </h4>
+                    <p className='text-blue-300'>{testimonial.role}</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className='text-xl font-bold text-gray-800'>
-                    Jane Smith
-                  </h4>
-                  <p className='text-blue-600'>Software Engineer at Google</p>
+                <p className='italic text-blue-100'>
+                  "{testimonial.quote}"
+                </p>
+                <div className='mt-6 flex items-center'>
+                  <div className='flex text-yellow-400'>
+                    {[...Array(5)].map((_, i) => (
+                      <motion.svg
+                        key={i}
+                        className='h-5 w-5 fill-current'
+                        viewBox='0 0 20 20'
+                        initial={{ opacity: 0, scale: 0 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: (index * 0.1) + (i * 0.05) }}
+                        viewport={{ once: true }}
+                      >
+                        <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
+                      </motion.svg>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <p className='italic text-gray-600'>
-                "The AI-powered learning paths and real-time feedback
-                transformed my learning journey. I went from basic coding
-                knowledge to landing my dream job at Google in just 6 months!"
-              </p>
-              <div className='mt-6 flex items-center'>
-                <div className='flex text-yellow-400'>
-                  {[...Array(5)].map((_, i) => (
-                    <svg
-                      key={i}
-                      className='h-5 w-5 fill-current'
-                      viewBox='0 0 20 20'
-                    >
-                      <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
-                    </svg>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              viewport={{ once: true }}
-              className='rounded-xl bg-white p-8 shadow-lg'
-            >
-              <div className='mb-6 flex items-center'>
-                <div className='mr-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-xl font-bold text-white'>
-                  MR
-                </div>
-                <div>
-                  <h4 className='text-xl font-bold text-gray-800'>
-                    Michael Rodriguez
-                  </h4>
-                  <p className='text-blue-600'>Data Scientist at Tesla</p>
-                </div>
-              </div>
-              <p className='italic text-gray-600'>
-                "The interactive projects and AI assistant helped me master
-                complex concepts quickly. The platform's analytics showed me
-                exactly where to focus my efforts."
-              </p>
-              <div className='mt-6 flex items-center'>
-                <div className='flex text-yellow-400'>
-                  {[...Array(5)].map((_, i) => (
-                    <svg
-                      key={i}
-                      className='h-5 w-5 fill-current'
-                      viewBox='0 0 20 20'
-                    >
-                      <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
-                    </svg>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              viewport={{ once: true }}
-              className='rounded-xl bg-white p-8 shadow-lg'
-            >
-              <div className='mb-6 flex items-center'>
-                <div className='mr-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-xl font-bold text-white'>
-                  SK
-                </div>
-                <div>
-                  <h4 className='text-xl font-bold text-gray-800'>Sarah Kim</h4>
-                  <p className='text-blue-600'>Product Manager at Microsoft</p>
-                </div>
-              </div>
-              <p className='italic text-gray-600'>
-                "The collaborative features and real-world projects gave me
-                practical experience. I could learn at my own pace while getting
-                feedback from industry experts."
-              </p>
-              <div className='mt-6 flex items-center'>
-                <div className='flex text-yellow-400'>
-                  {[...Array(5)].map((_, i) => (
-                    <svg
-                      key={i}
-                      className='h-5 w-5 fill-current'
-                      viewBox='0 0 20 20'
-                    >
-                      <path d='M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z' />
-                    </svg>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* About Section */}
-      <section id='about' className='bg-white py-20'>
+      <section id='about' className='py-20'>
         <div className='container mx-auto px-6'>
           <div className='flex flex-col items-center lg:flex-row'>
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, x: -50, rotateY: -10 }}
+              whileInView={{ opacity: 1, x: 0, rotateY: 0 }}
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
               className='mb-12 lg:mb-0 lg:w-1/2'
             >
-              <div className='relative'>
-                <div className='h-96 w-full overflow-hidden rounded-2xl bg-gradient-to-br from-blue-100 to-blue-50 shadow-2xl'>
-                  <div className='absolute inset-0 bg-blue-600/5'></div>
-                  <p className='absolute inset-0 flex items-center justify-center text-lg text-gray-500'>
+              <div className='relative perspective-card'>
+                <div className='h-96 w-full overflow-hidden rounded-2xl glass-effect cyber-glow floating-card'>
+                  <div className='absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20'></div>
+                  <div className='absolute inset-0 neural-grid opacity-20'></div>
+                  <p className='absolute inset-0 flex items-center justify-center text-lg text-blue-100 z-10'>
                     Team of Education Experts
                   </p>
                 </div>
@@ -554,23 +603,23 @@ const LandingPage = () => {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: 50 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
               className='lg:w-1/2 lg:pl-16'
             >
-              <h2 className='mb-6 text-4xl font-bold text-gray-800'>
-                Revolutionizing Education Through Technology
+              <h2 className='mb-6 text-4xl font-bold text-white'>
+                Revolutionizing Education Through <span className='cyber-text'>Technology</span>
               </h2>
-              <p className='mb-6 leading-relaxed text-gray-600'>
+              <p className='mb-6 leading-relaxed text-blue-100'>
                 We're a team of educators, technologists, and learning experts
                 passionate about transforming education. Our AI-powered platform
                 combines cutting-edge technology with proven learning
                 methodologies to create an engaging and effective learning
                 experience.
               </p>
-              <p className='mb-8 leading-relaxed text-gray-600'>
+              <p className='mb-8 leading-relaxed text-blue-100'>
                 Founded in 2020, we've helped over 50,000 learners master new
                 skills and advance their careers. Our platform continuously
                 evolves, incorporating the latest advancements in AI and
@@ -578,24 +627,36 @@ const LandingPage = () => {
                 possible.
               </p>
               <div className='grid grid-cols-2 gap-6'>
-                <div>
-                  <h4 className='mb-2 text-xl font-bold text-gray-800'>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  viewport={{ once: true }}
+                  className='glass-effect rounded-lg p-4 quantum-border'
+                >
+                  <h4 className='mb-2 text-xl font-bold text-white'>
                     Our Mission
                   </h4>
-                  <p className='text-gray-600'>
+                  <p className='text-blue-200'>
                     To make high-quality education accessible, engaging, and
                     effective for everyone.
                   </p>
-                </div>
-                <div>
-                  <h4 className='mb-2 text-xl font-bold text-gray-800'>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  viewport={{ once: true }}
+                  className='glass-effect rounded-lg p-4 quantum-border'
+                >
+                  <h4 className='mb-2 text-xl font-bold text-white'>
                     Our Vision
                   </h4>
-                  <p className='text-gray-600'>
+                  <p className='text-blue-200'>
                     To become the world's leading platform for personalized
                     online learning.
                   </p>
-                </div>
+                </motion.div>
               </div>
             </motion.div>
           </div>
@@ -603,8 +664,9 @@ const LandingPage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className='bg-gradient-to-br from-blue-600 to-blue-700 py-20'>
-        <div className='container mx-auto px-6'>
+      <section className='py-20 relative overflow-hidden'>
+        <div className='absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20'></div>
+        <div className='container mx-auto px-6 relative z-10'>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -613,7 +675,7 @@ const LandingPage = () => {
             className='text-center'
           >
             <h2 className='mb-6 text-4xl font-bold text-white md:text-5xl'>
-              Ready to Transform Your Learning Journey?
+              Ready to Transform Your Learning <span className='cyber-text'>Journey</span>?
             </h2>
             <p className='mx-auto mb-8 max-w-2xl text-xl text-blue-100'>
               Join thousands of learners who are already experiencing the future
@@ -622,14 +684,14 @@ const LandingPage = () => {
             </p>
             <div className='flex flex-col justify-center space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0'>
               <Link to='/signup'>
-                <Button className='bg-white px-8 py-3 text-lg text-blue-600 hover:bg-blue-50'>
+                <Button className='bg-blue-600 px-8 py-3 text-lg text-white hover:bg-blue-700 cyber-glow transform transition-all duration-300 hover:scale-110'>
                   Get Started Free
                 </Button>
               </Link>
               <Link to='/pricing'>
                 <Button
                   variant='tertiary'
-                  className='border-white px-8 py-3 text-lg text-white hover:bg-blue-700'
+                  className='border-blue-400 px-8 py-3 text-lg text-blue-300 hover:bg-blue-600 hover:text-white quantum-border transform transition-all duration-300 hover:scale-110'
                 >
                   View Pricing
                 </Button>
@@ -640,172 +702,96 @@ const LandingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className='bg-gray-900 py-12 text-white'>
+      <footer className='bg-slate-900/80 py-12 text-white border-t border-blue-500/20 glass-effect'>
         <div className='container mx-auto px-6'>
           <div className='mb-8 grid grid-cols-1 gap-12 md:grid-cols-4'>
             <div>
-              <h3 className='mb-4 text-2xl font-bold'>Ai Study Tools</h3>
-              <p className='mb-4 text-gray-400'>
+              <h3 className='mb-4 text-2xl font-bold cyber-text'>Ai Study Tools</h3>
+              <p className='mb-4 text-blue-200'>
                 Transforming the way people learn with AI-powered, interactive,
                 and personalized content.
               </p>
               <div className='flex space-x-4'>
-                <a
-                  href='#'
-                  className='text-gray-400 transition-colors hover:text-white'
-                >
-                  <svg
-                    className='h-6 w-6'
-                    fill='currentColor'
-                    viewBox='0 0 24 24'
+                {['facebook', 'twitter', 'linkedin'].map((social, index) => (
+                  <motion.a
+                    key={social}
+                    href='#'
+                    className='text-blue-300 transition-all duration-300 hover:text-blue-100 transform hover:scale-110'
+                    whileHover={{ y: -2 }}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    viewport={{ once: true }}
                   >
-                    <path d='M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12s4.477 10 10 10 10-4.477 10-10z' />
-                  </svg>
-                </a>
-                <a
-                  href='#'
-                  className='text-gray-400 transition-colors hover:text-white'
-                >
-                  <svg
-                    className='h-6 w-6'
-                    fill='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path d='M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84' />
-                  </svg>
-                </a>
-                <a
-                  href='#'
-                  className='text-gray-400 transition-colors hover:text-white'
-                >
-                  <svg
-                    className='h-6 w-6'
-                    fill='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path d='M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.016 18.6h-2.472v-3.9c0-.918-.018-2.1-1.278-2.1-1.28 0-1.476 1.002-1.476 2.04v3.96H9.318V8.208h2.376v1.092h.033c.33-.624 1.134-1.284 2.334-1.284 2.496 0 2.955 1.644 2.955 3.78v5.804zM7.62 7.116c-.792 0-1.434-.642-1.434-1.434 0-.792.642-1.434 1.434-1.434.792 0 1.434.642 1.434 1.434 0 .792-.642 1.434-1.434 1.434zM6.384 18.6h2.472V8.208H6.384V18.6z' />
-                  </svg>
-                </a>
+                    <svg className='h-6 w-6' fill='currentColor' viewBox='0 0 24 24'>
+                      <path d='M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12s4.477 10 10 10 10-4.477 10-10z' />
+                    </svg>
+                  </motion.a>
+                ))}
               </div>
             </div>
-            <div>
-              <h4 className='mb-4 text-lg font-bold'>Platform</h4>
-              <ul className='space-y-2'>
-                <li>
-                  <a
-                    href='#features'
-                    className='text-gray-400 transition-colors hover:text-white'
-                  >
-                    Features
-                  </a>
-                </li>
-                <li>
-                  <Link
-                    to='/pricing'
-                    className='text-gray-400 transition-colors hover:text-white'
-                  >
-                    Pricing
-                  </Link>
-                </li>
-                <li>
-                  <a
-                    href='#'
-                    className='text-gray-400 transition-colors hover:text-white'
-                  >
-                    Enterprise
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href='#'
-                    className='text-gray-400 transition-colors hover:text-white'
-                  >
-                    Security
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className='mb-4 text-lg font-bold'>Resources</h4>
-              <ul className='space-y-2'>
-                <li>
-                  <a
-                    href='#'
-                    className='text-gray-400 transition-colors hover:text-white'
-                  >
-                    Documentation
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href='#'
-                    className='text-gray-400 transition-colors hover:text-white'
-                  >
-                    API Reference
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href='#'
-                    className='text-gray-400 transition-colors hover:text-white'
-                  >
-                    Blog
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href='#'
-                    className='text-gray-400 transition-colors hover:text-white'
-                  >
-                    Community
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className='mb-4 text-lg font-bold'>Company</h4>
-              <ul className='space-y-2'>
-                <li>
-                  <a
-                    href='#about'
-                    className='text-gray-400 transition-colors hover:text-white'
-                  >
-                    About Us
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href='#'
-                    className='text-gray-400 transition-colors hover:text-white'
-                  >
-                    Careers
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href='#'
-                    className='text-gray-400 transition-colors hover:text-white'
-                  >
-                    Contact
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href='#'
-                    className='text-gray-400 transition-colors hover:text-white'
-                  >
-                    Legal
-                  </a>
-                </li>
-              </ul>
-            </div>
+
+            {[
+              {
+                title: 'Platform',
+                links: [
+                  { name: 'Features', href: '#features' },
+                  { name: 'Pricing', href: '/pricing' },
+                  { name: 'Enterprise', href: '#' },
+                  { name: 'Security', href: '#' }
+                ]
+              },
+              {
+                title: 'Resources',
+                links: [
+                  { name: 'Documentation', href: '#' },
+                  { name: 'API Reference', href: '#' },
+                  { name: 'Blog', href: '#' },
+                  { name: 'Community', href: '#' }
+                ]
+              },
+              {
+                title: 'Company',
+                links: [
+                  { name: 'About Us', href: '#about' },
+                  { name: 'Careers', href: '#' },
+                  { name: 'Contact', href: '#' },
+                  { name: 'Legal', href: '#' }
+                ]
+              }
+            ].map((section, sectionIndex) => (
+              <div key={section.title}>
+                <h4 className='mb-4 text-lg font-bold text-white'>{section.title}</h4>
+                <ul className='space-y-2'>
+                  {section.links.map((link, linkIndex) => (
+                    <motion.li
+                      key={link.name}
+                      initial={{ opacity: 0, x: -20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      transition={{ delay: (sectionIndex * 0.1) + (linkIndex * 0.05) }}
+                      viewport={{ once: true }}
+                    >
+                      <a
+                        href={link.href}
+                        className='text-blue-300 transition-all duration-300 hover:text-blue-100 interactive-hover'
+                      >
+                        {link.name}
+                      </a>
+                    </motion.li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
-          <div className='border-t border-gray-800 pt-8 text-center'>
-            <p className='text-gray-400'>
-              &copy; {new Date().getFullYear()} Ai Study Tools. All rights
-              reserved.
-            </p>
-          </div>
+
+          <motion.div
+            className='border-t border-blue-500/20 pt-8 text-center text-blue-300'
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <p>&copy; 2024 Ai Study Tools. All rights reserved. Powered by futuristic design.</p>
+          </motion.div>
         </div>
       </footer>
     </div>

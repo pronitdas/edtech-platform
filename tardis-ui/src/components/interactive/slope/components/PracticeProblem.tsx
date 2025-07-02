@@ -1,5 +1,5 @@
 import { Problem } from '@/types/interactive'
-;('use client')
+  ; ('use client')
 
 import React, { useState } from 'react'
 
@@ -12,7 +12,7 @@ export interface PracticeProblemProps {
   onGenerateNewProblem: () => void
   lineData?: import('@/types/geometry').LineData | null
   onSubmitAnswer: () => void
-  isCorrect: boolean | null
+  isCorrect?: boolean | null | undefined
   showSolution: boolean
   onToggleSolution: () => void
   onNextProblem: () => void
@@ -83,31 +83,28 @@ const PracticeProblem: React.FC<PracticeProblemProps> = ({
           <div className='flex space-x-2'>
             <button
               onClick={() => setDifficulty('easy')}
-              className={`rounded-md px-3 py-1 text-sm ${
-                difficulty === 'easy'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-700 text-gray-200'
-              }`}
+              className={`rounded-md px-3 py-1 text-sm ${difficulty === 'easy'
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-700 text-gray-200'
+                }`}
             >
               Easy
             </button>
             <button
               onClick={() => setDifficulty('medium')}
-              className={`rounded-md px-3 py-1 text-sm ${
-                difficulty === 'medium'
-                  ? 'bg-yellow-600 text-white'
-                  : 'bg-gray-700 text-gray-200'
-              }`}
+              className={`rounded-md px-3 py-1 text-sm ${difficulty === 'medium'
+                ? 'bg-yellow-600 text-white'
+                : 'bg-gray-700 text-gray-200'
+                }`}
             >
               Medium
             </button>
             <button
               onClick={() => setDifficulty('hard')}
-              className={`rounded-md px-3 py-1 text-sm ${
-                difficulty === 'hard'
-                  ? 'bg-red-600 text-white'
-                  : 'bg-gray-700 text-gray-200'
-              }`}
+              className={`rounded-md px-3 py-1 text-sm ${difficulty === 'hard'
+                ? 'bg-red-600 text-white'
+                : 'bg-gray-700 text-gray-200'
+                }`}
             >
               Hard
             </button>
@@ -215,11 +212,10 @@ const PracticeProblem: React.FC<PracticeProblemProps> = ({
               <button
                 onClick={handleSubmit}
                 disabled={!lineData}
-                className={`rounded-md px-4 py-2 text-white ${
-                  !lineData
-                    ? 'cursor-not-allowed bg-gray-600'
-                    : 'bg-blue-600 hover:bg-blue-700'
-                }`}
+                className={`rounded-md px-4 py-2 text-white ${!lineData
+                  ? 'cursor-not-allowed bg-gray-600'
+                  : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
               >
                 Submit Answer
               </button>
@@ -235,11 +231,10 @@ const PracticeProblem: React.FC<PracticeProblemProps> = ({
             {/* Feedback */}
             {isCorrect !== null && (
               <div
-                className={`mb-4 rounded-md p-3 ${
-                  isCorrect
-                    ? 'border-l-4 border-green-500 bg-green-900'
-                    : 'border-l-4 border-red-500 bg-red-900'
-                }`}
+                className={`mb-4 rounded-md p-3 ${isCorrect
+                  ? 'border-l-4 border-green-500 bg-green-900'
+                  : 'border-l-4 border-red-500 bg-red-900'
+                  }`}
               >
                 <p className='font-medium text-white'>
                   {isCorrect ? 'Correct! Well done!' : 'Incorrect. Try again!'}
@@ -273,7 +268,7 @@ const PracticeProblem: React.FC<PracticeProblemProps> = ({
             )}
 
             {/* Next problem button (only shown when current problem is solved correctly) */}
-            {isCorrect && (
+            {isCorrect === true && (
               <button
                 onClick={onNextProblem}
                 className='w-full rounded-md bg-green-600 py-2 text-white hover:bg-green-700'

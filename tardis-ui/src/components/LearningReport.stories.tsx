@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import LearningReport from './LearningReport'
 import { analyticsService } from '@/services/analytics-service'
-import { MockInteractionTrackerProvider } from '../stories/MockInteractionTrackerProvider'
+import { InteractionTrackerProvider } from '../stories/InteractionTrackerContextMock'
 
 // Create a mock implementation of the analytics service
 const originalGetUserCompletion = analyticsService.getUserCompletion
@@ -41,9 +41,9 @@ const meta: Meta<typeof LearningReport> = {
 
       return (
         <div className='min-h-screen bg-gray-900'>
-          <MockInteractionTrackerProvider>
+          <InteractionTrackerProvider>
             <Story />
-          </MockInteractionTrackerProvider>
+          </InteractionTrackerProvider>
         </div>
       )
     },
@@ -79,13 +79,13 @@ export const Loading: Story = {
   decorators: [
     Story => {
       // Override with a function that never resolves to simulate loading
-      analyticsService.getUserCompletion = () => new Promise(() => {})
+      analyticsService.getUserCompletion = () => new Promise(() => { })
 
       return (
         <div className='min-h-screen bg-gray-900'>
-          <MockInteractionTrackerProvider>
+          <InteractionTrackerProvider>
             <Story />
-          </MockInteractionTrackerProvider>
+          </InteractionTrackerProvider>
         </div>
       )
     },
@@ -106,9 +106,9 @@ export const Error: Story = {
 
       return (
         <div className='min-h-screen bg-gray-900'>
-          <MockInteractionTrackerProvider>
+          <InteractionTrackerProvider>
             <Story />
-          </MockInteractionTrackerProvider>
+          </InteractionTrackerProvider>
         </div>
       )
     },

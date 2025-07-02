@@ -96,7 +96,7 @@ export const useChapters = () => {
         )
         setState(prev => ({
           ...prev,
-          chaptersMeta: metadata,
+          chaptersMeta: metadata as unknown as EdTechChapter[],
         }))
       } catch (error) {
         setState(prev => ({

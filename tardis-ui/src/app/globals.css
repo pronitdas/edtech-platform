@@ -26,7 +26,7 @@
   --font-mono: "Roboto Mono", monospace;
   --font-math: "KaTeX_Main", serif;
 
-  /* Primary Colors */
+  /* Primary Colors - Enhanced for futuristic design */
   --primary-50: #eff6ff;
   --primary-100: #dbeafe;
   --primary-200: #bfdbfe;
@@ -38,6 +38,13 @@
   --primary-800: #1e40af;
   --primary-900: #1e3a8a;
   --primary-950: #172554;
+
+  /* Futuristic Colors */
+  --cyber-blue: #00D4FF;
+  --neon-purple: #6B4CE6;
+  --electric-cyan: #00F0FF;
+  --quantum-violet: #8B5CF6;
+  --neural-green: #10B981;
 
   /* Secondary Colors */
   --secondary-50: #f0f9ff;
@@ -186,18 +193,256 @@ body {
 .one {
   transform: translateZ(50px);
 }
+
 .two {
   transform: rotateY(90deg) translateZ(50px);
 }
+
 .three {
   transform: rotateY(180deg) translateZ(50px);
 }
+
 .four {
   transform: rotateY(-90deg) translateZ(50px);
 }
+
 .five {
   transform: rotateX(90deg) translateZ(50px);
 }
+
 .six {
   transform: rotateX(-90deg) translateZ(50px);
+}
+
+/* Futuristic Design System */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 40px rgba(59, 130, 246, 0.6), 0 0 60px rgba(59, 130, 246, 0.4);
+  }
+}
+
+@keyframes pulse-border {
+
+  0%,
+  100% {
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+
+  50% {
+    border-color: rgba(59, 130, 246, 0.8);
+  }
+}
+
+@keyframes matrix-bg {
+  0% {
+    background-position: 0% 0%;
+  }
+
+  100% {
+    background-position: 100% 100%;
+  }
+}
+
+@keyframes hologram {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: rotateY(0deg);
+  }
+
+  50% {
+    opacity: 0.7;
+    transform: rotateY(5deg);
+  }
+}
+
+@keyframes data-flow {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Futuristic Utility Classes */
+.floating-card {
+  animation: float 6s ease-in-out infinite;
+  transform-style: preserve-3d;
+  transition: all 0.3s ease;
+}
+
+.floating-card:hover {
+  transform: translateY(-15px) rotateX(5deg) rotateY(5deg);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(59, 130, 246, 0.1),
+    0 0 30px rgba(59, 130, 246, 0.3);
+}
+
+.cyber-glow {
+  animation: glow 3s ease-in-out infinite;
+}
+
+.pulse-border {
+  animation: pulse-border 2s ease-in-out infinite;
+}
+
+.holographic {
+  background: linear-gradient(45deg,
+      rgba(59, 130, 246, 0.1) 0%,
+      rgba(147, 197, 253, 0.05) 50%,
+      rgba(59, 130, 246, 0.1) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.neural-grid {
+  background-image:
+    linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: matrix-bg 20s linear infinite;
+}
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 8px 32px 0 rgba(31, 38, 135, 0.37),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.quantum-border {
+  position: relative;
+  overflow: hidden;
+}
+
+.quantum-border::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(59, 130, 246, 0.4),
+      transparent);
+  animation: data-flow 3s infinite;
+}
+
+.perspective-card {
+  perspective: 1000px;
+}
+
+.perspective-card>div {
+  transform-style: preserve-3d;
+  transition: transform 0.6s;
+}
+
+.perspective-card:hover>div {
+  transform: rotateY(10deg) rotateX(5deg);
+}
+
+/* Enhanced 3D Transforms */
+.transform-3d {
+  transform-style: preserve-3d;
+}
+
+.rotate-y-6 {
+  transform: rotateY(6deg);
+}
+
+.rotate-x-6 {
+  transform: rotateX(6deg);
+}
+
+.translate-z-20 {
+  transform: translateZ(20px);
+}
+
+/* Gradient Text Effects */
+.gradient-text {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.cyber-text {
+  background: linear-gradient(135deg, var(--cyber-blue) 0%, var(--electric-cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Interactive Elements */
+.interactive-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.interactive-hover:hover {
+  transform: translateY(-5px) scale(1.02);
+  filter: brightness(1.1);
+}
+
+/* Staggered Animations */
+.stagger-animation {
+  animation-delay: calc(var(--stagger-delay, 0) * 100ms);
+}
+
+/* Blob animations for background */
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
 }

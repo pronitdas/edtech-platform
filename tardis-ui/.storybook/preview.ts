@@ -1,5 +1,7 @@
 import { withThemeByClassName } from '@storybook/addon-themes'
 import type { Preview } from '@storybook/react'
+import React from 'react'
+import { InteractionTrackerProvider } from '../src/stories/InteractionTrackerContextMock'
 import '../src/app/globals.css'
 
 const preview: Preview = {
@@ -73,7 +75,7 @@ const preview: Preview = {
     },
     layout: 'centered',
   },
-  // Add theme switching support
+  // Add theme switching support and global providers
   decorators: [
     withThemeByClassName({
       themes: {
@@ -82,6 +84,19 @@ const preview: Preview = {
       },
       defaultTheme: 'light',
     }),
+    // Global provider decorator for InteractionTracker - wraps ALL stories
+    (Story) => {
+      return React.createElement(
+        InteractionTrackerProvider,
+        {
+          dataService: null,
+          userId: 'storybook-user',
+          batchSize: 10,
+          flushInterval: 30000
+        },
+        React.createElement(Story)
+      )
+    },
   ],
   globalTypes: {
     theme: {

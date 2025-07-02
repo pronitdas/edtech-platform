@@ -8,7 +8,8 @@ import {
   Brain,
   MessageSquare,
 } from 'lucide-react'
-import { MockInteractionTrackerProvider } from '../../stories/MockInteractionTrackerProvider'
+import { InteractionTrackerProvider } from '../../stories/InteractionTrackerContextMock'
+
 
 // Mock data for our stories
 const mockChapter = {
@@ -112,9 +113,9 @@ const meta: Meta<typeof CourseMain> = {
   decorators: [
     Story => (
       <div className='min-h-screen bg-gray-900'>
-        <MockInteractionTrackerProvider>
+        <InteractionTrackerProvider>
           <Story />
-        </MockInteractionTrackerProvider>
+        </InteractionTrackerProvider>
       </div>
     ),
   ],
