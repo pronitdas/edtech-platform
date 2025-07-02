@@ -12,11 +12,57 @@ class RegisterRequest(BaseModel):
     email: str
     password: str
     name: Optional[str] = None
+    role: str = "student"  # "student" or "teacher"
+
+class StudentOnboardingRequest(BaseModel):
+    email: str
+    password: str
+    name: str
+    grade_level: Optional[str] = None
+    subjects_of_interest: List[str] = []
+    learning_goals: Optional[str] = None
+    preferred_difficulty: str = "medium"  # "easy", "medium", "hard"
+
+class TeacherOnboardingRequest(BaseModel):
+    email: str
+    password: str
+    name: str
+    school_name: Optional[str] = None
+    subjects_taught: List[str] = []
+    grade_levels_taught: List[str] = []
+    years_experience: Optional[int] = None
+    classroom_size: Optional[int] = None
 
 class UserProfile(BaseModel):
     id: int
     email: str
     name: Optional[str]
+    role: Optional[str] = "student"
+    created_at: datetime
+
+class StudentProfile(BaseModel):
+    id: int
+    email: str
+    name: str
+    role: str = "student"
+    grade_level: Optional[str] = None
+    subjects_of_interest: List[str] = []
+    learning_goals: Optional[str] = None
+    preferred_difficulty: str = "medium"
+    onboarding_completed: bool = False
+    created_at: datetime
+
+class TeacherProfile(BaseModel):
+    id: int
+    email: str
+    name: str
+    role: str = "teacher"
+    school_name: Optional[str] = None
+    subjects_taught: List[str] = []
+    grade_levels_taught: List[str] = []
+    years_experience: Optional[int] = None
+    classroom_size: Optional[int] = None
+    onboarding_completed: bool = False
     created_at: datetime
 
 class TokenResponse(BaseModel):

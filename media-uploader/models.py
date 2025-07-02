@@ -92,6 +92,22 @@ class User(Base):
     current_jwt = Column(String)  # Store current active JWT
     jwt_issued_at = Column(DateTime)  # When the current JWT was issued
     jwt_expires_at = Column(DateTime)  # When the current JWT expires
+    
+    # Onboarding fields
+    onboarding_completed = Column(Boolean, default=False, nullable=False)
+    
+    # Student-specific fields
+    grade_level = Column(String(50))
+    subjects_of_interest = Column(JSON, default=list)
+    learning_goals = Column(Text)
+    preferred_difficulty = Column(String(20), default="medium")
+    
+    # Teacher-specific fields
+    school_name = Column(String(200))
+    subjects_taught = Column(JSON, default=list)
+    grade_levels_taught = Column(JSON, default=list)
+    years_experience = Column(Integer)
+    classroom_size = Column(Integer)
 
 class ContentAnalytics(Base):
     """Model for tracking content generation analytics."""

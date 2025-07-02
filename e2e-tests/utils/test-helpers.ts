@@ -7,15 +7,42 @@ export interface TestUser {
   email: string
   password: string
   name: string
+  role?: 'student' | 'teacher' | 'admin'
 }
 
-export function generateTestUser(): TestUser {
+export interface TestFile {
+  name: string
+  path: string
+  type: 'pdf' | 'txt' | 'docx' | 'video'
+  size: number
+}
+
+export function generateTestUser(role: 'student' | 'teacher' | 'admin' = 'student'): TestUser {
   const timestamp = Date.now()
+  const rolePrefix = role === 'teacher' ? 'teacher' : role === 'admin' ? 'admin' : 'student'
   return {
-    email: `test${timestamp}@example.com`,
+    email: `${rolePrefix}${timestamp}@example.com`,
     password: 'TestPassword123!',
-    name: `Test User ${timestamp}`
+    name: `Test ${role.charAt(0).toUpperCase() + role.slice(1)} ${timestamp}`,
+    role
   }
+}
+
+export function getTestFiles(): TestFile[] {
+  return [
+    {
+      name: 'test-document.txt',
+      path: './test-files/test-document.txt',
+      type: 'txt',
+      size: 1024
+    },
+    {
+      name: 'test-document.pdf',
+      path: './test-files/test-document.pdf',
+      type: 'pdf',
+      size: 2048
+    }
+  ]
 }
 
 export async function waitForElement(page: Page, selector: string, timeout = 10000) {
@@ -40,6 +67,76 @@ export async function waitForNavigation(page: Page, url?: string, timeout = 1000
     console.error(`Navigation timeout: ${url}`)
     return false
   }
+}
+
+export async function smartClick(page: Page, selectors: string[], timeout = 10000) {
+  for (const selector of selectors) {
+    try {
+      await page.waitForSelector(selector, { timeout: timeout / selectors.length })
+      await page.click(selector)
+      return true
+    } catch (error) {
+      continue
+    }
+  }
+  throw new Error(`None of the selectors found: ${selectors.join(', ')}`)
+}
+
+export async function smartFill(page: Page, selectors: string[], value: string, timeout = 10000) {
+  for (const selector of selectors) {
+    try {
+      await page.waitForSelector(selector, { timeout: timeout / selectors.length })
+      await page.focus(selector)
+      await page.keyboard.down('Control')
+      await page.keyboard.press('KeyA')
+      await page.keyboard.up('Control')
+      await page.type(selector, value)
+      return true
+    } catch (error) {
+      continue
+    }
+  }
+  throw new Error(`None of the input selectors found: ${selectors.join(', ')}`)
+}
+
+export async function takeScreenshot(page: Page, name: string, fullPage = true) {
+  const timestamp = Date.now()
+  const filename = `./screenshots/${name}-${timestamp}.png`
+  await page.screenshot({ path: filename, fullPage })
+  console.log(`Screenshot saved: ${filename}`)
+  return filename
+}
+
+export async function waitForAnyElement(page: Page, selectors: string[], timeout = 10000) {
+  const promises = selectors.map(selector =>
+    page.waitForSelector(selector, { timeout }).catch(() => null)
+  )
+
+  const results = await Promise.allSettled(promises)
+  const foundIndex = results.findIndex(result => result.status === 'fulfilled' && result.value)
+
+  if (foundIndex >= 0) {
+    return { found: true, selector: selectors[foundIndex], index: foundIndex }
+  }
+
+  return { found: false, selector: null, index: -1 }
+}
+
+export async function retryOperation<T>(
+  operation: () => Promise<T>,
+  maxRetries = 3,
+  delay = 1000
+): Promise<T> {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await operation()
+    } catch (error) {
+      if (i === maxRetries - 1) throw error
+      console.log(`Retry ${i + 1}/${maxRetries} after error:`, error.message)
+      await new Promise(resolve => setTimeout(resolve, delay))
+    }
+  }
+  throw new Error('Max retries exceeded')
 }
 
 export async function fillForm(page: Page, formData: Record<string, string>) {

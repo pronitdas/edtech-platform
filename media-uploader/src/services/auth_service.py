@@ -38,7 +38,7 @@ class AuthService:
     def __init__(self, db: Session):
         self.db = db
         
-    async def register(self, email: str, password: str, name: str = None) -> Dict[str, Any]:
+    async def register(self, email: str, password: str, name: str = None, role: str = "student") -> Dict[str, Any]:
         """Register a new user directly in the database"""
         try:
             # Check if user already exists
@@ -57,6 +57,7 @@ class AuthService:
                 verified=True,
                 active=True,
                 password_hash=hashed_password,
+                roles=[role],
                 created_at=datetime.utcnow()
             )
             
@@ -149,6 +150,114 @@ class AuthService:
             
         user = self.db.query(User).filter(User.id == user_id).first()
         return user
+    
+    async def student_onboarding(self, email: str, password: str, name: str, 
+                               grade_level: str = None, subjects_of_interest: list = None,
+                               learning_goals: str = None, preferred_difficulty: str = "medium") -> Dict[str, Any]:
+        """Complete student onboarding with profile details"""
+        try:
+            # Check if user already exists
+            existing_user = self.db.query(User).filter(User.email == email).first()
+            if existing_user:
+                return {"error": "User with this email already exists"}
+            
+            # Create new student user
+            hashed_password = hash_password(password)
+            kratos_id = str(uuid.uuid4())
+            
+            user = User(
+                kratos_id=kratos_id,
+                email=email,
+                display_name=name,
+                verified=True,
+                active=True,
+                password_hash=hashed_password,
+                roles=["student"],
+                onboarding_completed=True,
+                grade_level=grade_level,
+                subjects_of_interest=subjects_of_interest or [],
+                learning_goals=learning_goals,
+                preferred_difficulty=preferred_difficulty,
+                created_at=datetime.utcnow()
+            )
+            
+            self.db.add(user)
+            self.db.commit()
+            self.db.refresh(user)
+            
+            # Create JWT token
+            access_token = self.create_access_token(data={"sub": str(user.id)})
+            
+            return {
+                "access_token": access_token,
+                "token_type": "bearer",
+                "user_id": user.id,
+                "email": user.email
+            }
+                
+        except Exception as e:
+            logger.error(f"Student onboarding error: {e}")
+            self.db.rollback()
+            return {"error": str(e)}
+    
+    async def teacher_onboarding(self, email: str, password: str, name: str,
+                               school_name: str = None, subjects_taught: list = None,
+                               grade_levels_taught: list = None, years_experience: int = None,
+                               classroom_size: int = None) -> Dict[str, Any]:
+        """Complete teacher onboarding with profile details"""
+        try:
+            # Check if user already exists
+            existing_user = self.db.query(User).filter(User.email == email).first()
+            if existing_user:
+                return {"error": "User with this email already exists"}
+            
+            # Create new teacher user
+            hashed_password = hash_password(password)
+            kratos_id = str(uuid.uuid4())
+            
+            user = User(
+                kratos_id=kratos_id,
+                email=email,
+                display_name=name,
+                verified=True,
+                active=True,
+                password_hash=hashed_password,
+                roles=["teacher"],
+                onboarding_completed=True,
+                school_name=school_name,
+                subjects_taught=subjects_taught or [],
+                grade_levels_taught=grade_levels_taught or [],
+                years_experience=years_experience,
+                classroom_size=classroom_size,
+                created_at=datetime.utcnow()
+            )
+            
+            self.db.add(user)
+            self.db.commit()
+            self.db.refresh(user)
+            
+            # Create JWT token
+            access_token = self.create_access_token(data={"sub": str(user.id)})
+            
+            return {
+                "access_token": access_token,
+                "token_type": "bearer",
+                "user_id": user.id,
+                "email": user.email
+            }
+                
+        except Exception as e:
+            logger.error(f"Teacher onboarding error: {e}")
+            self.db.rollback()
+            return {"error": str(e)}
+    
+    async def get_current_user_from_token(self, authorization: str) -> Optional[User]:
+        """Get current user from authorization header"""
+        if not authorization or not authorization.startswith("Bearer "):
+            return None
+        
+        token = authorization.split(" ")[1]
+        return self.get_current_user(token)
 
 
 # Standalone function for FastAPI dependency injection
