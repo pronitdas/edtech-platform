@@ -58,7 +58,7 @@ const PERatioVisualization = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const companiesRef = useRef<Company[]>([])
   const frameCountRef = useRef<number>(0)
-  const animationFrameRef = useRef<number>()
+  const animationFrameRef = useRef<number>(0)
   const [hoveredCompany, setHoveredCompany] = useState<Company | null>(null)
   const [mousePos, setMousePos] = useState<{ x: number; y: number }>({
     x: 0,

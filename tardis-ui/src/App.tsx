@@ -26,7 +26,7 @@ function App() {
     <UserProvider>
       <InteractionTrackerProvider
         dataService={analyticsService}
-        userId={user?.id || ''}
+        userId={user?.id ? String(user.id) : ''}
       >
         <Router>
           <Routes>

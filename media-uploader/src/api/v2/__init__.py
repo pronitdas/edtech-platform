@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from .auth import router as auth_router
+from .simple_auth import router as simple_auth_router
 from .knowledge import router as knowledge_router
 from .chapters import router as chapters_router
 from .content import router as content_router
@@ -13,6 +14,7 @@ from .llm import router as llm_router
 v2_router = APIRouter(prefix="/v2")
 
 v2_router.include_router(auth_router, prefix="/auth", tags=["auth"])
+v2_router.include_router(simple_auth_router, prefix="/auth", tags=["simple-auth"])
 v2_router.include_router(knowledge_router, prefix="/knowledge", tags=["knowledge"])
 v2_router.include_router(chapters_router, prefix="/chapters", tags=["chapters"])
 v2_router.include_router(content_router, prefix="/content", tags=["content"])

@@ -16,28 +16,70 @@ interface AuthResponse {
 }
 
 export class AuthService {
+  private baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
   async login(credentials: LoginCredentials): Promise<User> {
-    const response = await apiClient.post<AuthResponse>(
-      '/auth/login',
-      credentials
-    )
-    localStorage.setItem('auth_token', response.token)
-    return response.user
+    // Use the v1 auth endpoints that integrate with Kratos
+    const response = await fetch(`${this.baseUrl}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(`Login failed: ${error}`)
+    }
+
+    const data = await response.json()
+    localStorage.setItem('auth_token', data.access_token)
+    return data.user
   }
 
   async register(data: RegisterData): Promise<User> {
-    const response = await apiClient.post<AuthResponse>('/auth/register', data)
-    localStorage.setItem('auth_token', response.token)
-    return response.user
+    // Use the v1 auth endpoints that integrate with Kratos
+    const response = await fetch(`${this.baseUrl}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(`Registration failed: ${error}`)
+    }
+
+    const result = await response.json()
+    localStorage.setItem('auth_token', result.access_token)
+    return result.user
   }
 
   async logout(): Promise<void> {
-    await apiClient.post('/auth/logout')
     localStorage.removeItem('auth_token')
+    // Optional: call logout endpoint if needed
   }
 
   async getCurrentUser(): Promise<User> {
-    return apiClient.get<User>('/auth/profile')
+    const token = localStorage.getItem('auth_token')
+    if (!token) {
+      throw new Error('No auth token')
+    }
+
+    const response = await fetch(`${this.baseUrl}/auth/me`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to get user profile')
+    }
+
+    return response.json()
   }
 
   isAuthenticated(): boolean {

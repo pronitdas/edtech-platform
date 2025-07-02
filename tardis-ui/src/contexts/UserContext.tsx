@@ -2,10 +2,23 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 import { apiClient, AuthResponse } from '../services/api'
 
 interface User {
-  id: string
+  id: string | number
   email: string
   name?: string
   created_at?: string
+  role?: string
+  onboarding_completed?: boolean
+  // Student fields
+  grade_level?: string
+  subjects_of_interest?: string[]
+  learning_goals?: string
+  preferred_difficulty?: string
+  // Teacher fields
+  school_name?: string
+  subjects_taught?: string[]
+  grade_levels_taught?: string[]
+  years_experience?: number
+  classroom_size?: number
 }
 
 interface UserContextType {
@@ -28,15 +41,24 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     const checkSession = async () => {
       const token = localStorage.getItem('auth_token')
       if (token) {
-        apiClient.setToken(token)
         try {
-          const profile = await apiClient.getProfile()
-          setUser(profile as User)
+          // Use the v2 profile endpoint
+          const response = await fetch(`http://localhost:8000/v2/auth/profile`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          })
+          
+          if (response.ok) {
+            const profile = await response.json()
+            setUser(profile as User)
+          } else {
+            // Token invalid, clear it
+            localStorage.removeItem('auth_token')
+          }
         } catch (error) {
-          // Token invalid, clear it
           console.warn('Invalid token, clearing session:', error)
           localStorage.removeItem('auth_token')
-          apiClient.setToken(null)
         }
       }
       setLoading(false)
@@ -85,6 +107,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       console.error('Logout error:', error)
     } finally {
       apiClient.setToken(null)
+      localStorage.removeItem('auth_token')
       setUser(null)
     }
   }

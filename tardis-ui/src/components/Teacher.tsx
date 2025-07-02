@@ -51,7 +51,7 @@ const Teacher = () => {
           auth,
           callbacks,
           streamOptions,
-        })
+        } as any)
         setAgentManager(manager)
         manager.connect() // Connect WebRTC session
       } catch (error) {

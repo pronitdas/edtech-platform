@@ -11,7 +11,7 @@ import hashlib
 from sqlalchemy.orm import Session
 import jwt
 from jwt.exceptions import PyJWTError as JWTError
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from models import User
 from database import get_db
@@ -65,8 +65,12 @@ class AuthService:
             self.db.commit()
             self.db.refresh(user)
             
-            # Create JWT token
-            access_token = self.create_access_token(data={"sub": str(user.id)})
+            # Create JWT token with kratos_id for middleware compatibility
+            access_token = self.create_access_token(data={
+                "sub": str(user.id),
+                "kid": user.kratos_id,
+                "email": user.email
+            })
             
             return {
                 "access_token": access_token,
@@ -102,8 +106,12 @@ class AuthService:
             user.last_login = datetime.utcnow()
             self.db.commit()
             
-            # Create JWT token
-            access_token = self.create_access_token(data={"sub": str(user.id)})
+            # Create JWT token with kratos_id for middleware compatibility
+            access_token = self.create_access_token(data={
+                "sub": str(user.id),
+                "kid": user.kratos_id,
+                "email": user.email
+            })
             
             return {
                 "access_token": access_token,
@@ -185,8 +193,12 @@ class AuthService:
             self.db.commit()
             self.db.refresh(user)
             
-            # Create JWT token
-            access_token = self.create_access_token(data={"sub": str(user.id)})
+            # Create JWT token with kratos_id for middleware compatibility
+            access_token = self.create_access_token(data={
+                "sub": str(user.id),
+                "kid": user.kratos_id,
+                "email": user.email
+            })
             
             return {
                 "access_token": access_token,
@@ -236,8 +248,12 @@ class AuthService:
             self.db.commit()
             self.db.refresh(user)
             
-            # Create JWT token
-            access_token = self.create_access_token(data={"sub": str(user.id)})
+            # Create JWT token with kratos_id for middleware compatibility
+            access_token = self.create_access_token(data={
+                "sub": str(user.id),
+                "kid": user.kratos_id,
+                "email": user.email
+            })
             
             return {
                 "access_token": access_token,
@@ -289,3 +305,23 @@ async def get_current_user(
         raise credentials_exception
     
     return user
+
+
+# New dependency function that works with Kratos middleware
+def get_current_user_from_middleware(request: Request) -> User:
+    """
+    FastAPI dependency to get the current authenticated user from middleware
+    This works with the KratosAuthMiddleware that sets user in request.state
+    """
+    user = getattr(request.state, 'user', None)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
+
+
+# Alias for cleaner imports - use middleware-based auth by default
+get_current_user = get_current_user_from_middleware

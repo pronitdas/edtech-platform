@@ -8,9 +8,9 @@ from datetime import datetime
 from dataclasses import dataclass, field
 from pydantic import BaseModel
 
-# Temporarily disabled ML dependencies
-# import torch
-# import whisper
+# ML dependencies
+import torch
+import whisper
 from openai import OpenAI
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import re

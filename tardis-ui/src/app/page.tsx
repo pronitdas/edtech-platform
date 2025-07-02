@@ -15,13 +15,15 @@ import { QuizComponent } from '@/components/quiz/QuizComponent'
 import { LearningDashboard } from '@/components/analytics/LearningDashboard'
 import { InteractionTrackerProvider } from '@/contexts/InteractionTrackerContext'
 import { analyticsService } from '@/services/analytics-service'
-import { ChevronLeft, Menu, X } from 'lucide-react'
+import { ChevronLeft, Menu, X, Home } from 'lucide-react'
 import { useUser } from '@/contexts/UserContext'
 import { useNavigate } from 'react-router-dom'
 import { Chapter, ChapterContent, QuizQuestion } from '@/types/api'
+import PersonalizedDashboard from '@/components/dashboard/PersonalizedDashboard'
 
 // Enum for application views
 const VIEW_TYPES = {
+  DASHBOARD: 'dashboard',
   KNOWLEDGE_SELECTION: 'knowledge_selection',
   CHAPTER_SELECTION: 'chapter_selection',
   COURSE_CONTENT: 'course_content',
@@ -57,7 +59,7 @@ function EdtechApp() {
   } = useChapters()
 
   // Application state
-  const [currentView, setCurrentView] = useState(VIEW_TYPES.KNOWLEDGE_SELECTION)
+  const [currentView, setCurrentView] = useState(VIEW_TYPES.DASHBOARD)
   const [currentTopic, setCurrentTopic] = useState<{
     knowledgeId: number | null
     topicId: string | null
@@ -80,6 +82,23 @@ function EdtechApp() {
   // Toggle sidebar on mobile
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen)
+  }
+
+  // Navigate to learning interface
+  const handleNavigateToLearning = () => {
+    setCurrentView(VIEW_TYPES.KNOWLEDGE_SELECTION)
+  }
+
+  // Navigate back to dashboard
+  const handleNavigateToDashboard = () => {
+    setCurrentView(VIEW_TYPES.DASHBOARD)
+    setContent(null)
+    setCurrentTopic({
+      knowledgeId: null,
+      topicId: null,
+      topic: null,
+      language: language,
+    })
   }
 
   // Handle knowledge domain selection
@@ -208,6 +227,10 @@ function EdtechApp() {
         setCurrentView(VIEW_TYPES.KNOWLEDGE_SELECTION)
         setContent(null)
         break
+      case VIEW_TYPES.KNOWLEDGE_SELECTION:
+        setCurrentView(VIEW_TYPES.DASHBOARD)
+        setContent(null)
+        break
       default:
         // Do nothing if we're already at the root view
         break
@@ -231,13 +254,13 @@ function EdtechApp() {
   return (
     <InteractionTrackerProvider
       dataService={analyticsService}
-      userId={userId || ''}
+      userId={userId ? String(userId) : ''}
     >
       <div className='flex h-screen w-screen flex-col overflow-hidden bg-gray-900 shadow-lg'>
         {/* Main content area with sidebar */}
         <div className='flex flex-1 overflow-hidden'>
-          {/* Sidebar - Show in all views except knowledge selection */}
-          {currentView !== VIEW_TYPES.KNOWLEDGE_SELECTION && (
+          {/* Sidebar - Show in all views except dashboard and knowledge selection */}
+          {currentView !== VIEW_TYPES.DASHBOARD && currentView !== VIEW_TYPES.KNOWLEDGE_SELECTION && (
             <aside
               className={`${sidebarOpen ? 'absolute inset-y-0 left-0 z-50' : 'hidden'} flex-col overflow-hidden border-r border-gray-700 bg-gray-800 text-white shadow-lg md:relative md:flex md:w-1/4 md:min-w-[250px] md:max-w-[300px]`}
             >
@@ -254,7 +277,7 @@ function EdtechApp() {
                 <div className='border-b border-gray-700 p-3 sm:p-4'>
                   <h3 className='mb-2 text-lg font-semibold'>Your Progress</h3>
                   <LearningDashboard
-                    userId={userId || ''}
+                    userId={userId ? String(userId) : ''}
                     courseId={currentTopic.knowledgeId?.toString() || ''}
                     compact={true}
                   />
@@ -287,7 +310,7 @@ function EdtechApp() {
 
           <main className='flex flex-grow flex-col overflow-hidden'>
             {/* Top navigation bar with back button, sidebar toggle and language selector */}
-            {currentView !== VIEW_TYPES.KNOWLEDGE_SELECTION && (
+            {currentView !== VIEW_TYPES.DASHBOARD && currentView !== VIEW_TYPES.KNOWLEDGE_SELECTION && (
               <div className='flex items-center justify-between border-b border-gray-700 bg-gray-800 p-2 text-white sm:p-3'>
                 <div className='flex items-center gap-2'>
                   {/* Mobile sidebar toggle */}
@@ -310,8 +333,28 @@ function EdtechApp() {
               </div>
             )}
 
+            {/* Knowledge selection navigation bar */}
+            {currentView === VIEW_TYPES.KNOWLEDGE_SELECTION && (
+              <div className='flex items-center justify-between border-b border-gray-700 bg-gray-800 p-2 text-white sm:p-3'>
+                <div className='flex items-center gap-2'>
+                  <button
+                    onClick={handleNavigateToDashboard}
+                    className='flex items-center gap-1 rounded-md bg-blue-500 px-3 py-1 text-sm transition-colors hover:bg-blue-600 sm:text-base'
+                  >
+                    <Home className='h-4 w-4' />
+                    <span>Dashboard</span>
+                  </button>
+                </div>
+                <LanguageSelector language={language} onChange={setLanguage} />
+              </div>
+            )}
+
             {/* Main content area */}
             <div className='flex-grow overflow-auto'>
+              {currentView === VIEW_TYPES.DASHBOARD && (
+                <PersonalizedDashboard onNavigateToLearning={handleNavigateToLearning} />
+              )}
+
               {currentView === VIEW_TYPES.KNOWLEDGE_SELECTION && (
                 <div className='flex h-full flex-col md:flex-row'>
                   {/* Sidebar for knowledge selection view */}
@@ -402,7 +445,7 @@ function EdtechApp() {
                     </h2>
                     <div className='overflow-hidden rounded-lg bg-gray-800 shadow-lg'>
                       <LearningDashboard
-                        userId={userId || ''}
+                        userId={userId ? String(userId) : ''}
                         courseId={currentTopic.knowledgeId?.toString() || ''}
                         compact={window.innerWidth < 1024}
                       />
@@ -413,7 +456,7 @@ function EdtechApp() {
             </div>
 
             {/* Footer */}
-            <Footer />
+            {currentView !== VIEW_TYPES.DASHBOARD && <Footer />}
           </main>
         </div>
       </div>

@@ -13,6 +13,7 @@ import DrawingToolbar from './DrawingToolbar'
 import BottomControls from './BottomControls'
 import AITutor from './AITutor'
 import GameificationPanel from './GameificationPanel'
+import TouchFeedback from './TouchFeedback'
 import { ChevronLeft, ChevronRight, Settings, Volume2 } from 'lucide-react'
 
 /**
@@ -297,7 +298,27 @@ const SlopeDrawingLayout: React.FC = () => {
           >
             {/* Canvas Glow Effect */}
             <div className='pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-br from-purple-500/5 via-transparent to-cyan-500/5' />
-            <GraphCanvas
+            
+            <TouchFeedback
+              className="h-full w-full"
+              onTouch={(point) => {
+                // Provide haptic feedback for canvas touch
+                if (isMobile) {
+                  triggerHapticFeedback('light')
+                }
+              }}
+              onTouchMove={(point) => {
+                // Optional: Add subtle haptic feedback for drag operations
+                // Throttled to avoid excessive haptic feedback
+              }}
+              onTouchEnd={(point) => {
+                // Confirm action completion with haptic feedback
+                if (isMobile) {
+                  triggerHapticFeedback('medium')
+                }
+              }}
+            >
+              <GraphCanvas
               drawingMode='slope'
               width={dimensions.width}
               height={dimensions.height}
@@ -334,6 +355,7 @@ const SlopeDrawingLayout: React.FC = () => {
                 stepSize: 0.1, // Assuming default step size
               }}
             />
+            </TouchFeedback>
           </div>
 
           {/* Animated Solution */}

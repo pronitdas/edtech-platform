@@ -150,16 +150,7 @@ export async function fillForm(page: Page, formData: Record<string, string>) {
   }
 }
 
-export async function takeScreenshot(page: Page, name: string) {
-  try {
-    await page.screenshot({
-      path: `./screenshots/${name}-${Date.now()}.png`,
-      fullPage: true
-    })
-  } catch (error) {
-    console.log(`Screenshot failed for ${name}:`, error.message)
-  }
-}
+
 
 export async function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))

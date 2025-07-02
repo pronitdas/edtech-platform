@@ -1,24 +1,12 @@
-import logging
 import os
-import io
-import base64
-from typing import Dict, Optional
-from datetime import datetime
 
-# Load environment variables from .env file
-
-import fitz  # PyMuPDF
-from PIL import Image
-
-from fastapi import FastAPI, HTTPException, UploadFile, File, Depends, Request
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
-import jwt
+# JWT import removed - using Kratos middleware
 from src.middleware.security import SecurityMiddleware
+from src.middleware.kratos_auth import KratosAuthMiddleware
 
-from models import ProcessingStatus, RetryRequest, RetryHistory, ImageUploadStatus, PDFResponse, User
-from routes.auth import JWT_SECRET, JWT_ALGORITHM, get_db
 from database import DatabaseManager
 from queue_manager import QueueManager
 from pdf_processor import PDFProcessor
@@ -31,85 +19,13 @@ from routes.neo4j import router as neo4j_router
 from src.api.v2 import v2_router
 from knowledge_graph import Neo4jGraphService
 from config import redis_client, logger
-import redis
-import os
 
 # Initialize Neo4jGraphService
 neo4j_graph_service = Neo4jGraphService()
 
 
 
-class JWTMiddleware(BaseHTTPMiddleware):
-    """Middleware to validate JWT tokens on protected endpoints."""
-    
-    async def dispatch(self, request: Request, call_next):
-        if not self.should_validate_token(request.url.path):
-            return await call_next(request)
-        
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
-            return JSONResponse(
-                status_code=401,
-                content={"detail": "No valid authentication credentials"}
-            )
-        
-        token = auth_header.split(' ')[1]
-        try:
-            # Validate JWT token
-            payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-            user_id = int(payload["sub"])
-            kratos_id = payload["kid"]
-
-            # Attach user object to request state
-            db = next(get_db())  # Get a database session
-            user = db.query(User).filter(User.id == user_id).first()
-            if not user:
-                raise HTTPException(status_code=404, detail="User not found")
-            
-            request.state.user = user
-            request.state.user_id = user_id
-            request.state.kratos_id = kratos_id
-            return await call_next(request)
-        except jwt.ExpiredSignatureError:
-            return JSONResponse(
-                status_code=401,
-                content={"detail": "Token has expired"}
-            )
-        except jwt.JWTError:
-            return JSONResponse(
-                status_code=401,
-                content={"detail": "Invalid token"}
-            )
-
-    def should_validate_token(self, path: str) -> bool:
-        """Check if the endpoint requires JWT validation."""
-        # Public endpoints that don't require authentication
-        public_paths = [
-            "/health",
-            "/",
-            "/docs",
-            "/redoc", 
-            "/openapi.json",
-            "/api/info",
-            "/v2/auth/register",
-            "/v2/auth/login",
-            "/v2/admin/health"
-        ]
-        
-        # Check if path is public
-        if any(path.startswith(prefix) for prefix in public_paths):
-            return False
-            
-        # All V2 endpoints except auth are protected
-        if path.startswith("/v2/"):
-            return True
-            
-        # Legacy protected paths
-        protected_paths = [
-            "/analytics",
-            "/api/protected"
-        ]
-        return any(path.startswith(prefix) for prefix in protected_paths)
+# JWT Middleware removed - replaced with KratosAuthMiddleware
 
 # FastAPI initialization with comprehensive documentation
 app = FastAPI(
@@ -194,11 +110,11 @@ app = FastAPI(
 # Add security middleware (first, for all requests)
 app.add_middleware(SecurityMiddleware)
 
-# Add JWT middleware (after security)
-app.add_middleware(JWTMiddleware)
+# Add Kratos authentication middleware (after security)
+app.add_middleware(KratosAuthMiddleware)
 
 # CORS configuration - more restrictive for security
-allow_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",")
+allow_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001,http://localhost:5173,http://localhost:5174").split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allow_origins,
@@ -212,10 +128,16 @@ app.include_router(router, tags=["Knowledge Processing"])
 app.include_router(analytics_router, tags=["Analytics"])
 app.include_router(auth_router, tags=["Authentication"])
 app.include_router(media_router, tags=["Media Management"])
+app.include_router(neo4j_router, tags=["Neo4j Graph"])
 app.include_router(v2_router, tags=["V2 API"])
 
+@app.get("/test-public")
+async def test_public():
+    """Simple test endpoint to verify public access"""
+    return {"message": "Public endpoint working", "status": "ok"}
+
 @app.get(
-    "/health",
+    "/health", 
     tags=["Health & Monitoring"],
     summary="Health Check",
     description="Check the health status of the API service",
@@ -228,19 +150,7 @@ async def health_check():
     Returns:
         dict: Service health status, version, and timestamp
     """
-    return {
-        "status": "healthy",
-        "service": "edtech-platform",
-        "version": "2.0.0",
-        "timestamp": datetime.utcnow().isoformat(),
-        "components": {
-            "database": "skipped",
-            "redis": "skipped",
-            "neo4j": "skipped",
-            "storage": "available", 
-            "queue": "running"
-        }
-    }
+    return {"status": "healthy", "message": "API is running"}
 
 @app.get(
     "/",

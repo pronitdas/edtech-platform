@@ -42,15 +42,14 @@ const typographyVariants = cva('text-slate-950 dark:text-slate-50', {
 export interface TypographyProps
   extends React.HTMLAttributes<HTMLElement>,
     VariantProps<typeof typographyVariants> {
-  as?: keyof JSX.IntrinsicElements
+  as?: keyof React.JSX.IntrinsicElements
 }
 
 export const Typography = React.forwardRef<HTMLElement, TypographyProps>(
   ({ className, variant, weight, align, as, ...props }, ref) => {
-    const Component =
-      as || (variant?.toString().startsWith('h') ? variant : 'p')
+    const Component = as || (typeof variant === 'string' && variant.startsWith('h') ? variant : 'p')
 
-    return React.createElement(Component, {
+    return React.createElement(Component as keyof React.JSX.IntrinsicElements, {
       ref,
       className: cn(typographyVariants({ variant, weight, align, className })),
       ...props,

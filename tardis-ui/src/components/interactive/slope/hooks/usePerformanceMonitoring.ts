@@ -26,7 +26,7 @@ export function usePerformanceMonitoring(
   const metricsRef = useRef<PerformanceMetrics[]>([])
   const frameCountRef = useRef(0)
   const lastTimeRef = useRef(performance.now())
-  const renderStartRef = useRef<number>()
+  const renderStartRef = useRef<number>(0)
 
   // Track component render performance
   const startRenderMeasurement = useCallback(() => {

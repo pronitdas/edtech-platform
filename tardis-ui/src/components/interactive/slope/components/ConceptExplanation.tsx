@@ -80,9 +80,8 @@ const ConceptExplanation: React.FC<ConceptExplanationProps> = ({
             </h3>
 
             {/* Main Content */}
-            <div className='prose prose-invert mb-4'>
+            <div className='prose prose-invert mb-4 text-gray-300'>
               <ReactMarkdown
-                className='text-gray-300'
                 remarkPlugins={[remarkMath]}
                 rehypePlugins={[rehypeKatex]}
               >
@@ -92,9 +91,8 @@ const ConceptExplanation: React.FC<ConceptExplanationProps> = ({
 
             {/* Formula Display */}
             {selectedConcept.formula && (
-              <div className='my-4 rounded-md bg-gray-900 p-3 text-center'>
+              <div className='my-4 rounded-md bg-gray-900 p-3 text-center text-lg text-gray-100'>
                 <ReactMarkdown
-                  className='text-lg text-gray-100'
                   remarkPlugins={[remarkMath]}
                   rehypePlugins={[rehypeKatex]}
                 >
@@ -125,10 +123,9 @@ const ConceptExplanation: React.FC<ConceptExplanationProps> = ({
                     {selectedConcept.examples.map(example => (
                       <div
                         key={example.id}
-                        className='rounded-md bg-gray-900 p-3'
+                        className='rounded-md bg-gray-900 p-3 text-gray-300'
                       >
                         <ReactMarkdown
-                          className='text-gray-300'
                           remarkPlugins={[remarkMath]}
                           rehypePlugins={[rehypeKatex]}
                         >
@@ -137,9 +134,8 @@ const ConceptExplanation: React.FC<ConceptExplanationProps> = ({
 
                         {/* Example Formula */}
                         {example.formula && (
-                          <div className='mt-2 text-center'>
+                          <div className='mt-2 text-center text-gray-100'>
                             <ReactMarkdown
-                              className='text-gray-100'
                               remarkPlugins={[remarkMath]}
                               rehypePlugins={[rehypeKatex]}
                             >

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { Point } from '../../../../types/geometry'
 
 interface GraphConfig {
@@ -26,6 +26,10 @@ export function useGraphManagement({
   const [points, setPoints] = useState<Point[]>([])
   const [zoom, setZoom] = useState(initialZoom)
   const [offset, setOffset] = useState(initialOffset)
+  
+  // Animation state
+  const animationRef = useRef<number | null>(null)
+  const [isAnimating, setIsAnimating] = useState(false)
 
   // Apply zoom limits
   const setZoomWithLimits = useCallback(
@@ -35,11 +39,126 @@ export function useGraphManagement({
     [minZoom, maxZoom]
   )
 
-  // Reset the view to center the points
+  // Smooth transition utility with easing
+  const easeInOutCubic = (t: number): number => {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+  }
+
+  // Animated zoom function
+  const setZoomAnimated = useCallback(
+    (targetZoom: number, duration: number = 400) => {
+      const clampedZoom = Math.max(minZoom, Math.min(maxZoom, targetZoom))
+      const startZoom = zoom
+      const startTime = performance.now()
+
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current)
+      }
+
+      setIsAnimating(true)
+
+      const animate = (currentTime: number) => {
+        const elapsed = currentTime - startTime
+        const progress = Math.min(elapsed / duration, 1)
+        const easedProgress = easeInOutCubic(progress)
+        
+        const currentZoom = startZoom + (clampedZoom - startZoom) * easedProgress
+        setZoom(currentZoom)
+
+        if (progress < 1) {
+          animationRef.current = requestAnimationFrame(animate)
+        } else {
+          setIsAnimating(false)
+          animationRef.current = null
+        }
+      }
+
+      animationRef.current = requestAnimationFrame(animate)
+    },
+    [zoom, minZoom, maxZoom]
+  )
+
+  // Animated offset function
+  const setOffsetAnimated = useCallback(
+    (targetOffset: { x: number; y: number }, duration: number = 400) => {
+      const startOffset = offset
+      const startTime = performance.now()
+
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current)
+      }
+
+      setIsAnimating(true)
+
+      const animate = (currentTime: number) => {
+        const elapsed = currentTime - startTime
+        const progress = Math.min(elapsed / duration, 1)
+        const easedProgress = easeInOutCubic(progress)
+        
+        const currentOffset = {
+          x: startOffset.x + (targetOffset.x - startOffset.x) * easedProgress,
+          y: startOffset.y + (targetOffset.y - startOffset.y) * easedProgress,
+        }
+        setOffset(currentOffset)
+
+        if (progress < 1) {
+          animationRef.current = requestAnimationFrame(animate)
+        } else {
+          setIsAnimating(false)
+          animationRef.current = null
+        }
+      }
+
+      animationRef.current = requestAnimationFrame(animate)
+    },
+    [offset]
+  )
+
+  // Combined animated zoom and pan function
+  const animateToView = useCallback(
+    (targetZoom: number, targetOffset: { x: number; y: number }, duration: number = 600) => {
+      const clampedZoom = Math.max(minZoom, Math.min(maxZoom, targetZoom))
+      const startZoom = zoom
+      const startOffset = offset
+      const startTime = performance.now()
+
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current)
+      }
+
+      setIsAnimating(true)
+
+      const animate = (currentTime: number) => {
+        const elapsed = currentTime - startTime
+        const progress = Math.min(elapsed / duration, 1)
+        const easedProgress = easeInOutCubic(progress)
+        
+        const currentZoom = startZoom + (clampedZoom - startZoom) * easedProgress
+        const currentOffset = {
+          x: startOffset.x + (targetOffset.x - startOffset.x) * easedProgress,
+          y: startOffset.y + (targetOffset.y - startOffset.y) * easedProgress,
+        }
+        
+        setZoom(currentZoom)
+        setOffset(currentOffset)
+
+        if (progress < 1) {
+          animationRef.current = requestAnimationFrame(animate)
+        } else {
+          setIsAnimating(false)
+          animationRef.current = null
+        }
+      }
+
+      animationRef.current = requestAnimationFrame(animate)
+    },
+    [zoom, offset, minZoom, maxZoom]
+  )
+
+  // Reset the view to center the points (with smooth animation)
   const resetView = useCallback(() => {
     if (points.length === 0) {
-      setZoomWithLimits(initialZoom)
-      setOffset(initialOffset)
+      animateToView(initialZoom, initialOffset, 500)
       return
     }
 
@@ -74,12 +193,13 @@ export function useGraphManagement({
     const zoomY = canvasHeight / scaleFactor / (rangeY * margin)
     const newZoom = Math.min(zoomX, zoomY, maxZoom) // Limit max zoom
 
-    // Center the points in the canvas with corrected offset calculation
-    setZoomWithLimits(newZoom)
-    setOffset({
+    // Center the points in the canvas with smooth animation
+    const targetOffset = {
       x: -centerX * scaleFactor * newZoom,
       y: centerY * scaleFactor * newZoom,
-    })
+    }
+    
+    animateToView(newZoom, targetOffset, 600)
   }, [
     points,
     initialZoom,
@@ -87,8 +207,8 @@ export function useGraphManagement({
     canvasWidth,
     canvasHeight,
     scaleFactor,
-    setZoomWithLimits,
     maxZoom,
+    animateToView,
   ])
 
   // Clear all points
@@ -229,6 +349,15 @@ export function useGraphManagement({
     }
   }, [points, calculateSlope, calculateYIntercept, generateEquation])
 
+  // Cleanup animation on unmount
+  useEffect(() => {
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current)
+      }
+    }
+  }, [])
+
   return {
     points,
     setPoints,
@@ -249,6 +378,11 @@ export function useGraphManagement({
     lineData,
     canvasWidth,
     canvasHeight,
+    // Animation functions
+    setZoomAnimated,
+    setOffsetAnimated,
+    animateToView,
+    isAnimating,
   }
 }
 

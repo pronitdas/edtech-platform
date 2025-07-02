@@ -6,6 +6,8 @@ interface VideoPlayerProps {
   videoUrl: string
   title: string
   poster?: string
+  knowledgeId?: string
+  moduleId?: string
 }
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -13,6 +15,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   videoUrl,
   title,
   poster,
+  knowledgeId = 'unknown',
+  moduleId = 'unknown',
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -39,8 +43,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       setIsPlaying(true)
       lastPlayTime.current = video.currentTime
       trackVideoPlay(contentId, {
-        knowledgeId: 'unknown', // TODO: Pass actual knowledgeId
-        moduleId: 'unknown', // TODO: Pass actual moduleId
+        knowledgeId,
+        moduleId,
         currentTime: video.currentTime,
         totalDuration: video.duration || 0,
         progressPercent: video.duration ? (video.currentTime / video.duration) * 100 : 0,
@@ -54,8 +58,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       setIsPlaying(false)
       const elapsedTime = video.currentTime - lastPlayTime.current
       trackVideoPause(contentId, {
-        knowledgeId: 'unknown', // TODO: Pass actual knowledgeId
-        moduleId: 'unknown', // TODO: Pass actual moduleId
+        knowledgeId,
+        moduleId,
         currentTime: video.currentTime,
         totalDuration: video.duration || 0,
         progressPercent: video.duration ? (video.currentTime / video.duration) * 100 : 0,
@@ -69,8 +73,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const handleEnded = () => {
       setIsPlaying(false)
       trackVideoComplete(contentId, {
-        knowledgeId: 'unknown', // TODO: Pass actual knowledgeId
-        moduleId: 'unknown', // TODO: Pass actual moduleId
+        knowledgeId,
+        moduleId,
         videoId: contentId.toString(),
         watchedSegments: [[0, video.currentTime]], // Simplified - should track actual segments
         totalWatchedTime: video.currentTime,
