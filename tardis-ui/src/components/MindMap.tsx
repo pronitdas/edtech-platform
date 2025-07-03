@@ -121,8 +121,8 @@ const MindMapInner: React.FC<MindMapInnerProps> = ({ markdown }) => {
   const [editLabel, setEditLabel] = useState<string>('')
 
   const authState = useAuthState()
-  // TODO: Get OpenAI key from proper source
-  const oAiKey = import.meta.env.VITE_OPENAI_API_KEY || null
+  // Get OpenAI API key from environment variables
+  const oAiKey = import.meta.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY || null
   const [apiClient, setApiClient] = useState<OpenAIService | null>(null)
   const {
     fitView,

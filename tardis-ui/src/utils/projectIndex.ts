@@ -41,7 +41,7 @@ export const PROJECT_INDEX: FileNode[] = [
     status: 'complete',
   },
   {
-    path: 'app/page.tsx',
+    path: 'app/ModernPage.tsx',
     type: 'file',
     summary: 'Main application page with embedded chapter viewer',
     exists: true,
@@ -426,7 +426,7 @@ export const PROJECT_INDEX: FileNode[] = [
   {
     path: 'components/ChapterViewer.tsx',
     type: 'file',
-    summary: 'Standalone chapter viewer (extract from app/page.tsx)',
+    summary: 'Standalone chapter viewer (extract from app/ModernPage.tsx)',
     exists: false,
     category: 'component',
     priority: 'high',

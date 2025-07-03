@@ -17,12 +17,12 @@ import usePerformanceTracking from '@/hooks/usePerformanceTracking'
 import { analyticsService } from '@/services/analytics-service'
 
 // Components - Lazy loaded for performance
-const RealDashboard = lazy(() => import('@/components/RealDashboard'))
+import { Dashboard } from '@/components/Dashboard'
+import NavigationHeader from '@/components/navigation/NavigationHeader'
 const KnowledgeSelector = lazy(() => import('@/components/learning/KnowledgeSelector'))
 const ChapterView = lazy(() => import('@/components/learning/ChapterView'))
 const CourseContent = lazy(() => import('@/components/learning/CourseContent'))
 const LearningModule = lazy(() => import('@/components/learning/LearningModule'))
-const NavigationHeader = lazy(() => import('@/components/learning/NavigationHeader'))
 
 // UI Components
 import Loader from '@/components/ui/Loader'
@@ -106,8 +106,8 @@ const LearningOrchestrator: React.FC = () => {
     }
   }, [language, currentTopic, getEdTechContentForChapter, setTopic, setView])
 
-  const handleModuleSelect = useCallback((moduleType: string, moduleContent: any) => {
-    let actualContent = moduleContent
+  const handleModuleSelect = useCallback((moduleType: string, moduleContent: ModuleContent) => {
+    let actualContent: unknown = moduleContent
 
     // Handle nested content structure
     if (moduleContent?.version && typeof moduleContent === 'object') {
@@ -122,11 +122,13 @@ const LearningOrchestrator: React.FC = () => {
       return
     }
 
-    if (moduleType === 'video' && actualContent.id && actualContent.url) {
-      setVideoContent(actualContent)
+    const content = actualContent as Record<string, unknown>
+
+    if (moduleType === 'video' && content.id && content.url) {
+      setVideoContent(content as unknown as VideoContent)
       setView('learning_module')
-    } else if (moduleType === 'quiz' && actualContent.id && actualContent.title && Array.isArray(actualContent.questions)) {
-      setQuizContent(actualContent)
+    } else if (moduleType === 'quiz' && content.id && content.title && Array.isArray(content.questions)) {
+      setQuizContent(content as unknown as QuizContent)
       setView('learning_module')
     }
   }, [setVideoContent, setQuizContent, setView])
@@ -168,6 +170,7 @@ const LearningOrchestrator: React.FC = () => {
 
   return (
     <div className='flex h-screen w-screen flex-col overflow-hidden bg-gray-900 shadow-lg'>
+      <NavigationHeader />
       <div className='flex flex-1 overflow-hidden'>
         {/* Sidebar */}
         {currentView !== 'dashboard' && currentView !== 'knowledge_selection' && (
@@ -236,7 +239,7 @@ const LearningOrchestrator: React.FC = () => {
           <div className='flex-grow overflow-auto'>
             <Suspense fallback={<LoadingFallback />}>
               {currentView === 'dashboard' && (
-                <RealDashboard 
+                <Dashboard 
                   userId={String(userId)}
                   userName={user?.name || 'Student'}
                   onNavigateToLearning={handleNavigateToLearning}

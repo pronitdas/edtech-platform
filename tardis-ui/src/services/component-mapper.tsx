@@ -10,8 +10,13 @@ import BookValueCalculator from '@/components/BookValueCalculator'
 import PriceToDividendCalculator from '@/components/PriceToDividendCalculator'
 import LiquidationValueCalculator from '@/components/LiquidationValueCalculator'
 
+// Content mapping configuration type
+interface ContentMappingConfig {
+  readonly [key: string]: React.ReactNode
+}
+
 // Map of special content start phrases to their corresponding components
-const SPECIAL_CONTENT_MAP = {
+const SPECIAL_CONTENT_MAP: ContentMappingConfig = {
   'How much investors': <PERatioCalculator />,
   Evaluate: <PriceToCashFlowCalculator />,
   'This tool': <StockValuationModel />,
@@ -22,7 +27,7 @@ const SPECIAL_CONTENT_MAP = {
   'Book Value': <BookValueCalculator />,
   'Price-to-Dividend': <PriceToDividendCalculator />,
   'Liquidation value': <LiquidationValueCalculator />,
-}
+} as const
 
 /**
  * Checks if content starts with any special phrases and returns the corresponding component
@@ -32,9 +37,14 @@ const SPECIAL_CONTENT_MAP = {
 export const getSpecialComponent = (
   content: string | unknown
 ): React.ReactNode | null => {
-  if (!content || typeof content !== 'string') return null
+  if (!content || typeof content !== 'string') {
+    return null
+  }
 
-  for (const [startPhrase, component] of Object.entries(SPECIAL_CONTENT_MAP)) {
+  // Use Object.entries with proper typing
+  const entries = Object.entries(SPECIAL_CONTENT_MAP) as Array<[string, React.ReactNode]>
+  
+  for (const [startPhrase, component] of entries) {
     if (content.startsWith(startPhrase)) {
       return component
     }

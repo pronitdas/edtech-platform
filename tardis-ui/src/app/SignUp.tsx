@@ -22,8 +22,8 @@ function SignUpPage() {
     setError('')
     setLoading(true)
 
-    // Redirect to onboarding flow instead of direct registration
-    navigate('/onboarding')
+    // Redirect to enhanced onboarding flow
+    navigate('/enhanced-onboarding')
   }
 
   return (

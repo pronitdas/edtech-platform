@@ -300,7 +300,42 @@ export const SlopeDrawingProvider: React.FC<SlopeDrawingProviderProps> = ({
     stats, // Use stats from provider state
     setStats, // Provide setStats in context
     generateProblem,
-    checkSolution: (lineData: any) => false, // TODO: Implement proper checkSolution
+    checkSolution: (lineData: LineData) => {
+      if (!currentProblem) return false
+      
+      // Extract slope from the drawn line
+      const point1 = lineData.point1
+      const point2 = lineData.point2
+      const drawnSlope = (point2.y - point1.y) / (point2.x - point1.x)
+      
+      // Get expected slope from current problem
+      const solution = currentProblem.solution
+      if (!solution || typeof solution === 'string') return false
+      const expectedSlope = solution.slope
+      
+      // Allow for small tolerance in slope calculation
+      const tolerance = 0.1
+      const isCorrect = Math.abs(drawnSlope - expectedSlope) <= tolerance
+      
+      // Update stats and cognitive load tracking
+      if (isCorrect) {
+        recordError()
+        setStats(prev => ({
+          ...prev,
+          correct: prev.correct + 1,
+          attempted: prev.attempted + 1
+        }))
+      } else {
+        recordError()
+        setStats(prev => ({
+          ...prev,
+          incorrect: prev.incorrect + 1,
+          attempted: prev.attempted + 1
+        }))
+      }
+      
+      return isCorrect
+    },
     toggleSolution,
     nextProblem,
     changeDifficulty, // Provide changeDifficulty in context

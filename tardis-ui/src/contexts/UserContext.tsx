@@ -11,14 +11,25 @@ interface User {
   // Student fields
   grade_level?: string
   subjects_of_interest?: string[]
-  learning_goals?: string
+  learning_goals?: string[]
   preferred_difficulty?: string
+  learning_interests?: string[]
+  knowledge_gaps?: string[]
+  preferred_learning_style?: 'visual' | 'auditory' | 'kinesthetic' | 'reading'
+  current_knowledge_level?: Record<string, 'beginner' | 'intermediate' | 'advanced'>
   // Teacher fields
   school_name?: string
   subjects_taught?: string[]
   grade_levels_taught?: string[]
   years_experience?: number
   classroom_size?: number
+  topics_to_teach?: string[]
+  curriculum_standards?: string[]
+  content_generation_preferences?: {
+    complexity_level: 'beginner' | 'intermediate' | 'advanced'
+    content_style: 'formal' | 'conversational' | 'interactive'
+    assessment_frequency: 'low' | 'medium' | 'high'
+  }
 }
 
 interface UserContextType {
@@ -28,6 +39,9 @@ interface UserContextType {
   register: (email: string, password: string, name?: string) => Promise<void>
   logout: () => Promise<void>
   updateProfile: (data: { name?: string; email?: string }) => Promise<void>
+  completeOnboarding: (onboardingData: Partial<User>) => Promise<void>
+  isTeacher: () => boolean
+  isStudent: () => boolean
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
@@ -126,6 +140,28 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const completeOnboarding = async (onboardingData: Partial<User>) => {
+    if (!user) throw new Error('No user logged in')
+
+    try {
+      // Update user with onboarding data
+      const updatedUser = { ...user, ...onboardingData, onboarding_completed: true }
+      setUser(updatedUser)
+
+      // Send to backend (using existing update profile endpoint for now)
+      // In production, this would use a dedicated onboarding endpoint
+      await apiClient.updateProfile(onboardingData)
+    } catch (error) {
+      console.error('Onboarding completion error:', error)
+      throw new Error(
+        error instanceof Error ? error.message : 'Failed to complete onboarding'
+      )
+    }
+  }
+
+  const isTeacher = () => user?.role === 'teacher'
+  const isStudent = () => user?.role === 'student'
+
   return (
     <UserContext.Provider
       value={{
@@ -135,6 +171,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         register,
         logout,
         updateProfile,
+        completeOnboarding,
+        isTeacher,
+        isStudent,
       }}
     >
       {children}

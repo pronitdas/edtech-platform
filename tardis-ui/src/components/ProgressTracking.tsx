@@ -15,6 +15,10 @@ interface TopicProgress {
   questionsCorrect: number
   averageResponseTime: number // in seconds
   lastPracticed: string // ISO date string
+  isGeneratedContent?: boolean
+  generationDate?: string
+  chaptersCompleted?: number
+  totalChapters?: number
 }
 
 interface TimeSpentData {
@@ -26,6 +30,14 @@ interface ProgressTrackingProps {
   userId: string
   topicsData?: TopicProgress[]
   timeSpentData?: TimeSpentData[]
+  generatedContentProgress?: Array<{
+    knowledge_id: string
+    topic: string
+    chaptersCompleted: number
+    totalChapters: number
+    timeSpent: number
+    lastAccessed: string
+  }>
   className?: string
   compact?: boolean
 }
@@ -34,6 +46,7 @@ export const ProgressTracking: React.FC<ProgressTrackingProps> = ({
   userId,
   topicsData = [],
   timeSpentData = [],
+  generatedContentProgress = [],
   className = '',
   compact = false,
 }) => {
@@ -41,6 +54,11 @@ export const ProgressTracking: React.FC<ProgressTrackingProps> = ({
   const [improvementAreas, setImprovementAreas] = useState<TopicProgress[]>([])
   const [totalTimeSpent, setTotalTimeSpent] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  const [generatedContentStats, setGeneratedContentStats] = useState({
+    totalContent: 0,
+    completedContent: 0,
+    inProgressContent: 0
+  })
 
   useEffect(() => {
     // Process the data to identify strengths and improvement areas
@@ -67,7 +85,22 @@ export const ProgressTracking: React.FC<ProgressTrackingProps> = ({
       const total = timeSpentData.reduce((sum, data) => sum + data.minutes, 0)
       setTotalTimeSpent(total)
     }
-  }, [topicsData, timeSpentData])
+
+    // Process generated content progress
+    if (generatedContentProgress.length > 0) {
+      const stats = generatedContentProgress.reduce((acc, content) => {
+        acc.totalContent++
+        if (content.chaptersCompleted === content.totalChapters) {
+          acc.completedContent++
+        } else if (content.chaptersCompleted > 0) {
+          acc.inProgressContent++
+        }
+        return acc
+      }, { totalContent: 0, completedContent: 0, inProgressContent: 0 })
+      
+      setGeneratedContentStats(stats)
+    }
+  }, [topicsData, timeSpentData, generatedContentProgress])
 
   const formatTime = (minutes: number) => {
     const hrs = Math.floor(minutes / 60)
@@ -176,7 +209,48 @@ export const ProgressTracking: React.FC<ProgressTrackingProps> = ({
         </h2>
       </div>
 
-      <div className='grid grid-cols-1 gap-4 p-4 md:grid-cols-2'>
+      <div className='grid grid-cols-1 gap-4 p-4 md:grid-cols-3'>
+        {/* Generated Content Progress */}
+        {generatedContentProgress.length > 0 && (
+          <div className='rounded-lg bg-gray-800 p-4'>
+            <h3 className='mb-3 flex items-center font-medium text-white'>
+              <BrainCircuit size={18} className='mr-2' />
+              Generated Content
+            </h3>
+            
+            <div className='space-y-3'>
+              <div className='grid grid-cols-3 gap-2 text-center'>
+                <div>
+                  <div className='text-lg font-bold text-blue-400'>{generatedContentStats.totalContent}</div>
+                  <div className='text-xs text-gray-400'>Total</div>
+                </div>
+                <div>
+                  <div className='text-lg font-bold text-green-400'>{generatedContentStats.completedContent}</div>
+                  <div className='text-xs text-gray-400'>Completed</div>
+                </div>
+                <div>
+                  <div className='text-lg font-bold text-yellow-400'>{generatedContentStats.inProgressContent}</div>
+                  <div className='text-xs text-gray-400'>In Progress</div>
+                </div>
+              </div>
+
+              <div className='mt-4'>
+                <h4 className='mb-2 text-sm text-gray-400'>Recent Content</h4>
+                <div className='space-y-2'>
+                  {generatedContentProgress.slice(0, 3).map((content) => (
+                    <div key={content.knowledge_id} className='flex items-center justify-between'>
+                      <span className='truncate text-sm text-gray-300'>{content.topic}</span>
+                      <span className='text-xs text-gray-400'>
+                        {content.chaptersCompleted}/{content.totalChapters}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Time stats */}
         <div className='rounded-lg bg-gray-800 p-4'>
           <h3 className='mb-3 flex items-center font-medium text-white'>

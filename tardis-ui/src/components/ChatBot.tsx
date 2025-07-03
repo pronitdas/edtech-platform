@@ -19,8 +19,8 @@ interface ChatbotProps {
 const VoiceChatbot = ({ topic, language, onQuestionAsked }: ChatbotProps) => {
   const [userResponse, setUserResponse] = useState('')
   const authState = useAuthState()
-  // TODO: Get OpenAI key from proper source - currently not available in auth state
-  const oAiKey = import.meta.env.VITE_OPENAI_API_KEY || null
+  // Get OpenAI API key from environment variables
+  const oAiKey = import.meta.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY || null
   const [apiClient, setApiClient] = useState<OpenAIService | null>(null)
   const [mentorText, setMentorText] = useState(
     "Hello, I'm Mentor! Let's start your journey. What would you like to know about?"

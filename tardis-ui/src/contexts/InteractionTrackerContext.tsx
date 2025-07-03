@@ -76,6 +76,34 @@ interface RoleplayCompleteEvent {
   }>
 }
 
+// Topic generation tracking events
+interface TopicGenerationStartEvent {
+  topic: string
+  subject_area: string
+  difficulty_level: string
+  target_audience: string
+  content_depth: string
+  learning_objectives: string[]
+  user_id: string
+}
+
+interface TopicGenerationCompleteEvent {
+  knowledge_id: string
+  topic: string
+  generation_time: number
+  chapters_count: number
+  external_sources_count: number
+  status: 'completed' | 'error'
+}
+
+interface TopicContentViewEvent {
+  knowledge_id: string
+  content_type: 'chapter' | 'mindmap' | 'notes' | 'summary' | 'quiz'
+  chapter_id?: string
+  section: string
+  time_spent: number
+}
+
 // New state structure as proposed in the epic
 interface InteractionContextState {
   session: {
@@ -118,6 +146,9 @@ interface InteractionContextValue
   trackRoleplayStart: (data: RoleplayStartEvent) => void
   trackRoleplayResponse: (data: RoleplayResponseEvent) => void
   trackRoleplayComplete: (data: RoleplayCompleteEvent) => void
+  trackTopicGenerationStart: (data: TopicGenerationStartEvent) => void
+  trackTopicGenerationComplete: (data: TopicGenerationCompleteEvent) => void
+  trackTopicContentView: (data: TopicContentViewEvent) => void
   pendingEventsCount: number
   totalEventsCount: number
   flushEvents: () => Promise<void>
@@ -688,6 +719,37 @@ export const InteractionTrackerProvider: React.FC<
       [trackEvent]
     )
 
+    // Topic generation tracking methods
+    const trackTopicGenerationStart = useCallback(
+      (data: TopicGenerationStartEvent) => {
+        trackEvent('topic_generation_start', 0, {
+          ...data,
+          timestamp: Date.now(),
+        })
+      },
+      [trackEvent]
+    )
+
+    const trackTopicGenerationComplete = useCallback(
+      (data: TopicGenerationCompleteEvent) => {
+        trackEvent('topic_generation_complete', parseInt(data.knowledge_id, 10) || 0, {
+          ...data,
+          timestamp: Date.now(),
+        })
+      },
+      [trackEvent]
+    )
+
+    const trackTopicContentView = useCallback(
+      (data: TopicContentViewEvent) => {
+        trackEvent('topic_content_view', parseInt(data.knowledge_id, 10) || 0, {
+          ...data,
+          timestamp: Date.now(),
+        })
+      },
+      [trackEvent]
+    )
+
     // Memoized counts
     const pendingEventsCount = useMemo(
       () => state.events.pending.length,
@@ -724,6 +786,9 @@ export const InteractionTrackerProvider: React.FC<
         trackRoleplayStart,
         trackRoleplayResponse,
         trackRoleplayComplete,
+        trackTopicGenerationStart,
+        trackTopicGenerationComplete,
+        trackTopicContentView,
         pendingEventsCount,
         totalEventsCount,
         flushEvents,
@@ -744,6 +809,9 @@ export const InteractionTrackerProvider: React.FC<
         trackRoleplayStart,
         trackRoleplayResponse,
         trackRoleplayComplete,
+        trackTopicGenerationStart,
+        trackTopicGenerationComplete,
+        trackTopicContentView,
         pendingEventsCount,
         totalEventsCount,
         flushEvents,

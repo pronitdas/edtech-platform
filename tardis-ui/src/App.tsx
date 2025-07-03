@@ -16,7 +16,9 @@ import LandingPage from './app/landing/page'
 import PricingPage from './app/pricing/page'
 import AnalyticsPage from './pages/AnalyticsPage'
 import ChapterViewer from './components/ChapterViewer'
-import MainApplication from './app/page'
+import ModernPage from './app/ModernPage'
+import TeacherDashboard from './components/TeacherDashboard/TeacherDashboard'
+import EnhancedOnboarding from './components/onboarding/EnhancedOnboarding'
 import { analyticsService } from './services/analytics-service'
 import { useUser } from './contexts/UserContext'
 
@@ -41,7 +43,7 @@ function App() {
               path='/app'
               element={
                 <ProtectedRoute>
-                  <MainApplication />
+                  <ModernPage />
                 </ProtectedRoute>
               }
             />
@@ -66,6 +68,30 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ChapterViewer />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path='/teacher'
+              element={
+                <ProtectedRoute>
+                  <TeacherDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path='/onboarding'
+              element={
+                <ProtectedRoute>
+                  <EnhancedOnboarding />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path='/shared-content/:contentId'
+              element={
+                <ProtectedRoute>
+                  <ModernPage />
                 </ProtectedRoute>
               }
             />

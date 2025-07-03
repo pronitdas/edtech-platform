@@ -26,11 +26,14 @@ export interface PracticeToolResponse {
 
 export interface RecentActivityResponse {
   id: string
+  activity: string
   type: 'lesson' | 'quiz' | 'upload'
   title: string
+  date: string
   timestamp: string
   progress?: number
   timeSpent?: number
+  score?: number
 }
 
 export interface TopicDataResponse {

@@ -1,7 +1,7 @@
 // App.tsx
 import React from 'react'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
-import Edtech from './page'
+import ModernPage from './ModernPage'
 import LoginPage from './LoginPage'
 import SignUpPage from './SignUp'
 import LandingPage from './landing/page'
@@ -17,7 +17,7 @@ function App() {
         <Route path='/signup' element={<SignUpPage />} />
         <Route path='/onboarding' element={<OnboardingFlow />} />
         <Route path='/login' element={<LoginPage />} />
-        <Route path='/dashboard' element={<Edtech />} />
+        <Route path='/dashboard' element={<ModernPage />} />
       </Routes>
     </Router>
   )

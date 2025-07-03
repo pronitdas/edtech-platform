@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import { useUser } from '@/contexts/UserContext'
 import { apiClient } from '@/services/api-client'
-import type { DashboardStats, RecentActivityResponse } from '@/types/dashboard'
+import type { DashboardStats, RecentActivityResponse, ApiResponse } from '@/types/dashboard'
 
 interface LocalDashboardStats {
   totalCourses: number
@@ -49,7 +49,7 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({ onNavigat
 
       try {
         // Fetch real dashboard statistics
-        const statsResponse = await apiClient.get<DashboardStats>(`/dashboard/user/${user.id}/dashboard-stats`)
+        const statsResponse = await apiClient.get<ApiResponse<DashboardStats>>(`/dashboard/user/${user.id}/dashboard-stats`)
         
         if (statsResponse.success && statsResponse.data) {
           setStats({
@@ -61,7 +61,7 @@ const PersonalizedDashboard: React.FC<PersonalizedDashboardProps> = ({ onNavigat
         }
 
         // Fetch recent activity
-        const activityResponse = await apiClient.get<RecentActivityResponse[]>(`/dashboard/user/${user.id}/recent-activity`)
+        const activityResponse = await apiClient.get<ApiResponse<RecentActivityResponse[]>>(`/dashboard/user/${user.id}/recent-activity`)
         
         if (activityResponse.success && activityResponse.data) {
           setRecentActivity(activityResponse.data)

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
-// import * as math from 'mathjs' // TODO: Install mathjs or use native Math
+import * as math from 'mathjs'
+import p5 from 'p5'
 
 const DividendGrowthCalculator = () => {
   const [initialDividend, setInitialDividend] = useState(1.0)
@@ -40,8 +41,7 @@ const DividendGrowthCalculator = () => {
   useEffect(() => {
     if (!canvasContainerRef.current) return
 
-    const sketch = (p: any) => {
-      // TODO: Install p5.js types
+    const sketch = (p: p5) => {
       const paddingLeft = 80
       const paddingRight = 50
       const paddingTop = 50
@@ -141,17 +141,10 @@ const DividendGrowthCalculator = () => {
       p.updateVis = updateVisualization
     }
 
-    // TODO: Install p5.js properly with: npm install p5 @types/p5
-    // For now, check if p5 is available on window
-    interface P5Constructor {
-      new (sketch: (p: unknown) => void): { remove(): void; updateVis?(): void }
-    }
+    // p5.js is now properly installed with TypeScript types
 
-    const p5 = (window as any).p5 as P5Constructor | undefined
-    if (p5) {
-      const instance = new p5(sketch)
-      canvasRef.current = instance
-    }
+    const instance = new p5(sketch, canvasContainerRef.current)
+    canvasRef.current = instance
 
     return () => {
       // Clean up p5 instance when component unmounts

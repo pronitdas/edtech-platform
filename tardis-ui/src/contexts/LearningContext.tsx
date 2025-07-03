@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react'
 import { Chapter } from '@/types/api'
+import type { VideoContent, QuizContent, ModuleContent } from '@/types/content'
 
 // Types
 export type ViewType = 'dashboard' | 'knowledge_selection' | 'chapter_selection' | 'course_content' | 'learning_module'
@@ -14,20 +15,20 @@ export interface CurrentTopic {
 export interface LearningState {
   currentView: ViewType
   currentTopic: CurrentTopic
-  videoContent: any
-  quizContent: any
+  videoContent: VideoContent | null
+  quizContent: QuizContent | null
   sidebarOpen: boolean
-  content: any
+  content: ModuleContent | null
 }
 
 // Actions
 type LearningAction =
   | { type: 'SET_VIEW'; payload: ViewType }
   | { type: 'SET_TOPIC'; payload: Partial<CurrentTopic> }
-  | { type: 'SET_VIDEO_CONTENT'; payload: any }
-  | { type: 'SET_QUIZ_CONTENT'; payload: any }
+  | { type: 'SET_VIDEO_CONTENT'; payload: VideoContent | null }
+  | { type: 'SET_QUIZ_CONTENT'; payload: QuizContent | null }
   | { type: 'TOGGLE_SIDEBAR' }
-  | { type: 'SET_CONTENT'; payload: any }
+  | { type: 'SET_CONTENT'; payload: ModuleContent | null }
   | { type: 'RESET_LEARNING_STATE' }
 
 // Initial state
@@ -95,10 +96,10 @@ interface LearningContextType {
   // Helper functions
   setView: (view: ViewType) => void
   setTopic: (topic: Partial<CurrentTopic>) => void
-  setVideoContent: (content: any) => void
-  setQuizContent: (content: any) => void
+  setVideoContent: (content: VideoContent | null) => void
+  setQuizContent: (content: QuizContent | null) => void
   toggleSidebar: () => void
-  setContent: (content: any) => void
+  setContent: (content: ModuleContent | null) => void
   resetLearningState: () => void
 }
 
@@ -121,11 +122,11 @@ export const LearningProvider: React.FC<LearningProviderProps> = ({ children }) 
     dispatch({ type: 'SET_TOPIC', payload: topic })
   }
 
-  const setVideoContent = (content: any) => {
+  const setVideoContent = (content: VideoContent | null) => {
     dispatch({ type: 'SET_VIDEO_CONTENT', payload: content })
   }
 
-  const setQuizContent = (content: any) => {
+  const setQuizContent = (content: QuizContent | null) => {
     dispatch({ type: 'SET_QUIZ_CONTENT', payload: content })
   }
 
@@ -133,7 +134,7 @@ export const LearningProvider: React.FC<LearningProviderProps> = ({ children }) 
     dispatch({ type: 'TOGGLE_SIDEBAR' })
   }
 
-  const setContent = (content: any) => {
+  const setContent = (content: ModuleContent | null) => {
     dispatch({ type: 'SET_CONTENT', payload: content })
   }
 

@@ -15,6 +15,7 @@ import hashlib
 sys.path.append('/home/pronit/workspace/edtech-platform/media-uploader')
 
 from models import User
+from src.models.v2_models import UserProfile
 from src.database.connection import get_db_connection
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import text

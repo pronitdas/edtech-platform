@@ -43,13 +43,21 @@ export class GenericDrawingStrategy implements DrawingStrategy {
       const width = p.width
       const height = p.height
 
-      // Function to evaluate the equation
+      // Function to safely evaluate mathematical expressions
       const evaluateEquation = (x: number) => {
         try {
-          // Use eval() to evaluate the equation (be cautious with user input!)
-          // TODO: Sanitize user input to prevent security vulnerabilities before using eval()
-          const y = eval(equation)
-          return y
+          // Safe mathematical expression evaluator - replaces dangerous eval()
+          const safeEquation = equation
+            .replace(/\bx\b/g, x.toString())
+            .replace(/[^0-9+\-*/().\s]/g, '') // Remove any non-mathematical characters
+          
+          // Use Function constructor for safer evaluation (still allows math expressions)
+          const result = new Function('return ' + safeEquation)()
+          
+          if (typeof result === 'number' && isFinite(result)) {
+            return result
+          }
+          return null
         } catch (error) {
           console.error('Error evaluating equation:', error)
           return null
