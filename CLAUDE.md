@@ -196,3 +196,8 @@ Key modules:
 - **AI/ML**: OpenAI API, custom model gateway
 - **Infrastructure**: Docker, Redis, S3-compatible storage
 
+### Development Environment Specifics
+- Frontend is running at port 5174
+- Backend services are managed by docker compose
+- Both frontend and backend support hot reloading
+- Do not start/stop services unnecessarily

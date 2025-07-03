@@ -76,8 +76,6 @@ export const ProgressTracking: React.FC<ProgressTrackingProps> = ({
         )
         .sort((a, b) => a.masteryLevel - b.masteryLevel)
       setImprovementAreas(needsImprovement.slice(0, 3))
-
-      setIsLoading(false)
     }
 
     // Calculate total time spent
@@ -100,6 +98,9 @@ export const ProgressTracking: React.FC<ProgressTrackingProps> = ({
       
       setGeneratedContentStats(stats)
     }
+
+    // Always set loading to false after processing data
+    setIsLoading(false)
   }, [topicsData, timeSpentData, generatedContentProgress])
 
   const formatTime = (minutes: number) => {

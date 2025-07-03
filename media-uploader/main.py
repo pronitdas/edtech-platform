@@ -17,6 +17,8 @@ from routes.auth import router as auth_router
 from routes.media import router as media_router
 from routes.neo4j import router as neo4j_router
 from src.api.v2 import v2_router
+from src.api.v2.simple_auth import router as simple_auth_router
+from src.api.v2.auth import router as v2_auth_router
 from knowledge_graph import Neo4jGraphService
 from config import redis_client, logger
 
@@ -129,7 +131,9 @@ app.include_router(analytics_router, tags=["Analytics"])
 app.include_router(auth_router, tags=["Authentication"])
 app.include_router(media_router, tags=["Media Management"])
 app.include_router(neo4j_router, tags=["Neo4j Graph"])
-app.include_router(v2_router, tags=["V2 API"])
+app.include_router(v2_router, prefix="/api", tags=["V2 API"])
+app.include_router(simple_auth_router, prefix="/v2/auth", tags=["Direct Auth"])
+app.include_router(v2_auth_router, prefix="/v2/auth", tags=["Direct Auth V2"])
 
 @app.get("/test-public")
 async def test_public():

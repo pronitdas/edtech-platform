@@ -356,3 +356,60 @@ class SearchService:
             return content
         
         return content[:max_length] + "..."
+    
+    async def search_knowledge(
+        self,
+        query: str,
+        limit: int = 10,
+        content_types: List[str] = None,
+        filters: Dict[str, Any] = None
+    ) -> List[Knowledge]:
+        """
+        Search knowledge items by query (compatibility method for semantic search API)
+        
+        Args:
+            query: Search query string
+            limit: Maximum number of results
+            content_types: List of content types to filter by
+            filters: Additional filters to apply
+            
+        Returns:
+            List of matching Knowledge objects
+        """
+        try:
+            # Build base query
+            knowledge_query = self.db.query(Knowledge)
+            
+            # Apply text search (simple LIKE for now, could be enhanced with FTS)
+            if query:
+                search_filter = or_(
+                    Knowledge.name.ilike(f"%{query}%"),
+                    Knowledge.summary.ilike(f"%{query}%")
+                )
+                knowledge_query = knowledge_query.filter(search_filter)
+            
+            # Apply content type filters
+            if content_types and "all" not in content_types:
+                knowledge_query = knowledge_query.filter(
+                    Knowledge.content_type.in_(content_types)
+                )
+            
+            # Apply additional filters
+            if filters:
+                if filters.get("user_id"):
+                    knowledge_query = knowledge_query.filter(
+                        Knowledge.user_id == filters["user_id"]
+                    )
+                if filters.get("status"):
+                    knowledge_query = knowledge_query.filter(
+                        Knowledge.status == filters["status"]
+                    )
+            
+            # Execute query with limit
+            results = knowledge_query.limit(limit).all()
+            
+            return results
+            
+        except Exception as e:
+            print(f"Search error: {e}")
+            return []

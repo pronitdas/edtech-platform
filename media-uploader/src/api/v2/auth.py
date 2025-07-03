@@ -82,24 +82,38 @@ async def get_profile(authorization: str = Header(None), db: Session = Depends(g
         raise HTTPException(status_code=401, detail="Invalid token")
     
     # Return detailed profile based on role
+    # Handle roles field which might be stored as JSON string or array
+    import json
+    if isinstance(user.roles, str):
+        try:
+            roles = json.loads(user.roles)
+        except (json.JSONDecodeError, TypeError):
+            roles = []
+    elif isinstance(user.roles, list):
+        roles = user.roles
+    else:
+        roles = []
+    
+    primary_role = roles[0] if roles else "student"
+    
     profile_data = {
         "id": user.id,
         "email": user.email,
         "name": user.display_name,
-        "role": user.roles[0] if user.roles else "student",
+        "role": primary_role,
         "onboarding_completed": user.onboarding_completed,
         "created_at": user.created_at
     }
     
     # Add role-specific fields
-    if "student" in user.roles:
+    if "student" in roles:
         profile_data.update({
             "grade_level": user.grade_level,
             "subjects_of_interest": user.subjects_of_interest or [],
             "learning_goals": user.learning_goals,
             "preferred_difficulty": user.preferred_difficulty
         })
-    elif "teacher" in user.roles:
+    elif "teacher" in roles:
         profile_data.update({
             "school_name": user.school_name,
             "subjects_taught": user.subjects_taught or [],

@@ -73,23 +73,46 @@ async def simple_teacher_onboarding(request: TeacherOnboardingRequest, db: Sessi
 
 @router.post("/demo-login", response_model=TokenResponse)
 async def demo_login(db: Session = Depends(get_db)):
-    """Demo login with pre-created demo user"""
+    """Demo login with pre-created demo student user"""
     auth_service = AuthService(db)
 
-    # Demo user credentials
+    # Demo student credentials
     demo_email = "demo@edtech.com"
     demo_password = "demo123"
-    demo_name = "Demo User"
+    demo_name = "Demo Student"
 
     # Try to login first
     result = await auth_service.login(demo_email, demo_password)
 
     # If user doesn't exist, create it
     if "error" in result:
-        # Create demo user
+        # Create demo student user
         create_result = await auth_service.register(demo_email, demo_password, demo_name, "student")
         if "error" in create_result:
-            raise HTTPException(status_code=500, detail="Failed to create demo user")
+            raise HTTPException(status_code=500, detail="Failed to create demo student user")
+        return TokenResponse(**create_result)
+
+    return TokenResponse(**result)
+
+@router.post("/demo-teacher-login", response_model=TokenResponse)
+async def demo_teacher_login(db: Session = Depends(get_db)):
+    """Demo login with pre-created demo teacher user"""
+    auth_service = AuthService(db)
+
+    # Demo teacher credentials
+    demo_email = "teacher@edtech.com"
+    demo_password = "teacher123"
+    demo_name = "Demo Teacher"
+
+    # Try to login first
+    result = await auth_service.login(demo_email, demo_password)
+
+    # If user doesn't exist, create it
+    if "error" in result:
+        # Create demo teacher user
+        create_result = await auth_service.register(demo_email, demo_password, demo_name, "teacher")
+        if "error" in create_result:
+            raise HTTPException(status_code=500, detail="Failed to create demo teacher user")
         return TokenResponse(**create_result)
 
     return TokenResponse(**result)

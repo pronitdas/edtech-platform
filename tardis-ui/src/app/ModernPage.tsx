@@ -19,6 +19,7 @@ import { analyticsService } from '@/services/analytics-service'
 // Components - Lazy loaded for performance
 import { Dashboard } from '@/components/Dashboard'
 import NavigationHeader from '@/components/navigation/NavigationHeader'
+const TeacherDashboard = lazy(() => import('@/components/TeacherDashboard/TeacherDashboard'))
 const KnowledgeSelector = lazy(() => import('@/components/learning/KnowledgeSelector'))
 const ChapterView = lazy(() => import('@/components/learning/ChapterView'))
 const CourseContent = lazy(() => import('@/components/learning/CourseContent'))
@@ -44,7 +45,7 @@ const LearningOrchestrator: React.FC = () => {
   usePerformanceTracking('learning-app')
   
   // User and navigation
-  const { user } = useUser()
+  const { user, loading: userLoading } = useUser()
   const navigate = useNavigate()
   
   // Learning state
@@ -65,6 +66,16 @@ const LearningOrchestrator: React.FC = () => {
 
   // User authentication check
   const userId = user?.id
+  
+  // Show loading while user context is loading
+  if (userLoading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-gray-900">
+        <div className="text-white">Loading...</div>
+      </div>
+    )
+  }
+  
   if (!userId) {
     navigate('/login')
     return null
@@ -170,7 +181,8 @@ const LearningOrchestrator: React.FC = () => {
 
   return (
     <div className='flex h-screen w-screen flex-col overflow-hidden bg-gray-900 shadow-lg'>
-      <NavigationHeader />
+      {/* Show main navigation only for dashboard views */}
+      {(currentView === 'dashboard' || currentView === 'knowledge_selection') && <NavigationHeader />}
       <div className='flex flex-1 overflow-hidden'>
         {/* Sidebar */}
         {currentView !== 'dashboard' && currentView !== 'knowledge_selection' && (
@@ -222,28 +234,37 @@ const LearningOrchestrator: React.FC = () => {
         )}
 
         <main className='flex flex-grow flex-col overflow-hidden'>
-          {/* Navigation Header */}
-          <Suspense fallback={<div className="h-16 bg-gray-800" />}>
-            <NavigationHeader
-              currentView={currentView}
-              language={language}
-              onLanguageChange={setLanguage}
-              onBack={handleBack}
-              onNavigateToDashboard={handleNavigateToDashboard}
-              onToggleSidebar={toggleSidebar}
-              showSidebarToggle={currentView !== 'dashboard' && currentView !== 'knowledge_selection'}
-            />
-          </Suspense>
+          {/* Learning Navigation Header - only for non-dashboard views */}
+          {currentView !== 'dashboard' && currentView !== 'knowledge_selection' && (
+            <Suspense fallback={<div className="h-16 bg-gray-800" />}>
+              <NavigationHeader
+                currentView={currentView}
+                language={language}
+                onLanguageChange={setLanguage}
+                onBack={handleBack}
+                onNavigateToDashboard={handleNavigateToDashboard}
+                onToggleSidebar={toggleSidebar}
+                showSidebarToggle={currentView !== 'dashboard' && currentView !== 'knowledge_selection'}
+              />
+            </Suspense>
+          )}
 
           {/* Main content area */}
           <div className='flex-grow overflow-auto'>
             <Suspense fallback={<LoadingFallback />}>
               {currentView === 'dashboard' && (
-                <Dashboard 
-                  userId={String(userId)}
-                  userName={user?.name || 'Student'}
-                  onNavigateToLearning={handleNavigateToLearning}
-                />
+                (() => {
+                  console.log('DEBUG: Dashboard rendering - user role:', user?.role, 'user:', user)
+                  return user?.role === 'teacher' ? (
+                    <TeacherDashboard />
+                  ) : (
+                    <Dashboard 
+                      userId={String(userId)}
+                      userName={user?.name || 'Student'}
+                      onNavigateToLearning={handleNavigateToLearning}
+                    />
+                  )
+                })()
               )}
 
               {currentView === 'knowledge_selection' && (

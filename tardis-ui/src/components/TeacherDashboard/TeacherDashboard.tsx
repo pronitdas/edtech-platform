@@ -13,7 +13,6 @@ import {
   AlertCircle
 } from 'lucide-react';
 import ContentManagementInterface from './ContentManagementInterface';
-import NavigationHeader from '../navigation/NavigationHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { apiClient } from '../../services/api-client';
 import { useUser } from '../../contexts/UserContext';
@@ -406,7 +405,6 @@ const TeacherDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-900">
-      <NavigationHeader />
       <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
         <header className="mb-8">

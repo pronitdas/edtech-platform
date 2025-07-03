@@ -42,14 +42,15 @@ function LoginPage() {
     }
   }
 
-  const handleDemoLogin = async () => {
+  const handleDemoLogin = async (userType: 'student' | 'teacher' = 'student') => {
     setLoading(true)
     setError('')
 
     try {
-      // Call the demo login endpoint directly
+      // Call the appropriate demo login endpoint
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-      const response = await fetch(`${baseUrl}/v2/auth/demo-login`, {
+      const endpoint = userType === 'teacher' ? '/v2/auth/demo-teacher-login' : '/v2/auth/demo-login'
+      const response = await fetch(`${baseUrl}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -57,7 +58,7 @@ function LoginPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Demo login failed')
+        throw new Error(`Demo ${userType} login failed`)
       }
 
       const data = await response.json()
@@ -70,7 +71,7 @@ function LoginPage() {
     } catch (error: any) {
       setLoading(false)
       console.log(error.message)
-      setError(error.message || 'Demo login failed. Please try again.')
+      setError(error.message || `Demo ${userType} login failed. Please try again.`)
     }
   }
 
@@ -251,23 +252,41 @@ function LoginPage() {
                   </div>
                 </div>
 
-                <motion.button
-                  type='button'
-                  onClick={handleDemoLogin}
-                  disabled={loading}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className='mt-4 w-full py-3 rounded-xl font-semibold text-gray-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-green-100 to-blue-100 hover:from-green-200 hover:to-blue-200 border border-green-300'
-                >
-                  {loading ? (
-                    <div className='flex items-center justify-center space-x-2'>
-                      <div className='w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin'></div>
-                      <span>Signing in...</span>
-                    </div>
-                  ) : (
-                    '🚀 Try Demo User'
-                  )}
-                </motion.button>
+                <div className='mt-4 grid grid-cols-2 gap-3'>
+                  <motion.button
+                    type='button'
+                    onClick={() => handleDemoLogin('student')}
+                    disabled={loading}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className='py-3 rounded-xl font-semibold text-gray-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-green-100 to-blue-100 hover:from-green-200 hover:to-blue-200 border border-green-300'
+                  >
+                    {loading ? (
+                      <div className='flex items-center justify-center space-x-1'>
+                        <div className='w-3 h-3 border-2 border-gray-600 border-t-transparent rounded-full animate-spin'></div>
+                      </div>
+                    ) : (
+                      '🎓 Demo Student'
+                    )}
+                  </motion.button>
+
+                  <motion.button
+                    type='button'
+                    onClick={() => handleDemoLogin('teacher')}
+                    disabled={loading}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className='py-3 rounded-xl font-semibold text-gray-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 border border-purple-300'
+                  >
+                    {loading ? (
+                      <div className='flex items-center justify-center space-x-1'>
+                        <div className='w-3 h-3 border-2 border-gray-600 border-t-transparent rounded-full animate-spin'></div>
+                      </div>
+                    ) : (
+                      '👨‍🏫 Demo Teacher'
+                    )}
+                  </motion.button>
+                </div>
               </div>
             </div>
 

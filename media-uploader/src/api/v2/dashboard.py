@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 import logging
 
-from src.middleware.kratos_auth import get_current_user
+from src.services.auth_service import get_current_user
 from database import get_db
 from models import User
 

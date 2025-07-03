@@ -10,16 +10,17 @@ from pydantic import BaseModel, Field
 import json
 from datetime import datetime
 
-from ...database import get_db
-from ...services.topic_content_generator import (
+from database import get_db
+from src.services.topic_content_generator import (
     TopicContentGenerator, TopicGenerationRequest, GeneratedContent
 )
-from ...services.llm_service import LLMService
-from ...services.search_service import SearchService
-from ...models.v2_models import Knowledge, User
-from ...auth.middleware import get_current_user
+from src.services.llm_service import LLMService
+from src.services.search_service import SearchService
+from models import User
+from models import Knowledge
+from src.services.auth_service import get_current_user
 
-router = APIRouter(prefix="/api/v2/topic-generation", tags=["Topic Generation"])
+router = APIRouter(prefix="/topic-generation", tags=["Topic Generation"])
 
 # Request/Response Models
 class TopicGenerationRequestModel(BaseModel):

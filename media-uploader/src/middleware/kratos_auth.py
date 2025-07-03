@@ -190,7 +190,18 @@ class KratosAuthMiddleware(BaseHTTPMiddleware):
             "/redoc", 
             "/openapi.json",
             "/api/info",
-            # V2 auth endpoints
+            # V2 auth endpoints (with /api prefix)
+            "/api/v2/auth/register",
+            "/api/v2/auth/login",
+            "/api/v2/auth/simple-register",
+            "/api/v2/auth/simple-login",
+            "/api/v2/auth/simple-onboard-student",
+            "/api/v2/auth/simple-onboard-teacher",
+            "/api/v2/auth/demo-login",
+            "/api/v2/auth/demo-teacher-login",
+            "/api/v2/auth/onboard/student",
+            "/api/v2/auth/onboard/teacher",
+            # V2 auth endpoints (without /api prefix - for direct frontend calls)
             "/v2/auth/register",
             "/v2/auth/login",
             "/v2/auth/simple-register",
@@ -198,10 +209,12 @@ class KratosAuthMiddleware(BaseHTTPMiddleware):
             "/v2/auth/simple-onboard-student",
             "/v2/auth/simple-onboard-teacher",
             "/v2/auth/demo-login",
+            "/v2/auth/demo-teacher-login",
+            "/v2/auth/profile",
             "/v2/auth/onboard/student",
             "/v2/auth/onboard/teacher",
             # Admin health checks
-            "/v2/admin/health"
+            "/api/v2/admin/health"
         ]
         
         # Check if path is public (exact match only for specific paths)

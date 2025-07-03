@@ -214,34 +214,33 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className={`p-4 ${className}`}>
-      <header className='mb-6'>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className='mb-2 text-2xl font-bold text-white'>
-              Welcome back, {userName}!
-            </h1>
-            <p className='text-gray-400'>
-              Track your progress and continue your learning journey
-            </p>
-          </div>
-          <div className="flex space-x-3">
-            <button
-              onClick={() => setShowSemanticSearch(true)}
-              className="px-4 py-2 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg hover:from-green-600 hover:to-teal-600 transition-all duration-200 flex items-center space-x-2"
-            >
-              <Search size={18} />
-              <span>Smart Search</span>
-            </button>
-            <button
-              onClick={() => setShowTopicGenerator(true)}
-              className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 transition-all duration-200 flex items-center space-x-2"
-            >
-              <span>✨</span>
-              <span>Generate New Content</span>
-            </button>
-          </div>
+      {/* Action buttons moved to top right */}
+      <div className="mb-6 flex justify-between items-start">
+        <div>
+          <h1 className='mb-2 text-2xl font-bold text-white'>
+            Welcome back, {userName}!
+          </h1>
+          <p className='text-gray-400'>
+            Track your progress and continue your learning journey
+          </p>
         </div>
-      </header>
+        <div className="flex space-x-3">
+          <button
+            onClick={() => setShowSemanticSearch(true)}
+            className="px-4 py-2 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg hover:from-green-600 hover:to-teal-600 transition-all duration-200 flex items-center space-x-2"
+          >
+            <Search size={18} />
+            <span>Smart Search</span>
+          </button>
+          <button
+            onClick={() => setShowTopicGenerator(true)}
+            className="px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 transition-all duration-200 flex items-center space-x-2"
+          >
+            <span>✨</span>
+            <span>Generate New Content</span>
+          </button>
+        </div>
+      </div>
 
       <div className='mb-8 grid grid-cols-1 gap-6 lg:grid-cols-3'>
         {/* Learning Dashboard (Course Progress) */}
@@ -381,7 +380,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           Practice Tools
         </h2>
 
-        <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4'>
+        <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2'>
           {practiceTools.map(tool => (
             <Card
               key={tool.id}

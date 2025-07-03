@@ -29,14 +29,15 @@ export default function LoginPage() {
     }
   }
 
-  const handleDemoLogin = async () => {
+  const handleDemoLogin = async (userType: 'student' | 'teacher' = 'student') => {
     setLoading(true)
     setError('')
 
     try {
-      // Call the demo login endpoint directly
+      // Call the appropriate demo login endpoint
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-      const response = await fetch(`${baseUrl}/v2/auth/demo-login`, {
+      const endpoint = userType === 'teacher' ? '/v2/auth/demo-teacher-login' : '/v2/auth/demo-login'
+      const response = await fetch(`${baseUrl}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -44,7 +45,7 @@ export default function LoginPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Demo login failed')
+        throw new Error(`Demo ${userType} login failed`)
       }
 
       const data = await response.json()
@@ -58,7 +59,7 @@ export default function LoginPage() {
       // Reload to update auth state
       window.location.reload()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Demo login failed')
+      setError(err instanceof Error ? err.message : `Demo ${userType} login failed`)
     } finally {
       setLoading(false)
     }
@@ -149,14 +150,25 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <button
-              type='button'
-              onClick={handleDemoLogin}
-              disabled={loading}
-              className='group relative flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50'
-            >
-              {loading ? 'Signing in...' : 'Try Demo User'}
-            </button>
+            <div className='grid grid-cols-2 gap-3'>
+              <button
+                type='button'
+                onClick={() => handleDemoLogin('student')}
+                disabled={loading}
+                className='group relative flex w-full justify-center rounded-md border border-green-300 bg-green-50 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50'
+              >
+                {loading ? 'Signing in...' : '🎓 Demo Student'}
+              </button>
+              
+              <button
+                type='button'
+                onClick={() => handleDemoLogin('teacher')}
+                disabled={loading}
+                className='group relative flex w-full justify-center rounded-md border border-purple-300 bg-purple-50 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-purple-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50'
+              >
+                {loading ? 'Signing in...' : '👨‍🏫 Demo Teacher'}
+              </button>
+            </div>
           </div>
         </form>
       </div>
