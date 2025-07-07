@@ -19,6 +19,8 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
+    "test:integration": "tsx src/test/run-integration-tests.ts",
+    "test:api": "tsx src/test/manual-api-test.ts",
     "prepare": "husky install || true"
   },
   "dependencies": {

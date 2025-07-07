@@ -143,15 +143,15 @@ class KnowledgeService:
             })
             
             # Add to processing queue
-            await self.queue_manager.add_to_queue(
-                knowledge_id=knowledge.id,
-                task_type="process_knowledge",
-                task_data={
-                    "content_types": content_types,
-                    "language": content_language,
-                    "ws_channel": ws_channel
-                }
-            )
+            self.queue_manager.add_job(knowledge.id)
+            
+            # Also add content generation job if requested
+            if content_types:
+                self.queue_manager.add_content_generation_job(
+                    knowledge_id=knowledge.id,
+                    types=content_types,
+                    language=content_language
+                )
             
         except Exception as e:
             knowledge.status = "failed"

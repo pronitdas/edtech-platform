@@ -171,7 +171,7 @@ async def generate_chunked_content(
                     {"role": "system", "content": prompt},
                     {"role": "user", "content": chunks[0]},
                 ],
-                model="microsoft_-_phi-3-mini-128k-instruct",
+                model="llama-3.2-3b-instruct",
                 max_tokens=max_tokens,
             )
             return result
@@ -202,7 +202,7 @@ async def generate_chunked_content(
                     {"role": "system", "content": context_prompt},
                     {"role": "user", "content": chunk_context + chunk},
                 ],
-                model="microsoft_-_phi-3-mini-128k-instruct",
+                model="llama-3.2-3b-instruct",
                 max_tokens=max_tokens,
             )
             
@@ -288,7 +288,7 @@ async def generate_mind_map_structure(
         # For mind maps, we'll use a direct call instead of chunking to ensure proper JSON structure
         result = await openai_client.chat_completion(
             [{"role": "system", "content": prompt}, {"role": "user", "content": text}],
-            model="microsoft_-_phi-3-mini-128k-instruct",  # Use the same model as other generators
+            model="llama-3.2-3b-instruct",  # Use the same model as other generators
             max_tokens=4096,
             json_schema={
                 "name": "mindmap_schema",
@@ -360,9 +360,13 @@ def parse_mind_map_result(result: str) -> Dict[str, Any]:
         A mind map structure
     """
     try:
+        # Check if result is an error message
+        if result.startswith("Error:") or "Error in fetching data" in result:
+            logger.warning(f"Received error message instead of JSON: {result}")
+            return _get_fallback_mindmap()
+        
         # Attempt to parse as JSON
         import json
-
         parsed = json.loads(result)
 
         # Validate the structure
@@ -376,19 +380,25 @@ def parse_mind_map_result(result: str) -> Dict[str, Any]:
             ]
 
         return parsed
+    except json.JSONDecodeError as e:
+        logger.error(f"Error parsing mind map JSON: {str(e)}. Content: {result[:200]}...")
+        return _get_fallback_mindmap()
     except Exception as e:
-        logger.error(f"Error parsing mind map JSON: {str(e)}")
-        # Return a fallback structure
-        return {
-            "nodes": [
-                {
-                    "id": "1",
-                    "type": "input",
-                    "data": {"label": "Error parsing mind map"},
-                }
-            ],
-            "edges": [],
-        }
+        logger.error(f"Error processing mind map: {str(e)}")
+        return _get_fallback_mindmap()
+
+def _get_fallback_mindmap():
+    """Return a fallback mind map structure."""
+    return {
+        "nodes": [
+            {
+                "id": "1",
+                "type": "input",
+                "data": {"label": "Content Overview"},
+            }
+        ],
+        "edges": [],
+    }
 
 
 async def generate_questions(
@@ -441,23 +451,68 @@ async def generate_questions(
         # For quizzes, we'll use a direct call instead of chunking to ensure proper JSON structure
         result = await openai_client.chat_completion(
             [{"role": "system", "content": prompt}, {"role": "user", "content": text}],
-            model="microsoft_-_phi-3-mini-128k-instruct",  # Use the same model as other generators
+            model="llama-3.2-3b-instruct",  # Use the same model as other generators
             max_tokens=4096,
             json_schema=json_schema,
         )
 
         # Parse the result as JSON
         try:
+            # Check if result is an error message
+            if result.startswith("Error:") or "Error in fetching data" in result:
+                logger.warning(f"Received error message instead of JSON: {result}")
+                return []
+            
             parsed = json.loads(result)
             if "questions" in parsed and isinstance(parsed["questions"], list):
                 return parsed["questions"]
             else:
-                logger.error(f"Invalid questions format: {result}")
+                logger.error(f"Invalid questions format: {result[:200]}...")
                 return []
         except json.JSONDecodeError as e:
-            logger.error(f"Error parsing questions JSON: {str(e)}")
-            return []
+            logger.error(f"Error parsing questions JSON: {str(e)}. Content: {result[:200]}...")
+            # Try to extract questions from malformed JSON
+            return _extract_questions_fallback(result)
 
     except Exception as e:
         logger.error(f"Error generating questions: {str(e)}")
+        return []
+
+def _extract_questions_fallback(text: str) -> List[Dict]:
+    """Extract questions from malformed text as fallback."""
+    try:
+        # Try to find question patterns in the text
+        questions = []
+        lines = text.split('\n')
+        
+        current_question = None
+        current_options = []
+        
+        for line in lines:
+            line = line.strip()
+            if line.endswith('?'):
+                # This looks like a question
+                if current_question:
+                    # Save previous question
+                    questions.append({
+                        "question": current_question,
+                        "options": current_options if current_options else ["Option 1", "Option 2", "Option 3"],
+                        "answer": current_options[0] if current_options else "Option 1"
+                    })
+                current_question = line
+                current_options = []
+            elif line.startswith(('A)', 'B)', 'C)', 'D)', '1.', '2.', '3.', '4.')):
+                # This looks like an option
+                current_options.append(line[2:].strip() if line[1] in ').' else line)
+        
+        # Save last question
+        if current_question:
+            questions.append({
+                "question": current_question,
+                "options": current_options if current_options else ["Option 1", "Option 2", "Option 3"],
+                "answer": current_options[0] if current_options else "Option 1"
+            })
+        
+        return questions[:5]  # Return max 5 questions
+    except Exception:
         return []

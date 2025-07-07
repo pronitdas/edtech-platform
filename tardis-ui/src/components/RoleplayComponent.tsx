@@ -7,11 +7,16 @@ import {
   ChevronLeft,
   ChevronRight,
   Send,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
 } from 'lucide-react'
 import { OpenAIService } from '@/services/openAi'
 import { RoleplayService } from '@/services/RoleplayService'
 import { EvaluationService } from '@/services/EvaluationService'
 import { analyticsService } from '@/services/analytics-service'
+import { voiceService } from '@/services/voice-service'
 import BlackboardDisplay from '@/components/BlackboardDisplay'
 import StudentCard from '@/components/StudentCard'
 
@@ -43,6 +48,8 @@ interface RoleplayState {
   currentStep: number
   isLoading: boolean
   sessionId: string | null
+  isListening: boolean
+  isSpeaking: boolean
 }
 
 const MAX_ROLEPLAY_STEPS = 5
@@ -75,6 +82,8 @@ const RoleplayComponent: React.FC<RoleplayComponentProps> = ({
     currentStep: 0,
     isLoading: false,
     sessionId: null,
+    isListening: false,
+    isSpeaking: false,
   })
 
   const [roleplayState, setRoleplayState] = useState<RoleplayState>(

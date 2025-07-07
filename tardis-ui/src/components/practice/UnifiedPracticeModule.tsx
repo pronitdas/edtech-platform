@@ -23,6 +23,8 @@ import {
   Lightbulb,
   RefreshCw
 } from 'lucide-react'
+import { useVoiceIntegration } from '@/hooks/useVoiceIntegration'
+import VoiceControlBar from './VoiceControlBar'
 
 // Types
 interface PracticeQuestion {
@@ -103,6 +105,14 @@ const UnifiedPracticeModule: React.FC<UnifiedPracticeModuleProps> = ({
   const [isPaused, setIsPaused] = useState(false)
   const [showHint, setShowHint] = useState(false)
   const [showExplanation, setShowExplanation] = useState(false)
+  
+  // Voice integration
+  const voice = useVoiceIntegration({
+    autoRead: true,
+    language: 'english',
+    enableCommands: true,
+    voiceRate: 0.9
+  })
   const [practiceStats, setPracticeStats] = useState<PracticeStats>({
     totalSessions: 0,
     totalTimeSpent: 0,
@@ -115,6 +125,102 @@ const UnifiedPracticeModule: React.FC<UnifiedPracticeModuleProps> = ({
     level: 1,
     practiceHistory: []
   })
+
+  // Setup voice commands for practice
+  useEffect(() => {
+    voice.addCommonPracticeCommands({
+      onNext: () => handleNextQuestion(),
+      onPrevious: () => handlePreviousQuestion(),
+      onHint: () => setShowHint(true),
+      onRepeat: () => readCurrentQuestion(),
+      onSubmit: () => handleSubmitAnswer(),
+      onPause: () => togglePause()
+    })
+  }, [currentSession, currentQuestionIndex])
+
+  // Voice functions
+  const readCurrentQuestion = () => {
+    if (currentSession && currentSession.questions[currentQuestionIndex]) {
+      const question = currentSession.questions[currentQuestionIndex]
+      voice.speak(question.question)
+    }
+  }
+
+  const announceScore = (score: number, total: number) => {
+    voice.speak(`You scored ${score} out of ${total} questions correct!`)
+  }
+
+  const announceHint = (hint: string) => {
+    voice.speak(`Here's a hint: ${hint}`)
+  }
+
+  // Practice navigation functions
+  const handleNextQuestion = () => {
+    if (currentSession && currentQuestionIndex < currentSession.questions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1)
+      setShowHint(false)
+      setShowExplanation(false)
+      // Auto-read next question after a brief delay
+      setTimeout(() => {
+        if (voice.voiceEnabled) {
+          readCurrentQuestion()
+        }
+      }, 500)
+    }
+  }
+
+  const handlePreviousQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1)
+      setShowHint(false)
+      setShowExplanation(false)
+    }
+  }
+
+  const handleSubmitAnswer = () => {
+    if (currentSession && userAnswers[currentSession.questions[currentQuestionIndex].id]) {
+      const isCorrect = userAnswers[currentSession.questions[currentQuestionIndex].id] === 
+                       currentSession.questions[currentQuestionIndex].correctAnswer
+      
+      if (isCorrect) {
+        voice.speak('Correct!')
+      } else {
+        voice.speak('Incorrect. Let me show you the explanation.')
+        setShowExplanation(true)
+      }
+      
+      // Move to next question or finish
+      setTimeout(() => {
+        if (currentQuestionIndex === currentSession.questions.length - 1) {
+          finishSession()
+        } else {
+          handleNextQuestion()
+        }
+      }, 2000)
+    }
+  }
+
+  const togglePause = () => {
+    setIsPaused(!isPaused)
+    voice.speak(isPaused ? 'Resuming practice' : 'Practice paused')
+  }
+
+  const finishSession = () => {
+    if (currentSession) {
+      const correctAnswers = currentSession.questions.filter(q => 
+        userAnswers[q.id] === q.correctAnswer
+      ).length
+      
+      setCurrentSession(prev => ({
+        ...prev!,
+        score: correctAnswers,
+        endTime: new Date()
+      }))
+      
+      announceScore(correctAnswers, currentSession.questions.length)
+      setCurrentView('results')
+    }
+  }
 
   // Practice modes configuration
   const practiceModesConfig = {
@@ -372,6 +478,26 @@ const UnifiedPracticeModule: React.FC<UnifiedPracticeModuleProps> = ({
 
     return (
       <div className="space-y-6">
+        {/* Voice Control Bar */}
+        <VoiceControlBar
+          isListening={voice.isListening}
+          isSpeaking={voice.isSpeaking}
+          voiceEnabled={voice.voiceEnabled}
+          isSupported={voice.isSupported}
+          onToggleListening={voice.startListening}
+          onToggleSpeaking={() => {
+            if (voice.isSpeaking) {
+              voice.stopSpeaking()
+            } else {
+              readCurrentQuestion()
+            }
+          }}
+          onToggleVoiceEnabled={(enabled) => voice.setVoiceEnabled(!voice.voiceEnabled)}
+          onShowHelp={() => {
+            voice.speak('Voice commands available: Say next for next question, hint for help, repeat to read question again, submit to check answer, or pause to take a break.')
+          }}
+        />
+
         {/* Header */}
         <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
           <div className="flex items-center justify-between mb-4">
@@ -473,14 +599,24 @@ const UnifiedPracticeModule: React.FC<UnifiedPracticeModuleProps> = ({
           <div className="flex items-center justify-between mt-6">
             <div className="flex items-center space-x-3">
               <button
-                onClick={() => setShowHint(!showHint)}
+                onClick={() => {
+                  setShowHint(!showHint)
+                  if (!showHint && currentQuestion.hints && currentQuestion.hints.length > 0) {
+                    announceHint(currentQuestion.hints[0])
+                  }
+                }}
                 className="flex items-center px-3 py-2 text-sm bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
               >
                 <Lightbulb className="h-4 w-4 mr-1" />
                 Hint
               </button>
               <button
-                onClick={() => setShowExplanation(!showExplanation)}
+                onClick={() => {
+                  setShowExplanation(!showExplanation)
+                  if (!showExplanation && currentQuestion.explanation) {
+                    voice.speak(currentQuestion.explanation)
+                  }
+                }}
                 className="flex items-center px-3 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
               >
                 <BookOpen className="h-4 w-4 mr-1" />

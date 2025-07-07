@@ -25,7 +25,7 @@ export class OpenAIService implements OpenAIClient {
 
   async chatCompletion(
     messages: OpenAIMessage[],
-    model: string = 'microsoft_-_phi-3-mini-128k-instruct', // Default model from example
+    model: string = 'qwen3-4b-128k', // Default model from example
     max_tokens: number = -1, // Default max_tokens from example
     temperature: number = 0.7, // Added temperature
     stream: boolean = false // Added stream
@@ -41,7 +41,7 @@ export class OpenAIService implements OpenAIClient {
     try {
       // Updated URL to local endpoint
       const response = await fetch(
-        'http://localhost:1234/v1/chat/completions',
+        'http://172.31.128.1:1234/v1/chat/completions',
         {
           method: 'POST',
           headers: {

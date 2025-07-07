@@ -52,11 +52,7 @@ def get_openai_client():
     return OpenAIClient(api_key)
 
 # Routes
-# Public health check (no auth)
-@router.get("/health", include_in_schema=True)
-def health_check():
-    """Health check endpoint."""
-    return {"status": "healthy"}
+# Note: Health check is defined in main.py as a public endpoint
 
 
 @router.get(

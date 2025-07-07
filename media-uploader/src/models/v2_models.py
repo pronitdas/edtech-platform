@@ -137,7 +137,6 @@ class AnalyticsResponse(BaseModel):
 
 # Content Generation Models
 class ContentGenerationRequest(BaseModel):
-    knowledge_id: int
     content_types: List[str] = ["notes", "summary", "quiz", "mindmap"]
     language: str = "English"
 

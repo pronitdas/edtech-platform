@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import useAuthState from '@/hooks/useAuth'
 import { OpenAIService } from '@/services/openAi'
+import { voiceService } from '@/services/voice-service'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Mic, MicOff, Volume2, VolumeX, Send, Loader2 } from 'lucide-react'
@@ -66,7 +67,25 @@ const VoiceChatbot = ({ topic, language, onQuestionAsked }: ChatbotProps) => {
     if (!apiClient && oAiKey) {
       setApiClient(new OpenAIService(oAiKey))
     }
-  }, [oAiKey, apiClient])
+    
+    // Setup voice service callbacks
+    voiceService.setCallbacks({
+      onResult: (transcript) => {
+        setUserResponse(transcript)
+        setIsLoading(false)
+      },
+      onError: (error) => {
+        console.error('Voice recognition error:', error)
+        setIsLoading(false)
+      },
+      onStart: () => setIsListening(true),
+      onEnd: () => setIsListening(false)
+    })
+    
+    // Set language for voice recognition
+    const langCode = voiceService.getLanguageCode(language)
+    voiceService.setLanguage(langCode)
+  }, [oAiKey, apiClient, language])
 
   useEffect(() => {
     // Scroll to bottom whenever conversation updates
@@ -180,7 +199,7 @@ const VoiceChatbot = ({ topic, language, onQuestionAsked }: ChatbotProps) => {
           })),
           { role: 'user' as const, content: userResponse },
         ],
-        'o1-mini',
+        'qwen3-4b-128k',
         200
       )
 
@@ -191,16 +210,9 @@ const VoiceChatbot = ({ topic, language, onQuestionAsked }: ChatbotProps) => {
       ])
       setUserResponse('')
 
-      if ('speechSynthesis' in window) {
-        let langCode = 'en-US'
-        const lowerLang = language.toLowerCase()
-        if (lowerLang.includes('hindi')) langCode = 'hi-IN'
-        else if (lowerLang.includes('vietnamese')) langCode = 'vi-VN'
-        else if (lowerLang.includes('bengali')) langCode = 'bn-IN'
-        else if (lowerLang.includes('marathi')) langCode = 'mr-IN'
-
-        speakTextInChunks(newMentorText, langCode)
-      }
+      const langCode = voiceService.getLanguageCode(language)
+      voiceService.speak(newMentorText, { language: langCode })
+      setIsSpeaking(true)
 
       if (onQuestionAsked) {
         onQuestionAsked(userResponse)
@@ -222,72 +234,35 @@ const VoiceChatbot = ({ topic, language, onQuestionAsked }: ChatbotProps) => {
   ])
 
   const toggleListening = useCallback(async () => {
+    if (!voiceService.isSupported) {
+      alert('Voice recognition is not supported in your browser.')
+      return
+    }
+
     if (!isListening) {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        })
-        mediaStreamRef.current = stream
-        const mediaRecorder = new MediaRecorder(stream)
-        mediaRecorderRef.current = mediaRecorder
-        audioChunksRef.current = []
-
-        mediaRecorder.ondataavailable = event => {
-          if (event.data.size > 0) {
-            audioChunksRef.current.push(event.data)
-          }
-        }
-
-        mediaRecorder.onstop = async () => {
-          // Stop all tracks to release the microphone
-          if (mediaStreamRef.current) {
-            mediaStreamRef.current.getTracks().forEach(track => track.stop())
-            mediaStreamRef.current = null
-          }
-          const audioBlob = new Blob(audioChunksRef.current, {
-            type: 'audio/webm',
-          })
-          setIsLoading(true)
-          const transcription = await transcribeAudio(audioBlob)
-          setUserResponse(transcription)
-          setIsLoading(false)
-        }
-
-        mediaRecorder.start()
-        setIsListening(true)
+        setIsLoading(true)
+        await voiceService.startListening()
       } catch (err) {
-        console.error('Error starting audio recording:', err)
-        alert('Could not start recording audio.')
+        console.error('Error starting voice recognition:', err)
+        alert('Could not start voice recognition.')
+        setIsLoading(false)
       }
     } else {
-      if (
-        mediaRecorderRef.current &&
-        mediaRecorderRef.current.state !== 'inactive'
-      ) {
-        mediaRecorderRef.current.stop()
-        setIsListening(false)
-      }
+      voiceService.stopListening()
     }
-  }, [isListening, transcribeAudio])
+  }, [isListening])
 
   const toggleSpeaking = useCallback(() => {
     if (isSpeaking) {
-      window.speechSynthesis.cancel()
-      speechQueueRef.current = []
+      voiceService.stopSpeaking()
       setIsSpeaking(false)
     } else {
-      if ('speechSynthesis' in window) {
-        let langCode = 'en-US'
-        const lowerLang = language.toLowerCase()
-        if (lowerLang.includes('hindi')) langCode = 'hi-IN'
-        else if (lowerLang.includes('vietnamese')) langCode = 'vi-VN'
-        else if (lowerLang.includes('bengali')) langCode = 'bn-IN'
-        else if (lowerLang.includes('marathi')) langCode = 'mr-IN'
-
-        speakTextInChunks(mentorText, langCode)
-      }
+      const langCode = voiceService.getLanguageCode(language)
+      voiceService.speak(mentorText, { language: langCode })
+      setIsSpeaking(true)
     }
-  }, [isSpeaking, mentorText, language, speakTextInChunks])
+  }, [isSpeaking, mentorText, language])
 
   // =============== RENDER ===============
   return (

@@ -190,6 +190,10 @@ class KratosAuthMiddleware(BaseHTTPMiddleware):
             "/redoc", 
             "/openapi.json",
             "/api/info",
+            # Legacy auth endpoints
+            "/auth/register",
+            "/auth/login",
+            "/auth/logout",
             # V2 auth endpoints (with /api prefix)
             "/api/v2/auth/register",
             "/api/v2/auth/login",

@@ -33,6 +33,10 @@ class QueueManager:
         self.max_retries = 3
         self.retry_delays = [5, 30, 120]  # Exponential backoff: 5s, 30s, 2min
         
+        # Add health monitoring
+        self.last_successful_generation = None
+        self.consecutive_failures = 0
+        
     def add_job(self, knowledge_id: int) -> None:
         """Add a job to the queue."""
         self.job_queue.put({"knowledge_id": knowledge_id, "retry_count": 0})
@@ -54,6 +58,71 @@ class QueueManager:
         })
         self.ensure_content_generation_thread()
         
+    def _extract_chapters_from_markdown(self, markdown: str, knowledge_id: int) -> List[Dict]:
+        """Extract chapters from markdown text based on headers."""
+        import re
+        import uuid
+        
+        chapters = []
+        lines = markdown.split('\n')
+        current_chapter = {
+            "id": f"chapter_{uuid.uuid4().hex[:8]}",
+            "title": "Introduction",
+            "content": "",
+            "meta_data": {
+                "level": 1,
+                "created_at": datetime.utcnow().isoformat(),
+                "knowledge_id": knowledge_id
+            }
+        }
+        
+        for line in lines:
+            # Check for headers
+            if line.startswith('##'):
+                # Save previous chapter if it has content
+                if current_chapter["content"].strip():
+                    chapters.append(current_chapter)
+                
+                # Start new chapter
+                title = line.replace('##', '').strip()
+                current_chapter = {
+                    "id": f"chapter_{uuid.uuid4().hex[:8]}",
+                    "title": title,
+                    "content": "",
+                    "meta_data": {
+                        "level": 2,
+                        "created_at": datetime.utcnow().isoformat(),
+                        "knowledge_id": knowledge_id
+                    }
+                }
+            elif line.startswith('#') and not line.startswith('##'):
+                # Main title - update current chapter title if it's still Introduction
+                if current_chapter["title"] == "Introduction":
+                    current_chapter["title"] = line.replace('#', '').strip()
+                    current_chapter["meta_data"]["level"] = 1
+            else:
+                # Add content to current chapter
+                current_chapter["content"] += line + "\n"
+        
+        # Don't forget the last chapter
+        if current_chapter["content"].strip():
+            chapters.append(current_chapter)
+        
+        # If no chapters were created, create one with all content
+        if not chapters:
+            chapters.append({
+                "id": f"chapter_{uuid.uuid4().hex[:8]}",
+                "title": "Content",
+                "content": markdown,
+                "meta_data": {
+                    "level": 1,
+                    "created_at": datetime.utcnow().isoformat(),
+                    "knowledge_id": knowledge_id
+                }
+            })
+        
+        return chapters
+
     def add_retry_job(self, knowledge_id: int, retry_count: int) -> None:
         """Add a retry job to the queue."""
         if retry_count >= self.max_retries:
@@ -206,7 +275,10 @@ class QueueManager:
             from openai_functions import generate_notes, generate_summary, generate_questions, generate_mind_map_structure
             
             # Get OpenAI client
-            openai_client = OpenAIClient(api_key=os.environ.get("OPENAI_API_KEY", ""), base_url="http://192.168.1.12:1234/v1")
+            openai_client = OpenAIClient(
+                api_key=os.environ.get("OPENAI_API_KEY", "local-api-key"), 
+                base_url=os.environ.get("OPENAI_BASE_URL")
+            )
             
             # Get chapter data from the database
             chapters = self.db_manager.get_chapter_data(knowledge_id)
@@ -227,7 +299,7 @@ class QueueManager:
             
             # Process each chapter
             for chapter in chapters:
-                chapter_id = chapter.get("id")
+                chapter_id = chapter.id
                 
                 # Generate content for each requested type
                 results = {}
@@ -241,19 +313,22 @@ class QueueManager:
                     try:
                         # Call the appropriate generator function
                         if content_type == "mindmap":
-                            generated = await generator(openai_client, chapter.get("chapter", ""), language)
+                            generated = await generator(openai_client, chapter.content or "", language)
                         elif content_type == "quiz":
-                            generated = await generator(openai_client, chapter.get("chapter", ""), language)
+                            generated = await generator(openai_client, chapter.content or "", language)
                         else:
-                            generated = await generator(openai_client, chapter.get("chapter", ""), language)
+                            generated = await generator(openai_client, chapter.content or "", language)
                             # Join the chunked results with a delimiter for storage
                             generated = "|||||".join(generated) if isinstance(generated, list) else generated
                         
                         results[content_type] = generated
                         logger.info(f"Successfully generated {content_type} content for chapter {chapter_id}")
+                        self.consecutive_failures = 0  # Reset failure counter on success
                     except Exception as e:
-                        logger.error(f"Error generating {content_type} for chapter {chapter_id}: {str(e)}")
-                        results[content_type] = f"Error generating {content_type}: {str(e)}"
+                        error_msg = f"Error generating {content_type} for chapter {chapter_id}: {str(e)}"
+                        logger.error(error_msg)
+                        results[content_type] = f"Error: Unable to generate {content_type} content at this time."
+                        self.consecutive_failures += 1
                 
                 # Update content in the database using the EdTechContent model
                 logger.info(f"Updating content for chapter {chapter_id}, language {language}")
@@ -316,17 +391,17 @@ class QueueManager:
             
             for media_file in media_files:
                 try:
-                    logger.info(f"Processing file: {media_file['original_filename']}")
+                    logger.info(f"Processing file: {media_file.original_filename}")
                     
                     # Download file from storage
                     from storage import storage
-                    file_data = storage.download_file(media_file['file_path'])
+                    file_data = storage.download_file(media_file.file_path)
                     
                     if not file_data:
-                        raise ValueError(f"Could not download file: {media_file['file_path']}")
+                        raise ValueError(f"Could not download file: {media_file.file_path}")
                     
                     # Determine file type
-                    file_extension = os.path.splitext(media_file['original_filename'])[1].lower()
+                    file_extension = os.path.splitext(media_file.original_filename)[1].lower()
                     is_video = file_extension in ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.m4v']
                     
                     # Update status to indicate current file being processed
@@ -334,8 +409,8 @@ class QueueManager:
                         knowledge_id, 
                         "processing", 
                         {
-                            "message": f"Processing {'video' if is_video else 'document'}: {media_file['original_filename']}",
-                            "current_file": media_file['original_filename'],
+                            "message": f"Processing {'video' if is_video else 'document'}: {media_file.original_filename}",
+                            "current_file": media_file.original_filename,
                             "file_type": "video" if is_video else "document",
                             "progress": f"{len(processed_files) + 1}/{len(media_files)}",
                             "start_time": datetime.utcnow().isoformat()
@@ -344,7 +419,7 @@ class QueueManager:
 
                     if is_video:
                         # Process video file
-                        logger.info(f"Processing video file: {media_file['original_filename']}")
+                        logger.info(f"Processing video file: {media_file.original_filename}")
                         
                         # Process the video to get structured content using VideoProcessorV2
                         textbook, chapters = VideoProcessorV2.process_video_to_chapters(
@@ -355,15 +430,15 @@ class QueueManager:
                         
                         # Add chapters with file reference
                         for chapter in chapters:
-                            chapter["meta_data"]["source_file"] = media_file['original_filename']
-                            chapter["meta_data"]["media_id"] = media_file['id']
+                            chapter["meta_data"]["source_file"] = media_file.original_filename
+                            chapter["meta_data"]["media_id"] = media_file.id
                         
                         all_chapters.extend(chapters)
                         
                         # Collect file metadata
                         file_result = {
-                            "media_id": media_file['id'],
-                            "filename": media_file['original_filename'],
+                            "media_id": media_file.id,
+                            "filename": media_file.original_filename,
                             "file_type": "video",
                             "processed_at": datetime.utcnow().isoformat(),
                             "chapters_count": len(chapters),
@@ -378,28 +453,42 @@ class QueueManager:
                         
                     else:
                         # Process document file
-                        logger.info(f"Processing document file: {media_file['original_filename']}")
+                        logger.info(f"Processing document file: {media_file.original_filename}")
                         
                         # Determine file type and process accordingly
                         file_type = "document"
-                        if media_file['original_filename'].lower().endswith('.pdf'):
+                        if media_file.original_filename.lower().endswith('.pdf'):
                             # Process PDF file
                             markdown, images, metadata = PDFProcessor.process_pdf(file_data)
                             processor = PDFProcessor
                             file_type = "pdf"
-                        elif media_file['original_filename'].lower().endswith('.docx'):
+                        elif media_file.original_filename.lower().endswith('.docx'):
                             # Process DOCX file
                             markdown, images, metadata = DOCXProcessor.process_docx(file_data)
                             processor = DOCXProcessor
                             file_type = "docx"
-                        elif media_file['original_filename'].lower().endswith('.pptx'):
+                        elif media_file.original_filename.lower().endswith('.pptx'):
                             # Process PPTX file
                             markdown, images, metadata = PPTXProcessor.process_pptx(file_data)
                             processor = PPTXProcessor
                             file_type = "pptx"
+                        elif media_file.original_filename.lower().endswith(('.md', '.txt')):
+                            # Process markdown/text files directly
+                            markdown = file_data.decode('utf-8') if isinstance(file_data, bytes) else file_data
+                            images = {}
+                            metadata = {
+                                "file_type": "text",
+                                "original_filename": media_file.original_filename,
+                                "processed_at": datetime.utcnow().isoformat()
+                            }
+                            processor = None
+                            file_type = "text"
                         else:
                             # Fallback to PDF processor for unknown document types
-                            markdown, images, metadata = PDFProcessor.process_pdf(file_data)
+                            result = PDFProcessor.process_pdf(file_data)
+                            if result is None:
+                                raise ValueError(f"Unsupported file type: {media_file.original_filename}")
+                            markdown, images, metadata = result
                             processor = PDFProcessor
         
                         # Upload each extracted image to storage
@@ -407,7 +496,7 @@ class QueueManager:
                         failed_images = []
                         
                         # Prepare images for upload
-                        prepared_images = processor.prepare_images_for_upload(images)
+                        prepared_images = processor.prepare_images_for_upload(images) if processor else {}
                         
                         # Upload images
                         if prepared_images and len(prepared_images) > 0:
@@ -415,7 +504,7 @@ class QueueManager:
                                 try:
                                     # Upload image to storage
                                     from storage import storage
-                                    img_file_path = f"images/{knowledge_id}/{media_file['id']}/{img_filename}"
+                                    img_file_path = f"images/{knowledge_id}/{media_file.id}/{img_filename}"
                                     
                                     upload_result = storage.upload_file(
                                         file_data=img_data["buffer"],
@@ -423,8 +512,8 @@ class QueueManager:
                                         content_type=f"image/{img_data['format']}",
                                         metadata={
                                             "knowledge_id": str(knowledge_id),
-                                            "media_id": str(media_file['id']),
-                                            "source_file": media_file['original_filename']
+                                            "media_id": str(media_file.id),
+                                            "source_file": media_file.original_filename
                                         }
                                     )
                                     
@@ -450,23 +539,28 @@ class QueueManager:
                                 continue
         
                         # Analyze content and get chapters
-                        textbook, chapters = processor.process_text_to_index(
-                            markdown, 
-                            knowledge_id=knowledge["id"],
-                            knowledge_name=knowledge["name"]
-                        )
+                        if processor:
+                            textbook, chapters = processor.process_text_to_index(
+                                markdown, 
+                                knowledge_id=knowledge["id"],
+                                knowledge_name=knowledge["name"]
+                            )
+                        else:
+                            # For text/markdown files, create simple chapters based on headers
+                            textbook = markdown
+                            chapters = self._extract_chapters_from_markdown(markdown, knowledge_id)
                         
                         # Add chapters with file reference
                         for chapter in chapters:
-                            chapter["meta_data"]["source_file"] = media_file['original_filename']
-                            chapter["meta_data"]["media_id"] = media_file['id']
+                            chapter["meta_data"]["source_file"] = media_file.original_filename
+                            chapter["meta_data"]["media_id"] = media_file.id
                         
                         all_chapters.extend(chapters)
         
                         # Collect file metadata
                         file_result = {
-                            "media_id": media_file['id'],
-                            "filename": media_file['original_filename'],
+                            "media_id": media_file.id,
+                            "filename": media_file.original_filename,
                             "file_type": file_type,
                             "processed_at": datetime.utcnow().isoformat(),
                             "chapters_count": len(chapters),
@@ -482,14 +576,14 @@ class QueueManager:
                     processed_files.append(file_result)
                     combined_metadata["processed_files"].append(file_result)
                     
-                    logger.info(f"Successfully processed file: {media_file['original_filename']}")
+                    logger.info(f"Successfully processed file: {media_file.original_filename}")
                     
                 except Exception as file_error:
-                    logger.error(f"Error processing file {media_file['original_filename']}: {str(file_error)}")
+                    logger.error(f"Error processing file {media_file.original_filename}: {str(file_error)}")
                     # Continue processing other files
                     failed_file = {
-                        "media_id": media_file['id'],
-                        "filename": media_file['original_filename'],
+                        "media_id": media_file.id,
+                        "filename": media_file.original_filename,
                         "error": str(file_error),
                         "processed_at": datetime.utcnow().isoformat()
                     }

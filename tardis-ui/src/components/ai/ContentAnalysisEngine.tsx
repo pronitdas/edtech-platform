@@ -342,7 +342,7 @@ export class ContentAnalysisEngine {
     // Extract learning objectives using NLP patterns
     const primaryObjectives = this.extractLearningObjectives(text)
     const secondaryObjectives = this.extractSecondaryObjectives(text)
-    const bloomsLevel = this.determineBlooms Taxonomy(text)
+    const bloomsLevel = this.determineBloomsTaxonomy(text)
     
     // Concept extraction and relationship mapping
     const mainConcepts = this.extractMainConcepts(text)
@@ -572,7 +572,7 @@ export class ContentAnalysisEngine {
     const words = text.toLowerCase().match(/\b\w+\b/g) || []
     const uniqueWords = new Set(words)
     const avgWordLength = words.reduce((sum, word) => sum + word.length, 0) / words.length
-    const vocabulary Diversity = uniqueWords.size / words.length
+    const vocabularyDiversity = uniqueWords.size / words.length
     
     // Combine factors (longer words + higher diversity = more complex)
     return Math.min(1, (avgWordLength / 10 + vocabularyDiversity) / 2)
@@ -620,7 +620,7 @@ export class ContentAnalysisEngine {
   private hasDataElements(text: string): boolean { return text.includes('data') || text.includes('chart') }
   private extractLearningObjectives(text: string): string[] { return [] }
   private extractSecondaryObjectives(text: string): string[] { return [] }
-  private determineBlooms Taxonomy(text: string): ContentAnalysisResult['learningObjectives']['blooms_taxonomy_level'] { return 'understand' }
+  private determineBloomsTaxonomy(text: string): ContentAnalysisResult['learningObjectives']['blooms_taxonomy_level'] { return 'understand' }
   private extractMainConcepts(text: string): string[] { return [] }
   private extractSupportingConcepts(text: string): string[] { return [] }
   private identifyPrerequisites(concepts: string[]): string[] { return [] }

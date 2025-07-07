@@ -45,7 +45,7 @@ class KnowledgeWorkflowTester:
         }
         
         try:
-            response = await self.client.post("/v2/auth/register", json=register_data)
+            response = await self.client.post("/api/v2/auth/register", json=register_data)
             self.log(f"Registration response: {response.status_code}")
             
             if response.status_code in [200, 201]:
@@ -69,7 +69,7 @@ class KnowledgeWorkflowTester:
         }
         
         try:
-            response = await self.client.post("/v2/auth/login", json=login_data)
+            response = await self.client.post("/api/v2/auth/login", json=login_data)
             self.log(f"Login response: {response.status_code}")
             
             if response.status_code == 200:
@@ -149,7 +149,7 @@ Machine learning is transforming industries by enabling computers to learn from 
                     "content_language": "English"
                 }
                 
-                response = await self.client.post("/v2/knowledge/", files=files, data=data)
+                response = await self.client.post("/api/v2/knowledge/", files=files, data=data)
                 
             self.log(f"Knowledge upload response: {response.status_code}")
             
@@ -188,7 +188,7 @@ Machine learning is transforming industries by enabling computers to learn from 
             wait_time = 0
             
             while wait_time < max_wait:
-                response = await self.client.get(f"/v2/knowledge/{self.knowledge_id}")
+                response = await self.client.get(f"/api/v2/knowledge/{self.knowledge_id}")
                 
                 if response.status_code == 200:
                     data = response.json()
@@ -196,8 +196,8 @@ Machine learning is transforming industries by enabling computers to learn from 
                     
                     self.log(f"📊 Processing status: {status}")
                     
-                    if status == "completed":
-                        self.log("✅ Processing completed successfully")
+                    if status in ["completed", "processed"]:
+                        self.log(f"✅ Processing completed successfully (status: {status})")
                         return True
                     elif status == "failed":
                         self.log("❌ Processing failed")
@@ -226,17 +226,24 @@ Machine learning is transforming industries by enabling computers to learn from 
         self.log("Checking generated chapters...")
         
         try:
-            response = await self.client.get(f"/v2/chapters/{self.knowledge_id}")
+            response = await self.client.get(f"/api/v2/chapters/{self.knowledge_id}")
             
             if response.status_code == 200:
                 chapters = response.json()
                 self.log(f"✅ Found {len(chapters)} chapters")
                 
-                for i, chapter in enumerate(chapters[:3]):  # Show first 3 chapters
-                    title = chapter.get("title", "Untitled")
-                    content_preview = chapter.get("content", "")[:100] + "..."
-                    self.log(f"  📖 Chapter {i+1}: {title}")
-                    self.log(f"    Preview: {content_preview}")
+                try:
+                    for i, chapter in enumerate(chapters[:3]):  # Show first 3 chapters
+                        if isinstance(chapter, dict):
+                            title = chapter.get("title", "Untitled")
+                            content = chapter.get("content", "")
+                            content_preview = content[:100] + "..." if len(content) > 100 else content
+                            self.log(f"  📖 Chapter {i+1}: {title}")
+                            self.log(f"    Preview: {content_preview}")
+                        else:
+                            self.log(f"  📖 Chapter {i+1}: {str(chapter)[:50]}...")
+                except Exception as e:
+                    self.log(f"  ⚠️  Chapter display error: {e}")
                 
                 return len(chapters) > 0
             else:
@@ -256,22 +263,51 @@ Machine learning is transforming industries by enabling computers to learn from 
         self.log("Checking generated educational content...")
         
         try:
-            response = await self.client.get(f"/v2/content/{self.knowledge_id}")
+            # First trigger content generation
+            generation_response = await self.client.post(f"/api/v2/content/generate/{self.knowledge_id}", json={
+                "content_types": ["summary", "notes", "quiz", "mindmap"],
+                "language": "English"
+            })
+            
+            if generation_response.status_code in [200, 201]:
+                self.log("✅ Content generation triggered successfully")
+                # Wait a moment for generation to complete
+                import asyncio
+                await asyncio.sleep(5)
+            else:
+                self.log(f"⚠️  Content generation trigger failed: {generation_response.status_code}")
+                
+            # Try to get generated content
+            response = await self.client.get(f"/api/v2/content/{self.knowledge_id}")
             
             if response.status_code == 200:
-                content = response.json()
+                content_data = response.json()
                 self.log(f"✅ Generated content found")
                 
-                # Check different content types
-                content_types = ["summary", "notes", "quiz", "mindmap"]
-                found_content = {}
-                
-                for content_type in content_types:
-                    if content_type in content:
-                        found_content[content_type] = len(str(content[content_type]))
-                        self.log(f"  📝 {content_type}: {found_content[content_type]} chars")
-                
-                return len(found_content) > 0
+                # Check the actual API response format
+                if "content" in content_data and isinstance(content_data["content"], list):
+                    total_chapters = content_data.get("total_chapters", 0)
+                    self.log(f"  📖 Total chapters with content: {total_chapters}")
+                    
+                    content_found = False
+                    for chapter_content in content_data["content"]:
+                        chapter_id = chapter_content.get("chapter_id", "unknown")
+                        
+                        # Check for different content types in each chapter
+                        for content_type in ["summary", "notes", "quiz", "mindmap"]:
+                            if content_type in chapter_content:
+                                content_value = chapter_content[content_type]
+                                if content_value and not str(content_value).startswith("Error:"):
+                                    content_found = True
+                                    content_length = len(str(content_value))
+                                    self.log(f"  📝 Chapter {chapter_id} {content_type}: {content_length} chars")
+                                else:
+                                    self.log(f"  ⚠️  Chapter {chapter_id} {content_type}: Error or empty")
+                    
+                    return content_found
+                else:
+                    self.log(f"  ❌ Unexpected content format: {list(content_data.keys())}")
+                    return False
             else:
                 self.log(f"❌ Failed to get content: {response.status_code}")
                 return False
@@ -289,7 +325,7 @@ Machine learning is transforming industries by enabling computers to learn from 
             search_terms = ["machine learning", "supervised learning", "neural networks"]
             
             for term in search_terms:
-                response = await self.client.get(f"/v2/search/?q={term}")
+                response = await self.client.get(f"/api/v2/search/?q={term}")
                 
                 if response.status_code == 200:
                     results = response.json()

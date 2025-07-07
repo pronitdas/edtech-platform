@@ -4,6 +4,8 @@ import React, { createContext, useContext, ReactNode, useEffect } from 'react'
 import { Chapter, ChapterContent } from '@/types/api'
 import { useCourseState } from '@/hooks/useCourseState'
 import { ContentType } from '@/services/edtech-api'
+import { DynamicApiClient } from '@/services/dynamic-api-client'
+import { useAuth } from './AuthContext'
 
 // CourseState interface defined here for export
 export interface CourseState {
@@ -31,10 +33,13 @@ export interface CourseState {
   }>
 }
 
+// Enhanced context type that includes API client
+type CourseContextType = ReturnType<typeof useCourseState> & {
+  apiClient: DynamicApiClient | null
+}
+
 // Create the context with a default undefined value
-const CourseContext = createContext<
-  ReturnType<typeof useCourseState> | undefined
->(undefined)
+const CourseContext = createContext<CourseContextType | undefined>(undefined)
 
 interface CourseProviderProps {
   children: ReactNode
@@ -55,6 +60,8 @@ export const CourseProvider: React.FC<CourseProviderProps> = ({
   language = 'English',
   availableTabs,
 }) => {
+  const { apiClient } = useAuth()
+  
   // Log any missing data for debugging
   useEffect(() => {
     if (!chapter || !chapter.id) {
@@ -79,15 +86,21 @@ export const CourseProvider: React.FC<CourseProviderProps> = ({
 
   const courseState = useCourseState(content, chapter, language)
 
+  // Enhanced context value with API client
+  const enhancedContextValue: CourseContextType = {
+    ...courseState,
+    apiClient
+  }
+
   return (
-    <CourseContext.Provider value={courseState}>
+    <CourseContext.Provider value={enhancedContextValue}>
       {children}
     </CourseContext.Provider>
   )
 }
 
 // Custom hook to use the course context
-export function useCourse() {
+export function useCourse(): CourseContextType {
   const context = useContext(CourseContext)
 
   if (context === undefined) {

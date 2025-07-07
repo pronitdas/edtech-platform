@@ -45,14 +45,10 @@ class ContentService:
         
         try:
             # Add to queue for processing
-            await self.queue_manager.add_to_queue(
+            self.queue_manager.add_content_generation_job(
                 knowledge_id=knowledge_id,
-                task_type="content_generation",
-                task_data={
-                    "content_types": content_types,
-                    "language": language,
-                    "task_id": task_id
-                }
+                types=content_types,
+                language=language
             )
             
             self._generation_tasks[task_id]["status"] = "queued"

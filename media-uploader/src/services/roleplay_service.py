@@ -5,6 +5,7 @@ from datetime import datetime
 
 from models import Knowledge, Base
 from src.models.v2_models import RoleplayResponse
+import os
 from openai_client import OpenAIClient
 
 # Define the RoleplayScenario model if not in models.py
@@ -28,7 +29,9 @@ except ImportError:
 class RoleplayService:
     def __init__(self, db: Session):
         self.db = db
-        self.openai_client = OpenAIClient()
+        api_key = os.environ.get("OPENAI_API_KEY", "local-api-key")
+        base_url = os.environ.get("OPENAI_BASE_URL")
+        self.openai_client = OpenAIClient(api_key=api_key, base_url=base_url)
 
     async def validate_user_access(self, knowledge_id: int, user_id: int) -> Knowledge:
         """Validate user access and return knowledge entry."""

@@ -13,6 +13,8 @@ import {
   ChevronRight,
   Shuffle
 } from 'lucide-react'
+import { useVoiceIntegration } from '@/hooks/useVoiceIntegration'
+import VoiceControlBar from '../VoiceControlBar'
 
 interface Flashcard {
   id: string

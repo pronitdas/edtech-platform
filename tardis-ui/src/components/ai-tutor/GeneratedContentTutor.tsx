@@ -20,6 +20,7 @@ import {
 import { useUser } from '@/contexts/UserContext';
 import { useInteractionTracker } from '@/contexts/InteractionTrackerContext';
 import { apiClient } from '@/services/api-client';
+import { voiceService } from '@/services/voice-service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface GeneratedContent {
@@ -173,50 +174,50 @@ const GeneratedContentTutor: React.FC<GeneratedContentTutorProps> = ({
 
   const generateId = () => Math.random().toString(36).substr(2, 9);
 
-  const speakMessage = (text: string) => {
-    if (!enableVoice || !window.speechSynthesis) return;
+  const speakMessage = async (text: string) => {
+    if (!enableVoice || !voiceService.isSupported) return;
     
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.9;
-    utterance.pitch = 1;
-    utterance.volume = 0.8;
-    
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    
-    window.speechSynthesis.speak(utterance);
+    setIsSpeaking(true);
+    try {
+      await voiceService.speak(text, { 
+        language: 'en-US',
+        rate: 0.9,
+        pitch: 1,
+        volume: 0.8
+      });
+    } finally {
+      setIsSpeaking(false);
+    }
   };
 
-  const startListening = () => {
-    if (!enableVoice || !('webkitSpeechRecognition' in window)) return;
+  useEffect(() => {
+    // Setup voice service callbacks
+    voiceService.setCallbacks({
+      onResult: (transcript) => {
+        setCurrentMessage(transcript);
+      },
+      onError: (error) => {
+        console.error('Voice recognition error:', error);
+        setIsListening(false);
+      },
+      onStart: () => setIsListening(true),
+      onEnd: () => setIsListening(false)
+    });
+  }, []);
 
-    const recognition = new (window as any).webkitSpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
+  const startListening = async () => {
+    if (!enableVoice || !voiceService.isSupported) return;
 
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setCurrentMessage(transcript);
-    };
-
-    recognition.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
+    try {
+      await voiceService.startListening();
+    } catch (error) {
+      console.error('Error starting voice recognition:', error);
       setIsListening(false);
-    };
-
-    recognitionRef.current = recognition;
-    recognition.start();
+    }
   };
 
   const stopListening = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    }
+    voiceService.stopListening();
   };
 
   const sendMessage = async () => {

@@ -6,7 +6,7 @@ import os
 import dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models import Knowledge, Chapter, RetryHistory, Media, EdTechContent
+from models import Knowledge, Chapter, RetryHistoryDB, Media, EdTechContent
 
 dotenv.load_dotenv()
 
@@ -111,11 +111,11 @@ class DatabaseManager:
             logger.error(f"Error updating retry info: {str(e)}")
             raise
             
-    def get_retry_history(self, knowledge_id: int) -> List[RetryHistory]:
+    def get_retry_history(self, knowledge_id: int) -> List[RetryHistoryDB]:
         """Get retry history for a knowledge entry."""
         try:
             with SessionLocal() as db:
-                history = db.query(RetryHistory).filter(RetryHistory.knowledge_id == knowledge_id).order_by(RetryHistory.created_at.desc()).all()
+                history = db.query(RetryHistoryDB).filter(RetryHistoryDB.knowledge_id == knowledge_id).order_by(RetryHistoryDB.created_at.desc()).all()
                 return history
         except Exception as e:
             logger.error(f"Error getting retry history: {str(e)}")
@@ -125,7 +125,7 @@ class DatabaseManager:
         """Add a retry history entry."""
         try:
             with SessionLocal() as db:
-                retry_entry = RetryHistory(
+                retry_entry = RetryHistoryDB(
                     knowledge_id=knowledge_id,
                     status=status,
                     error=error,
