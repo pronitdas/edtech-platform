@@ -40,13 +40,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
     setError(null)
 
     try {
-      const response = await apiClient.post<any>('/auth/onboard/student', {
+      const response = await apiClient.post<any>('/v2/auth/onboard/student', {
         email: data.email,
         password: data.password,
         name: data.name,
         grade_level: data.gradeLevel,
         subjects_of_interest: data.subjectsOfInterest,
-        learning_goals: data.learningGoals,
+        learning_goals: Array.isArray(data.learningGoals) ? data.learningGoals.join(', ') : data.learningGoals,
         preferred_difficulty: data.preferredDifficulty
       })
 
@@ -74,7 +74,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
     setError(null)
 
     try {
-      const response = await apiClient.post<any>('/auth/onboard/teacher', {
+      const response = await apiClient.post<any>('/v2/auth/onboard/teacher', {
         email: data.email,
         password: data.password,
         name: data.name,

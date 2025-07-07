@@ -60,7 +60,8 @@ export const CourseProvider: React.FC<CourseProviderProps> = ({
   language = 'English',
   availableTabs,
 }) => {
-  const { apiClient } = useAuth()
+  const authContext = useAuth()
+  const apiClient = authContext?.apiClient || null
   
   // Log any missing data for debugging
   useEffect(() => {

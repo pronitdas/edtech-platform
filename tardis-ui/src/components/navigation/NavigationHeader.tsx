@@ -100,7 +100,7 @@ const NavigationHeader: React.FC = () => {
             <div className="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-lg">
               <Brain className="h-5 w-5 text-white" />
             </div>
-            <h1 className="text-xl font-bold text-white">EduPlatform</h1>
+            <h1 className="text-xl font-bold text-white">Tardis</h1>
           </div>
 
           {/* Desktop Navigation */}

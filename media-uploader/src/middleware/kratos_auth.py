@@ -217,6 +217,9 @@ class KratosAuthMiddleware(BaseHTTPMiddleware):
             "/v2/auth/profile",
             "/v2/auth/onboard/student",
             "/v2/auth/onboard/teacher",
+            # API v2 onboard endpoints (with /api prefix)
+            "/api/v2/auth/onboard/student", 
+            "/api/v2/auth/onboard/teacher",
             # Admin health checks
             "/api/v2/admin/health",
             # Profile endpoints (protected, but need to access user info)

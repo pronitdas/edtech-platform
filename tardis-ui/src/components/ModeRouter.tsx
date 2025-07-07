@@ -36,7 +36,7 @@ const ModeRouter: React.FC = () => {
       return (
         <div className="min-h-screen bg-gray-950 p-6 flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-white mb-4">Welcome to EduPlatform</h1>
+            <h1 className="text-2xl font-bold text-white mb-4">Welcome to Tardis</h1>
             <p className="text-gray-400 mb-8">Please complete your profile to access your personalized dashboard.</p>
             <button 
               onClick={() => window.location.href = '/profile'}

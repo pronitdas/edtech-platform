@@ -68,19 +68,7 @@ async def get_knowledge_graph(
 )
 async def clear_neo4j_cache():
     try:
-        await redis_client.flushdb()
-        return {"message": "Neo4j cache cleared successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to clear cache: {str(e)}")
-
-@router.post(
-    "/neo4j/clear_cache",
-    summary="Clear Neo4j Cache",
-    description="Clears the Redis cache for Neo4j related endpoints.",
-    tags=["Neo4j Graph"]
-)
-async def clear_neo4j_cache():
-    try:
+        from config import redis_client
         await redis_client.flushdb()
         return {"message": "Neo4j cache cleared successfully"}
     except Exception as e:
@@ -93,11 +81,18 @@ async def clear_neo4j_cache():
     tags=["Neo4j Graph"]
 )
 async def build_knowledge_graph(
-    knowledge_id: int,
-    chapters: List[Dict[str, Any]],
+    data: Dict[str, Any],
     neo4j_service: Neo4jGraphService = Depends(get_neo4j_service)
 ):
     try:
+        knowledge_id = data.get("knowledge_id")
+        chapters = data.get("chapters", [])
+        
+        if not knowledge_id:
+            raise HTTPException(status_code=400, detail="knowledge_id is required")
+        if not chapters:
+            raise HTTPException(status_code=400, detail="chapters are required")
+            
         neo4j_service.build_knowledge_graph(knowledge_id, chapters)
         return {"message": "Knowledge graph built successfully"}
     except Exception as e:

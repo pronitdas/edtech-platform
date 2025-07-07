@@ -375,54 +375,99 @@ export const InteractionTrackerProvider: React.FC<
       let isMounted = true // Flag to prevent state updates on unmounted component
 
       const initializeSession = async () => {
-        if (userId && dataService.startUserSession) {
+        if (userId) {
           console.log(
             `[InteractionTracker] Attempting to start session for userId: ${userId}`
           )
-          dispatch({ type: 'SET_TRACKING_ENABLED', payload: false }) // Disable tracking until session is ready
-          dispatch({ type: 'SET_SESSION', payload: { sessionId: null } }) // Clear old session ID
+          
+          // Check if dataService has startUserSession method
+          if (dataService.startUserSession) {
+            dispatch({ type: 'SET_TRACKING_ENABLED', payload: false }) // Disable tracking until session is ready
+            dispatch({ type: 'SET_SESSION', payload: { sessionId: null } }) // Clear old session ID
 
-          try {
-            const sessionResult = await dataService.startUserSession(userId)
+            try {
+              const sessionResult = await dataService.startUserSession(userId)
 
-            if (isMounted && sessionResult && sessionResult.id) {
-              console.log(
-                `[InteractionTracker] Session started successfully. Session ID: ${sessionResult.id}`
-              )
-              // Store the DB-generated session ID and enable tracking
-              dispatch({
-                type: 'SET_SESSION',
-                payload: {
-                  sessionId: sessionResult.id,
-                  metadata: {
-                    userId,
-                    startedAt: new Date().toISOString(),
+              if (isMounted && sessionResult && sessionResult.id) {
+                console.log(
+                  `[InteractionTracker] Session started successfully. Session ID: ${sessionResult.id}`
+                )
+                // Store the DB-generated session ID and enable tracking
+                dispatch({
+                  type: 'SET_SESSION',
+                  payload: {
+                    sessionId: sessionResult.id,
+                    metadata: {
+                      userId,
+                      startedAt: new Date().toISOString(),
+                    },
                   },
-                },
-              })
-              dispatch({ type: 'SET_TRACKING_ENABLED', payload: true })
-            } else if (isMounted) {
-              console.error(
-                '[InteractionTracker] Failed to start session or get session ID from service.'
+                })
+                dispatch({ type: 'SET_TRACKING_ENABLED', payload: true })
+              } else if (isMounted) {
+                console.warn(
+                  '[InteractionTracker] Failed to start session or get session ID from service.'
+                )
+                // Use a fallback session ID and enable tracking anyway
+                const fallbackSessionId = `session_${userId}_${Date.now()}`
+                dispatch({
+                  type: 'SET_SESSION',
+                  payload: {
+                    sessionId: fallbackSessionId,
+                    metadata: {
+                      userId,
+                      startedAt: new Date().toISOString(),
+                      fallback: true
+                    },
+                  },
+                })
+                dispatch({ type: 'SET_TRACKING_ENABLED', payload: true })
+              }
+            } catch (error) {
+              console.warn(
+                '[InteractionTracker] Error during session initialization, using fallback:',
+                error
               )
-              // Keep tracking disabled and session null
-              dispatch({ type: 'SET_SESSION', payload: { sessionId: null } })
-              dispatch({ type: 'SET_TRACKING_ENABLED', payload: false })
+              if (isMounted) {
+                // Use a fallback session ID and enable tracking
+                const fallbackSessionId = `session_${userId}_${Date.now()}`
+                dispatch({
+                  type: 'SET_SESSION',
+                  payload: {
+                    sessionId: fallbackSessionId,
+                    metadata: {
+                      userId,
+                      startedAt: new Date().toISOString(),
+                      fallback: true
+                    },
+                  },
+                })
+                dispatch({ type: 'SET_TRACKING_ENABLED', payload: true })
+              }
             }
-          } catch (error) {
-            console.error(
-              '[InteractionTracker] Error during session initialization:',
-              error
+          } else {
+            // No startUserSession method, create a simple session and enable tracking
+            console.log(
+              '[InteractionTracker] No startUserSession method, creating simple session.'
             )
-            if (isMounted) {
-              dispatch({ type: 'SET_SESSION', payload: { sessionId: null } })
-              dispatch({ type: 'SET_TRACKING_ENABLED', payload: false })
-            }
+            const simpleSessionId = `session_${userId}_${Date.now()}`
+            dispatch({
+              type: 'SET_SESSION',
+              payload: {
+                sessionId: simpleSessionId,
+                metadata: {
+                  userId,
+                  startedAt: new Date().toISOString(),
+                  simple: true
+                },
+              },
+            })
+            dispatch({ type: 'SET_TRACKING_ENABLED', payload: true })
           }
         } else {
-          // No userId or service method, disable tracking
+          // No userId, disable tracking
           console.log(
-            '[InteractionTracker] No userId or startUserSession method, disabling tracking.'
+            '[InteractionTracker] No userId provided, disabling tracking.'
           )
           dispatch({ type: 'SET_SESSION', payload: { sessionId: null } })
           dispatch({ type: 'SET_TRACKING_ENABLED', payload: false })

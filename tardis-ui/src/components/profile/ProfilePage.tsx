@@ -15,6 +15,7 @@ import {
   ExternalLink
 } from 'lucide-react'
 import { useUser } from '../../contexts/UserContext'
+import NavigationHeader from '../navigation/NavigationHeader'
 
 interface ApiKey {
   id: number
@@ -371,8 +372,9 @@ const ProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gray-900">
+      <NavigationHeader />
+      <div className="max-w-6xl mx-auto p-6">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Profile Settings</h1>
           <p className="text-gray-400">Manage your account, API keys, and preferences</p>

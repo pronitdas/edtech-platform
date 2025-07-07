@@ -11,6 +11,8 @@ export interface User {
   email: string
   name?: string
   created_at: string
+  role?: 'student' | 'teacher' | 'content_creator'
+  onboarding_completed?: boolean
 }
 
 export interface Knowledge {

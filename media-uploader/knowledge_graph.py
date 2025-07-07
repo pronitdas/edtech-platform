@@ -81,7 +81,8 @@ class Neo4jGraphService:
         try:
             with self.driver.session() as session:
                 result = session.run(cypher, params or {})
-                return result
+                # Convert to list to avoid consumption issues
+                return list(result)
         except Exception as e:
             logger.error(f"Error executing query: {str(e)}")
             return []
@@ -111,8 +112,8 @@ class Neo4jGraphService:
         
         try:
             result = self.execute_query(cypher, {"properties": properties})
-            if result:
-                record = result.single()
+            if result and len(result) > 0:
+                record = result[0]
                 if record:
                     created_node = record["n"]
                     return GraphNode(
@@ -152,8 +153,8 @@ class Neo4jGraphService:
                 "properties": properties
             })
             
-            if result:
-                record = result.single()
+            if result and len(result) > 0:
+                record = result[0]
                 if record:
                     created_rel = record["r"]
                     return GraphRelationship(
@@ -177,11 +178,11 @@ class Neo4jGraphService:
         """
         
         result = self.execute_query(cypher, {"node_id": node_id})
-        record = result.single()
         
-        if not record:
+        if not result or len(result) == 0:
             return None
-        
+            
+        record = result[0]
         node = record["n"]
         labels = record["labels"]
         
@@ -382,12 +383,13 @@ class Neo4jGraphService:
                 )
                 
                 concept_node = None
-                if existing_concepts.peek():
+                if existing_concepts and len(existing_concepts) > 0:
                     # Use existing concept
+                    existing_concept = existing_concepts[0]["c"]
                     concept_node = GraphNode(
-                        id=existing_concepts.peek()["c"]["id"],
+                        id=existing_concept["id"],
                         labels=["Concept"],
-                        properties=dict(existing_concepts.peek()["c"])
+                        properties=dict(existing_concept)
                     )
                 else:
                     # Create new concept

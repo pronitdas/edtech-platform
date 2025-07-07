@@ -86,9 +86,9 @@ class KnowledgeGraphSynchronizer:
             {"knowledge_id": knowledge_id}
         )
 
-        if existing.peek():
+        if existing and len(existing) > 0:
             logger.info(f"Knowledge node already exists for ID {knowledge_id}")
-            node = existing.peek()["k"]
+            node = existing[0]["k"]
             return GraphNode(
                 id=node["id"],
                 labels=["Knowledge"],
@@ -124,9 +124,9 @@ class KnowledgeGraphSynchronizer:
             )
 
             chapter_node = None
-            if existing.peek():
+            if existing and len(existing) > 0:
                 # Update existing chapter node
-                node = existing.peek()["c"]
+                node = existing[0]["c"]
                 chapter_node = GraphNode(
                     id=node["id"],
                     labels=["Chapter"],
@@ -169,9 +169,9 @@ class KnowledgeGraphSynchronizer:
             )
 
             concept_node = None
-            if existing.peek():
+            if existing and len(existing) > 0:
                 # Use existing concept
-                node = existing.peek()["c"]
+                node = existing[0]["c"]
                 concept_node = GraphNode(
                     id=node["id"],
                     labels=["Concept"],
@@ -199,7 +199,7 @@ class KnowledgeGraphSynchronizer:
                 {"chapter_id": chapter_node_id, "concept_id": concept_node.id}
             )
 
-            if not contains_exists.peek():
+            if not contains_exists or len(contains_exists) == 0:
                 graph_service.create_relationship(GraphRelationship(
                     start_node_id=chapter_node_id,
                     end_node_id=concept_node.id,
@@ -216,7 +216,7 @@ class KnowledgeGraphSynchronizer:
                 {"knowledge_id": knowledge_node_id, "concept_id": concept_node.id}
             )
 
-            if not teaches_exists.peek():
+            if not teaches_exists or len(teaches_exists) == 0:
                 graph_service.create_relationship(GraphRelationship(
                     start_node_id=knowledge_node_id,
                     end_node_id=concept_node.id,
@@ -267,7 +267,7 @@ class KnowledgeGraphSynchronizer:
                         {"concept1_id": concept1["id"], "concept2_id": concept2["id"]}
                     )
 
-                    if not related_exists.peek():
+                    if not related_exists or len(related_exists) == 0:
                         graph_service.create_relationship(GraphRelationship(
                             start_node_id=concept1["id"],
                             end_node_id=concept2["id"],

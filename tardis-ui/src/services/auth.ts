@@ -19,8 +19,8 @@ export class AuthService {
   private baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
   async login(credentials: LoginCredentials): Promise<User> {
-    // Use the v1 auth endpoints that integrate with Kratos
-    const response = await fetch(`${this.baseUrl}/auth/login`, {
+    // Use the v2 auth endpoints that support direct email/password auth
+    const response = await fetch(`${this.baseUrl}/v2/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -35,17 +35,32 @@ export class AuthService {
 
     const data = await response.json()
     localStorage.setItem('auth_token', data.access_token)
-    return data.user
+    
+    // Transform v2 response to match expected User interface
+    return {
+      id: data.user_id,
+      email: data.email,
+      name: data.display_name || data.email.split('@')[0],
+      created_at: new Date().toISOString(),
+      role: 'student', // Default role, will be updated from profile
+      onboarding_completed: true // V2 auth endpoints handle onboarding automatically
+    }
   }
 
   async register(data: RegisterData): Promise<User> {
-    // Use the v1 auth endpoints that integrate with Kratos
-    const response = await fetch(`${this.baseUrl}/auth/register`, {
+    // Use the v2 auth endpoints that support direct email/password registration
+    const registerPayload = {
+      email: data.email,
+      password: data.password,
+      display_name: data.name || data.email.split('@')[0]
+    }
+    
+    const response = await fetch(`${this.baseUrl}/v2/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify(registerPayload),
     })
 
     if (!response.ok) {
@@ -55,7 +70,16 @@ export class AuthService {
 
     const result = await response.json()
     localStorage.setItem('auth_token', result.access_token)
-    return result.user
+    
+    // Transform v2 response to match expected User interface
+    return {
+      id: result.user_id,
+      email: result.email,
+      name: registerPayload.display_name,
+      created_at: new Date().toISOString(),
+      role: 'student', // Default role, will be updated from profile
+      onboarding_completed: true // V2 auth endpoints handle onboarding automatically
+    }
   }
 
   async logout(): Promise<void> {
@@ -79,7 +103,29 @@ export class AuthService {
       throw new Error('Failed to get user profile')
     }
 
-    return response.json()
+    const data = await response.json()
+    
+    // Transform backend response to match expected User interface
+    let role = 'student' // default
+    if (data.roles) {
+      try {
+        const rolesArray = typeof data.roles === 'string' ? JSON.parse(data.roles) : data.roles
+        if (rolesArray.length > 0) {
+          role = rolesArray[0] // Take the first role
+        }
+      } catch (e) {
+        console.warn('Failed to parse roles:', data.roles)
+      }
+    }
+    
+    return {
+      id: data.id,
+      email: data.email,
+      name: data.display_name || data.email.split('@')[0],
+      created_at: data.created_at,
+      role: role as 'student' | 'teacher' | 'content_creator',
+      onboarding_completed: true // If they can call /auth/me, they've completed onboarding
+    }
   }
 
   isAuthenticated(): boolean {

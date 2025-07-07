@@ -2,9 +2,30 @@
 
 ## 🚀 Quick Start
 
+✅ **Backend Status**: Your backend is running and healthy at http://localhost:8000!
+
 The dynamic API client is ready for testing with your live backend. Here are several ways to test all APIs:
 
-### 1. Browser Console Testing (Recommended)
+### 1. Dedicated API Test Page (Recommended)
+
+Visit the dedicated API testing page:
+**http://localhost:3000/api-test**
+
+This provides a clean, interactive dashboard for testing all APIs with:
+- Real-time test execution
+- Visual status indicators  
+- Response data inspection
+- Performance timing
+- Knowledge ID tracking
+
+### 2. Storybook Integration Testing
+
+Visit Storybook at http://localhost:6006 and navigate to:
+- **API Integration/Live Backend Testing**: Complete API test suite
+- **API Integration/Knowledge Workflow**: End-to-end workflow demo
+- **API Integration/Real-Time Analytics**: Live analytics dashboard
+
+### 3. Browser Console Testing
 
 Open your browser console in the running app and run:
 
@@ -17,19 +38,7 @@ import('./src/test/manual-api-test.js').then(module => {
 
 // Run complete test suite
 apiTests.runCompleteTestSuite()
-
-// Or run individual tests
-apiTests.testHealthCheck()
-apiTests.testFileUpload()
 ```
-
-### 2. Storybook Integration Testing
-
-Visit Storybook at http://localhost:6006 and navigate to:
-
-- **API Integration/Live Backend Testing**: Complete API test suite
-- **API Integration/Knowledge Workflow**: End-to-end workflow demo
-- **API Integration/Real-Time Analytics**: Live analytics dashboard
 
 ### 3. NPM Script Testing
 

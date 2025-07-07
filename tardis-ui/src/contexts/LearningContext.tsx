@@ -120,7 +120,8 @@ interface LearningProviderProps {
 
 export const LearningProvider: React.FC<LearningProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(learningReducer, initialState)
-  const { apiClient } = useAuth()
+  const authContext = useAuth()
+  const apiClient = authContext?.apiClient || null
 
   // Helper functions
   const setView = (view: ViewType) => {
@@ -153,14 +154,20 @@ export const LearningProvider: React.FC<LearningProviderProps> = ({ children }) 
 
   // API helper functions
   const fetchKnowledgeFiles = async (knowledgeId: number) => {
-    if (!apiClient) throw new Error('API client not available')
+    if (!apiClient) {
+      console.warn('API client not available in LearningContext')
+      throw new Error('API client not available - ensure AuthProvider is wrapping this component')
+    }
     return await (apiClient as any).getKnowledgeFilesKnowledgeKnowledgeIdFilesGet({
       knowledge_id: knowledgeId
     })
   }
 
   const startProcessing = async (knowledgeId: number, options: any = {}) => {
-    if (!apiClient) throw new Error('API client not available')
+    if (!apiClient) {
+      console.warn('API client not available in LearningContext')
+      throw new Error('API client not available - ensure AuthProvider is wrapping this component')
+    }
     return await (apiClient as any).startProcessingProcessKnowledgeIdGet({
       knowledge_id: knowledgeId,
       generate_content: options.generate_content || true,
@@ -170,14 +177,20 @@ export const LearningProvider: React.FC<LearningProviderProps> = ({ children }) 
   }
 
   const getProcessingStatus = async (knowledgeId: number) => {
-    if (!apiClient) throw new Error('API client not available')
+    if (!apiClient) {
+      console.warn('API client not available in LearningContext')
+      throw new Error('API client not available - ensure AuthProvider is wrapping this component')
+    }
     return await (apiClient as any).getProcessingStatusProcessKnowledgeIdStatusGet({
       knowledge_id: knowledgeId
     })
   }
 
   const getChapterData = async (knowledgeId: number, options: any = {}) => {
-    if (!apiClient) throw new Error('API client not available')
+    if (!apiClient) {
+      console.warn('API client not available in LearningContext')
+      throw new Error('API client not available - ensure AuthProvider is wrapping this component')
+    }
     return await (apiClient as any).getChapterDataChaptersKnowledgeIdGet({
       knowledge_id: knowledgeId,
       chapter_id: options.chapter_id,
