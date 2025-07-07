@@ -15,7 +15,7 @@ from models import User
 from models import Knowledge
 from src.services.auth_service import get_current_user
 
-router = APIRouter(prefix="/teacher", tags=["Teacher Management"])
+router = APIRouter(tags=["Teacher Management"])
 
 # Request/Response Models
 class StudentProfile(BaseModel):
@@ -303,3 +303,121 @@ async def get_teacher_analytics_overview(
     }
     
     return mock_analytics
+
+@router.get("/stats")
+async def get_teacher_stats(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get teacher dashboard statistics."""
+    try:
+        # Check if user is a teacher
+        if "teacher" not in getattr(current_user, "roles", []):
+            raise HTTPException(status_code=403, detail="Access denied - teacher role required")
+        
+        # Get teacher statistics
+        total_students = db.execute("""
+            SELECT COUNT(DISTINCT student_id) as count
+            FROM teacher_student_relationships 
+            WHERE teacher_id = :teacher_id AND status = 'active'
+        """, {"teacher_id": current_user.id}).scalar() or 0
+        
+        total_assignments = db.execute("""
+            SELECT COUNT(*) as count
+            FROM content_assignments 
+            WHERE teacher_id = :teacher_id
+        """, {"teacher_id": current_user.id}).scalar() or 0
+        
+        content_created = db.execute("""
+            SELECT COUNT(*) as count
+            FROM knowledge 
+            WHERE user_id = :teacher_id
+        """, {"teacher_id": current_user.id}).scalar() or 0
+        
+        return {
+            "success": True,
+            "data": {
+                "total_students": total_students,
+                "total_assignments": total_assignments,
+                "content_created": content_created,
+                "active_classrooms": 1  # Mock for now
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get teacher stats: {str(e)}")
+
+@router.get("/classrooms")
+async def get_teacher_classrooms(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get teacher's classrooms."""
+    try:
+        # Check if user is a teacher
+        if "teacher" not in getattr(current_user, "roles", []):
+            raise HTTPException(status_code=403, detail="Access denied - teacher role required")
+        
+        classrooms_query = db.execute("""
+            SELECT DISTINCT 
+                classroom_id,
+                COUNT(student_id) as student_count
+            FROM teacher_student_relationships 
+            WHERE teacher_id = :teacher_id AND status = 'active'
+            GROUP BY classroom_id
+        """, {"teacher_id": current_user.id}).fetchall()
+        
+        classrooms = [
+            {
+                "id": row.classroom_id or "default",
+                "name": row.classroom_id or "Default Classroom",
+                "student_count": row.student_count
+            }
+            for row in classrooms_query
+        ]
+        
+        # If no classrooms, return default
+        if not classrooms:
+            classrooms = [{"id": "default", "name": "Default Classroom", "student_count": 0}]
+        
+        return {"success": True, "data": classrooms}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get classrooms: {str(e)}")
+
+@router.get("/students")
+async def get_teacher_students(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get teacher's students."""
+    try:
+        # Check if user is a teacher
+        if "teacher" not in getattr(current_user, "roles", []):
+            raise HTTPException(status_code=403, detail="Access denied - teacher role required")
+        
+        students_query = db.execute("""
+            SELECT 
+                u.id,
+                u.display_name,
+                u.email,
+                tsr.classroom_id,
+                tsr.created_at
+            FROM teacher_student_relationships tsr
+            JOIN users u ON tsr.student_id = u.id
+            WHERE tsr.teacher_id = :teacher_id AND tsr.status = 'active'
+            ORDER BY u.display_name
+        """, {"teacher_id": current_user.id}).fetchall()
+        
+        students = [
+            {
+                "id": row.id,
+                "name": row.display_name,
+                "email": row.email,
+                "classroom_id": row.classroom_id,
+                "enrolled_at": row.created_at
+            }
+            for row in students_query
+        ]
+        
+        return {"success": True, "data": students}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get students: {str(e)}")

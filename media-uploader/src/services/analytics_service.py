@@ -12,13 +12,12 @@ try:
     from models import UserEvent, UserSession
 except ImportError:
     from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, JSON, BigInteger
-    from sqlalchemy.dialects.postgresql import UUID
     from uuid import uuid4
     
     class UserSession(Base):
         __tablename__ = "user_sessions"
         
-        id = Column(UUID, primary_key=True, default=uuid4)
+        id = Column(String, primary_key=True)
         user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
         started_at = Column(DateTime, default=datetime.utcnow)
         ended_at = Column(DateTime)
@@ -31,7 +30,7 @@ except ImportError:
         user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
         knowledge_id = Column(Integer, ForeignKey("knowledge.id", ondelete="SET NULL"))
         chapter_id = Column(String(64))
-        session_id = Column(UUID, ForeignKey("user_sessions.id", ondelete="SET NULL"))
+        session_id = Column(String, ForeignKey("user_sessions.id", ondelete="SET NULL"))
         event_type = Column(String(64), nullable=False)
         content_id = Column(String(64))
         ts = Column(DateTime, default=datetime.utcnow)
@@ -367,3 +366,33 @@ class AnalyticsService:
             stats["average_score"] = sum(scores) / len(scores)
         
         return stats
+
+    async def start_session(self, user_id: int) -> str:
+        """Start a new user session and return session ID."""
+        from uuid import uuid4
+        
+        session = UserSession(
+            id=str(uuid4()),
+            user_id=user_id,
+            started_at=datetime.utcnow()
+        )
+        
+        self.db.add(session)
+        self.db.commit()
+        self.db.refresh(session)
+        
+        return str(session.id)
+
+    async def end_session(self, session_id: str, user_id: int) -> None:
+        """End a user session."""
+        session = self.db.query(UserSession).filter(
+            and_(UserSession.id == session_id, UserSession.user_id == user_id)
+        ).first()
+        
+        if session and session.ended_at is None:
+            session.ended_at = datetime.utcnow()
+            if session.started_at:
+                duration = session.ended_at - session.started_at
+                session.duration_sec = int(duration.total_seconds())
+            
+            self.db.commit()

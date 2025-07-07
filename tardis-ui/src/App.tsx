@@ -15,21 +15,23 @@ import ProtectedRoute from './components/ProtectedRoute'
 import LandingPage from './app/landing/page'
 import PricingPage from './app/pricing/page'
 import AnalyticsPage from './pages/AnalyticsPage'
+import GeneralAnalyticsPage from './pages/GeneralAnalyticsPage'
 import ChapterViewer from './components/ChapterViewer'
 import ModernPage from './app/ModernPage'
-import TeacherDashboard from './components/TeacherDashboard/TeacherDashboard'
+import TeacherDashboard from './components/dashboards/TeacherDashboard'
+import ContentCreatorDashboard from './components/dashboards/ContentCreatorDashboard'
 import EnhancedOnboarding from './components/onboarding/EnhancedOnboarding'
+import { UnifiedPracticeModule } from './components/practice'
 import { analyticsService } from './services/analytics-service'
 import { useUser } from './contexts/UserContext'
 
-function App() {
+function AppContent() {
   const { user } = useUser()
   return (
-    <UserProvider>
-      <InteractionTrackerProvider
-        dataService={analyticsService}
-        userId={user?.id ? String(user.id) : ''}
-      >
+    <InteractionTrackerProvider
+      dataService={analyticsService}
+      userId={user?.id ? String(user.id) : ''}
+    >
         <Router>
           <Routes>
             {/* Public routes */}
@@ -37,10 +39,19 @@ function App() {
             <Route path='/pricing' element={<PricingPage />} />
             <Route path='/login' element={<LoginPage />} />
             <Route path='/register' element={<RegisterPage />} />
+            <Route path='/signup' element={<RegisterPage />} />
 
             {/* Protected routes */}
             <Route
               path='/app'
+              element={
+                <ProtectedRoute>
+                  <ModernPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path='/dashboard'
               element={
                 <ProtectedRoute>
                   <ModernPage />
@@ -64,10 +75,26 @@ function App() {
               }
             />
             <Route
+              path='/analytics/general'
+              element={
+                <ProtectedRoute>
+                  <GeneralAnalyticsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path='/chapter/:knowledgeId/:chapterId'
               element={
                 <ProtectedRoute>
                   <ChapterViewer />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path='/practice'
+              element={
+                <ProtectedRoute>
+                  <UnifiedPracticeModule />
                 </ProtectedRoute>
               }
             />
@@ -80,7 +107,23 @@ function App() {
               }
             />
             <Route
+              path='/creator'
+              element={
+                <ProtectedRoute>
+                  <ContentCreatorDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path='/onboarding'
+              element={
+                <ProtectedRoute>
+                  <EnhancedOnboarding />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path='/enhanced-onboarding'
               element={
                 <ProtectedRoute>
                   <EnhancedOnboarding />
@@ -100,6 +143,13 @@ function App() {
           </Routes>
         </Router>
       </InteractionTrackerProvider>
+  )
+}
+
+function App() {
+  return (
+    <UserProvider>
+      <AppContent />
     </UserProvider>
   )
 }

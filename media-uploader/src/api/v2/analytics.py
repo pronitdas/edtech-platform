@@ -72,6 +72,33 @@ async def get_user_completion(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get completion stats: {str(e)}")
 
+@router.post("/sessions/start")
+async def start_user_session(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Start a new user session."""
+    try:
+        analytics_service = AnalyticsService(db)
+        session_id = await analytics_service.start_session(current_user.id)
+        return {"success": True, "session_id": session_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to start session: {str(e)}")
+
+@router.post("/sessions/{session_id}/end")
+async def end_user_session(
+    session_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """End a user session."""
+    try:
+        analytics_service = AnalyticsService(db)
+        await analytics_service.end_session(session_id, current_user.id)
+        return {"success": True, "message": "Session ended successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to end session: {str(e)}")
+
 @router.get("/user/{user_id}/sessions")
 async def get_user_sessions(
     user_id: int,

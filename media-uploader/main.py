@@ -19,6 +19,10 @@ from routes.neo4j import router as neo4j_router
 from src.api.v2 import v2_router
 from src.api.v2.simple_auth import router as simple_auth_router
 from src.api.v2.auth import router as v2_auth_router
+from src.api.v2.analytics import router as direct_analytics_router
+from src.api.v2.knowledge import router as direct_knowledge_router
+from src.api.v2.student import router as direct_student_router
+from src.api.v2.teacher import router as direct_teacher_router
 from knowledge_graph import Neo4jGraphService
 from config import redis_client, logger
 
@@ -134,6 +138,10 @@ app.include_router(neo4j_router, tags=["Neo4j Graph"])
 app.include_router(v2_router, prefix="/api", tags=["V2 API"])
 app.include_router(simple_auth_router, prefix="/v2/auth", tags=["Direct Auth"])
 app.include_router(v2_auth_router, prefix="/v2/auth", tags=["Direct Auth V2"])
+app.include_router(direct_analytics_router, prefix="/v2/analytics", tags=["Direct Analytics"])
+app.include_router(direct_knowledge_router, prefix="/v2/knowledge", tags=["Direct Knowledge"])
+app.include_router(direct_student_router, prefix="/v2/student", tags=["Direct Student"])
+app.include_router(direct_teacher_router, prefix="/v2/teacher", tags=["Direct Teacher"])
 
 @app.get("/test-public")
 async def test_public():

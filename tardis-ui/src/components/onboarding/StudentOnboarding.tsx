@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { User, BookOpen, Target, Settings, ArrowRight, ArrowLeft, Eye, EyeOff } from 'lucide-react'
+import { User, BookOpen, Target, Settings, ArrowRight, ArrowLeft, Eye, EyeOff, Brain, Zap, Trophy } from 'lucide-react'
 import OnboardingProgress from './OnboardingProgress'
 
 interface StudentOnboardingData {
@@ -11,6 +11,9 @@ interface StudentOnboardingData {
   subjectsOfInterest: string[]
   learningGoals: string
   preferredDifficulty: 'easy' | 'medium' | 'hard'
+  preferredPracticeModes: string[]
+  practiceGoals: string[]
+  dailyPracticeTime: number
 }
 
 interface StudentOnboardingProps {
@@ -28,7 +31,10 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onBac
     gradeLevel: '',
     subjectsOfInterest: [],
     learningGoals: '',
-    preferredDifficulty: 'medium'
+    preferredDifficulty: 'medium',
+    preferredPracticeModes: [],
+    practiceGoals: [],
+    dailyPracticeTime: 15
   })
 
   const steps = [
@@ -55,6 +61,12 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onBac
       title: 'Learning Preferences',
       description: 'Customize your learning experience',
       icon: Settings
+    },
+    {
+      id: 'practice-setup',
+      title: 'Practice Preferences',
+      description: 'Set up your personalized practice experience',
+      icon: Brain
     }
   ]
 
@@ -67,6 +79,25 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onBac
     'Mathematics', 'Science', 'English/Literature', 'History', 'Geography',
     'Physics', 'Chemistry', 'Biology', 'Computer Science', 'Art',
     'Music', 'Foreign Languages', 'Economics', 'Psychology', 'Philosophy'
+  ]
+
+  const practiceModes = [
+    { id: 'adaptive-quiz', name: 'Adaptive Quiz', description: 'Smart questions that adapt to your performance', icon: Brain },
+    { id: 'flashcards', name: 'Smart Flashcards', description: 'Spaced repetition for better memory', icon: BookOpen },
+    { id: 'speed-drill', name: 'Speed Training', description: 'Fast-paced practice for fluency', icon: Zap },
+    { id: 'deep-practice', name: 'Deep Practice', description: 'Comprehensive problem-solving', icon: Target },
+    { id: 'challenge-mode', name: 'Challenge Arena', description: 'Gamified competitive practice', icon: Trophy }
+  ]
+
+  const practiceGoalOptions = [
+    'Improve test scores',
+    'Build confidence',
+    'Master fundamentals',
+    'Increase speed and fluency',
+    'Prepare for exams',
+    'Learn new concepts',
+    'Review previous material',
+    'Compete with others'
   ]
 
   const handleNext = () => {
@@ -97,6 +128,22 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onBac
     updateFormData({ subjectsOfInterest: updated })
   }
 
+  const togglePracticeMode = (modeId: string) => {
+    const current = formData.preferredPracticeModes
+    const updated = current.includes(modeId)
+      ? current.filter(m => m !== modeId)
+      : [...current, modeId]
+    updateFormData({ preferredPracticeModes: updated })
+  }
+
+  const togglePracticeGoal = (goal: string) => {
+    const current = formData.practiceGoals
+    const updated = current.includes(goal)
+      ? current.filter(g => g !== goal)
+      : [...current, goal]
+    updateFormData({ practiceGoals: updated })
+  }
+
   const isStepValid = () => {
     switch (currentStep) {
       case 1:
@@ -107,6 +154,8 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onBac
         return formData.subjectsOfInterest.length > 0
       case 4:
         return formData.learningGoals && formData.preferredDifficulty
+      case 5:
+        return formData.preferredPracticeModes.length > 0 && formData.practiceGoals.length > 0
       default:
         return false
     }
@@ -277,6 +326,121 @@ const StudentOnboarding: React.FC<StudentOnboardingProps> = ({ onComplete, onBac
                     <div className="text-xs text-gray-500 mt-1">{difficulty.description}</div>
                   </button>
                 ))}
+              </div>
+            </div>
+          </div>
+        )
+
+      case 5:
+        return (
+          <div className="space-y-6" data-testid="student-practice-setup-step">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-4">
+                Which practice modes appeal to you? (Select all that apply) *
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {practiceModes.map((mode) => {
+                  const Icon = mode.icon
+                  return (
+                    <button
+                      key={mode.id}
+                      type="button"
+                      data-testid={`practice-mode-${mode.id}`}
+                      onClick={() => togglePracticeMode(mode.id)}
+                      className={`p-4 text-left border-2 rounded-xl transition-all duration-200 ${
+                        formData.preferredPracticeModes.includes(mode.id)
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className={`p-2 rounded-lg ${
+                          formData.preferredPracticeModes.includes(mode.id)
+                            ? 'bg-blue-100'
+                            : 'bg-gray-100'
+                        }`}>
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <div className="font-medium">{mode.name}</div>
+                          <div className="text-sm text-gray-500 mt-1">{mode.description}</div>
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                Selected: {formData.preferredPracticeModes.length} modes
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-4">
+                What are your practice goals? (Select all that apply) *
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {practiceGoalOptions.map((goal) => (
+                  <button
+                    key={goal}
+                    type="button"
+                    data-testid={`practice-goal-${goal.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
+                    onClick={() => togglePracticeGoal(goal)}
+                    className={`p-3 text-sm text-left border-2 rounded-lg transition-all duration-200 ${
+                      formData.practiceGoals.includes(goal)
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {goal}
+                  </button>
+                ))}
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                Selected: {formData.practiceGoals.length} goals
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="dailyPracticeTime" className="block text-sm font-medium text-gray-700 mb-4">
+                How much time would you like to practice daily?
+              </label>
+              <div className="grid grid-cols-4 gap-3">
+                {[
+                  { value: 10, label: '10 min', description: 'Quick daily review' },
+                  { value: 15, label: '15 min', description: 'Recommended for beginners' },
+                  { value: 30, label: '30 min', description: 'Solid practice session' },
+                  { value: 60, label: '60 min', description: 'Intensive learning' }
+                ].map((time) => (
+                  <button
+                    key={time.value}
+                    type="button"
+                    data-testid={`practice-time-${time.value}`}
+                    onClick={() => updateFormData({ dailyPracticeTime: time.value })}
+                    className={`p-4 text-center border-2 rounded-xl transition-all duration-200 ${
+                      formData.dailyPracticeTime === time.value
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="font-medium">{time.label}</div>
+                    <div className="text-xs text-gray-500 mt-1">{time.description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-200">
+              <div className="flex items-start space-x-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Brain className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-blue-800 mb-1">🎯 Personalized Learning Ahead!</h4>
+                  <p className="text-sm text-blue-700">
+                    Based on your preferences, we'll create a personalized practice plan that adapts to your learning style and helps you achieve your goals.
+                  </p>
+                </div>
               </div>
             </div>
           </div>

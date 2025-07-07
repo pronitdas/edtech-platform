@@ -7,7 +7,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const { login } = useUser()
+  const { login, demoLogin } = useUser()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -34,30 +34,8 @@ export default function LoginPage() {
     setError('')
 
     try {
-      // Call the appropriate demo login endpoint
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-      const endpoint = userType === 'teacher' ? '/v2/auth/demo-teacher-login' : '/v2/auth/demo-login'
-      const response = await fetch(`${baseUrl}${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error(`Demo ${userType} login failed`)
-      }
-
-      const data = await response.json()
-
-      // Store the token and user data
-      localStorage.setItem('auth_token', data.access_token)
-
-      // Navigate to the app
+      await demoLogin(userType)
       navigate(from, { replace: true })
-
-      // Reload to update auth state
-      window.location.reload()
     } catch (err) {
       setError(err instanceof Error ? err.message : `Demo ${userType} login failed`)
     } finally {

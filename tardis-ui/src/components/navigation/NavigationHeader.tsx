@@ -11,7 +11,8 @@ import {
   X,
   Brain,
   BookOpen,
-  Users
+  Users,
+  Target
 } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,13 +23,14 @@ interface NavigationItem {
   icon: React.ElementType;
   requiresTeacher?: boolean;
   requiresStudent?: boolean;
+  requiresContentCreator?: boolean;
 }
 
 const NavigationHeader: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isTeacher, isStudent, logout } = useUser();
+  const { user, isTeacher, isStudent, isContentCreator, logout } = useUser();
 
   const navigationItems: NavigationItem[] = [
     {
@@ -37,10 +39,22 @@ const NavigationHeader: React.FC = () => {
       icon: Home,
     },
     {
+      path: '/practice',
+      label: 'Practice',
+      icon: Target,
+      requiresStudent: true,
+    },
+    {
       path: '/teacher',
-      label: 'Teacher Dashboard',
+      label: 'Classroom',
       icon: GraduationCap,
       requiresTeacher: true,
+    },
+    {
+      path: '/creator',
+      label: 'Content Studio',
+      icon: BookOpen,
+      requiresContentCreator: true,
     },
     {
       path: '/profile',
@@ -57,6 +71,7 @@ const NavigationHeader: React.FC = () => {
   const filteredNavigation = navigationItems.filter(item => {
     if (item.requiresTeacher && !isTeacher()) return false;
     if (item.requiresStudent && !isStudent()) return false;
+    if (item.requiresContentCreator && !isContentCreator()) return false;
     return true;
   });
 

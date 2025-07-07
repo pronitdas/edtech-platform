@@ -17,9 +17,8 @@ import usePerformanceTracking from '@/hooks/usePerformanceTracking'
 import { analyticsService } from '@/services/analytics-service'
 
 // Components - Lazy loaded for performance
-import { Dashboard } from '@/components/Dashboard'
+import ModeRouter from '@/components/ModeRouter'
 import NavigationHeader from '@/components/navigation/NavigationHeader'
-const TeacherDashboard = lazy(() => import('@/components/TeacherDashboard/TeacherDashboard'))
 const KnowledgeSelector = lazy(() => import('@/components/learning/KnowledgeSelector'))
 const ChapterView = lazy(() => import('@/components/learning/ChapterView'))
 const CourseContent = lazy(() => import('@/components/learning/CourseContent'))
@@ -253,18 +252,7 @@ const LearningOrchestrator: React.FC = () => {
           <div className='flex-grow overflow-auto'>
             <Suspense fallback={<LoadingFallback />}>
               {currentView === 'dashboard' && (
-                (() => {
-                  console.log('DEBUG: Dashboard rendering - user role:', user?.role, 'user:', user)
-                  return user?.role === 'teacher' ? (
-                    <TeacherDashboard />
-                  ) : (
-                    <Dashboard 
-                      userId={String(userId)}
-                      userName={user?.name || 'Student'}
-                      onNavigateToLearning={handleNavigateToLearning}
-                    />
-                  )
-                })()
+                <ModeRouter />
               )}
 
               {currentView === 'knowledge_selection' && (

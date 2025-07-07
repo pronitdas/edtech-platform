@@ -1,26 +1,33 @@
 import React from 'react'
-import { User } from 'lucide-react' // Using User as a fallback icon
+import { User, Target, Brain, Zap, Trophy, Clock, Star } from 'lucide-react'
 
 // Assuming the Role interface is defined elsewhere and imported
 // or defined inline if needed specifically here.
 interface Role {
   name: string
   description: string
-  icon: string // Expecting an icon identifier (e.g., emoji or class name)
-  // Add other fields if necessary
+  icon: string
+  practiceFeatures?: string[]
+  benefits?: string[]
 }
 
 interface StudentCardProps {
   role: Role
   onClick: (roleName: string) => void
+  showPracticeFeatures?: boolean
 }
 
-const StudentCard: React.FC<StudentCardProps> = ({ role, onClick }) => {
-  // Basic handling for icon - assumes emoji for now
-  // TODO: Implement better icon handling (e.g., mapping identifiers to actual icons/components)
+const StudentCard: React.FC<StudentCardProps> = ({ role, onClick, showPracticeFeatures = false }) => {
+  const practiceIcons = {
+    'Adaptive Quiz': Brain,
+    'Smart Flashcards': Star,
+    'Speed Training': Zap,
+    'Challenge Arena': Trophy,
+    'Progress Tracking': Target,
+    'Personalized Learning': Brain
+  }
+
   const renderIcon = () => {
-    // Simple check if it looks like an emoji
-    // This is a basic heuristic and might need refinement
     const isEmoji = /\p{Emoji}/u.test(role.icon)
 
     if (isEmoji) {
@@ -30,10 +37,13 @@ const StudentCard: React.FC<StudentCardProps> = ({ role, onClick }) => {
         </span>
       )
     } else {
-      // Fallback to a default icon if it's not an emoji
-      // or use role.icon as a class name if using icon fonts
       return <User className='h-6 w-6 text-indigo-300' />
     }
+  }
+
+  const getPracticeIcon = (feature: string) => {
+    const IconComponent = practiceIcons[feature as keyof typeof practiceIcons] || Target
+    return <IconComponent className="h-3 w-3" />
   }
 
   return (
@@ -48,10 +58,48 @@ const StudentCard: React.FC<StudentCardProps> = ({ role, onClick }) => {
           </div>
           <h5 className='text-lg font-semibold text-white'>{role.name}</h5>
         </div>
-        <p className='line-clamp-3 text-sm text-gray-300'>{role.description}</p>
+        <p className='line-clamp-3 text-sm text-gray-300 mb-3'>{role.description}</p>
+
+        {/* Practice Features */}
+        {showPracticeFeatures && role.practiceFeatures && role.practiceFeatures.length > 0 && (
+          <div className="mb-3">
+            <h6 className="text-xs font-medium text-indigo-400 mb-2">🎯 Practice Features:</h6>
+            <div className="space-y-1">
+              {role.practiceFeatures.slice(0, 3).map((feature, index) => (
+                <div key={index} className="flex items-center space-x-2 text-xs text-gray-400">
+                  {getPracticeIcon(feature)}
+                  <span>{feature}</span>
+                </div>
+              ))}
+              {role.practiceFeatures.length > 3 && (
+                <div className="text-xs text-gray-500">
+                  +{role.practiceFeatures.length - 3} more features
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Benefits */}
+        {role.benefits && role.benefits.length > 0 && (
+          <div className="mb-3">
+            <h6 className="text-xs font-medium text-green-400 mb-2">✨ Benefits:</h6>
+            <div className="space-y-1">
+              {role.benefits.slice(0, 2).map((benefit, index) => (
+                <div key={index} className="flex items-center space-x-2 text-xs text-gray-400">
+                  <div className="w-1 h-1 rounded-full bg-green-400" />
+                  <span>{benefit}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-      {/* Optionally add a subtle hint to click */}
-      {/* <span className="text-xs text-indigo-400 mt-3 self-end">Select Role</span> */}
+      
+      <div className="text-xs text-indigo-400 mt-3 self-end flex items-center">
+        <Target className="h-3 w-3 mr-1" />
+        Select Role
+      </div>
     </button>
   )
 }

@@ -116,33 +116,8 @@ const ContentSharingWorkflow: React.FC<ContentSharingWorkflowProps> = ({
       }
     } catch (error) {
       console.error('Error loading students:', error);
-      // Mock data for demo
-      setStudents([
-        {
-          id: '1',
-          name: 'Alice Johnson',
-          email: 'alice.johnson@school.edu',
-          class_id: 'math_101',
-          class_name: 'Mathematics 101',
-          progress: { completed_content: 8, total_content: 12, last_active: '2024-01-15' }
-        },
-        {
-          id: '2',
-          name: 'Bob Smith',
-          email: 'bob.smith@school.edu',
-          class_id: 'math_101',
-          class_name: 'Mathematics 101',
-          progress: { completed_content: 5, total_content: 12, last_active: '2024-01-14' }
-        },
-        {
-          id: '3',
-          name: 'Carol Davis',
-          email: 'carol.davis@school.edu',
-          class_id: 'math_102',
-          class_name: 'Advanced Mathematics',
-          progress: { completed_content: 15, total_content: 18, last_active: '2024-01-15' }
-        }
-      ]);
+      // Set empty state instead of mock data
+      setStudents([]);
     }
     setLoading(false);
   };
@@ -156,27 +131,8 @@ const ContentSharingWorkflow: React.FC<ContentSharingWorkflowProps> = ({
       }
     } catch (error) {
       console.error('Error loading assignments:', error);
-      // Mock data for demo
-      setAssignments([
-        {
-          id: '1',
-          content: {
-            knowledge_id: 'k1',
-            topic: 'Quadratic Equations',
-            content_type: 'complete',
-            difficulty_level: 'intermediate',
-            estimated_time: 45,
-            chapters_count: 5,
-            created_at: '2024-01-10',
-            status: 'active'
-          },
-          students: students.slice(0, 2),
-          due_date: '2024-01-20',
-          instructions: 'Complete all chapters and quiz',
-          shared_at: '2024-01-12',
-          completion_stats: { completed: 1, in_progress: 1, not_started: 0 }
-        }
-      ]);
+      // Set empty state instead of mock data
+      setAssignments([]);
     }
     setLoading(false);
   };
