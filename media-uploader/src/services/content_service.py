@@ -6,11 +6,13 @@ from sqlalchemy import and_
 
 from models import Knowledge
 from queue_manager import QueueManager
+from database import DatabaseManager
 
 class ContentService:
     def __init__(self, db: Session):
         self.db = db
-        self.queue_manager = QueueManager()
+        self.db_manager = DatabaseManager()
+        self.queue_manager = QueueManager(self.db_manager)
         self._generation_tasks = {}  # In-memory task tracking
 
     async def validate_user_access(self, knowledge_id: int, user_id: int) -> None:

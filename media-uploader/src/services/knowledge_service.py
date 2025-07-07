@@ -9,12 +9,14 @@ from models import Knowledge, User, Media
 from src.models.v2_models import KnowledgeResponse
 from src.services.websocket_manager import websocket_manager
 from queue_manager import QueueManager
+from database import DatabaseManager
 from storage import upload_file_to_storage
 
 class KnowledgeService:
     def __init__(self, db: Session):
         self.db = db
-        self.queue_manager = QueueManager()
+        self.db_manager = DatabaseManager()
+        self.queue_manager = QueueManager(self.db_manager)
 
     async def upload_files(
         self,

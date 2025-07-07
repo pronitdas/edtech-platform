@@ -1,7 +1,7 @@
 // meshClient.ts
 // For interacting with Meshy API
 const MESHY_API_BASE_URL = 'https://api.meshy.ai/v1/tasks'
-const MESHY_API_KEY = 'YOUR_MESHY_API_KEY' // Replace with your API key
+const MESHY_API_KEY = import.meta.env.VITE_MESHY_API_KEY || ''
 
 export class MeshyClient {
   private apiKey: string

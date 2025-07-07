@@ -230,9 +230,54 @@ class MinIOStorage:
 storage = MinIOStorage()
 
 # Convenience functions for V2 API compatibility
-def upload_file_to_storage(file_data: BinaryIO, object_name: str, content_type: str = None) -> bool:
-    """Upload file to storage using the global storage instance."""
-    return storage.upload_file(file_data, object_name, content_type)
+async def upload_file_to_storage(file, object_name: str = None):
+    """Upload FastAPI UploadFile to storage and return file path and bucket name."""
+    import uuid
+    import asyncio
+    from fastapi import UploadFile
+    
+    # Debug information
+    logger.info(f"upload_file_to_storage called with file type: {type(file)}")
+    logger.info(f"File attributes: {dir(file) if hasattr(file, '__dict__') else 'No attributes'}")
+    
+    # Handle UploadFile or file-like objects
+    if hasattr(file, 'filename') and hasattr(file, 'read'):
+        # Generate object name if not provided
+        if object_name is None:
+            object_name = f"{uuid.uuid4()}_{getattr(file, 'filename', 'unknown_file')}"
+        
+        # Read file data
+        if hasattr(file, 'read'):
+            if asyncio.iscoroutinefunction(file.read):
+                file_content = await file.read()
+            else:
+                file_content = file.read()
+        else:
+            raise ValueError("File object has no read method")
+        
+        # Reset file pointer if possible
+        if hasattr(file, 'seek'):
+            if asyncio.iscoroutinefunction(file.seek):
+                await file.seek(0)
+            else:
+                file.seek(0)
+        
+        # Get content type
+        content_type = getattr(file, 'content_type', None) or "application/octet-stream"
+        
+        # Upload to storage
+        result = storage.upload_file(
+            file_data=file_content,
+            object_name=object_name,
+            content_type=content_type
+        )
+        
+        if result["success"]:
+            return object_name, result["bucket_name"]
+        else:
+            raise Exception(f"Failed to upload file: {result.get('error', 'Unknown error')}")
+    else:
+        raise ValueError(f"Expected file-like object with filename and read method, got {type(file)}")
 
 def get_file_from_storage(object_name: str) -> Optional[bytes]:
     """Download file from storage using the global storage instance."""
