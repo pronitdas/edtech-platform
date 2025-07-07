@@ -214,7 +214,9 @@ class KratosAuthMiddleware(BaseHTTPMiddleware):
             "/v2/auth/onboard/student",
             "/v2/auth/onboard/teacher",
             # Admin health checks
-            "/api/v2/admin/health"
+            "/api/v2/admin/health",
+            # Profile endpoints (protected, but need to access user info)
+            "/api/v2/profile/providers"
         ]
         
         # Check if path is public (exact match only for specific paths)

@@ -15,6 +15,7 @@ from .topic_generation import router as topic_generation_router
 from .semantic_search import router as semantic_search_router
 from .teacher import router as teacher_router
 from .ai_tutor import router as ai_tutor_router
+from .profile import router as profile_router
 
 v2_router = APIRouter(prefix="/v2")
 
@@ -34,3 +35,4 @@ v2_router.include_router(topic_generation_router, tags=["topic-generation"])
 v2_router.include_router(semantic_search_router, tags=["semantic-search"])
 v2_router.include_router(teacher_router, tags=["teacher"])
 v2_router.include_router(ai_tutor_router, tags=["ai-tutor"])
+v2_router.include_router(profile_router, tags=["profile"])

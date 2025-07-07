@@ -108,6 +108,26 @@ class User(Base):
     grade_levels_taught = Column(JSON, default=list)
     years_experience = Column(Integer)
     classroom_size = Column(Integer)
+    
+    # Profile settings (API preferences, UI settings, etc.)
+    profile_settings = Column(JSON, default=dict)
+
+class UserApiKey(Base):
+    """Model for storing encrypted API keys for external providers."""
+    __tablename__ = "user_api_keys"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    provider_name = Column(String(50), nullable=False)  # openai, anthropic, etc.
+    api_key_encrypted = Column(Text, nullable=False)  # Encrypted API key
+    api_key_hash = Column(String(64), nullable=False)  # SHA256 hash for verification
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    last_used_at = Column(DateTime)
+    
+    # Relationship
+    user = relationship("User", backref="api_keys")
 
 class ContentAnalytics(Base):
     """Model for tracking content generation analytics."""

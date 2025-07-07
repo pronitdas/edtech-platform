@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "thinker": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "clarity-mcp-server"
+      ]
+    },
+    "calculator": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-calculator"
+      ]
+    },
+    "puppeteer": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ]
+    },
+    "neo4j": {
+      "command": "uvx",
+      "args": [
+        "mcp-neo4j-memory@0.1.5",
+        "--db-url",
+        "neo4j://localhost:7687",
+        "--username",
+        "neo4j",
+        "--password",
+        "uaip_dev_password"
+      ]
+    }
+  }
+}
