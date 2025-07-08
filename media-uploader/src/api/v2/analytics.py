@@ -81,7 +81,7 @@ async def start_user_session(
     try:
         analytics_service = AnalyticsService(db)
         session_id = await analytics_service.start_session(current_user.id)
-        return {"success": True, "session_id": session_id}
+        return {"id": session_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to start session: {str(e)}")
 

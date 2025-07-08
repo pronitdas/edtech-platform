@@ -150,13 +150,20 @@ class AuthService:
         """Get current user from token"""
         payload = self.verify_token(token)
         if payload is None:
+            logger.warning("Token verification failed in get_current_user")
             return None
         
         user_id = payload.get("user_id")
         if user_id is None:
+            logger.warning("No user_id found in token payload")
             return None
             
         user = self.db.query(User).filter(User.id == user_id).first()
+        if user is None:
+            logger.warning(f"User with ID {user_id} not found in database")
+        else:
+            logger.debug(f"Successfully retrieved user {user_id}: {user.email}")
+            
         return user
     
     async def student_onboarding(self, email: str, password: str, name: str, 

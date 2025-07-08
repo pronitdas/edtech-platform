@@ -127,6 +127,7 @@ interface InteractionContextState {
 // Context value interface
 interface InteractionContextValue
   extends Omit<InteractionContextState, 'events'> {
+  trackEvent: (data: Record<string, any>) => void
   trackVideoPlay: (contentId: number, data: VideoPlayEvent) => void
   trackVideoPause: (contentId: number, data: VideoPauseEvent) => void
   trackVideoComplete: (contentId: number, data: VideoCompleteEvent) => void
@@ -601,7 +602,7 @@ export const InteractionTrackerProvider: React.FC<
     }, [dataService, state.events.pending, userId, dispatch])
 
     // Track an event (internal function)
-    const trackEvent = useCallback(
+    const trackEventInternal = useCallback(
       (
         eventType: string,
         contentId?: number,
@@ -623,6 +624,26 @@ export const InteractionTrackerProvider: React.FC<
       [userId]
     )
 
+    // Generic trackEvent function for public use
+    const trackEvent = useCallback(
+      (data: Record<string, any>) => {
+        const { eventType, contentId, knowledgeId, moduleId, contentType, timestamp, ...metadata } = data
+        
+        trackEventInternal(
+          eventType,
+          contentId ? parseInt(contentId, 10) : undefined,
+          {
+            knowledgeId,
+            moduleId,
+            contentType,
+            timestamp: timestamp || Date.now(),
+            ...metadata,
+          }
+        )
+      },
+      [trackEventInternal]
+    )
+
     // Specialized tracking methods (memoized)
     const trackVideoPlay = useCallback(
       (contentId: number, data: VideoPlayEvent) => {
@@ -633,12 +654,12 @@ export const InteractionTrackerProvider: React.FC<
           )
         }
 
-        trackEvent('video_play', contentId, {
+        trackEventInternal('video_play', contentId, {
           ...data,
           timestamp: data.timestamp || Date.now(),
         })
       },
-      [trackEvent]
+      [trackEventInternal]
     )
 
     const trackVideoPause = useCallback(
@@ -650,12 +671,12 @@ export const InteractionTrackerProvider: React.FC<
           )
         }
 
-        trackEvent('video_pause', contentId, {
+        trackEventInternal('video_pause', contentId, {
           ...data,
           timestamp: data.timestamp || Date.now(),
         })
       },
-      [trackEvent]
+      [trackEventInternal]
     )
 
     const trackVideoComplete = useCallback(
@@ -667,12 +688,12 @@ export const InteractionTrackerProvider: React.FC<
           )
         }
 
-        trackEvent('video_complete', contentId, {
+        trackEventInternal('video_complete', contentId, {
           ...data,
           timestamp: data.timestamp || Date.now(),
         })
       },
-      [trackEvent]
+      [trackEventInternal]
     )
 
     const trackVideoProgress = useCallback(
@@ -684,43 +705,43 @@ export const InteractionTrackerProvider: React.FC<
           )
         }
 
-        trackEvent('video_progress', contentId, {
+        trackEventInternal('video_progress', contentId, {
           ...data,
           timestamp: data.timestamp || Date.now(),
         })
       },
-      [trackEvent]
+      [trackEventInternal]
     )
 
     const trackQuizStart = useCallback(
       (quizId: number, data: QuizStartEvent) =>
-        trackEvent('quiz_start', quizId, data),
-      [trackEvent]
+        trackEventInternal('quiz_start', quizId, data),
+      [trackEventInternal]
     )
 
     const trackQuizAnswer = useCallback(
       (quizId: number, questionId: string, data: QuizQuestionAnswerEvent) =>
-        trackEvent('quiz_answer', quizId, { ...data, questionId }),
-      [trackEvent]
+        trackEventInternal('quiz_answer', quizId, { ...data, questionId }),
+      [trackEventInternal]
     )
 
     const trackQuizComplete = useCallback(
       (quizId: number, data: QuizSubmitEvent) =>
-        trackEvent('quiz_complete', quizId, data),
-      [trackEvent]
+        trackEventInternal('quiz_complete', quizId, data),
+      [trackEventInternal]
     )
 
     const trackContentView = useCallback(
       (contentId: string, data: ContentViewEvent) =>
-        trackEvent('content_view', parseInt(contentId, 10) || 0, data),
-      [trackEvent]
+        trackEventInternal('content_view', parseInt(contentId, 10) || 0, data),
+      [trackEventInternal]
     )
 
     // Specialized roleplay tracking methods
     const trackRoleplayStart = useCallback(
       (data: RoleplayStartEvent) => {
         const { knowledgeId, moduleId, scenarioId, ...restData } = data
-        trackEvent('roleplay_start', parseInt(scenarioId, 10) || 0, {
+        trackEventInternal('roleplay_start', parseInt(scenarioId, 10) || 0, {
           knowledgeId,
           moduleId,
           scenarioId,
@@ -728,13 +749,13 @@ export const InteractionTrackerProvider: React.FC<
           interactionType: 'scenario_selection',
         })
       },
-      [trackEvent]
+      [trackEventInternal]
     )
 
     const trackRoleplayResponse = useCallback(
       (data: RoleplayResponseEvent) => {
         const { knowledgeId, moduleId, scenarioId, ...restData } = data
-        trackEvent('roleplay_response', parseInt(scenarioId, 10) || 0, {
+        trackEventInternal('roleplay_response', parseInt(scenarioId, 10) || 0, {
           knowledgeId,
           moduleId,
           scenarioId,
@@ -742,13 +763,13 @@ export const InteractionTrackerProvider: React.FC<
           interactionType: 'teacher_response',
         })
       },
-      [trackEvent]
+      [trackEventInternal]
     )
 
     const trackRoleplayComplete = useCallback(
       (data: RoleplayCompleteEvent) => {
         const { knowledgeId, moduleId, scenarioId, ...restData } = data
-        trackEvent('roleplay_complete', parseInt(scenarioId, 10) || 0, {
+        trackEventInternal('roleplay_complete', parseInt(scenarioId, 10) || 0, {
           knowledgeId,
           moduleId,
           scenarioId,
@@ -756,7 +777,7 @@ export const InteractionTrackerProvider: React.FC<
           interactionType: 'completion',
         })
       },
-      [trackEvent]
+      [trackEventInternal]
     )
 
     // Add new navigation tracking method
@@ -769,12 +790,12 @@ export const InteractionTrackerProvider: React.FC<
           )
         }
 
-        trackEvent('navigation', 0, {
+        trackEventInternal('navigation', 0, {
           ...data,
           timestamp: data.timestamp || Date.now(),
         })
       },
-      [trackEvent]
+      [trackEventInternal]
     )
 
     // Add new mindmap interaction tracking method
@@ -787,43 +808,43 @@ export const InteractionTrackerProvider: React.FC<
           )
         }
 
-        trackEvent('mindmap_interaction', parseInt(mapId, 10) || 0, {
+        trackEventInternal('mindmap_interaction', parseInt(mapId, 10) || 0, {
           ...data,
           timestamp: data.timestamp || Date.now(),
         })
       },
-      [trackEvent]
+      [trackEventInternal]
     )
 
     // Topic generation tracking methods
     const trackTopicGenerationStart = useCallback(
       (data: TopicGenerationStartEvent) => {
-        trackEvent('topic_generation_start', 0, {
+        trackEventInternal('topic_generation_start', 0, {
           ...data,
           timestamp: Date.now(),
         })
       },
-      [trackEvent]
+      [trackEventInternal]
     )
 
     const trackTopicGenerationComplete = useCallback(
       (data: TopicGenerationCompleteEvent) => {
-        trackEvent('topic_generation_complete', parseInt(data.knowledge_id, 10) || 0, {
+        trackEventInternal('topic_generation_complete', parseInt(data.knowledge_id, 10) || 0, {
           ...data,
           timestamp: Date.now(),
         })
       },
-      [trackEvent]
+      [trackEventInternal]
     )
 
     const trackTopicContentView = useCallback(
       (data: TopicContentViewEvent) => {
-        trackEvent('topic_content_view', parseInt(data.knowledge_id, 10) || 0, {
+        trackEventInternal('topic_content_view', parseInt(data.knowledge_id, 10) || 0, {
           ...data,
           timestamp: Date.now(),
         })
       },
-      [trackEvent]
+      [trackEventInternal]
     )
 
     // Memoized counts
@@ -849,6 +870,7 @@ export const InteractionTrackerProvider: React.FC<
       () => ({
         session: state.session,
         config: state.config,
+        trackEvent,
         trackVideoPlay,
         trackVideoPause,
         trackVideoComplete,
@@ -872,6 +894,7 @@ export const InteractionTrackerProvider: React.FC<
       [
         state.session,
         state.config,
+        trackEvent,
         trackVideoPlay,
         trackVideoPause,
         trackVideoComplete,

@@ -76,7 +76,12 @@ const StudentDashboard: React.FC = () => {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
         })
         if (progressResponse.ok) {
-          setProgress(await progressResponse.json())
+          const contentType = progressResponse.headers.get('content-type')
+          if (contentType && contentType.includes('application/json')) {
+            setProgress(await progressResponse.json())
+          } else {
+            console.warn('Progress endpoint returned non-JSON response')
+          }
         }
 
         // Fetch assignments
@@ -84,7 +89,12 @@ const StudentDashboard: React.FC = () => {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
         })
         if (assignmentsResponse.ok) {
-          setAssignments(await assignmentsResponse.json())
+          const contentType = assignmentsResponse.headers.get('content-type')
+          if (contentType && contentType.includes('application/json')) {
+            setAssignments(await assignmentsResponse.json())
+          } else {
+            console.warn('Assignments endpoint returned non-JSON response')
+          }
         }
 
         // Fetch achievements
@@ -92,7 +102,12 @@ const StudentDashboard: React.FC = () => {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
         })
         if (achievementsResponse.ok) {
-          setAchievements(await achievementsResponse.json())
+          const contentType = achievementsResponse.headers.get('content-type')
+          if (contentType && contentType.includes('application/json')) {
+            setAchievements(await achievementsResponse.json())
+          } else {
+            console.warn('Achievements endpoint returned non-JSON response')
+          }
         }
 
         trackEvent({
@@ -110,9 +125,14 @@ const StudentDashboard: React.FC = () => {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
           })
           if (generatedResponse.ok) {
-            const data = await generatedResponse.json()
-            if (data.generated_content) {
-              setGeneratedContent(data.generated_content)
+            const contentType = generatedResponse.headers.get('content-type')
+            if (contentType && contentType.includes('application/json')) {
+              const data = await generatedResponse.json()
+              if (data.generated_content) {
+                setGeneratedContent(data.generated_content)
+              }
+            } else {
+              console.warn('Generated content endpoint returned non-JSON response')
             }
           }
         } catch (error) {
@@ -125,8 +145,13 @@ const StudentDashboard: React.FC = () => {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('auth_token')}` }
           })
           if (practiceResponse.ok) {
-            const tools = await practiceResponse.json()
-            setPracticeTools(tools || [])
+            const contentType = practiceResponse.headers.get('content-type')
+            if (contentType && contentType.includes('application/json')) {
+              const tools = await practiceResponse.json()
+              setPracticeTools(tools || [])
+            } else {
+              console.warn('Practice tools endpoint returned non-JSON response')
+            }
           }
         } catch (error) {
           console.log('No practice tools available')

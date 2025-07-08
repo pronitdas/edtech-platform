@@ -118,6 +118,8 @@ export function useGraphManagement({
   const animateToView = useCallback(
     (targetZoom: number, targetOffset: { x: number; y: number }, duration: number = 600) => {
       const clampedZoom = Math.max(minZoom, Math.min(maxZoom, targetZoom))
+      
+      // Capture current values at the start of animation
       const startZoom = zoom
       const startOffset = offset
       const startTime = performance.now()
@@ -152,7 +154,7 @@ export function useGraphManagement({
 
       animationRef.current = requestAnimationFrame(animate)
     },
-    [zoom, offset, minZoom, maxZoom]
+    [minZoom, maxZoom] // Remove zoom and offset from dependencies to break circular dependency
   )
 
   // Reset the view to center the points (with smooth animation)

@@ -112,7 +112,12 @@ class KratosAuthMiddleware(BaseHTTPMiddleware):
                 payload = auth_service.verify_token(token)
                 
                 if payload and "user_id" in payload:
-                    user = db.query(User).filter(User.id == payload["user_id"]).first()
+                    user_id = payload["user_id"]
+                    user = db.query(User).filter(User.id == user_id).first()
+                    if user is None:
+                        logger.warning(f"JWT validation: User with ID {user_id} not found in database")
+                    else:
+                        logger.debug(f"JWT validation: Successfully found user {user_id}: {user.email}")
                     return user
             finally:
                 db.close()

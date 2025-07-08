@@ -128,21 +128,36 @@ const SlopeDrawingLayout: React.FC = () => {
 
       const canvas = containerRef.current.querySelector('.canvas-container')
       if (canvas) {
+        const rect = canvas.getBoundingClientRect()
+        // Ensure minimum dimensions for canvas rendering
+        const width = Math.max(rect.width, 320) // Minimum width for mobile
+        const height = Math.max(rect.height, 240) // Minimum height for mobile
+        
         setDimensions({
-          width: canvas.clientWidth,
-          height: canvas.clientHeight,
+          width: width,
+          height: height,
         })
       }
     }
 
-    // Initial size
-    updateDimensions()
+    // Initial size with a small delay to ensure DOM is ready
+    const timeoutId = setTimeout(() => {
+      updateDimensions()
+    }, 100)
 
     // Listen for resize events
-    const resizeObserver = new ResizeObserver(updateDimensions)
-    resizeObserver.observe(containerRef.current)
+    const resizeObserver = new ResizeObserver(() => {
+      // Debounce resize updates
+      clearTimeout(timeoutId)
+      setTimeout(updateDimensions, 100)
+    })
+    
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current)
+    }
 
     return () => {
+      clearTimeout(timeoutId)
       if (containerRef.current) {
         resizeObserver.unobserve(containerRef.current)
       }
@@ -281,20 +296,31 @@ const SlopeDrawingLayout: React.FC = () => {
 
       {/* Main content area with sidebar */}
       <div className='relative z-10 flex flex-1 overflow-hidden'>
-        {/* Sidebar - Drawing Tools */}
-        <div className='border-r border-white/10 bg-black/20 shadow-2xl backdrop-blur-xl'>
+        {/* Sidebar - Drawing Tools - Responsive */}
+        <div className='hidden md:block border-r border-white/10 bg-black/20 shadow-2xl backdrop-blur-xl'>
           <DrawingToolbar
             drawingTool={drawingTool}
             setDrawingTool={setDrawingTool}
           />
         </div>
 
-        {/* Main Graph/Canvas Area */}
+        {/* Main Graph/Canvas Area - Responsive */}
         <div className='flex flex-1 flex-col overflow-hidden'>
+          {/* Mobile Drawing Tools */}
+          <div className='md:hidden border-b border-white/10 bg-black/20 shadow-2xl backdrop-blur-xl'>
+            <DrawingToolbar
+              drawingTool={drawingTool}
+              setDrawingTool={setDrawingTool}
+            />
+          </div>
+          
           {/* Graph Canvas */}
           <div
-            className='canvas-container relative m-2 flex-1 overflow-hidden rounded-lg border border-white/10 bg-gradient-to-br from-slate-950 via-gray-900 to-slate-950 shadow-2xl backdrop-blur-sm'
-            style={{ minHeight: '60vh' }}
+            className='canvas-container relative m-1 md:m-2 flex-1 rounded-lg border border-white/10 bg-gradient-to-br from-slate-950 via-gray-900 to-slate-950 shadow-2xl backdrop-blur-sm'
+            style={{ 
+              minHeight: '300px', // Mobile minimum
+              height: 'calc(100vh - 200px)', // Dynamic height based on viewport
+            }}
           >
             {/* Canvas Glow Effect */}
             <div className='pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-br from-purple-500/5 via-transparent to-cyan-500/5' />
@@ -318,43 +344,54 @@ const SlopeDrawingLayout: React.FC = () => {
                 }
               }}
             >
-              <GraphCanvas
-              drawingMode='slope'
-              width={dimensions.width}
-              height={dimensions.height}
-              points={points}
-              onPointsChange={setPoints}
-              zoom={zoom}
-              offset={offset}
-              onZoomChange={setZoom}
-              onOffsetChange={setOffset}
-              mapPointToCanvas={mapPointToCanvas}
-              mapCanvasToPoint={mapCanvasToPoint}
-              editMode={
-                activeMode !== 'concept' || !selectedConcept?.demoPoints
-              }
-              highlightSolution={
-                activeMode === 'practice' && isCorrect === true
-              }
-              drawingTool={drawingTool}
-              onDrawingToolChange={setDrawingTool}
-              customPoints={customPoints}
-              customLines={customLines}
-              shapes={shapes}
-              texts={texts}
-              selectedItem={selectedItem}
-              setSelectedItem={setSelectedItem}
-              undoStack={undoStack}
-              setUndoStack={setUndoStack}
-              redoStack={redoStack}
-              setRedoStack={setRedoStack}
-              slopeConfig={{
-                equation: lineData?.equation || '',
-                xRange: [-10, 10], // Assuming default range
-                yRange: [-10, 10], // Assuming default range
-                stepSize: 0.1, // Assuming default step size
-              }}
-            />
+              {/* Debug: Show dimensions */}
+              {dimensions.width === 0 || dimensions.height === 0 ? (
+                <div className='flex items-center justify-center h-full text-white'>
+                  <div className='text-center'>
+                    <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4'></div>
+                    <p>Loading graph canvas...</p>
+                    <p className='text-sm text-gray-400'>Dimensions: {dimensions.width}x{dimensions.height}</p>
+                  </div>
+                </div>
+              ) : (
+                <GraphCanvas
+                  drawingMode='slope'
+                  width={dimensions.width}
+                  height={dimensions.height}
+                  points={points}
+                  onPointsChange={setPoints}
+                  zoom={zoom}
+                  offset={offset}
+                  onZoomChange={setZoom}
+                  onOffsetChange={setOffset}
+                  mapPointToCanvas={mapPointToCanvas}
+                  mapCanvasToPoint={mapCanvasToPoint}
+                  editMode={
+                    activeMode !== 'concept' || !selectedConcept?.demoPoints
+                  }
+                  highlightSolution={
+                    activeMode === 'practice' && isCorrect === true
+                  }
+                  drawingTool={drawingTool}
+                  onDrawingToolChange={setDrawingTool}
+                  customPoints={customPoints}
+                  customLines={customLines}
+                  shapes={shapes}
+                  texts={texts}
+                  selectedItem={selectedItem}
+                  setSelectedItem={setSelectedItem}
+                  undoStack={undoStack}
+                  setUndoStack={setUndoStack}
+                  redoStack={redoStack}
+                  setRedoStack={setRedoStack}
+                  slopeConfig={{
+                    equation: lineData?.equation || '',
+                    xRange: [-10, 10], // Assuming default range
+                    yRange: [-10, 10], // Assuming default range
+                    stepSize: 0.1, // Assuming default step size
+                  }}
+                />
+              )}
             </TouchFeedback>
           </div>
 
@@ -378,9 +415,13 @@ const SlopeDrawingLayout: React.FC = () => {
           )}
         </div>
 
-        {/* Right Panel (enhanced with tabs) */}
+        {/* Right Panel (enhanced with tabs) - Responsive */}
         <div
-          className={`${rightPanelCollapsed ? 'w-12' : 'w-96'} relative flex-shrink-0 border-l border-white/10 bg-black/20 shadow-2xl backdrop-blur-xl transition-all duration-300`}
+          className={`${
+            rightPanelCollapsed 
+              ? 'w-12' 
+              : 'w-full md:w-80 lg:w-96'
+          } relative flex-shrink-0 border-l border-white/10 bg-black/20 shadow-2xl backdrop-blur-xl transition-all duration-300 ${rightPanelCollapsed ? '' : 'md:relative absolute inset-x-0 bottom-0 md:inset-auto z-30'}`}
         >
           {/* Collapse Toggle */}
           <button
@@ -415,7 +456,7 @@ const SlopeDrawingLayout: React.FC = () => {
                   >
                     <div className='flex items-center justify-center space-x-1'>
                       <span>{tab.icon}</span>
-                      <span className='hidden lg:inline'>{tab.label}</span>
+                      <span className='hidden sm:inline'>{tab.label}</span>
                     </div>
                   </button>
                 ))}

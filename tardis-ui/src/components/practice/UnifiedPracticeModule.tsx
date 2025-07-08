@@ -26,6 +26,9 @@ import {
 import { useVoiceIntegration } from '@/hooks/useVoiceIntegration'
 import VoiceControlBar from './VoiceControlBar'
 
+// Move lazy loading outside the component to prevent infinite suspension
+const InteractiveGeometryMode = React.lazy(() => import('./modes/InteractiveGeometryMode'))
+
 // Types
 interface PracticeQuestion {
   id: string
@@ -448,20 +451,20 @@ const UnifiedPracticeModule: React.FC<UnifiedPracticeModuleProps> = ({
 
     // Special handling for interactive geometry mode
     if (selectedMode === 'interactive-geometry') {
-      const InteractiveGeometryMode = React.lazy(() => import('./modes/InteractiveGeometryMode'))
       return (
         <React.Suspense fallback={<div className="text-white">Loading interactive geometry...</div>}>
           <InteractiveGeometryMode
             onComplete={(results) => {
               // Update session with geometry results
-              setCurrentSession(prev => ({
-                ...prev!,
+              const updatedSession = {
+                ...currentSession!,
                 score: results.accuracy,
                 timeSpent: results.totalTime,
                 endTime: new Date()
-              }))
-              onComplete?.(currentSession!)
-              setCurrentView('results')
+              }
+              setCurrentSession(updatedSession)
+              onComplete?.(updatedSession)
+              setCurrentView('home')
             }}
             onProgress={onProgress}
             userId={topicId}
