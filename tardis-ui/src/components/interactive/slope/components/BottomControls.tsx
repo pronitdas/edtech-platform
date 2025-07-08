@@ -53,7 +53,7 @@ const BottomControls: React.FC<BottomControlsProps> = ({
     <div className='relative flex items-center justify-between border-t border-white/10 bg-gradient-to-r from-gray-900/95 to-black/95 p-4 backdrop-blur-sm'>
       {/* Animated background glow */}
       <div className='absolute inset-0 bg-gradient-to-r from-purple-500/5 to-cyan-500/5 opacity-50' />
-      
+
       <div className='relative flex items-center space-x-3'>
         {/* Reset View Button */}
         <button
@@ -62,11 +62,11 @@ const BottomControls: React.FC<BottomControlsProps> = ({
           className='group relative flex items-center space-x-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-gray-200 transition-all duration-200 hover:bg-white/20 hover:text-white hover:scale-105 active:scale-95 disabled:opacity-50'
           aria-label="Reset view to center and default zoom"
         >
-          <RotateCcw 
-            size={16} 
-            className={`transition-transform duration-300 ${isResetting ? 'animate-spin' : 'group-hover:rotate-180'}`} 
+          <RotateCcw
+            size={16}
+            className={`transition-transform duration-300 ${isResetting ? 'animate-spin' : 'group-hover:rotate-180'}`}
           />
-          <span>Reset View</span>
+          <span>Reset</span>
           {isResetting && (
             <div className='absolute inset-0 rounded-lg bg-gradient-to-r from-blue-500/20 to-cyan-500/20 animate-pulse' />
           )}
@@ -79,11 +79,11 @@ const BottomControls: React.FC<BottomControlsProps> = ({
           className='group relative flex items-center space-x-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-gray-200 transition-all duration-200 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/30 hover:scale-105 active:scale-95 disabled:opacity-50'
           aria-label="Clear all points from the graph"
         >
-          <Trash2 
-            size={16} 
-            className={`transition-all duration-300 ${isClearing ? 'animate-bounce' : 'group-hover:animate-pulse'}`} 
+          <Trash2
+            size={16}
+            className={`transition-all duration-300 ${isClearing ? 'animate-bounce' : 'group-hover:animate-pulse'}`}
           />
-          <span>Clear Points</span>
+          <span>Clear</span>
           {isClearing && (
             <div className='absolute inset-0 rounded-lg bg-gradient-to-r from-red-500/20 to-pink-500/20 animate-pulse' />
           )}
@@ -102,7 +102,7 @@ const BottomControls: React.FC<BottomControlsProps> = ({
             ) : (
               <Play size={16} className='group-hover:animate-bounce' />
             )}
-            <span>{isAnimating ? 'Playing...' : 'Show Steps'}</span>
+            <span>{isAnimating ? 'Playing...' : 'Steps'}</span>
             {isAnimating && (
               <div className='absolute inset-0 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-500/20 animate-pulse' />
             )}

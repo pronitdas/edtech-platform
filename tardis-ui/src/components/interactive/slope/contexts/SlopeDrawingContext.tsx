@@ -258,6 +258,17 @@ export const SlopeDrawingProvider: React.FC<SlopeDrawingProviderProps> = ({
     }
   }, [selectedConcept, setPointsFromCoordinates])
 
+  // Initialize points from current problem when in practice mode
+  React.useEffect(() => {
+    if (currentProblem && currentProblem.startPoints && currentProblem.startPoints.length > 0) {
+      // Set points from the current problem's start points
+      setPointsFromCoordinates(currentProblem.startPoints)
+    } else if (currentProblem && currentProblem.targetPoints && currentProblem.targetPoints.length > 0) {
+      // Fallback to target points if no start points
+      setPointsFromCoordinates(currentProblem.targetPoints)
+    }
+  }, [currentProblem, setPointsFromCoordinates])
+
   const contextValue: SlopeDrawingContextValue = {
     activeMode,
     setActiveMode,

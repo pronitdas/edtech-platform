@@ -49,7 +49,7 @@ COPY requirements.txt ./
 #     torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118  
 
 # Install remaining dependencies with optimizations
-RUN pip3 install --no-cache-dir -r requirements.txt --ignore-installed blinker
+RUN pip3 install --no-cache-dir -r requirements.txt --ignore-installed blinker wikipedia
 
 # Pre-download Whisper model to cache
 RUN python3 -c "import whisper; whisper.load_model('base')" || echo "Whisper model download failed, continuing..."

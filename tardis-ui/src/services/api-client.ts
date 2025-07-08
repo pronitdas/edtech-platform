@@ -37,6 +37,53 @@ const mockResponses: MockResponses = {
     created_at: new Date().toISOString(),
   },
 
+  // Teacher endpoints
+  'GET:/api/v2/teacher/stats': {
+    totalStudents: 45,
+    totalContent: 12,
+    activeAssignments: 8,
+    avgCompletionRate: 78,
+    recentActivity: [
+      { type: 'submission', student: 'Alice', assignment: 'Math Quiz 1', time: '2 hours ago' },
+      { type: 'question', student: 'Bob', topic: 'Quadratic Equations', time: '5 hours ago' },
+      { type: 'completion', student: 'Carol', assignment: 'Science Project', time: '1 day ago' }
+    ]
+  },
+  'GET:/api/v2/teacher/classrooms': [
+    {
+      classId: 'class_1',
+      className: 'Advanced Mathematics',
+      studentCount: 28,
+      avgProgress: 85,
+      recentActivity: 'Quiz completed by 15 students'
+    },
+    {
+      classId: 'class_2', 
+      className: 'Physics Fundamentals',
+      studentCount: 17,
+      avgProgress: 72,
+      recentActivity: 'New assignment posted'
+    }
+  ],
+  'GET:/api/v2/topic-generation/my-generated-content': {
+    content: [
+      {
+        id: 'content_1',
+        title: 'Quadratic Equations Study Guide',
+        type: 'study_guide',
+        subject: 'Mathematics',
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'content_2',
+        title: 'Physics Lab Safety Quiz',
+        type: 'quiz',
+        subject: 'Physics', 
+        createdAt: new Date().toISOString()
+      }
+    ]
+  },
+
   // Knowledge endpoints
   'GET:/v2/knowledge': [
     {
@@ -176,7 +223,7 @@ class ApiClient {
       return mockResponse
     }
 
-    const response = await fetch(`${this.baseURL}/v2${endpoint}`, {
+    const response = await fetch(`${this.baseURL}${endpoint}`, {
       headers: {
         'Content-Type': 'application/json',
         ...this.getAuthHeaders(),
@@ -194,7 +241,7 @@ class ApiClient {
       return mockResponse
     }
 
-    const response = await fetch(`${this.baseURL}/v2${endpoint}`, {
+    const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -214,7 +261,7 @@ class ApiClient {
       return mockResponse
     }
 
-    const response = await fetch(`${this.baseURL}/v2${endpoint}`, {
+    const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -234,7 +281,7 @@ class ApiClient {
       return mockResponse
     }
 
-    const response = await fetch(`${this.baseURL}/v2${endpoint}`, {
+    const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: 'DELETE',
       headers: this.getAuthHeaders(),
     })
@@ -250,7 +297,7 @@ class ApiClient {
       return mockResponse
     }
 
-    const response = await fetch(`${this.baseURL}/v2${endpoint}`, {
+    const response = await fetch(`${this.baseURL}${endpoint}`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: formData,

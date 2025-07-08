@@ -53,6 +53,7 @@ const TopicContentGenerator: React.FC<TopicContentGeneratorProps> = ({
   const [generationStatus, setGenerationStatus] = useState<GenerationStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [generatedContent, setGeneratedContent] = useState<GeneratedContentSummary | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const { trackTopicGenerationStart, trackTopicGenerationComplete } = useInteractionTracker();
 
   const subjectAreas = [
@@ -86,6 +87,28 @@ const TopicContentGenerator: React.FC<TopicContentGeneratorProps> = ({
     }));
   };
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    const validFiles = files.filter(file => {
+      // Check file size (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        setError(`File ${file.name} is too large. Maximum size is 10MB.`);
+        return false;
+      }
+      return true;
+    });
+    
+    setUploadedFiles(prev => [...prev, ...validFiles]);
+    // Clear the error if files are valid
+    if (validFiles.length > 0) {
+      setError(null);
+    }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -110,7 +133,21 @@ const TopicContentGenerator: React.FC<TopicContentGeneratorProps> = ({
         user_id: 'current_user' // This should come from user context
       });
 
-      const response = await apiClient.post('/api/v2/topic-generation/generate', formData);
+      // Create FormData for file upload if files exist
+      let requestData: any = formData;
+      
+      if (uploadedFiles.length > 0) {
+        const formDataWithFiles = new FormData();
+        formDataWithFiles.append('request', JSON.stringify(formData));
+        
+        uploadedFiles.forEach((file, index) => {
+          formDataWithFiles.append(`files`, file);
+        });
+        
+        requestData = formDataWithFiles;
+      }
+
+      const response = await apiClient.post('/api/v2/topic-generation/generate', requestData);
       const contentSummary: GeneratedContentSummary = response.data;
       
       setGeneratedContent(contentSummary);
@@ -296,6 +333,53 @@ const TopicContentGenerator: React.FC<TopicContentGeneratorProps> = ({
                   <button
                     type="button"
                     onClick={() => handleRemoveObjective(index)}
+                    className="text-red-500 hover:text-red-700 text-sm"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* File Upload Section */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Upload Supporting Materials (Optional)
+          </label>
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+            <input
+              type="file"
+              multiple
+              accept=".pdf,.doc,.docx,.txt,.ppt,.pptx"
+              onChange={handleFileUpload}
+              className="hidden"
+              id="file-upload"
+            />
+            <label
+              htmlFor="file-upload"
+              className="cursor-pointer flex flex-col items-center"
+            >
+              <svg className="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <span className="text-sm text-gray-600">
+                Click to upload files or drag and drop
+              </span>
+              <span className="text-xs text-gray-500 mt-1">
+                PDF, DOC, DOCX, TXT, PPT, PPTX up to 10MB each
+              </span>
+            </label>
+          </div>
+          {uploadedFiles.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {uploadedFiles.map((file, index) => (
+                <div key={index} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded">
+                  <span className="text-sm">{file.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveFile(index)}
                     className="text-red-500 hover:text-red-700 text-sm"
                   >
                     Remove

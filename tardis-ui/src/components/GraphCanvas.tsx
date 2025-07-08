@@ -151,6 +151,15 @@ const GraphCanvas: React.FC<GraphCanvasProps> = props => {
         highlightSolution: props.highlightSolution,
         editMode: props.editMode,
         drawingTool: props.drawingTool,
+        onPointsChange: props.onPointsChange,
+        onCustomPointsChange: (points) => {
+          // Update custom points if needed - for now just log
+          console.log('Custom points changed:', points)
+        },
+        onCustomLinesChange: (lines) => {
+          // Update custom lines if needed - for now just log
+          console.log('Custom lines changed:', lines)
+        },
       })
     }
   }, [props, width, height, zoom, offset, mapPointToCanvas, mapCanvasToPoint])
@@ -173,6 +182,23 @@ const GraphCanvas: React.FC<GraphCanvasProps> = props => {
     if (!p5DrawingStrategy) {
       return <div>Error: Drawing strategy not available</div>
     }
+
+    // Update strategy configuration when props change
+    if (isP5Props(props) && props.drawingMode === 'slope' && p5DrawingStrategy.updateConfig) {
+      p5DrawingStrategy.updateConfig({
+        points: props.points,
+        customPoints: props.customPoints,
+        customLines: props.customLines,
+        shapes: props.shapes,
+        texts: props.texts,
+        zoom,
+        offset,
+        drawingTool: props.drawingTool,
+        editMode: props.editMode,
+        highlightSolution: props.highlightSolution,
+      })
+    }
+
     return (
       <CoreGraphCanvas
         width={width}

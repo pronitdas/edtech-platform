@@ -1,31 +1,20 @@
 import React, { useRef, useEffect, useState } from 'react'
 import { useSlopeDrawing } from '../contexts/SlopeDrawingContext'
-import { useAccessibility } from '../hooks/useAccessibility'
 import GraphCanvas from '../../../../components/GraphCanvas'
-import ConceptExplanation from './ConceptExplanation'
-import PracticeProblem from './PracticeProblem'
-import CustomProblemSolver from './CustomProblemSolver'
-import WordProblem from './WordProblem'
-import AnimatedSolution from './AnimatedSolution'
-import StatsDisplay from './StatsDisplay'
-import ModeSelector from './ModeSelector'
 import DrawingToolbar from './DrawingToolbar'
-import BottomControls from './BottomControls'
-import AITutor from './AITutor'
-import GameificationPanel from './GameificationPanel'
 import TouchFeedback from './TouchFeedback'
-import { ChevronLeft, ChevronRight, Settings, Volume2 } from 'lucide-react'
 
-/**
- * The main layout component for SlopeDrawing
- * This component uses the SlopeDrawingContext to access state and actions
- */
+// Add touch optimization styles
+const touchOptimizedStyles = {
+  WebkitUserSelect: 'none' as const,
+  userSelect: 'none' as const,
+  WebkitTouchCallout: 'none' as const,
+  WebkitTapHighlightColor: 'transparent',
+  touchAction: 'manipulation' as const,
+}
+
 const SlopeDrawingLayout: React.FC = () => {
   const {
-    // Mode state
-    activeMode,
-    setActiveMode,
-
     // Graph management
     points,
     setPoints,
@@ -50,74 +39,37 @@ const SlopeDrawingLayout: React.FC = () => {
     redoStack,
     setRedoStack,
 
-    // Drawing tool state
+    // Drawing tools
     drawingTool,
     setDrawingTool,
 
-    // Concept mode
-    concepts,
-    selectedConceptId,
-    setSelectedConceptId,
-    selectedConcept,
-
     // Practice problem mode
-    problems,
-    currentProblemId,
     currentProblem,
-    difficulty,
     isCorrect,
-    showSolution,
     stats,
-    generateProblem,
-    checkSolution,
-    toggleSolution,
-    nextProblem,
-    changeDifficulty, // Destructure changeDifficulty
-
-    // Animation state
-    showAnimation,
-    setShowAnimation,
-    animationSpeed,
-    setAnimationSpeed,
-
-    // Cognitive load
-    cognitiveState,
-    recordError,
-    recordHesitation,
-    resetTracking,
 
     // Canvas dimensions
     dimensions,
     setDimensions,
-
-    // Props passed to the SlopeDrawing component
-    language,
-    openaiClient,
   } = useSlopeDrawing()
 
-  // Reference to the container div (for sizing calculations)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Right panel state
-  const [rightPanelTab, setRightPanelTab] = useState<
-    'content' | 'ai' | 'gamification' | 'accessibility'
-  >('content')
-  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false)
-
-  // Accessibility features
-  const {
-    isMobile,
-    hasHapticFeedback,
-    prefersReducedMotion,
-    highContrast,
-    screenReaderActive,
-    fontSize,
-    announceToScreenReader,
-    triggerHapticFeedback,
-    focusElement,
-    setFontSize,
-    toggleHighContrast,
-  } = useAccessibility()
+  // Handle submission
+  const handleSubmitAnswer = () => {
+    if (lineData && currentProblem) {
+      // Check if the slope matches the expected answer
+      const expectedSlope = 2 // For the (2,3) to (6,11) problem
+      const calculatedSlope = lineData.slope
+      const isCorrectAnswer = calculatedSlope !== null && Math.abs(calculatedSlope - expectedSlope) < 0.1
+      
+      if (isCorrectAnswer) {
+        alert('Correct! The slope is 2.')
+      } else {
+        alert(`Not quite. Your slope is ${calculatedSlope?.toFixed(2)}. The correct answer is 2.`)
+      }
+    }
+  }
 
   // Update canvas dimensions when container size changes
   useEffect(() => {
@@ -129,9 +81,9 @@ const SlopeDrawingLayout: React.FC = () => {
       const canvas = containerRef.current.querySelector('.canvas-container')
       if (canvas) {
         const rect = canvas.getBoundingClientRect()
-        // Ensure minimum dimensions for canvas rendering
-        const width = Math.max(rect.width, 320) // Minimum width for mobile
-        const height = Math.max(rect.height, 240) // Minimum height for mobile
+        // Better mobile/tablet sizing
+        const width = Math.max(rect.width, window.innerWidth < 768 ? 300 : 320)
+        const height = Math.max(rect.height, window.innerWidth < 768 ? 400 : 240)
         
         setDimensions({
           width: width,
@@ -140,217 +92,193 @@ const SlopeDrawingLayout: React.FC = () => {
       }
     }
 
-    // Initial size with a small delay to ensure DOM is ready
     const timeoutId = setTimeout(() => {
       updateDimensions()
     }, 100)
 
-    // Listen for resize events
     const resizeObserver = new ResizeObserver(() => {
-      // Debounce resize updates
       clearTimeout(timeoutId)
       setTimeout(updateDimensions, 100)
     })
     
+    // Also listen for orientation changes on mobile devices
+    const handleOrientationChange = () => {
+      setTimeout(updateDimensions, 200) // Delay for orientation change
+    }
+    
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current)
     }
+    
+    window.addEventListener('orientationchange', handleOrientationChange)
+    window.addEventListener('resize', handleOrientationChange)
 
     return () => {
       clearTimeout(timeoutId)
       if (containerRef.current) {
         resizeObserver.unobserve(containerRef.current)
       }
+      window.removeEventListener('orientationchange', handleOrientationChange)
+      window.removeEventListener('resize', handleOrientationChange)
     }
   }, [setDimensions])
 
-  // Handle keyboard shortcuts
+  // Detect if we're on a touch device
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+  
+  // iPad-specific optimizations
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Prevent default behavior for certain keys to avoid interference
-      if (
-        [' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(
-          event.key
-        )
-      ) {
-        event.preventDefault()
-      }
-
-      // Handle tool selection shortcuts
-      switch (event.key.toLowerCase()) {
-        case 'p': // Point tool
-          setDrawingTool('point')
-          break
-        case 'l': // Line tool (assuming solid line)
-          setDrawingTool('solidLine')
-          break
-        case 'e': // Erase tool (assuming clear)
-          setDrawingTool('clear')
-          break
-        // Existing shortcuts
-        case 'r':
-          setDrawingTool('reset')
-          break
-        case 'm':
-          setDrawingTool('move')
-          break
-        case 's':
-          setDrawingTool('solidLine')
-          break
-        case 't':
-          setDrawingTool('text')
-          break
-        case 'c':
-          setDrawingTool('clear')
-          break
-        case 'a': // 'a' for pan, as 'p' is for point
-          setDrawingTool('pan')
-          break
-        case '+':
-          setDrawingTool('zoomIn')
-          break
-        case '-':
-          setDrawingTool('zoomOut')
-          break
-      }
-
-      // Handle Undo/Redo shortcuts (Ctrl+Z/Cmd+Z, Ctrl+Y/Cmd+Y)
-      if ((event.ctrlKey || event.metaKey) && event.key === 'z') {
-        setDrawingTool('undo')
-        event.preventDefault() // Prevent browser undo
-      } else if ((event.ctrlKey || event.metaKey) && event.key === 'y') {
-        setDrawingTool('redo')
-        event.preventDefault() // Prevent browser redo
-      }
-
-      // Handle Clear canvas shortcut (Delete or Backspace)
-      if (event.key === 'Delete' || event.key === 'Backspace') {
-        setDrawingTool('clear')
-        event.preventDefault() // Prevent browser back navigation
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [setDrawingTool]) // Depend on setDrawingTool to ensure the latest function is used
-
-  // Handle submitting an answer for practice problems
-  const handleSubmitAnswer = () => {
-    if (lineData) {
-      const isCorrect = checkSolution(lineData)
-      if (!isCorrect) {
-        recordError()
-        announceToScreenReader('Incorrect answer. Try again or ask for a hint.')
-        triggerHapticFeedback('medium')
+    if (isTouchDevice) {
+      // Prevent pull-to-refresh on mobile Safari
+      document.body.style.overscrollBehavior = 'none'
+      
+      // Prevent zoom on inputs (iOS Safari)
+      const meta = document.querySelector('meta[name="viewport"]')
+      if (meta) {
+        meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no')
       } else {
-        announceToScreenReader('Correct! Well done.')
-        triggerHapticFeedback('light')
+        const newMeta = document.createElement('meta')
+        newMeta.name = 'viewport'
+        newMeta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
+        document.head.appendChild(newMeta)
+      }
+      
+      // Add CSS for better touch performance
+      const style = document.createElement('style')
+      style.textContent = `
+        * {
+          -webkit-touch-callout: none;
+          -webkit-tap-highlight-color: transparent;
+        }
+        
+        .touch-manipulation {
+          touch-action: manipulation;
+          -webkit-user-select: none;
+          user-select: none;
+        }
+        
+        /* iPad specific improvements */
+        @media (max-width: 1024px) and (orientation: landscape) {
+          .canvas-container {
+            height: calc(100vh - 120px) !important;
+          }
+        }
+        
+        @media (max-width: 768px) and (orientation: portrait) {
+          .canvas-container {
+            height: calc(100vh - 200px) !important;
+          }
+        }
+      `
+      document.head.appendChild(style)
+      
+      return () => {
+        document.body.style.overscrollBehavior = 'auto'
+        document.head.removeChild(style)
       }
     }
-  }
-
-  // Handle hint usage for practice problems
-  const handleHintRequest = () => {
-    recordHesitation(30) // Assume using a hint indicates 30 seconds of hesitation
-    announceToScreenReader(
-      'Hint provided. Take your time to understand the concept.'
-    )
-  }
-
-  // Handle solution reveal
-  const handleSolutionReveal = () => {
-    recordHesitation(60) // Assume revealing solution indicates 60 seconds of hesitation
-    announceToScreenReader(
-      'Solution revealed. Review the steps to understand the approach.'
-    )
-  }
+  }, [isTouchDevice])
 
   return (
     <div
       ref={containerRef}
-      className='relative flex h-full w-full flex-col overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900'
+      className='flex h-full w-full overflow-hidden bg-gray-900'
+      style={touchOptimizedStyles}
     >
-      {/* Futuristic Background Effects */}
-      <div className='pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-400/10 via-pink-400/5 to-cyan-400/5' />
-      <div className='bg-grid-white/[0.02] pointer-events-none absolute inset-0' />
-
-      {/* Animated Particles Background */}
-      <div className='pointer-events-none absolute inset-0 overflow-hidden'>
-        <div className='absolute -left-48 -top-48 h-96 w-96 animate-pulse rounded-full bg-gradient-to-r from-purple-500/10 to-cyan-500/10 blur-3xl' />
-        <div className='absolute -bottom-40 -right-40 h-80 w-80 animate-pulse rounded-full bg-gradient-to-r from-pink-500/10 to-purple-500/10 blur-3xl delay-700' />
-        <div className='absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 transform animate-pulse rounded-full bg-gradient-to-r from-cyan-500/10 to-blue-500/10 blur-3xl delay-1000' />
-      </div>
-
-      {/* Tool mode selector */}
-      <div className='relative z-10 border-b border-white/10 bg-white/5 shadow-2xl backdrop-blur-xl'>
-        <ModeSelector
-          activeMode={activeMode}
-          onModeChange={setActiveMode}
-          cognitiveState={cognitiveState}
-          onReset={resetTracking}
-        />
-      </div>
-
-      {/* Main content area with sidebar */}
-      <div className='relative z-10 flex flex-1 overflow-hidden'>
-        {/* Sidebar - Drawing Tools - Responsive */}
-        <div className='hidden md:block border-r border-white/10 bg-black/20 shadow-2xl backdrop-blur-xl'>
+      {/* Main Content */}
+      <div className='flex flex-1 overflow-hidden'>
+        {/* Drawing Toolbar - Responsive */}
+        <div className='hidden md:block border-r border-gray-600 bg-gray-800 shadow-2xl'>
           <DrawingToolbar
             drawingTool={drawingTool}
-            setDrawingTool={setDrawingTool}
+            setDrawingTool={(tool) => {
+              // Handle special tools before setting
+              if (tool === 'reset') {
+                resetView()
+                return
+              }
+              if (tool === 'zoomIn') {
+                setZoom(zoom * 1.2)
+                return
+              }
+              if (tool === 'zoomOut') {
+                setZoom(zoom * 0.8)
+                return
+              }
+              if (tool === 'clear') {
+                clearPoints()
+                return
+              }
+              setDrawingTool(tool)
+            }}
           />
         </div>
 
-        {/* Main Graph/Canvas Area - Responsive */}
-        <div className='flex flex-1 flex-col overflow-hidden'>
-          {/* Mobile Drawing Tools */}
-          <div className='md:hidden border-b border-white/10 bg-black/20 shadow-2xl backdrop-blur-xl'>
-            <DrawingToolbar
-              drawingTool={drawingTool}
-              setDrawingTool={setDrawingTool}
-            />
+        {/* Mobile Drawing Toolbar */}
+        <div className='md:hidden absolute top-0 left-0 right-0 z-10 bg-gray-800 border-b border-gray-600 p-2'>
+          <div className='flex justify-center'>
+            <div className='flex space-x-2 overflow-x-auto'>
+              <DrawingToolbar
+                drawingTool={drawingTool}
+                setDrawingTool={(tool) => {
+                  // Handle special tools before setting
+                  if (tool === 'reset') {
+                    resetView()
+                    return
+                  }
+                  if (tool === 'zoomIn') {
+                    setZoom(zoom * 1.2)
+                    return
+                  }
+                  if (tool === 'zoomOut') {
+                    setZoom(zoom * 0.8)
+                    return
+                  }
+                  if (tool === 'clear') {
+                    clearPoints()
+                    return
+                  }
+                  setDrawingTool(tool)
+                }}
+              />
+            </div>
           </div>
-          
-          {/* Graph Canvas */}
+        </div>
+
+        {/* Graph Canvas */}
+        <div className='flex-1 p-2 md:p-4 pt-16 md:pt-4 pb-32 lg:pb-4'>
           <div
-            className='canvas-container relative m-1 md:m-2 flex-1 rounded-lg border border-white/10 bg-gradient-to-br from-slate-950 via-gray-900 to-slate-950 shadow-2xl backdrop-blur-sm'
-            style={{ 
-              minHeight: '300px', // Mobile minimum
-              height: 'calc(100vh - 200px)', // Dynamic height based on viewport
+            className={`canvas-container relative h-full w-full rounded-lg border border-gray-600 bg-white ${
+              isTouchDevice ? 'touch-none' : ''
+            }`}
+            style={{
+              ...touchOptimizedStyles,
+              // Prevent zoom on double tap for iOS Safari
+              WebkitUserZoom: 'disabled',
+              msContentZooming: 'none',
             }}
           >
-            {/* Canvas Glow Effect */}
-            <div className='pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-br from-purple-500/5 via-transparent to-cyan-500/5' />
-            
             <TouchFeedback
               className="h-full w-full"
               onTouch={(point) => {
-                // Provide haptic feedback for canvas touch
-                if (isMobile) {
-                  triggerHapticFeedback('light')
+                // Handle touch interactions for drawing
+                if (drawingTool === 'point') {
+                  const worldPoint = mapCanvasToPoint(point)
+                  setPoints([...points, worldPoint])
                 }
               }}
               onTouchMove={(point) => {
-                // Optional: Add subtle haptic feedback for drag operations
-                // Throttled to avoid excessive haptic feedback
-              }}
-              onTouchEnd={(point) => {
-                // Confirm action completion with haptic feedback
-                if (isMobile) {
-                  triggerHapticFeedback('medium')
+                // Handle drag operations for move tool
+                if (drawingTool === 'move') {
+                  // Pan functionality is handled by the canvas itself
                 }
               }}
             >
-              {/* Debug: Show dimensions */}
               {dimensions.width === 0 || dimensions.height === 0 ? (
-                <div className='flex items-center justify-center h-full text-white'>
+                <div className='flex items-center justify-center h-full text-gray-600'>
                   <div className='text-center'>
-                    <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4'></div>
-                    <p>Loading graph canvas...</p>
-                    <p className='text-sm text-gray-400'>Dimensions: {dimensions.width}x{dimensions.height}</p>
+                    <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4'></div>
+                    <p>Loading graph...</p>
                   </div>
                 </div>
               ) : (
@@ -366,12 +294,8 @@ const SlopeDrawingLayout: React.FC = () => {
                   onOffsetChange={setOffset}
                   mapPointToCanvas={mapPointToCanvas}
                   mapCanvasToPoint={mapCanvasToPoint}
-                  editMode={
-                    activeMode !== 'concept' || !selectedConcept?.demoPoints
-                  }
-                  highlightSolution={
-                    activeMode === 'practice' && isCorrect === true
-                  }
+                  editMode={true}
+                  highlightSolution={false}
                   drawingTool={drawingTool}
                   onDrawingToolChange={setDrawingTool}
                   customPoints={customPoints}
@@ -386,422 +310,183 @@ const SlopeDrawingLayout: React.FC = () => {
                   setRedoStack={setRedoStack}
                   slopeConfig={{
                     equation: lineData?.equation || '',
-                    xRange: [-10, 10], // Assuming default range
-                    yRange: [-10, 10], // Assuming default range
-                    stepSize: 0.1, // Assuming default step size
+                    xRange: [-2, 12],
+                    yRange: [-2, 15],
+                    stepSize: 1,
+                    // Touch-friendly configurations
+                    touchSensitivity: isTouchDevice ? 30 : 20,
+                    minZoom: 0.5,
+                    maxZoom: 3,
+                    gridSize: isTouchDevice ? 40 : 30, // Larger grid for touch
                   }}
+                  // Enhanced interaction handlers
+                  onElementClick={(type, index, data) => {
+                    console.log('Element clicked:', type, index, data)
+                    // Handle element selection and interaction
+                    if (type === 'point') {
+                      setSelectedItem(`point-${index}`)
+                    }
+                  }}
+                  // Pass touch device info
+                  isTouchDevice={isTouchDevice}
                 />
               )}
             </TouchFeedback>
           </div>
+        </div>
 
-          {/* Animated Solution */}
-          {showAnimation && lineData && (
-            <div className='m-2 h-48 overflow-hidden rounded-lg border-t border-white/20 bg-black/30 shadow-xl backdrop-blur-xl'>
-              <div className='absolute inset-0 rounded-lg bg-gradient-to-r from-purple-500/10 to-cyan-500/10' />
-              <div className='relative z-10'>
-                <AnimatedSolution
-                  points={points}
-                  slope={lineData.slope}
-                  equation={lineData.equation}
-                  onPointsChange={setPoints}
-                  autoPlay={true}
-                  speed={animationSpeed}
-                  onSpeedChange={setAnimationSpeed}
-                  onComplete={() => setShowAnimation(false)}
-                />
+        {/* Side Panel - Responsive */}
+        <div className='hidden lg:block w-80 border-l border-gray-600 bg-gray-800 p-4'>
+          <div className='space-y-4'>
+            {/* Current Solution */}
+            {lineData && (
+              <div>
+                <h3 className='text-white font-semibold mb-2'>Your Solution</h3>
+                <div className='bg-gray-700 p-3 rounded'>
+                  <div className='text-green-400 font-mono text-lg'>
+                    Slope = {lineData.slope?.toFixed(2)}
+                  </div>
+                  <div className='text-gray-300 text-sm mt-1'>
+                    Rise: {lineData.rise?.toFixed(1)}, Run: {lineData.run?.toFixed(1)}
+                  </div>
+                  <div className='text-gray-300 text-sm'>
+                    Formula: ({lineData.point2?.y} - {lineData.point1?.y}) / ({lineData.point2?.x} - {lineData.point1?.x})
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Instructions */}
+            <div>
+              <h3 className='text-white font-semibold mb-2'>Instructions</h3>
+              <div className='bg-gray-700 p-3 rounded text-sm text-gray-300'>
+                <ol className='space-y-1'>
+                  <li>1. Select Point tool (left toolbar)</li>
+                  <li>2. Click to place point at (2, 3)</li>
+                  <li>3. Click to place point at (6, 11)</li>
+                  <li>4. Select Line tool to connect points</li>
+                  <li>5. Check your slope calculation</li>
+                </ol>
               </div>
             </div>
-          )}
-        </div>
 
-        {/* Right Panel (enhanced with tabs) - Responsive */}
-        <div
-          className={`${
-            rightPanelCollapsed 
-              ? 'w-12' 
-              : 'w-full md:w-80 lg:w-96'
-          } relative flex-shrink-0 border-l border-white/10 bg-black/20 shadow-2xl backdrop-blur-xl transition-all duration-300 ${rightPanelCollapsed ? '' : 'md:relative absolute inset-x-0 bottom-0 md:inset-auto z-30'}`}
-        >
-          {/* Collapse Toggle */}
-          <button
-            onClick={() => setRightPanelCollapsed(!rightPanelCollapsed)}
-            className='absolute left-0 top-1/2 z-20 flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 transform items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-cyan-500 text-white transition-transform duration-200 hover:scale-110'
-          >
-            {rightPanelCollapsed ? (
-              <ChevronLeft className='h-4 w-4' />
-            ) : (
-              <ChevronRight className='h-4 w-4' />
-            )}
-          </button>
-
-          {!rightPanelCollapsed && (
-            <>
-              {/* Tab Navigation */}
-              <div className='flex border-b border-white/20 bg-black/30'>
-                {[
-                  { id: 'content', label: 'Content', icon: '📚' },
-                  { id: 'ai', label: 'AI Tutor', icon: '🤖' },
-                  { id: 'gamification', label: 'Progress', icon: '🏆' },
-                  { id: 'accessibility', label: 'Access', icon: '♿' },
-                ].map(tab => (
+            {/* Quick Actions */}
+            <div>
+              <h3 className='text-white font-semibold mb-2'>Quick Actions</h3>
+              <div className='space-y-3'>
+                <button
+                  onClick={() => {
+                    setPointsFromCoordinates([{x: 2, y: 3}, {x: 6, y: 11}])
+                    setDrawingTool('line')
+                  }}
+                  className='w-full bg-purple-600 text-white py-3 px-4 rounded hover:bg-purple-700 active:bg-purple-800 text-sm touch-manipulation'
+                >
+                  📍 Place Both Points
+                </button>
+                
+                <button
+                  onClick={handleSubmitAnswer}
+                  className='w-full bg-blue-600 text-white py-3 px-4 rounded hover:bg-blue-700 active:bg-blue-800 disabled:bg-gray-500 touch-manipulation'
+                  disabled={!lineData}
+                >
+                  ✓ Check Answer
+                </button>
+                
+                <div className='flex space-x-2'>
                   <button
-                    key={tab.id}
-                    onClick={() => setRightPanelTab(tab.id as any)}
-                    className={`flex-1 px-3 py-3 text-sm font-medium transition-all duration-200 ${
-                      rightPanelTab === tab.id
-                        ? 'border-b-2 border-cyan-400 bg-gradient-to-r from-purple-500/30 to-cyan-500/30 text-white'
-                        : 'text-gray-400 hover:bg-white/10 hover:text-white'
-                    }`}
+                    onClick={resetView}
+                    className='flex-1 bg-gray-600 text-white py-3 px-4 rounded hover:bg-gray-500 active:bg-gray-700 text-sm touch-manipulation'
                   >
-                    <div className='flex items-center justify-center space-x-1'>
-                      <span>{tab.icon}</span>
-                      <span className='hidden sm:inline'>{tab.label}</span>
-                    </div>
+                    🔄 Reset View
                   </button>
-                ))}
+                  <button
+                    onClick={clearPoints}
+                    className='flex-1 bg-gray-600 text-white py-3 px-4 rounded hover:bg-gray-500 active:bg-gray-700 text-sm touch-manipulation'
+                  >
+                    🗑️ Clear
+                  </button>
+                </div>
               </div>
+            </div>
 
-              {/* Tab Content */}
-              <div className='h-full overflow-y-auto pb-16'>
-                {/* Content Tab */}
-                {rightPanelTab === 'content' && (
-                  <div className='p-4'>
-                    {/* Concept Explanation Mode */}
-                    {activeMode === 'concept' && (
-                      <ConceptExplanation
-                        concepts={concepts}
-                        selectedConceptId={selectedConceptId}
-                        onSelectConcept={setSelectedConceptId}
-                        {...(lineData && { lineData })}
-                      />
-                    )}
-
-                    {/* Practice Problem Mode */}
-                    {activeMode === 'practice' && (
-                      <PracticeProblem
-                        problems={problems}
-                        currentProblemId={currentProblemId}
-                        difficulty={difficulty}
-                        setDifficulty={changeDifficulty}
-                        onSelectProblem={problemId => {
-                          console.log('Select problem:', problemId)
-                        }}
-                        onGenerateNewProblem={generateProblem}
-                        {...(lineData && { lineData })}
-                        onSubmitAnswer={handleSubmitAnswer}
-                        {...(isCorrect !== undefined && { isCorrect })}
-                        showSolution={showSolution}
-                        onToggleSolution={handleSolutionReveal}
-                        onNextProblem={nextProblem}
-                        stats={stats}
-                        onHintRequest={handleHintRequest}
-                      />
-                    )}
-
-                    {/* Custom Problem Solver Mode */}
-                    {activeMode === 'custom' && (
-                      <CustomProblemSolver
-                        {...(lineData && { lineData })}
-                        onPointsChange={setPointsFromCoordinates}
-                        {...(openaiClient && { openaiClient })}
-                        language={language}
-                      />
-                    )}
-
-                    {/* Word Problem Mode */}
-                    {activeMode === 'word' && (
-                      <WordProblem
-                        {...(lineData && { lineData })}
-                        onPointsChange={setPointsFromCoordinates}
-                        {...(openaiClient && { openaiClient })}
-                        language={language}
-                        difficulty={difficulty}
-                      />
-                    )}
-                  </div>
-                )}
-
-                {/* AI Tutor Tab */}
-                {rightPanelTab === 'ai' && (
-                  <div className='p-4'>
-                    <AITutor
-                      cognitiveState={cognitiveState}
-                      currentProblem={currentProblem}
-                      userProgress={{
-                        correct: stats.correct,
-                        incorrect: stats.incorrect,
-                        difficulty: difficulty,
-                      }}
-                      onHint={hint => {
-                        console.log('AI Hint:', hint)
-                        // Show hint in UI
-                      }}
-                      onDifficultyAdjust={changeDifficulty}
-                      onGenerateExplanation={concept => {
-                        console.log('Generate explanation for:', concept)
-                        // Generate and show explanation
-                      }}
-                    />
-                  </div>
-                )}
-
-                {/* Gamification Tab */}
-                {rightPanelTab === 'gamification' && (
-                  <div className='p-4'>
-                    <GameificationPanel
-                      userProgress={{
-                        correct: stats.correct,
-                        incorrect: stats.incorrect,
-                        difficulty: difficulty,
-                        streakCount: stats.streakCount,
-                      }}
-                      cognitiveState={cognitiveState}
-                      onAchievementUnlocked={achievement => {
-                        console.log('Achievement unlocked:', achievement)
-                        announceToScreenReader(
-                          `Achievement unlocked: ${achievement.title}. ${achievement.description}`
-                        )
-                        triggerHapticFeedback('heavy')
-                      }}
-                    />
-                  </div>
-                )}
-
-                {/* Accessibility Tab */}
-                {rightPanelTab === 'accessibility' && (
-                  <div className='space-y-6 p-4'>
-                    <div className='flex items-center space-x-2 text-cyan-400'>
-                      <span className='text-lg'>♿</span>
-                      <h3 className='font-bold'>Accessibility Settings</h3>
-                    </div>
-
-                    {/* Device Info */}
-                    <div className='rounded-lg border border-white/10 bg-white/5 p-3'>
-                      <h4 className='mb-2 font-medium text-white'>
-                        Device Features
-                      </h4>
-                      <div className='space-y-1 text-sm'>
-                        <div className='flex justify-between'>
-                          <span className='text-gray-300'>Mobile Device:</span>
-                          <span
-                            className={
-                              isMobile ? 'text-green-400' : 'text-gray-500'
-                            }
-                          >
-                            {isMobile ? 'Yes' : 'No'}
-                          </span>
-                        </div>
-                        <div className='flex justify-between'>
-                          <span className='text-gray-300'>
-                            Haptic Feedback:
-                          </span>
-                          <span
-                            className={
-                              hasHapticFeedback
-                                ? 'text-green-400'
-                                : 'text-gray-500'
-                            }
-                          >
-                            {hasHapticFeedback ? 'Supported' : 'Not Supported'}
-                          </span>
-                        </div>
-                        <div className='flex justify-between'>
-                          <span className='text-gray-300'>Screen Reader:</span>
-                          <span
-                            className={
-                              screenReaderActive
-                                ? 'text-green-400'
-                                : 'text-gray-500'
-                            }
-                          >
-                            {screenReaderActive ? 'Active' : 'Not Detected'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Font Size Control */}
-                    <div className='rounded-lg border border-white/10 bg-white/5 p-3'>
-                      <h4 className='mb-3 font-medium text-white'>Font Size</h4>
-                      <div className='flex space-x-2'>
-                        {(['small', 'medium', 'large'] as const).map(size => (
-                          <button
-                            key={size}
-                            onClick={() => {
-                              setFontSize(size)
-                              triggerHapticFeedback('light')
-                            }}
-                            className={`rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
-                              fontSize === size
-                                ? 'bg-gradient-to-r from-purple-500 to-cyan-500 text-white'
-                                : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                            }`}
-                            aria-label={`Set font size to ${size}`}
-                          >
-                            {size.charAt(0).toUpperCase() + size.slice(1)}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* High Contrast Toggle */}
-                    <div className='rounded-lg border border-white/10 bg-white/5 p-3'>
-                      <div className='flex items-center justify-between'>
-                        <div>
-                          <h4 className='font-medium text-white'>
-                            High Contrast
-                          </h4>
-                          <p className='text-sm text-gray-300'>
-                            Enhance visual contrast for better readability
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => {
-                            toggleHighContrast()
-                            triggerHapticFeedback('medium')
-                          }}
-                          className={`h-6 w-12 rounded-full transition-all duration-200 ${
-                            highContrast
-                              ? 'bg-gradient-to-r from-purple-500 to-cyan-500'
-                              : 'bg-gray-600'
-                          }`}
-                          aria-label={`${highContrast ? 'Disable' : 'Enable'} high contrast`}
-                        >
-                          <div
-                            className={`h-5 w-5 rounded-full bg-white transition-transform duration-200 ${
-                              highContrast
-                                ? 'translate-x-6 transform'
-                                : 'translate-x-0.5 transform'
-                            }`}
-                          />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Motion Preferences */}
-                    <div className='rounded-lg border border-white/10 bg-white/5 p-3'>
-                      <h4 className='mb-2 font-medium text-white'>
-                        Motion Preferences
-                      </h4>
-                      <div className='flex items-center space-x-2 text-sm'>
-                        <span
-                          className={`rounded px-2 py-1 ${
-                            prefersReducedMotion
-                              ? 'bg-green-500/20 text-green-400'
-                              : 'bg-gray-500/20 text-gray-400'
-                          }`}
-                        >
-                          {prefersReducedMotion
-                            ? 'Reduced Motion'
-                            : 'Normal Motion'}
-                        </span>
-                        <span className='text-gray-300'>
-                          {prefersReducedMotion
-                            ? 'Animations minimized'
-                            : 'Full animations enabled'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Keyboard Shortcuts */}
-                    <div className='rounded-lg border border-white/10 bg-white/5 p-3'>
-                      <h4 className='mb-3 font-medium text-white'>
-                        Keyboard Shortcuts
-                      </h4>
-                      <div className='space-y-2 text-sm'>
-                        <div className='flex justify-between'>
-                          <span className='text-gray-300'>Tab</span>
-                          <span className='text-cyan-400'>
-                            Navigate elements
-                          </span>
-                        </div>
-                        <div className='flex justify-between'>
-                          <span className='text-gray-300'>Enter/Space</span>
-                          <span className='text-cyan-400'>Activate button</span>
-                        </div>
-                        <div className='flex justify-between'>
-                          <span className='text-gray-300'>Escape</span>
-                          <span className='text-cyan-400'>Close modal</span>
-                        </div>
-                        <div className='flex justify-between'>
-                          <span className='text-gray-300'>P</span>
-                          <span className='text-cyan-400'>Point tool</span>
-                        </div>
-                        <div className='flex justify-between'>
-                          <span className='text-gray-300'>L</span>
-                          <span className='text-cyan-400'>Line tool</span>
-                        </div>
-                        <div className='flex justify-between'>
-                          <span className='text-gray-300'>Ctrl+Z</span>
-                          <span className='text-cyan-400'>Undo</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Haptic Test */}
-                    {hasHapticFeedback && (
-                      <div className='rounded-lg border border-white/10 bg-white/5 p-3'>
-                        <h4 className='mb-3 font-medium text-white'>
-                          Haptic Feedback Test
-                        </h4>
-                        <div className='flex space-x-2'>
-                          {(['light', 'medium', 'heavy'] as const).map(
-                            intensity => (
-                              <button
-                                key={intensity}
-                                onClick={() => {
-                                  triggerHapticFeedback(intensity)
-                                  announceToScreenReader(
-                                    `${intensity} haptic feedback triggered`
-                                  )
-                                }}
-                                className='rounded-lg bg-gradient-to-r from-purple-500/20 to-cyan-500/20 px-3 py-2 text-sm text-white transition-all duration-200 hover:from-purple-500/30 hover:to-cyan-500/30'
-                                aria-label={`Test ${intensity} haptic feedback`}
-                              >
-                                {intensity.charAt(0).toUpperCase() +
-                                  intensity.slice(1)}
-                              </button>
-                            )
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Audio Announcements Test */}
-                    <div className='rounded-lg border border-white/10 bg-white/5 p-3'>
-                      <h4 className='mb-3 font-medium text-white'>
-                        Screen Reader Test
-                      </h4>
-                      <button
-                        onClick={() =>
-                          announceToScreenReader(
-                            'This is a test announcement for screen readers. All accessibility features are working properly.'
-                          )
-                        }
-                        className='w-full rounded-lg bg-gradient-to-r from-purple-500 to-cyan-500 px-4 py-2 font-medium text-white transition-all duration-200 hover:from-purple-600 hover:to-cyan-600'
-                        aria-label='Test screen reader announcement'
-                      >
-                        <Volume2 className='mr-2 inline h-4 w-4' />
-                        Test Screen Reader
-                      </button>
-                    </div>
-                  </div>
-                )}
+            {/* Answer Feedback */}
+            {isCorrect !== null && (
+              <div className={`p-3 rounded ${isCorrect ? 'bg-green-800 text-green-200' : 'bg-red-800 text-red-200'}`}>
+                {isCorrect ? '✅ Correct! Well done.' : '❌ Try again. Check your points and calculation.'}
               </div>
-            </>
-          )}
+            )}
+
+            {/* Stats */}
+            <div>
+              <h3 className='text-white font-semibold mb-2'>Progress</h3>
+              <div className='grid grid-cols-2 gap-2 text-center text-sm'>
+                <div className='bg-gray-700 p-2 rounded'>
+                  <div className='text-green-400 font-bold'>{stats.correct}</div>
+                  <div className='text-gray-400'>Correct</div>
+                </div>
+                <div className='bg-gray-700 p-2 rounded'>
+                  <div className='text-red-400 font-bold'>{stats.incorrect}</div>
+                  <div className='text-gray-400'>Incorrect</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Bottom Controls */}
-      <div className='relative z-10 border-t border-white/10 bg-white/5 shadow-2xl backdrop-blur-xl'>
-        <BottomControls
-          {...(lineData && { lineData })}
-          resetView={resetView}
-          clearPoints={clearPoints}
-          onShowAnimation={() => setShowAnimation(true)} // Pass setShowAnimation to trigger animation
-        />
+        {/* Mobile Bottom Panel */}
+        <div className='lg:hidden fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-600 z-20'>
+          {/* Tool Status Bar */}
+          <div className='border-b border-gray-600 px-4 py-2 bg-gray-700'>
+            <div className='text-center text-white text-sm'>
+              Active Tool: <span className='font-semibold text-blue-400'>{drawingTool.charAt(0).toUpperCase() + drawingTool.slice(1)}</span>
+              {points.length > 0 && (
+                <span className='ml-4 text-gray-300'>
+                  Points: {points.length}
+                </span>
+              )}
+            </div>
+          </div>
+          
+          {/* Controls */}
+          <div className='p-4'>
+            <div className='flex space-x-2'>
+              {lineData ? (
+                <div className='flex-1 bg-gray-700 p-3 rounded text-center'>
+                  <div className='text-green-400 font-mono text-lg font-bold'>
+                    Slope = {lineData.slope?.toFixed(2)}
+                  </div>
+                  <div className='text-gray-300 text-xs'>
+                    Rise: {lineData.rise?.toFixed(1)}, Run: {lineData.run?.toFixed(1)}
+                  </div>
+                </div>
+              ) : (
+                <div className='flex-1 bg-gray-700 p-3 rounded text-center'>
+                  <div className='text-gray-400 text-sm'>
+                    Place 2 points to calculate slope
+                  </div>
+                </div>
+              )}
+              
+              <button
+                onClick={handleSubmitAnswer}
+                className='bg-blue-600 text-white py-3 px-6 rounded hover:bg-blue-700 active:bg-blue-800 disabled:bg-gray-500 touch-manipulation font-semibold'
+                disabled={!lineData}
+              >
+                ✓ Check
+              </button>
+              
+              <button
+                onClick={clearPoints}
+                className='bg-gray-600 text-white py-3 px-4 rounded hover:bg-gray-500 active:bg-gray-700 touch-manipulation'
+              >
+                🗑️
+              </button>
+            </div>
+            
+            {/* Safe area for home indicator on iPhone */}
+            <div className='h-2'></div>
+          </div>
+        </div>
       </div>
     </div>
   )

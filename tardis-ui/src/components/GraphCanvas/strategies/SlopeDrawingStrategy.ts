@@ -16,6 +16,9 @@ interface SlopeDrawingStrategyConfig {
   highlightSolution: boolean
   editMode: boolean
   drawingTool: DrawingTool
+  onPointsChange?: (points: Point[]) => void
+  onCustomPointsChange?: (points: Point[]) => void
+  onCustomLinesChange?: (lines: Line[]) => void
 }
 
 interface Particle {
@@ -44,6 +47,11 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
   private drawingTool: DrawingTool
   private particles: Particle[] = []
   private animationTime: number = 0
+  private onPointsChange: ((points: Point[]) => void) | undefined
+  private onCustomPointsChange: ((points: Point[]) => void) | undefined
+  private onCustomLinesChange: ((lines: Line[]) => void) | undefined
+  private tempLineStart: Point | null = null
+  private touchSensitivity: number = 20
 
   constructor(config: SlopeDrawingStrategyConfig) {
     this.points = config.points
@@ -58,6 +66,9 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
     this.highlightSolution = config.highlightSolution
     this.editMode = config.editMode
     this.drawingTool = config.drawingTool
+    this.onPointsChange = config.onPointsChange
+    this.onCustomPointsChange = config.onCustomPointsChange
+    this.onCustomLinesChange = config.onCustomLinesChange
   }
 
   drawOnCanvas(p: p5): void {
@@ -229,9 +240,14 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
       })
 
       // Draw custom lines
-      p.stroke(255, 165, 0) // Orange color for custom lines
-      p.strokeWeight(2)
       this.customLines.forEach(line => {
+        // Use line's color if available, otherwise default to orange
+        const lineColor = line.color || '#FFA500'
+        const strokeWeight = line.strokeWidth || 2
+        
+        p.stroke(lineColor)
+        p.strokeWeight(strokeWeight)
+        
         const start = this.mapPointToCanvas(line.start)
         const end = this.mapPointToCanvas(line.end)
         p.line(start.x, start.y, end.x, end.y)
@@ -482,6 +498,11 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
         // Show line preview
         p.stroke(255, 255, 0, 100)
         p.strokeWeight(2)
+        // If we have a temp line start, draw preview line
+        if (this.tempLineStart) {
+          const startCanvas = this.mapPointToCanvas(this.tempLineStart)
+          p.line(startCanvas.x, startCanvas.y, p.mouseX, p.mouseY)
+        }
         break
       case 'text':
         // Show text placement indicator
@@ -490,5 +511,111 @@ export class SlopeDrawingStrategy implements DrawingStrategy {
         p.rect(p.mouseX - 2, p.mouseY - 10, 4, 20)
         break
     }
+  }
+
+  // Handle canvas click interactions
+  handleCanvasClick(canvasPoint: { x: number; y: number }): boolean {
+    if (!this.editMode) return false
+
+    const worldPoint = this.mapCanvasToPoint(canvasPoint)
+
+    switch (this.drawingTool) {
+      case 'point':
+        // Add a new point
+        const newPoints = [...this.points, worldPoint]
+        if (this.onPointsChange) {
+          this.onPointsChange(newPoints)
+        }
+        return true
+
+      case 'solidLine':
+      case 'dottedLine':
+        // Handle line drawing (two-click system)
+        if (!this.tempLineStart) {
+          // Start line - set the start point
+          this.tempLineStart = worldPoint
+        } else {
+          // End line - create the line
+          const newLine: Line = {
+            start: this.tempLineStart,
+            end: worldPoint,
+            color: this.drawingTool === 'dottedLine' ? '#0000ff' : '#ff0000',
+            strokeWidth: 2
+          }
+          const newLines = [...this.customLines, newLine]
+          if (this.onCustomLinesChange) {
+            this.onCustomLinesChange(newLines)
+          }
+          this.tempLineStart = null
+        }
+        return true
+
+      case 'clear':
+        // Clear all points and lines
+        if (this.onPointsChange) {
+          this.onPointsChange([])
+        }
+        if (this.onCustomLinesChange) {
+          this.onCustomLinesChange([])
+        }
+        return true
+
+      case 'undo':
+        // Undo last action - remove last point
+        if (this.points.length > 0) {
+          const newPoints = this.points.slice(0, -1)
+          if (this.onPointsChange) {
+            this.onPointsChange(newPoints)
+          }
+        }
+        return true
+
+      case 'reset':
+        // Reset view (handled by parent component)
+        return false
+
+      case 'move':
+      case 'pan':
+        // These tools don't handle clicks directly, let the pan system handle it
+        return false
+
+      case 'zoomIn':
+      case 'zoomOut':
+        // These should be handled by the parent component
+        return false
+
+      default:
+        return false
+    }
+  }
+
+  // Update method to refresh internal state
+  updateConfig(config: Partial<SlopeDrawingStrategyConfig>): void {
+    if (config.points !== undefined) this.points = config.points
+    if (config.customPoints !== undefined) this.customPoints = config.customPoints
+    if (config.customLines !== undefined) this.customLines = config.customLines
+    if (config.shapes !== undefined) this.shapes = config.shapes
+    if (config.texts !== undefined) this.texts = config.texts
+    if (config.zoom !== undefined) this.zoom = config.zoom
+    if (config.offset !== undefined) this.offset = config.offset
+    if (config.drawingTool !== undefined) {
+      this.drawingTool = config.drawingTool
+      // Reset temp line start when tool changes
+      if (config.drawingTool !== 'solidLine') {
+        this.tempLineStart = null
+      }
+    }
+    if (config.editMode !== undefined) this.editMode = config.editMode
+    if (config.highlightSolution !== undefined) this.highlightSolution = config.highlightSolution
+  }
+
+  // Get touch sensitivity for mobile devices
+  getTouchSensitivity(): number {
+    return this.touchSensitivity
+  }
+
+  // Set mobile mode optimizations
+  setMobileMode(isMobile: boolean): void {
+    this.touchSensitivity = isMobile ? 30 : 20
   }
 }

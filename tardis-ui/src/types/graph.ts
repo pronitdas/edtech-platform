@@ -30,6 +30,19 @@ export interface DrawingStrategy {
   findElementAtPoint(point: Point): InteractiveElement | null
 
   /**
+   * Handles canvas click interactions for drawing tools.
+   * @param canvasPoint The point clicked in canvas coordinates
+   * @returns True if the click was handled, false otherwise
+   */
+  handleCanvasClick?(canvasPoint: { x: number; y: number }): boolean
+
+  /**
+   * Updates the strategy configuration with new values.
+   * @param config Partial configuration to update
+   */
+  updateConfig?(config: any): void
+
+  /**
    * Enables or disables mobile-specific optimizations.
    * @param enabled Whether mobile mode should be enabled
    */

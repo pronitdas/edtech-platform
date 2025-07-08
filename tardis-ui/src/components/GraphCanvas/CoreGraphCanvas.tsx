@@ -120,6 +120,24 @@ const CoreGraphCanvas: React.FC<CoreGraphCanvasProps> = ({
 
       // Helper function to get normalized touch coordinates
       const getPointFromTouch = (touch: Touch): { x: number; y: number } => {
+        if (!p.canvas || !p.canvas.elt) {
+          // Fallback: try to get canvas from canvasRef if p.canvas is not ready
+          const canvasElement = canvasRef.current?.querySelector('canvas')
+          if (canvasElement) {
+            const rect = canvasElement.getBoundingClientRect()
+            return {
+              x: touch.clientX - rect.left,
+              y: touch.clientY - rect.top,
+            }
+          }
+          // Final fallback to basic coordinates
+          console.warn('Canvas element not available for touch coordinates')
+          return {
+            x: touch.clientX,
+            y: touch.clientY,
+          }
+        }
+        
         const rect = p.canvas.elt.getBoundingClientRect()
         return {
           x: touch.clientX - rect.left,
@@ -204,15 +222,21 @@ const CoreGraphCanvas: React.FC<CoreGraphCanvasProps> = ({
         p.pixelDensity(window.devicePixelRatio)
 
         const canvasElement = canvas.elt
+        if (!canvasElement) {
+          console.error('Canvas element not available')
+          return
+        }
+        
         canvasElement.addEventListener('wheel', (e: WheelEvent) =>
           e.preventDefault()
         )
 
         // Touch event handlers
         canvasElement.addEventListener('touchstart', (e: TouchEvent) => {
-          e.preventDefault()
-          if (!e.touches[0]) return
-          const touch = getPointFromTouch(e.touches[0])
+          try {
+            e.preventDefault()
+            if (!e.touches[0]) return
+            const touch = getPointFromTouch(e.touches[0])
           prevMouseX = touch.x
           prevMouseY = touch.y
 
@@ -222,14 +246,27 @@ const CoreGraphCanvas: React.FC<CoreGraphCanvasProps> = ({
               debouncedClick(element)
               return
             }
+
+            // Handle drawing tool interactions for touch
+            if (drawingStrategy.handleCanvasClick) {
+              const handled = drawingStrategy.handleCanvasClick({ x: touch.x, y: touch.y })
+              if (handled) {
+                return // Drawing tool handled the touch
+              }
+            }
+
             isDragging = true
           } else if (e.touches.length === 2) {
             lastTouchDistance = 0
           }
+          } catch (error) {
+            handleTouchError(error as Error)
+          }
         })
 
         canvasElement.addEventListener('touchmove', (e: TouchEvent) => {
-          e.preventDefault()
+          try {
+            e.preventDefault()
 
           if (e.touches.length === 2) {
             handleTouchZoom(e)
@@ -244,14 +281,21 @@ const CoreGraphCanvas: React.FC<CoreGraphCanvasProps> = ({
             prevMouseX = touch.x
             prevMouseY = touch.y
           }
+          } catch (error) {
+            handleTouchError(error as Error)
+          }
         })
 
         canvasElement.addEventListener('touchend', (e: TouchEvent) => {
-          e.preventDefault()
-          isDragging = false
-          isMultiTouch = false
-          lastTouchDistance = 0
-          debouncedClick.flush()
+          try {
+            e.preventDefault()
+            isDragging = false
+            isMultiTouch = false
+            lastTouchDistance = 0
+            debouncedClick.flush()
+          } catch (error) {
+            handleTouchError(error as Error)
+          }
         })
 
         // Increase hit areas for touch on mobile
@@ -280,6 +324,15 @@ const CoreGraphCanvas: React.FC<CoreGraphCanvasProps> = ({
           debouncedClick(element)
           return
         }
+
+        // Handle drawing tool interactions
+        if (drawingStrategy.handleCanvasClick) {
+          const handled = drawingStrategy.handleCanvasClick({ x: p.mouseX, y: p.mouseY })
+          if (handled) {
+            return // Drawing tool handled the click
+          }
+        }
+
         isDragging = true
         prevMouseX = p.mouseX
         prevMouseY = p.mouseY

@@ -8,15 +8,7 @@ import json
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 from dataclasses import dataclass, asdict
-# import wikipedia  # TODO: Add wikipedia package to requirements.txt
-class wikipedia:
-    @staticmethod
-    def search(query, results=5):
-        return [f"Mock Wikipedia result for: {query}"]
-    
-    @staticmethod
-    def summary(title, sentences=2):
-        return f"Mock Wikipedia summary for: {title}"
+import wikipedia
 import requests
 from sqlalchemy.orm import Session
 

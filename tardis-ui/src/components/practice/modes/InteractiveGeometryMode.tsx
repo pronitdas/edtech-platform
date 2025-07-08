@@ -30,6 +30,8 @@ interface GeometryProblem {
   description: string
   problem: string
   solution: any
+  targetPoints?: { x: number; y: number }[]
+  startPoints?: { x: number; y: number }[]
   hints: string[]
   difficulty: 'beginner' | 'intermediate' | 'advanced'
   topic: 'Linear Functions' | 'Coordinate Geometry' | 'Graphing' | 'Slope'
@@ -95,6 +97,8 @@ const InteractiveGeometryMode: React.FC<InteractiveGeometryModeProps> = ({
       description: 'Calculate the slope between two points',
       problem: 'Find the slope of the line passing through points (2, 3) and (6, 11)',
       solution: { slope: 2, work: '(11-3)/(6-2) = 8/4 = 2' },
+      targetPoints: [{ x: 2, y: 3 }, { x: 6, y: 11 }],
+      startPoints: [{ x: 2, y: 3 }, { x: 6, y: 11 }],
       hints: [
         'Use the slope formula: m = (y₂ - y₁) / (x₂ - x₁)',
         'Substitute the coordinates: (6, 11) and (2, 3)',
@@ -397,7 +401,16 @@ const InteractiveGeometryMode: React.FC<InteractiveGeometryModeProps> = ({
                   interactiveContent={{
                     title: currentProblem.title,
                     content: currentProblem.problem,
-                    type: 'slope-drawing'
+                    type: 'slope-drawing',
+                    problems: [{
+                      id: currentProblem.id,
+                      question: currentProblem.problem,
+                      difficulty: currentProblem.difficulty,
+                      hints: currentProblem.hints,
+                      solution: currentProblem.solution,
+                      targetPoints: currentProblem.targetPoints || [],
+                      startPoints: currentProblem.startPoints || []
+                    }]
                   }}
                   onUpdateProgress={(progress) => {
                     onProgress?.(progress)
