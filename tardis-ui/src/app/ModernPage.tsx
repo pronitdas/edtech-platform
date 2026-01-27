@@ -236,15 +236,7 @@ const LearningOrchestrator: React.FC = () => {
           {/* Learning Navigation Header - only for non-dashboard views */}
           {currentView !== 'dashboard' && currentView !== 'knowledge_selection' && (
             <Suspense fallback={<div className="h-16 bg-gray-800" />}>
-              <NavigationHeader
-                currentView={currentView}
-                language={language}
-                onLanguageChange={setLanguage}
-                onBack={handleBack}
-                onNavigateToDashboard={handleNavigateToDashboard}
-                onToggleSidebar={toggleSidebar}
-                showSidebarToggle={currentView !== 'dashboard' && currentView !== 'knowledge_selection'}
-              />
+              <NavigationHeader />
             </Suspense>
           )}
 
