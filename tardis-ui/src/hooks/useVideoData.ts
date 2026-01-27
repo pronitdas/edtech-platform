@@ -62,7 +62,7 @@ export const useVideoData = ({ knowledgeId, autoLoad = true, enableRealTimeProgr
       const [metadata, chapters, progress, notes, bookmarks] = await Promise.all([
         VideoApiService.getVideoMetadata(knowledgeId),
         VideoApiService.getVideoChapters(knowledgeId),
-        VideoApiService.getVideoProgress(knowledgeId, user.id),
+        VideoApiService.getVideoProgress(knowledgeId, typeof user.id === 'number' ? user.id : Number(user.id)),
         VideoApiService.getVideoNotes(knowledgeId),
         VideoApiService.getVideoBookmarks(knowledgeId)
       ])
@@ -190,13 +190,22 @@ export const useVideoData = ({ knowledgeId, autoLoad = true, enableRealTimeProgr
   // Add bookmark
   const addBookmark = useCallback(async (chapterId: string, timestamp: number, title: string, description?: string) => {
     try {
-      const bookmark = await VideoApiService.createVideoBookmark({
+      const bookmarkData: {
+        knowledge_id: number
+        chapter_id: string
+        timestamp: number
+        title: string
+        description?: string
+      } = {
         knowledge_id: knowledgeId,
         chapter_id: chapterId,
         timestamp,
-        title,
-        description
-      })
+        title
+      }
+      if (description !== undefined) {
+        bookmarkData.description = description
+      }
+      const bookmark = await VideoApiService.createVideoBookmark(bookmarkData)
 
       setState(prev => ({
         ...prev,

@@ -614,7 +614,7 @@ const UdemyPlusVideoPlayer: React.FC<UdemyPlusVideoPlayerProps> = ({
                   duration: ch.meta_data.duration,
                   type: ch.meta_data.type,
                   description: ch.content?.substring(0, 200) + (ch.content?.length > 200 ? '...' : ''),
-                  thumbnailUrl: ch.meta_data.thumbnail_url,
+                  thumbnailUrl: ch.meta_data.thumbnail_url || '',
                   isCompleted: videoData.completedChapters.has(ch.id),
                   watchProgress: videoData.getChapterData(ch.id).watchProgress,
                   hasNotes: videoData.getChapterData(ch.id).notes.length > 0,
