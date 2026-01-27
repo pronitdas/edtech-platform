@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
+import {
   Home, 
   User, 
   GraduationCap, 
@@ -11,16 +11,16 @@ import {
   X,
   Brain,
   BookOpen,
-  Users,
   Target
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useUser } from '@/contexts/UserContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface NavigationItem {
   path: string;
   label: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   requiresTeacher?: boolean;
   requiresStudent?: boolean;
   requiresContentCreator?: boolean;
@@ -68,7 +68,7 @@ const NavigationHeader: React.FC = () => {
     },
   ];
 
-  const filteredNavigation = navigationItems.filter(item => {
+  const filteredNavigation: NavigationItem[] = navigationItems.filter((item) => {
     if (item.requiresTeacher && !isTeacher()) return false;
     if (item.requiresStudent && !isStudent()) return false;
     if (item.requiresContentCreator && !isContentCreator()) return false;
