@@ -1,3 +1,6 @@
+/// <reference lib="dom" />
+/// <reference lib="dom.iterable" />
+/// <reference lib="es2022" />
 import { useState, useCallback } from 'react'
 import { OpenAIClient } from '@/services/openAi'
 
@@ -199,12 +202,14 @@ export function useWordProblemGenerator({
     })
 
     // Calculate expected values
-    const rise = template.variables.find(v => v.name === 'rise')?.min !== undefined 
-      ? variables.rise || variables.rise1 + (variables.rise2 || 0)
-      : 0
-    const run = template.variables.find(v => v.name === 'run')?.min !== undefined
-      ? variables.run || variables.run1 + (variables.run2 || 0)
-      : 1
+    const hasRise = template.variables.some(v => v.name === 'rise')
+    const hasRun = template.variables.some(v => v.name === 'run')
+    const rise = hasRise
+      ? (variables.rise ?? 0)
+      : (variables.rise1 ?? 0) + (variables.rise2 ?? 0)
+    const run = hasRun
+      ? (variables.run ?? 1)
+      : (variables.run1 ?? 1) + (variables.run2 ?? 0)
     const expectedSlope = run !== 0 ? rise / run : null
 
     const problem: GeneratedWordProblem = {
@@ -303,13 +308,23 @@ Make it engaging and appropriate for ${selectedDifficulty} level. Language shoul
           setCurrentProblem(problem)
         } catch (e) {
           // Fallback to template-based generation
-          const template = templates[Math.floor(Math.random() * templates.length)]
+          const template =
+            templates[Math.floor(Math.random() * templates.length)] ??
+            WORD_PROBLEM_TEMPLATES[0]
+          if (!template) {
+            throw new Error('No word problem templates available')
+          }
           const problem = getProblemFromTemplate(template)
           setCurrentProblem(problem)
         }
       } else {
         // Use template-based generation
-        const template = templates[Math.floor(Math.random() * templates.length)]
+        const template =
+          templates[Math.floor(Math.random() * templates.length)] ??
+          WORD_PROBLEM_TEMPLATES[0]
+        if (!template) {
+          throw new Error('No word problem templates available')
+        }
         const problem = getProblemFromTemplate(template)
         setCurrentProblem(problem)
       }

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import type { ComponentType } from 'react'
 import PracticeProblem from '../components/PracticeProblem'
-import { Problem, ProblemGenerationStats } from '../types'
+import { Problem, ProblemDifficulty, ProblemGenerationStats } from '../types'
 
 const meta = {
   title: 'Slope/PracticeProblem',
@@ -10,7 +11,7 @@ const meta = {
   },
   tags: ['autodocs'],
   decorators: [
-    Story => (
+    (Story: ComponentType) => (
       <div
         style={{
           width: '400px',
@@ -59,15 +60,37 @@ const sampleProblems: Problem[] = [
   },
 ]
 
-const sampleStats = {
+const sampleStats: ProblemGenerationStats = {
   correct: 3,
   incorrect: 1,
   attempted: 4,
   streakCount: 2,
-  history: ['correct', 'incorrect', 'correct', 'correct'] as (
-    | 'correct'
-    | 'incorrect'
-  )[],
+  history: [
+    {
+      problemId: 'prob-1',
+      isCorrect: true,
+      timeSpent: 42,
+      difficulty: 'easy',
+    },
+    {
+      problemId: 'prob-2',
+      isCorrect: false,
+      timeSpent: 58,
+      difficulty: 'medium',
+    },
+    {
+      problemId: 'prob-1',
+      isCorrect: true,
+      timeSpent: 35,
+      difficulty: 'easy',
+    },
+    {
+      problemId: 'prob-2',
+      isCorrect: true,
+      timeSpent: 47,
+      difficulty: 'medium',
+    },
+  ],
   difficultyStats: {
     easy: { attempted: 2, correct: 2 },
     medium: { attempted: 2, correct: 1 },
@@ -90,8 +113,9 @@ export const Default: Story = {
     problems: sampleProblems,
     currentProblemId: 'prob-1',
     difficulty: 'easy',
-    setDifficulty: difficulty => console.log('Set difficulty:', difficulty),
-    onSelectProblem: id => console.log('Selected problem:', id),
+    setDifficulty: (difficulty: ProblemDifficulty) =>
+      console.log('Set difficulty:', difficulty),
+    onSelectProblem: (id: string) => console.log('Selected problem:', id),
     onGenerateNewProblem: () => console.log('Generate new problem'),
     lineData: sampleLineData,
     onSubmitAnswer: () => console.log('Submit answer'),

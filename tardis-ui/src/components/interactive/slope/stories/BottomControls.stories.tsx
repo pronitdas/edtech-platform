@@ -26,9 +26,11 @@ export const WithLineData: Story = {
     lineData: {
       slope: 2,
       equation: 'y = 2x + 3',
-      intercept: 3,
+      yIntercept: 3,
       point1: { x: 0, y: 3 },
       point2: { x: 2, y: 7 },
+      rise: 4,
+      run: 2,
     },
     resetView: () => console.log('Reset view'),
     clearPoints: () => console.log('Clear points'),
@@ -40,9 +42,12 @@ export const UndefinedSlope: Story = {
   args: {
     lineData: {
       slope: null,
+      yIntercept: null,
       equation: 'x = 2',
       point1: { x: 2, y: -1 },
       point2: { x: 2, y: 3 },
+      rise: 4,
+      run: 0,
     },
     resetView: () => console.log('Reset view'),
     clearPoints: () => console.log('Clear points'),

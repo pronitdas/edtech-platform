@@ -1,13 +1,13 @@
 // Slope Drawing Stories - Export all stories
 // This file is auto-generated to help Storybook discover all stories
 
-export * from './AnimatedSolution.stories'
-export * from './BottomControls.stories'
-export * from './ConceptExplanation.stories'
-export * from './DrawingToolbar.stories'
-export * from './GraphCanvas.stories'
-export * from './ModeSelector.stories'
-export * from './PracticeProblem.stories'
-export * from './SlopeDrawing.stories'
-export * from './WordProblem.stories'
-export * from './mocks'
+export * as AnimatedSolutionStories from './AnimatedSolution.stories'
+export * as BottomControlsStories from './BottomControls.stories'
+export * as ConceptExplanationStories from './ConceptExplanation.stories'
+export * as DrawingToolbarStories from './DrawingToolbar.stories'
+export * as GraphCanvasStories from './GraphCanvas.stories'
+export * as ModeSelectorStories from './ModeSelector.stories'
+export * as PracticeProblemStories from './PracticeProblem.stories'
+export * as SlopeDrawingStories from './SlopeDrawing.stories'
+export * as WordProblemStories from './WordProblem.stories'
+export * as SlopeStoryMocks from './mocks'

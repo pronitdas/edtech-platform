@@ -30,12 +30,15 @@ export interface SlopeDrawingProps {
 }
 
 // Extend the InteractiveContent type to include concept explanations with demo points
-import { Problem } from '@/types/interactive'
+import type { Problem } from '@/types/interactive'
+import type { Concept } from '@/types/learning'
 
 export interface ExtendedInteractiveContent extends InteractiveContent {
-  concepts?: import('@/types/learning').Concept[]
+  concepts?: Concept[]
   problems?: Problem[]
 }
+
+export type { Concept, Problem }
 
 import { Point } from '@/types/geometry'
 

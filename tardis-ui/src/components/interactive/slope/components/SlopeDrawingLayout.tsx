@@ -1,4 +1,7 @@
-import React, { useRef, useEffect, useState } from 'react'
+/// <reference lib="dom" />
+/// <reference lib="dom.iterable" />
+/// <reference lib="es2022" />
+import React, { useRef, useEffect } from 'react'
 import { useSlopeDrawing } from '../contexts/SlopeDrawingContext'
 import GraphCanvas from '../../../../components/GraphCanvas'
 import DrawingToolbar from './DrawingToolbar'
@@ -128,9 +131,12 @@ const SlopeDrawingLayout: React.FC = () => {
   
   // iPad-specific optimizations
   useEffect(() => {
-    if (isTouchDevice) {
-      // Prevent pull-to-refresh on mobile Safari
-      document.body.style.overscrollBehavior = 'none'
+    if (!isTouchDevice) {
+      return undefined
+    }
+
+    // Prevent pull-to-refresh on mobile Safari
+    document.body.style.overscrollBehavior = 'none'
       
       // Prevent zoom on inputs (iOS Safari)
       const meta = document.querySelector('meta[name="viewport"]')
@@ -172,10 +178,9 @@ const SlopeDrawingLayout: React.FC = () => {
       `
       document.head.appendChild(style)
       
-      return () => {
-        document.body.style.overscrollBehavior = 'auto'
-        document.head.removeChild(style)
-      }
+    return () => {
+      document.body.style.overscrollBehavior = 'auto'
+      document.head.removeChild(style)
     }
   }, [isTouchDevice])
 
@@ -264,7 +269,6 @@ const SlopeDrawingLayout: React.FC = () => {
             style={{
               ...touchOptimizedStyles,
               // Prevent zoom on double tap for iOS Safari
-              WebkitUserZoom: 'disabled',
               msContentZooming: 'none',
             }}
             role='img'
@@ -325,8 +329,6 @@ const SlopeDrawingLayout: React.FC = () => {
                     xRange: [-2, 12],
                     yRange: [-2, 15],
                     stepSize: 1,
-                    // Touch-friendly configurations
-                    touchSensitivity: isTouchDevice ? 30 : 20,
                     minZoom: 0.5,
                     maxZoom: 3,
                     gridSize: isTouchDevice ? 40 : 30, // Larger grid for touch
@@ -339,8 +341,6 @@ const SlopeDrawingLayout: React.FC = () => {
                       setSelectedItem(`point-${index}`)
                     }
                   }}
-                  // Pass touch device info
-                  isTouchDevice={isTouchDevice}
                 />
               )}
             </TouchFeedback>
@@ -389,7 +389,7 @@ const SlopeDrawingLayout: React.FC = () => {
                 <button
                   onClick={() => {
                     setPointsFromCoordinates([{x: 2, y: 3}, {x: 6, y: 11}])
-                    setDrawingTool('line')
+                    setDrawingTool('solidLine')
                   }}
                   className='w-full bg-purple-600 text-white py-3 px-4 rounded hover:bg-purple-700 active:bg-purple-800 text-sm touch-manipulation'
                 >

@@ -109,7 +109,7 @@ export function useAnimationController({
         }))
         onStepChange?.(nextIndex)
         stepStartTimeRef.current = timestamp
-        steps[nextIndex].onStart?.()
+        steps[nextIndex]?.onStart?.()
       } else {
         // Animation complete
         if (loop) {
@@ -123,7 +123,7 @@ export function useAnimationController({
           onStepChange?.(0)
           startTimeRef.current = timestamp
           stepStartTimeRef.current = timestamp
-          steps[0].onStart?.()
+          steps[0]?.onStart?.()
         } else {
           // Stop animation
           setState(prev => ({
@@ -152,7 +152,7 @@ export function useAnimationController({
       isPaused: false,
     }))
 
-    steps[state.currentStepIndex].onStart?.()
+    steps[state.currentStepIndex]?.onStart?.()
     animationFrameRef.current = requestAnimationFrame(animate)
   }, [steps, state.currentStepIndex, animate])
 
@@ -218,7 +218,7 @@ export function useAnimationController({
     }))
 
     onStepChange?.(index)
-    steps[index].onStart?.()
+    steps[index]?.onStart?.()
   }, [steps, totalDuration, onStepChange])
 
   // Go to next step
@@ -247,7 +247,7 @@ export function useAnimationController({
     let accumulatedDuration = 0
     let targetStepIndex = 0
     for (let i = 0; i < steps.length; i++) {
-      const stepDuration = steps[i].duration || DEFAULT_DURATION
+      const stepDuration = steps[i]?.duration || DEFAULT_DURATION
       if (accumulatedDuration + stepDuration >= targetTime) {
         targetStepIndex = i
         break
@@ -267,7 +267,7 @@ export function useAnimationController({
     }))
 
     onStepChange?.(targetStepIndex)
-    steps[targetStepIndex].onStart?.()
+    steps[targetStepIndex]?.onStart?.()
   }, [steps, totalDuration, onStepChange])
 
   // Cleanup on unmount

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import type { ComponentType } from 'react'
 import WordProblem from '../components/WordProblem'
-import { OpenAIClient } from '@/services/openAI'
+import { OpenAIClient } from '@/services/openAi'
 
 const meta = {
   title: 'Slope/WordProblem',
@@ -10,7 +11,7 @@ const meta = {
   },
   tags: ['autodocs'],
   decorators: [
-    Story => (
+    (Story: ComponentType) => (
       <div
         style={{
           width: '400px',
@@ -31,7 +32,14 @@ type Story = StoryObj<typeof meta>
 
 // Mock OpenAI client for storybook
 const createMockOpenAIClient = (): OpenAIClient => ({
-  chatCompletion: async (messages, _model, _maxTokens) => {
+  generateResponse: async prompt => {
+    return `Mock response for: ${prompt}`
+  },
+  chatCompletion: async (
+    messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
+    _model?: string,
+    _maxTokens?: number
+  ) => {
     return JSON.stringify({
       question: 'A construction crew is building a wheelchair ramp that rises 6 inches over a horizontal distance of 24 inches. What is the slope of the ramp?',
       context: 'This construction scenario involves calculating the slope for a wheelchair ramp, ensuring accessibility standards are met.',
@@ -78,7 +86,7 @@ export const Loading: Story = {
     difficulty: 'easy',
   },
   decorators: [
-    Story => {
+    (_Story: ComponentType) => {
       // Simulate loading state by overriding the component state
       return (
         <div
@@ -165,7 +173,6 @@ export const NoAI: Story = {
   args: {
     lineData: sampleLineData,
     onPointsChange: points => console.log('Points changed:', points),
-    openaiClient: undefined, // No AI client - will use template-based generation
     language: 'en',
     difficulty: 'easy',
   },

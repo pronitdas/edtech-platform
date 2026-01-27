@@ -1,46 +1,42 @@
 // Mocks for Slope Drawing Storybook stories
-import { OpenAIClient } from '@/services/openAI'
+import { OpenAIClient } from '@/services/openAi'
+
+type MockOpenAIMessage = {
+  role: 'system' | 'user' | 'assistant'
+  content: string
+}
 
 // Mock OpenAI client for storybook
 export const createMockOpenAIClient = (): OpenAIClient => ({
-  chatCompletion: async (messages, _model, _maxTokens) => {
+  generateResponse: async (prompt: string) => {
+    if (prompt.includes('Word Problem')) {
+      return '{"question":"Your solution analysis","feedback":"Correct! You found the right slope."}'
+    }
+
+    return '{"question":"Sample question","context":"Sample context","hints":["Hint 1","Hint 2"],"expectedSlope":2,"expectedIntercept":0,"solution":"Solution steps...","explanation":"Explanation..."}'
+  },
+  chatCompletion: async (
+    messages: MockOpenAIMessage[],
+    _model?: string,
+    _maxTokens?: number,
+    _temperature?: number,
+    _stream?: boolean
+  ) => {
     // Simulate different responses based on the prompt
     const lastMessage = messages[messages.length - 1]?.content || ''
 
     if (lastMessage.includes('Generate a real-world')) {
-      return JSON.stringify({
-        question: 'A construction crew is building a wheelchair ramp that rises 6 inches over a horizontal distance of 24 inches. What is the slope of the ramp?',
-        context: 'This construction scenario involves calculating the slope for a wheelchair ramp.',
-        hints: [
-          'Remember: slope = rise / run',
-          'Rise is the vertical change (6 inches)',
-          'Run is the horizontal change (24 inches)',
-        ],
-        expectedSlope: 0.25,
-        expectedIntercept: null,
-        solution: 'slope = rise / run = 6 / 24 = 0.25',
-        explanation: 'The ramp has a gentle slope of 0.25, which means for every 4 inches of horizontal distance, the ramp rises 1 inch.',
-      })
+      return '{"question":"A construction crew is building a wheelchair ramp that rises 6 inches over a horizontal distance of 24 inches. What is the slope of the ramp?","context":"This construction scenario involves calculating the slope for a wheelchair ramp.","hints":["Remember: slope = rise / run","Rise is the vertical change (6 inches)","Run is the horizontal change (24 inches)"],"expectedSlope":0.25,"expectedIntercept":null,"solution":"slope = rise / run = 6 / 24 = 0.25","explanation":"The ramp has a gentle slope of 0.25, which means for every 4 inches of horizontal distance, the ramp rises 1 inch."}'
     }
 
     if (lastMessage.includes('Word Problem')) {
-      return JSON.stringify({
-        question: 'Your solution analysis',
-        feedback: 'Correct! You found the right slope.',
-      })
+      return '{"question":"Your solution analysis","feedback":"Correct! You found the right slope."}'
     }
 
-    return JSON.stringify({
-      question: 'Sample question',
-      context: 'Sample context',
-      hints: ['Hint 1', 'Hint 2'],
-      expectedSlope: 2,
-      expectedIntercept: 0,
-      solution: 'Solution steps...',
-      explanation: 'Explanation...',
-    })
+    return '{"question":"Sample question","context":"Sample context","hints":["Hint 1","Hint 2"],"expectedSlope":2,"expectedIntercept":0,"solution":"Solution steps...","explanation":"Explanation..."}'
   },
 })
+
 
 // Sample data for storybook
 export const samplePoints = [

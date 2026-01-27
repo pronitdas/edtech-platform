@@ -83,6 +83,9 @@ export const WithOpenAI: Story = {
         console.log('OpenAI prompt:', prompt)
         return 'Sample OpenAI response'
       },
+      chatCompletion: async () => {
+        return 'Sample OpenAI response'
+      },
     },
   },
 }
