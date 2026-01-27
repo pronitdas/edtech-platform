@@ -20,7 +20,7 @@ interface OnboardingData {
   grade_level?: string;
   subjects_of_interest?: string[];
   learning_goals?: string[];
-  preferred_difficulty?: string;
+  preferred_difficulty?: 'beginner' | 'intermediate' | 'advanced';
   // Enhanced fields for topic generation
   topics_to_teach?: string[];
   curriculum_standards?: string[];
@@ -35,6 +35,10 @@ interface OnboardingData {
   current_knowledge_level?: Record<string, 'beginner' | 'intermediate' | 'advanced'>;
 }
 
+type ContentGenerationPreferences = NonNullable<
+  OnboardingData['content_generation_preferences']
+>;
+
 const EnhancedOnboarding: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
@@ -48,16 +52,51 @@ const EnhancedOnboarding: React.FC = () => {
   const [showTopicFlow, setShowTopicFlow] = useState(false);
   const navigate = useNavigate();
   const { register, completeOnboarding, isTeacher, isStudent } = useUser();
+  type CompleteOnboardingPayload = Parameters<typeof completeOnboarding>[0];
 
   // Form field states
   const [subjects, setSubjects] = useState<string[]>([]);
   const [gradeLevels, setGradeLevels] = useState<string[]>([]);
   const [learningGoals, setLearningGoals] = useState<string[]>([]);
-  const [contentPreferences, setContentPreferences] = useState({
-    complexity_level: 'intermediate' as const,
-    content_style: 'conversational' as const,
-    assessment_frequency: 'medium' as const
+  const [contentPreferences, setContentPreferences] = useState<ContentGenerationPreferences>({
+    complexity_level: 'intermediate',
+    content_style: 'conversational',
+    assessment_frequency: 'medium'
   });
+
+  const roleOptions = ['student', 'teacher'] as const;
+
+  const toComplexityLevel = (value: string): ContentGenerationPreferences['complexity_level'] | null => {
+    if (value === 'beginner' || value === 'intermediate' || value === 'advanced') {
+      return value;
+    }
+    return null;
+  };
+
+  const toContentStyle = (value: string): ContentGenerationPreferences['content_style'] | null => {
+    if (value === 'formal' || value === 'conversational' || value === 'interactive') {
+      return value;
+    }
+    return null;
+  };
+
+  const toAssessmentFrequency = (
+    value: string
+  ): ContentGenerationPreferences['assessment_frequency'] | null => {
+    if (value === 'low' || value === 'medium' || value === 'high') {
+      return value;
+    }
+    return null;
+  };
+
+  const toPreferredDifficulty = (
+    value: string
+  ): OnboardingData['preferred_difficulty'] | null => {
+    if (value === 'beginner' || value === 'intermediate' || value === 'advanced') {
+      return value;
+    }
+    return null;
+  };
 
   const commonSubjects = [
     'Mathematics', 'Science', 'English/Language Arts', 'History', 'Art', 'Music',
@@ -121,26 +160,41 @@ const EnhancedOnboarding: React.FC = () => {
       await register(onboardingData.email, onboardingData.password, onboardingData.name);
 
       // Complete the onboarding data
-      const completeData = {
+      const baseData = {
         role: onboardingData.role,
-        onboarding_completed: true,
-        [onboardingData.role === 'teacher' ? 'topics_to_teach' : 'learning_interests']: selectedTopics,
-        ...(onboardingData.role === 'teacher' ? {
-          school_name: onboardingData.school_name,
-          subjects_taught: subjects,
-          grade_levels_taught: gradeLevels,
-          years_experience: onboardingData.years_experience,
-          content_generation_preferences: contentPreferences
-        } : {
-          grade_level: onboardingData.grade_level,
-          subjects_of_interest: subjects,
-          learning_goals: learningGoals,
-          preferred_difficulty: onboardingData.preferred_difficulty
-        })
+        onboarding_completed: true
       };
 
-      // Complete onboarding through UserContext
-      await completeOnboarding(completeData);
+      if (onboardingData.role === 'teacher') {
+        const completeData: CompleteOnboardingPayload = {
+          ...baseData,
+          topics_to_teach: selectedTopics,
+          ...(onboardingData.school_name
+            ? { school_name: onboardingData.school_name }
+            : {}),
+          subjects_taught: subjects,
+          grade_levels_taught: gradeLevels,
+          ...(onboardingData.years_experience !== undefined
+            ? { years_experience: onboardingData.years_experience }
+            : {}),
+          content_generation_preferences: contentPreferences
+        };
+        await completeOnboarding(completeData);
+      } else {
+        const completeData: CompleteOnboardingPayload = {
+          ...baseData,
+          learning_interests: selectedTopics,
+          ...(onboardingData.grade_level
+            ? { grade_level: onboardingData.grade_level }
+            : {}),
+          subjects_of_interest: subjects,
+          learning_goals: learningGoals,
+          ...(onboardingData.preferred_difficulty
+            ? { preferred_difficulty: onboardingData.preferred_difficulty }
+            : {})
+        };
+        await completeOnboarding(completeData);
+      }
 
       // Redirect to appropriate dashboard
       navigate(onboardingData.role === 'teacher' ? '/teacher-dashboard' : '/dashboard');
@@ -192,10 +246,10 @@ const EnhancedOnboarding: React.FC = () => {
             I am a...
           </label>
           <div className="grid grid-cols-2 gap-3">
-            {['student', 'teacher'].map((role) => (
+            {roleOptions.map((role) => (
               <button
                 key={role}
-                onClick={() => setOnboardingData(prev => ({ ...prev, role: role as 'student' | 'teacher' }))}
+                onClick={() => setOnboardingData(prev => ({ ...prev, role }))}
                 className={`p-4 rounded-lg border text-center transition-colors ${
                   onboardingData.role === role
                     ? 'bg-purple-500 text-white border-purple-500'
@@ -368,10 +422,15 @@ const EnhancedOnboarding: React.FC = () => {
               </label>
               <select
                 value={contentPreferences.complexity_level}
-                onChange={(e) => setContentPreferences(prev => ({ 
-                  ...prev, 
-                  complexity_level: e.target.value as 'beginner' | 'intermediate' | 'advanced' 
-                }))}
+                onChange={(e) => {
+                  const level = toComplexityLevel(e.target.value);
+                  if (level) {
+                    setContentPreferences(prev => ({
+                      ...prev,
+                      complexity_level: level
+                    }));
+                  }
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <option value="beginner">Beginner</option>
@@ -386,10 +445,15 @@ const EnhancedOnboarding: React.FC = () => {
               </label>
               <select
                 value={contentPreferences.content_style}
-                onChange={(e) => setContentPreferences(prev => ({ 
-                  ...prev, 
-                  content_style: e.target.value as 'formal' | 'conversational' | 'interactive' 
-                }))}
+                onChange={(e) => {
+                  const style = toContentStyle(e.target.value);
+                  if (style) {
+                    setContentPreferences(prev => ({
+                      ...prev,
+                      content_style: style
+                    }));
+                  }
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <option value="formal">Formal</option>
@@ -404,10 +468,15 @@ const EnhancedOnboarding: React.FC = () => {
               </label>
               <select
                 value={contentPreferences.assessment_frequency}
-                onChange={(e) => setContentPreferences(prev => ({ 
-                  ...prev, 
-                  assessment_frequency: e.target.value as 'low' | 'medium' | 'high' 
-                }))}
+                onChange={(e) => {
+                  const frequency = toAssessmentFrequency(e.target.value);
+                  if (frequency) {
+                    setContentPreferences(prev => ({
+                      ...prev,
+                      assessment_frequency: frequency
+                    }));
+                  }
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <option value="low">Low</option>
@@ -518,7 +587,12 @@ const EnhancedOnboarding: React.FC = () => {
           </label>
           <select
             value={onboardingData.preferred_difficulty || 'intermediate'}
-            onChange={(e) => setOnboardingData(prev => ({ ...prev, preferred_difficulty: e.target.value }))}
+            onChange={(e) => {
+              const difficulty = toPreferredDifficulty(e.target.value);
+              if (difficulty) {
+                setOnboardingData(prev => ({ ...prev, preferred_difficulty: difficulty }));
+              }
+            }}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
           >
             <option value="beginner">Beginner</option>
