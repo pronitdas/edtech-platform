@@ -495,7 +495,8 @@ export class ContentAnalysisEngine {
     }
     
     // AI tutoring for complex content
-    if (this.analyzeComplexity(content).then(c => c.level === 'advanced' || c.level === 'expert')) {
+    const complexity = await this.analyzeComplexity(content);
+    if (complexity.level === 'advanced' || complexity.level === 'expert') {
       recommendations.push({
         viewerId: 'ai-tutor',
         suitability: 0.75,
@@ -722,7 +723,7 @@ export const ContentAnalysisPanel: React.FC<{ analysis: ContentAnalysisResult }>
                     {enhancement.priority > 0.7 ? 'High' : enhancement.priority > 0.5 ? 'Med' : 'Low'}
                   </span>
                   {enhancement.ai_generatable && (
-                    <Zap className="h-3 w-3 text-cyan-400" title="AI Generatable" />
+                    <span title="AI Generatable"><Zap className="h-3 w-3 text-cyan-400" /></span>
                   )}
                 </div>
               </div>
