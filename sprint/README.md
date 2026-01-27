@@ -2,11 +2,34 @@
 
 > **Current Sprint Status & Navigation**
 
-## 🎯 Active Sprint: Sprint 17 (Updated)
+## 🎯 Active Sprint: Sprint 17
 
-**Focus**: Code Cleanup & Modernization  
-**Duration**: Jan 27 - Feb 10, 2026  
-**Status**: 🟡 In Progress - Initial Setup  
+**Focus**: Completion & Modernization  
+**Duration**: January 27 - February 10, 2026  
+**Status**: 🟡 In Progress - Day 1
+
+### Quick Links
+- **[Sprint 17 Backlog](sprint-17-backlog.md)** - Detailed tasks and acceptance criteria
+- **[Sprint 14 Backlog](sprint-14-backlog.md)** - Reference (from 2024)
+- **[Sprint 15 Backlog](sprint-15-backlog.md)** - Reference (from 2024)
+- **[Sprint 16 Backlog](sprint-16-backlog.md)** - Reference (from 2024)
+- **[Daily Tracker](daily-tracker.md)** - Real-time status updates
+- **[Implementation Guide](implementation-guide.md)** - Technical patterns
+
+---
+
+## 📅 Sprint Schedule (Updated 2026)
+
+| Sprint | Dates | Focus | Status | Progress |
+|--------|-------|-------|--------|----------|
+| **Sprint 17** | Jan 27 - Feb 10 | Completion & Modernization | 🟡 Active | 20% |
+| **Sprint 18** | Feb 10-24 | Testing & AI Integration | 🔵 Planned | 0% |
+| **Sprint 19** | Feb 24 - Mar 10 | Production Readiness | 🔵 Planned | 0% |
+
+### Detailed Sprint Plans
+- **[Sprint 17 Backlog](sprint-17-backlog.md)** - Current sprint tasks
+- **[Sprint Schedule](sprint-schedule.md)** - Full 2026 timeline
+- **[Sprint Planning Guide](sprint-planning.md)** - Planning methodology  
 
 ### Quick Links
 - **[Sprint 14 Backlog](sprint-14-backlog.md)** - Detailed tasks and acceptance criteria
