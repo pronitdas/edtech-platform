@@ -4,7 +4,7 @@
 
 This directory contains refactoring epics for the EdTech platform based on the analysis of:
 - Existing components in `tardis-ui`
-- Issues identified in `.issues` directory  
+- Issues identified in `.archive/old_issues` directory (archived for reference)
 - Refactoring plan in `media-uploader/issues.md`
 - Strategic roadmap and production roadmap
 - Updated architecture (Vite + React, no Supabase/Next.js)
@@ -173,7 +173,7 @@ This directory contains refactoring epics for the EdTech platform based on the a
 
 ## Related Documents
 - [Strategic Roadmap](strategic-roadmap.md)
-- [Roadmap to Production](../tardis-ui/.issues/roadmap-to-production.md)
+- [Roadmap to Production](../tardis-ui/.archive/old_issues/roadmap-to-production.md) (archived)
 - [Media Uploader Issues](../media-uploader/issues.md)
 
 ## Dependencies and Relationships

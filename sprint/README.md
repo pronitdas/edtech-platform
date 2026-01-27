@@ -2,11 +2,11 @@
 
 > **Current Sprint Status & Navigation**
 
-## 🎯 Active Sprint: Sprint 14
+## 🎯 Active Sprint: Sprint 17 (Updated)
 
-**Focus**: Slope Drawing Polish & Cognitive Load Refinement  
-**Duration**: July 3-17, 2024  
-**Status**: 🟡 Week 2 - 60% Complete  
+**Focus**: Code Cleanup & Modernization  
+**Duration**: Jan 27 - Feb 10, 2026  
+**Status**: 🟡 In Progress - Initial Setup  
 
 ### Quick Links
 - **[Sprint 14 Backlog](sprint-14-backlog.md)** - Detailed tasks and acceptance criteria
@@ -19,9 +19,9 @@
 
 | Sprint | Dates | Focus | Status | Progress |
 |--------|-------|-------|--------|----------|
-| **Sprint 14** | July 3-17 | Slope Drawing Polish & Cognitive Load | 🟡 Active | 60% |
-| **Sprint 15** | July 17-31 | Backend Completion & WebSocket | ❌ Planned | 0% |
-| **Sprint 16** | July 31-Aug 14 | Frontend Feature Parity | ❌ Planned | 0% |
+| **Sprint 17** | Jan 27 - Feb 10 | Code Cleanup & Modernization | 🟡 Active | 20% |
+| **Sprint 18** | Feb 10-24 | Backend Service Completion | 🔵 Planned | 0% |
+| **Sprint 19** | Feb 24 - Mar 10 | Frontend Feature Parity | 🔵 Planned | 0% |
 
 ### Detailed Sprint Plans
 - **[Sprint 15 Backlog](sprint-15-backlog.md)** - Backend completion focus
@@ -152,5 +152,5 @@
 
 ---
 
-*Last updated: Sprint 14, Day 8*  
+*Last updated: Sprint 17, Day 1*  
 *Next review: Daily standup* 
