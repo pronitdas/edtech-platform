@@ -22,6 +22,7 @@ import {
 // Import the existing slope drawing components
 import SlopeDrawing from '../../interactive/slope/SlopeDrawing'
 import type { SlopeDrawingProps } from '../../interactive/slope/types'
+import type { InteractiveContent } from '@/types/api'
 
 interface GeometryProblem {
   id: string
@@ -88,6 +89,36 @@ const InteractiveGeometryMode: React.FC<InteractiveGeometryModeProps> = ({
     topics: new Set()
   })
 
+  const mapDifficulty = (difficulty: GeometryProblem['difficulty']): 'easy' | 'medium' | 'hard' => {
+    switch (difficulty) {
+      case 'beginner':
+        return 'easy'
+      case 'intermediate':
+        return 'medium'
+      case 'advanced':
+      default:
+        return 'hard'
+    }
+  }
+
+  type InteractiveProblem = NonNullable<InteractiveContent['problems']>[number]
+  type InteractiveProblemSolution = NonNullable<InteractiveProblem['solution']>
+
+  const normalizeSolution = (solution: GeometryProblem['solution']): InteractiveProblemSolution => {
+    if (typeof solution === 'string') return solution
+    if (
+      typeof solution === 'object' &&
+      solution !== null &&
+      'slope' in solution &&
+      'yIntercept' in solution &&
+      typeof solution.slope === 'number' &&
+      typeof solution.yIntercept === 'number'
+    ) {
+      return { slope: solution.slope, yIntercept: solution.yIntercept }
+    }
+    return JSON.stringify(solution)
+  }
+
   // Sample geometry problems
   const sampleProblems: GeometryProblem[] = [
     {
@@ -145,7 +176,7 @@ const InteractiveGeometryMode: React.FC<InteractiveGeometryModeProps> = ({
     }
   ]
 
-  const allProblems = problems.length > 0 ? problems : sampleProblems
+  const allGeometryProblems= problems.length > 0 ? problems : sampleProblems
 
   const problemTypes = [
     {
@@ -154,7 +185,7 @@ const InteractiveGeometryMode: React.FC<InteractiveGeometryModeProps> = ({
       description: 'Master slope calculations and visualizations',
       icon: TrendingUp,
       color: 'blue',
-      problems: allProblems.filter(p => p.type === 'slope')
+      problems: problems.filter((p) => p.type === 'slope')
     },
     {
       id: 'line-equation',
@@ -162,7 +193,7 @@ const InteractiveGeometryMode: React.FC<InteractiveGeometryModeProps> = ({
       description: 'Practice finding equations of lines',
       icon: Calculator,
       color: 'green',
-      problems: allProblems.filter(p => p.type === 'line-equation')
+      problems: problems.filter((p) => p.type === 'line-equation')
     },
     {
       id: 'coordinate-geometry',
@@ -170,7 +201,7 @@ const InteractiveGeometryMode: React.FC<InteractiveGeometryModeProps> = ({
       description: 'Explore coordinate plane concepts',
       icon: Compass,
       color: 'purple',
-      problems: allProblems.filter(p => p.type === 'coordinate-geometry')
+      problems: problems.filter((p) => p.type === 'coordinate-geometry')
     },
     {
       id: 'interactive-drawing',
@@ -178,7 +209,7 @@ const InteractiveGeometryMode: React.FC<InteractiveGeometryModeProps> = ({
       description: 'Draw and analyze geometric shapes',
       icon: Target,
       color: 'orange',
-      problems: allProblems.filter(p => p.type === 'slope') // Use slope problems for drawing
+      problems: problems.filter((p) => p.type === 'slope') // Use slope problems for drawing
     }
   ]
 
@@ -214,7 +245,7 @@ const InteractiveGeometryMode: React.FC<InteractiveGeometryModeProps> = ({
 
     return () => clearInterval(interval)
   }, [isActive, isPaused])
-
+allGeometryProblems
   const startPracticeType = (typeId: string) => {
     const type = problemTypes.find(t => t.id === typeId)
     if (!type || type.problems.length === 0) return
@@ -237,7 +268,7 @@ const InteractiveGeometryMode: React.FC<InteractiveGeometryModeProps> = ({
       points: prev.points + (isCorrect ? currentProblem.points : 0),
       topics: new Set([...prev.topics, currentProblem.topic])
     }))
-
+allGeometryProblems
     // Move to next problem or complete session
     const typeProblems = problemTypes.find(t => t.id === selectedProblemType)?.problems || []
     if (currentProblemIndex < typeProblems.length - 1) {
@@ -267,7 +298,7 @@ const InteractiveGeometryMode: React.FC<InteractiveGeometryModeProps> = ({
 
     onComplete?.(results)
   }
-
+allGeometryProblems
   const getCurrentProblem = () => {
     const typeProblems = problemTypes.find(t => t.id === selectedProblemType)?.problems || []
     return typeProblems[currentProblemIndex]
@@ -281,7 +312,7 @@ const InteractiveGeometryMode: React.FC<InteractiveGeometryModeProps> = ({
         <h2 className="text-3xl font-bold text-white mb-2">Interactive Geometry Practice</h2>
         <p className="text-gray-400">Choose your geometry focus area</p>
       </div>
-
+allGeometryProblems
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {problemTypes.map((type) => {
           const Icon = type.icon
@@ -315,13 +346,13 @@ const InteractiveGeometryMode: React.FC<InteractiveGeometryModeProps> = ({
                   </div>
                   <div className="text-center">
                     <div className="text-lg font-bold text-yellow-400">
-                      {type.problems.reduce((sum, p) => sum + p.points, 0)}
+                      {type.problems.reduce((sum: number, p: { points: number }) => sum + p.points, 0)}
                     </div>
                     <div className="text-xs text-gray-400">Points</div>
                   </div>
                   <div className="text-center">
                     <div className="text-lg font-bold text-green-400">
-                      {Math.round(type.problems.reduce((sum, p) => sum + p.estimatedTime, 0) / 60)}m
+                      {Math.round(type.problems.reduce((sum: number, p: { estimatedTime: number }) => sum + p.estimatedTime, 0) / 60)}m
                     </div>
                     <div className="text-xs text-gray-400">Est. Time</div>
                   </div>
@@ -343,10 +374,10 @@ const InteractiveGeometryMode: React.FC<InteractiveGeometryModeProps> = ({
   // Practice View with Slope Drawing Integration
   const renderPracticeView = () => {
     const currentProblem = getCurrentProblem()
-    if (!currentProblem) return null
+    if (!currentProblem || problems.length === 0) return null;
 
-    const typeConfig = problemTypes.find(t => t.id === selectedProblemType)
-    const isInteractiveDrawing = selectedProblemType === 'interactive-drawing'
+    const typeConfig = problemTypes.find(t => t.id === selectedProblemType);
+    const isInteractiveDrawing = selectedProblemType === 'interactive-drawing';
 
     return (
       <div className="space-y-6">
@@ -395,27 +426,34 @@ const InteractiveGeometryMode: React.FC<InteractiveGeometryModeProps> = ({
             <div className="bg-gray-900 rounded-lg p-4 border border-gray-600">
               <div className="h-96 bg-white rounded-lg">
                 {/* Integrate the existing SlopeDrawing component */}
-                <SlopeDrawing
-                  userId={userId}
-                  knowledgeId={knowledgeId}
-                  interactiveContent={{
-                    title: currentProblem.title,
-                    content: currentProblem.problem,
+                {(() => {
+                  const normalizedSolution = normalizeSolution(currentProblem.solution)
+                  const interactiveContent: InteractiveContent = {
                     type: 'slope-drawing',
+                    config: {
+                      title: currentProblem.title,
+                      content: currentProblem.problem
+                    },
                     problems: [{
                       id: currentProblem.id,
                       question: currentProblem.problem,
-                      difficulty: currentProblem.difficulty,
+                      difficulty: mapDifficulty(currentProblem.difficulty),
                       hints: currentProblem.hints,
-                      solution: currentProblem.solution,
-                      targetPoints: currentProblem.targetPoints || [],
-                      startPoints: currentProblem.startPoints || []
+                      targetPoints: currentProblem.targetPoints ?? [],
+                      startPoints: currentProblem.startPoints ?? [],
+                      ...(normalizedSolution !== undefined ? { solution: normalizedSolution } : {})
                     }]
-                  }}
-                  onUpdateProgress={(progress) => {
-                    onProgress?.(progress)
-                  }}
-                />
+                  }
+
+                  const slopeProps: SlopeDrawingProps = {
+                    interactiveContent,
+                    ...(userId ? { userId } : {}),
+                    ...(knowledgeId ? { knowledgeId } : {}),
+                    ...(onProgress ? { onUpdateProgress: onProgress } : {})
+                  }
+
+                  return <SlopeDrawing {...slopeProps} />
+                })()}
               </div>
             </div>
           ) : (
