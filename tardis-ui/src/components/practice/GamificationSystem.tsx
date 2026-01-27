@@ -22,11 +22,13 @@ import {
   Gem
 } from 'lucide-react'
 
+type IconComponent = React.ComponentType<{ className?: string }>
+
 interface Achievement {
   id: string
   title: string
   description: string
-  icon: React.ElementType
+  icon: IconComponent
   color: string
   rarity: 'common' | 'rare' | 'epic' | 'legendary'
   points: number
@@ -40,7 +42,7 @@ interface Achievement {
 interface Badge {
   id: string
   name: string
-  icon: React.ElementType
+  icon: IconComponent
   color: string
   requirement: string
   earned: boolean
@@ -62,7 +64,7 @@ interface Reward {
   title: string
   description: string
   value: number
-  icon: React.ElementType
+  icon: IconComponent
   rarity: 'common' | 'rare' | 'epic' | 'legendary'
 }
 
@@ -120,8 +122,8 @@ const GamificationSystem: React.FC<GamificationSystemProps> = ({
       progress: Math.min(currentStreak, 7),
       total: 7,
       unlocked: currentStreak >= 7,
-      unlockedAt: currentStreak >= 7 ? new Date() : undefined,
-      category: 'streak'
+      category: 'streak',
+      ...(currentStreak >= 7 ? { unlockedAt: new Date() } : {})
     },
     {
       id: 'perfect_score',

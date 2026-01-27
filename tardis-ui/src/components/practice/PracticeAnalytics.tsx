@@ -201,6 +201,7 @@ const PracticeAnalytics: React.FC<PracticeAnalyticsProps> = ({
     }
 
     const sortedSessions = [...allSessions].sort((a, b) => b.date.getTime() - a.date.getTime())
+    const latestSession = sortedSessions[0]
     const uniqueDays = new Set(sortedSessions.map(s => s.date.toDateString()))
     const daysSorted = Array.from(uniqueDays).sort().reverse()
 
@@ -232,8 +233,13 @@ const PracticeAnalytics: React.FC<PracticeAnalyticsProps> = ({
     for (let i = 0; i < daysSorted.length; i++) {
       tempStreak = 1
       for (let j = i + 1; j < daysSorted.length; j++) {
-        const current = new Date(daysSorted[j - 1])
-        const next = new Date(daysSorted[j])
+        const currentDay = daysSorted[j - 1]
+        const nextDay = daysSorted[j]
+        if (!currentDay || !nextDay) {
+          break
+        }
+        const current = new Date(currentDay)
+        const next = new Date(nextDay)
         const diffTime = current.getTime() - next.getTime()
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
@@ -249,7 +255,7 @@ const PracticeAnalytics: React.FC<PracticeAnalyticsProps> = ({
     return {
       current: currentStreak,
       longest: longestStreak,
-      lastActiveDate: sortedSessions[0].date
+      lastActiveDate: latestSession ? latestSession.date : new Date(0)
     }
   }
 

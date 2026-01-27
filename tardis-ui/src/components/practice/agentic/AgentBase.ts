@@ -126,9 +126,9 @@ export abstract class AgentBase extends EventEmitter {
 
   protected abstract handleMessage(message: AgentMessage): Promise<void>
 
-  abstract async initialize(): Promise<void>
+  abstract initialize(): Promise<void>
 
-  abstract async execute(input: any): Promise<any>
+  abstract execute(input: any): Promise<any>
 
   async shutdown(): Promise<void> {
     this.log('Shutting down agent')

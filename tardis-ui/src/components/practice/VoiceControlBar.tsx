@@ -9,7 +9,7 @@ import {
   HelpCircle
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Tooltip } from '@/components/ui/tooltip'
 
 interface VoiceControlBarProps {
   isListening: boolean
@@ -43,118 +43,97 @@ const VoiceControlBar: React.FC<VoiceControlBarProps> = ({
   }
 
   return (
-    <TooltipProvider>
-      <motion.div 
-        className={`flex items-center gap-2 p-3 bg-white border rounded-lg shadow-sm ${className}`}
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        {/* Voice Enable/Disable */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant={voiceEnabled ? "default" : "outline"}
-              size="sm"
-              onClick={onToggleVoiceEnabled}
-              className="flex items-center gap-1"
-            >
-              {voiceEnabled ? (
-                <Volume2 className="h-4 w-4" />
-              ) : (
-                <VolumeX className="h-4 w-4" />
-              )}
-              <span className="hidden sm:inline">
-                {voiceEnabled ? 'Voice On' : 'Voice Off'}
-              </span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            {voiceEnabled ? 'Disable voice features' : 'Enable voice features'}
-          </TooltipContent>
-        </Tooltip>
+    <motion.div 
+      className={`flex items-center gap-2 p-3 bg-white border rounded-lg shadow-sm ${className}`}
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      {/* Voice Enable/Disable */}
+      <Tooltip content={voiceEnabled ? 'Disable voice features' : 'Enable voice features'}>
+        <Button
+          variant={voiceEnabled ? "primary" : "outline"}
+          size="sm"
+          onClick={onToggleVoiceEnabled}
+          className="flex items-center gap-1"
+        >
+          {voiceEnabled ? (
+            <Volume2 className="h-4 w-4" />
+          ) : (
+            <VolumeX className="h-4 w-4" />
+          )}
+          <span className="hidden sm:inline">
+            {voiceEnabled ? 'Voice On' : 'Voice Off'}
+          </span>
+        </Button>
+      </Tooltip>
 
         {voiceEnabled && (
           <>
             {/* Listening Toggle */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={isListening ? "destructive" : "outline"}
-                  size="sm"
-                  onClick={onToggleListening}
-                  className="flex items-center gap-1"
-                  disabled={!voiceEnabled}
-                >
-                  {isListening ? (
-                    <motion.div
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ repeat: Infinity, duration: 1 }}
-                    >
-                      <Mic className="h-4 w-4" />
-                    </motion.div>
-                  ) : (
-                    <MicOff className="h-4 w-4" />
-                  )}
-                  <span className="hidden sm:inline">
-                    {isListening ? 'Stop Listening' : 'Start Listening'}
-                  </span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {isListening ? 'Stop voice recognition' : 'Start voice recognition'}
-              </TooltipContent>
+            <Tooltip content={isListening ? 'Stop voice recognition' : 'Start voice recognition'}>
+              <Button
+                variant={isListening ? "destructive" : "outline"}
+                size="sm"
+                onClick={onToggleListening}
+                className="flex items-center gap-1"
+                disabled={!voiceEnabled}
+              >
+                {isListening ? (
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ repeat: Infinity, duration: 1 }}
+                  >
+                    <Mic className="h-4 w-4" />
+                  </motion.div>
+                ) : (
+                  <MicOff className="h-4 w-4" />
+                )}
+                <span className="hidden sm:inline">
+                  {isListening ? 'Stop Listening' : 'Start Listening'}
+                </span>
+              </Button>
             </Tooltip>
 
             {/* Speaking Indicator/Control */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={isSpeaking ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={onToggleSpeaking}
-                  disabled={!voiceEnabled}
-                  className="flex items-center gap-1"
-                >
-                  {isSpeaking ? (
-                    <motion.div
-                      animate={{ rotate: [0, 360] }}
-                      transition={{ repeat: Infinity, duration: 2 }}
-                    >
-                      <Volume2 className="h-4 w-4" />
-                    </motion.div>
-                  ) : (
+            <Tooltip content={isSpeaking ? 'Stop reading' : 'Read content aloud'}>
+              <Button
+                variant={isSpeaking ? "secondary" : "ghost"}
+                size="sm"
+                onClick={onToggleSpeaking}
+                disabled={!voiceEnabled}
+                className="flex items-center gap-1"
+              >
+                {isSpeaking ? (
+                  <motion.div
+                    animate={{ rotate: [0, 360] }}
+                    transition={{ repeat: Infinity, duration: 2 }}
+                  >
                     <Volume2 className="h-4 w-4" />
-                  )}
-                  <span className="hidden sm:inline">
-                    {isSpeaking ? 'Speaking...' : 'Read Aloud'}
-                  </span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {isSpeaking ? 'Stop reading' : 'Read content aloud'}
-              </TooltipContent>
+                  </motion.div>
+                ) : (
+                  <Volume2 className="h-4 w-4" />
+                )}
+                <span className="hidden sm:inline">
+                  {isSpeaking ? 'Speaking...' : 'Read Aloud'}
+                </span>
+              </Button>
             </Tooltip>
           </>
         )}
 
         {/* Voice Commands Help */}
         {onShowHelp && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onShowHelp}
-                className="flex items-center gap-1"
-              >
-                <HelpCircle className="h-4 w-4" />
-                <span className="hidden sm:inline">Voice Help</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              Show voice commands help
-            </TooltipContent>
+          <Tooltip content="Show voice commands help">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onShowHelp}
+              className="flex items-center gap-1"
+            >
+              <HelpCircle className="h-4 w-4" />
+              <span className="hidden sm:inline">Voice Help</span>
+            </Button>
           </Tooltip>
         )}
 
@@ -173,8 +152,7 @@ const VoiceControlBar: React.FC<VoiceControlBarProps> = ({
              'Voice Ready'}
           </span>
         </div>
-      </motion.div>
-    </TooltipProvider>
+    </motion.div>
   )
 }
 

@@ -143,8 +143,8 @@ const UnifiedPracticeModule: React.FC<UnifiedPracticeModuleProps> = ({
 
   // Voice functions
   const readCurrentQuestion = () => {
-    if (currentSession && currentSession.questions[currentQuestionIndex]) {
-      const question = currentSession.questions[currentQuestionIndex]
+    const question = currentSession?.questions[currentQuestionIndex]
+    if (question) {
       voice.speak(question.question)
     }
   }
@@ -181,26 +181,27 @@ const UnifiedPracticeModule: React.FC<UnifiedPracticeModuleProps> = ({
   }
 
   const handleSubmitAnswer = () => {
-    if (currentSession && userAnswers[currentSession.questions[currentQuestionIndex].id]) {
-      const isCorrect = userAnswers[currentSession.questions[currentQuestionIndex].id] === 
-                       currentSession.questions[currentQuestionIndex].correctAnswer
-      
-      if (isCorrect) {
-        voice.speak('Correct!')
-      } else {
-        voice.speak('Incorrect. Let me show you the explanation.')
-        setShowExplanation(true)
-      }
-      
-      // Move to next question or finish
-      setTimeout(() => {
-        if (currentQuestionIndex === currentSession.questions.length - 1) {
-          finishSession()
-        } else {
-          handleNextQuestion()
-        }
-      }, 2000)
+    const currentQuestion = currentSession?.questions[currentQuestionIndex]
+    if (!currentQuestion) return
+    if (!userAnswers[currentQuestion.id]) return
+
+    const isCorrect = userAnswers[currentQuestion.id] === currentQuestion.correctAnswer
+
+    if (isCorrect) {
+      voice.speak('Correct!')
+    } else {
+      voice.speak('Incorrect. Let me show you the explanation.')
+      setShowExplanation(true)
     }
+
+    // Move to next question or finish
+    setTimeout(() => {
+      if (currentSession && currentQuestionIndex === currentSession.questions.length - 1) {
+        finishSession()
+      } else {
+        handleNextQuestion()
+      }
+    }, 2000)
   }
 
   const togglePause = () => {
@@ -209,20 +210,21 @@ const UnifiedPracticeModule: React.FC<UnifiedPracticeModuleProps> = ({
   }
 
   const finishSession = () => {
-    if (currentSession) {
-      const correctAnswers = currentSession.questions.filter(q => 
-        userAnswers[q.id] === q.correctAnswer
-      ).length
-      
-      setCurrentSession(prev => ({
-        ...prev!,
-        score: correctAnswers,
-        endTime: new Date()
-      }))
-      
-      announceScore(correctAnswers, currentSession.questions.length)
-      setCurrentView('results')
+    if (!currentSession) return
+
+    const correctAnswers = currentSession.questions.filter(q => 
+      userAnswers[q.id] === q.correctAnswer
+    ).length
+
+    const updatedSession = {
+      ...currentSession,
+      score: correctAnswers,
+      endTime: new Date()
     }
+
+    setCurrentSession(updatedSession)
+    announceScore(correctAnswers, currentSession.questions.length)
+    setCurrentView('results')
   }
 
   // Practice modes configuration
@@ -447,7 +449,7 @@ const UnifiedPracticeModule: React.FC<UnifiedPracticeModuleProps> = ({
 
   // Render practice interface
   const renderPracticeInterface = () => {
-    if (!currentSession) return null
+    if (!currentSession || !selectedMode) return null
 
     // Special handling for interactive geometry mode
     if (selectedMode === 'interactive-geometry') {
@@ -456,8 +458,9 @@ const UnifiedPracticeModule: React.FC<UnifiedPracticeModuleProps> = ({
           <InteractiveGeometryMode
             onComplete={(results) => {
               // Update session with geometry results
+              if (!currentSession) return
               const updatedSession = {
-                ...currentSession!,
+                ...currentSession,
                 score: results.accuracy,
                 timeSpent: results.totalTime,
                 endTime: new Date()
@@ -466,9 +469,9 @@ const UnifiedPracticeModule: React.FC<UnifiedPracticeModuleProps> = ({
               onComplete?.(updatedSession)
               setCurrentView('home')
             }}
-            onProgress={onProgress}
-            userId={topicId}
-            knowledgeId={knowledgeId}
+            {...(onProgress ? { onProgress } : {})}
+            {...(topicId ? { userId: topicId } : {})}
+            {...(knowledgeId ? { knowledgeId } : {})}
           />
         </React.Suspense>
       )
@@ -477,7 +480,9 @@ const UnifiedPracticeModule: React.FC<UnifiedPracticeModuleProps> = ({
     if (!currentSession.questions.length) return null
 
     const currentQuestion = currentSession.questions[currentQuestionIndex]
+    if (!currentQuestion) return null
     const progress = ((currentQuestionIndex + 1) / currentSession.questions.length) * 100
+    const safeTimeRemaining = timeRemaining ?? 0
 
     return (
       <div className="space-y-6">
@@ -495,7 +500,7 @@ const UnifiedPracticeModule: React.FC<UnifiedPracticeModuleProps> = ({
               readCurrentQuestion()
             }
           }}
-          onToggleVoiceEnabled={(enabled) => voice.setVoiceEnabled(!voice.voiceEnabled)}
+          onToggleVoiceEnabled={() => voice.setVoiceEnabled(!voice.voiceEnabled)}
           onShowHelp={() => {
             voice.speak('Voice commands available: Say next for next question, hint for help, repeat to read question again, submit to check answer, or pause to take a break.')
           }}
@@ -506,11 +511,11 @@ const UnifiedPracticeModule: React.FC<UnifiedPracticeModuleProps> = ({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-4">
               <h2 className="text-xl font-semibold text-white">
-                {practiceModesConfig[selectedMode!].title}
+                {practiceModesConfig[selectedMode].title}
               </h2>
               <div className="flex items-center text-gray-400">
                 <Timer className="h-4 w-4 mr-1" />
-                <span>{Math.floor(timeRemaining! / 60)}:{(timeRemaining! % 60).toString().padStart(2, '0')}</span>
+                <span>{Math.floor(safeTimeRemaining / 60)}:{(safeTimeRemaining % 60).toString().padStart(2, '0')}</span>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -604,8 +609,9 @@ const UnifiedPracticeModule: React.FC<UnifiedPracticeModuleProps> = ({
               <button
                 onClick={() => {
                   setShowHint(!showHint)
-                  if (!showHint && currentQuestion.hints && currentQuestion.hints.length > 0) {
-                    announceHint(currentQuestion.hints[0])
+                  const firstHint = currentQuestion.hints?.[0]
+                  if (!showHint && firstHint) {
+                    announceHint(firstHint)
                   }
                 }}
                 className="flex items-center px-3 py-2 text-sm bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
@@ -676,7 +682,8 @@ const UnifiedPracticeModule: React.FC<UnifiedPracticeModuleProps> = ({
   }
 
   const submitAnswer = () => {
-    if (currentQuestionIndex < currentSession!.questions.length - 1) {
+    if (!currentSession) return
+    if (currentQuestionIndex < currentSession.questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1)
       setShowHint(false)
       setShowExplanation(false)
@@ -695,9 +702,9 @@ const UnifiedPracticeModule: React.FC<UnifiedPracticeModuleProps> = ({
   useEffect(() => {
     let interval: NodeJS.Timeout
 
-    if (isActive && !isPaused && timeRemaining! > 0) {
+    if (isActive && !isPaused && timeRemaining !== null && timeRemaining > 0) {
       interval = setInterval(() => {
-        setTimeRemaining(prev => prev! - 1)
+        setTimeRemaining(prev => (prev !== null ? prev - 1 : 0))
       }, 1000)
     }
 
