@@ -3,7 +3,8 @@
  * WCAG 2.1 AA compliance utilities
  */
 
-import { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { VisuallyHidden } from '@/components/accessibility';
 
 // Color contrast utilities
 export const colorContrastRatios = {
@@ -31,15 +32,14 @@ export const contrastRequirements = {
  * Calculate relative luminance
  */
 export const getRelativeLuminance = (hexColor: string): number => {
-  const rgb = hexToRgb(hexColor);
-  if (!rgb) return 0;
-
-  const [r, g, b] = [rgb.r, rgb.g, rgb.b].map((c) => {
+  const rgbResult = hexToRgb(hexColor);
+  if (!rgbResult) return 0;
+  const { r, g, b } = rgbResult;
+  const toLinear = (c: number) => {
     const sRGB = c / 255;
     return sRGB <= 0.03928 ? sRGB / 12.92 : Math.pow((sRGB + 0.055) / 1.055, 2.4);
-  });
-
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
 };
 
 /**
@@ -60,13 +60,14 @@ export const getContrastRatio = (foreground: string, background: string): number
  */
 export const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result
-    ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16),
-      }
-    : null;
+  if (!result) return null;
+  const [, rStr, gStr, bStr] = result;
+  if (!rStr || !gStr || !bStr) return null;
+  return {
+    r: parseInt(rStr, 16),
+    g: parseInt(gStr, 16),
+    b: parseInt(bStr, 16),
+  };
 };
 
 /**
@@ -178,6 +179,7 @@ export const useLiveRegion = (defaultMessage: string = '') => {
   const regionRef = useRef<HTMLDivElement>(null);
 
   const announce = useCallback((newMessage: string, priority: 'polite' | 'assertive' = 'polite') => {
+    regionRef.current?.setAttribute('aria-live', priority);
     setMessage('');
     setTimeout(() => {
       setMessage(newMessage);
@@ -294,14 +296,15 @@ export const useFormValidationA11y = (
   describedBy: string[] = []
 ): ValidationA11y => {
   const errorId = `error-${generateA11yId()}`;
-  const describedById = describedBy.join(' ') || undefined;
+  const hasErrorMessage = errorMessage.trim().length > 0;
+  const describedById = [hasErrorMessage ? errorId : '', ...describedBy].filter(Boolean).join(' ');
 
   return {
     errorId,
-    describedById: describedById || '',
+    describedById,
     ariaInvalid: isInvalid,
     ariaRequired: true,
-    ariaDescribedBy: [errorId, ...describedBy].filter(Boolean).join(' ') || undefined,
+    ariaDescribedBy: describedById,
   };
 };
 
@@ -316,20 +319,28 @@ export const useFocusManagement = (
   useEffect(() => {
     if (!isOpen) return;
 
-    const previousActiveElement = document.activeElement as HTMLElement;
+    const previousActiveElement =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     const focusableElements = containerRef.current?.querySelectorAll<HTMLElement>(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     );
 
     if (focusableElements && focusableElements.length > 0) {
-      focusableElements[0].focus();
+      const firstElement = focusableElements[0];
+      if (firstElement) {
+        firstElement.focus();
+      }
     }
 
     return () => {
-      previousActiveElement?.focus();
+      if (previousActiveElement) {
+        previousActiveElement.focus();
+        return;
+      }
+      triggerRef.current?.focus();
     };
-  }, [isOpen, containerRef]);
+  }, [isOpen, containerRef, triggerRef]);
 };
 
 /**
@@ -361,5 +372,5 @@ export default {
   useHighContrastMode,
   useFormValidationA11y,
   useFocusManagement,
-  VisuallyHidden,
+  VisuallyHidden: VisuallyHidden,
 };
