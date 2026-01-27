@@ -101,7 +101,7 @@ const EnhancedVideoTimeline: React.FC<EnhancedVideoTimelineProps> = ({
     setPreview({
       time,
       position: e.clientX - rect.left,
-      chapterTitle: previewChapter?.title,
+      chapterTitle: previewChapter?.title || '',
       visible: true
     })
   }

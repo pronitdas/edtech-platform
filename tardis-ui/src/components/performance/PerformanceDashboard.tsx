@@ -78,12 +78,12 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
           {showWebVitals && (
             <div className="space-y-2 mb-4">
               <h4 className="text-xs font-medium text-gray-400 uppercase">Core Web Vitals</h4>
-              <WebVitalItem label="LCP" value={metrics.lcp} threshold={2500} unit="ms" />
-              <WebVitalItem label="FID" value={metrics.fid} threshold={100} unit="ms" />
-              <WebVitalItem label="CLS" value={metrics.cls} threshold={0.1} unit="" />
-              <WebVitalItem label="INP" value={metrics.inp} threshold={200} unit="ms" />
-              <WebVitalItem label="FCP" value={metrics.fcp} threshold={1800} unit="ms" />
-              <WebVitalItem label="TTFB" value={metrics.ttfb} threshold={800} unit="ms" />
+              <WebVitalItem label="LCP" value={metrics.lcp ?? null} threshold={2500} unit="ms" />
+              <WebVitalItem label="FID" value={metrics.fid ?? null} threshold={100} unit="ms" />
+              <WebVitalItem label="CLS" value={metrics.cls ?? null} threshold={0.1} unit="" />
+              <WebVitalItem label="INP" value={metrics.inp ?? null} threshold={200} unit="ms" />
+              <WebVitalItem label="FCP" value={metrics.fcp ?? null} threshold={1800} unit="ms" />
+              <WebVitalItem label="TTFB" value={metrics.ttfb ?? null} threshold={800} unit="ms" />
             </div>
           )}
 

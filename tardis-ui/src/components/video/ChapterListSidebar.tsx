@@ -107,8 +107,8 @@ const ChapterListSidebar: React.FC<ChapterListSidebarProps> = ({
 
   // Auto-expand current chapter
   useEffect(() => {
-    if (currentChapterIndex >= 0) {
-      const currentChapter = chapters[currentChapterIndex]
+    if (currentChapterIndex >= 0 && chapters[currentChapterIndex]) {
+      const currentChapter = chapters[currentChapterIndex];
       setExpandedChapters(prev => new Set([...prev, currentChapter.id]))
     }
   }, [currentChapterIndex, chapters])
