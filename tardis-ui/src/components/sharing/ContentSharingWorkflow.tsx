@@ -63,6 +63,22 @@ interface SharingAssignment {
   };
 }
 
+type ApiDataResponse<T> = {
+  data: T;
+};
+
+interface StudentsResponse {
+  students: Student[];
+}
+
+interface AssignmentsResponse {
+  assignments: SharingAssignment[];
+}
+
+interface ShareContentResponse {
+  success: boolean;
+}
+
 interface ContentSharingWorkflowProps {
   content?: SharedContent;
   isOpen: boolean;
@@ -110,7 +126,7 @@ const ContentSharingWorkflow: React.FC<ContentSharingWorkflowProps> = ({
   const loadStudents = async () => {
     setLoading(true);
     try {
-      const response = await apiClient.get(`/api/v2/teacher/students?teacher_id=${user?.id}`);
+      const response = await apiClient.get<ApiDataResponse<StudentsResponse>>(`/api/v2/teacher/students?teacher_id=${user?.id}`);
       if (response.data?.students) {
         setStudents(response.data.students);
       }
@@ -125,7 +141,7 @@ const ContentSharingWorkflow: React.FC<ContentSharingWorkflowProps> = ({
   const loadAssignments = async () => {
     setLoading(true);
     try {
-      const response = await apiClient.get(`/api/v2/teacher/assignments?teacher_id=${user?.id}`);
+      const response = await apiClient.get<ApiDataResponse<AssignmentsResponse>>(`/api/v2/teacher/assignments?teacher_id=${user?.id}`);
       if (response.data?.assignments) {
         setAssignments(response.data.assignments);
       }
@@ -159,7 +175,7 @@ const ContentSharingWorkflow: React.FC<ContentSharingWorkflowProps> = ({
 
     setLoading(true);
     try {
-      const response = await apiClient.post('/api/v2/teacher/share-content', {
+      const response = await apiClient.post<ApiDataResponse<ShareContentResponse>>('/api/v2/teacher/share-content', {
         teacher_id: user?.id,
         content_id: content.knowledge_id,
         student_ids: selectedStudents,

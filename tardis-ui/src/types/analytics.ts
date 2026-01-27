@@ -80,7 +80,7 @@ export interface QuizSubmitEvent extends BaseAnalyticsEvent {
 
 // Content View Events
 export interface ContentViewEvent extends BaseAnalyticsEvent {
-  contentId: string // Identifier for the content
+  contentId?: string // Identifier for the content (optional, can be passed separately)
   contentType: string // Type of content (article, video, mindmap, etc.)
   contentTitle?: string | undefined // Title of the content
   viewDuration?: number | undefined // How long the content was viewed (in seconds)

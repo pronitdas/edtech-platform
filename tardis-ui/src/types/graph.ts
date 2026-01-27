@@ -60,4 +60,7 @@ export interface InteractiveMathConfig {
   xRange: [number, number]
   yRange: [number, number]
   stepSize: number
+  minZoom?: number
+  maxZoom?: number
+  gridSize?: number
 }
