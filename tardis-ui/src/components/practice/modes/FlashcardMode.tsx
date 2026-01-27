@@ -124,6 +124,7 @@ const FlashcardMode: React.FC<FlashcardModeProps> = ({
   }
 
   const markCard = (correct: boolean) => {
+    if (!currentCard) return
     const responseTime = Date.now() - cardStartTime.getTime()
     const cardId = currentCard.id
     
@@ -186,6 +187,7 @@ const FlashcardMode: React.FC<FlashcardModeProps> = ({
   }
 
   const getProgress = () => {
+    if (sessionCards.length === 0) return 0
     const reviewed = Object.keys(results).length
     return (reviewed / sessionCards.length) * 100
   }

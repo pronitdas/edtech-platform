@@ -122,7 +122,7 @@ const SpeedDrillMode: React.FC<SpeedDrillModeProps> = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
-  const getSpeedRating = (wpm: number): string => {
+  const getSpeedRating = (wpm: number): SpeedDrillResults['speedRating'] => {
     if (wpm >= 60) return 'Lightning'
     if (wpm >= 45) return 'Expert'
     if (wpm >= 30) return 'Advanced'
@@ -370,7 +370,7 @@ const SpeedDrillMode: React.FC<SpeedDrillModeProps> = ({
             transition={{ duration: 0.2 }}
           >
             <div className="mb-6">
-              <div className="text-sm text-gray-400 mb-2">{currentQuestion?.type.toUpperCase()}</div>
+              <div className="text-sm text-gray-400 mb-2">{currentQuestion?.type?.toUpperCase()}</div>
               <h3 className="text-2xl font-medium text-white leading-relaxed">
                 {currentQuestion?.question}
               </h3>

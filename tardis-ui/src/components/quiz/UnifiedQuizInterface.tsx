@@ -55,6 +55,18 @@ interface QuizOption {
   data: LegacyQuiz | GeneratedQuiz;
 }
 
+type ApiDataResponse<T> = {
+  data: T;
+};
+
+interface LegacyQuizResponse {
+  quizzes: LegacyQuiz[];
+}
+
+interface GeneratedQuizResponse {
+  quizzes: GeneratedQuiz[];
+}
+
 interface UnifiedQuizInterfaceProps {
   knowledgeId?: string;
   chapterId?: string;
@@ -90,7 +102,7 @@ const UnifiedQuizInterface: React.FC<UnifiedQuizInterfaceProps> = ({
       // Load legacy quizzes if enabled
       if (showLegacyQuizzes && chapterId) {
         try {
-          const legacyResponse = await apiClient.get(`/api/v1/quizzes/chapter/${chapterId}`);
+          const legacyResponse = await apiClient.get<ApiDataResponse<LegacyQuizResponse>>(`/api/v1/quizzes/chapter/${chapterId}`);
           if (legacyResponse.data?.quizzes) {
             legacyResponse.data.quizzes.forEach((quiz: LegacyQuiz) => {
               options.push({
@@ -112,7 +124,7 @@ const UnifiedQuizInterface: React.FC<UnifiedQuizInterfaceProps> = ({
       // Load generated quizzes if enabled
       if (showGeneratedQuizzes && knowledgeId) {
         try {
-          const generatedResponse = await apiClient.get(`/api/v2/topic-generation/quizzes/${knowledgeId}`);
+          const generatedResponse = await apiClient.get<ApiDataResponse<GeneratedQuizResponse>>(`/api/v2/topic-generation/quizzes/${knowledgeId}`);
           if (generatedResponse.data?.quizzes) {
             generatedResponse.data.quizzes.forEach((quiz: GeneratedQuiz) => {
               options.push({
@@ -136,7 +148,7 @@ const UnifiedQuizInterface: React.FC<UnifiedQuizInterfaceProps> = ({
       // If no specific content provided, load available quizzes
       if (!knowledgeId && !chapterId && !topicId) {
         try {
-          const availableResponse = await apiClient.get('/api/v2/topic-generation/available-quizzes');
+          const availableResponse = await apiClient.get<ApiDataResponse<GeneratedQuizResponse>>('/api/v2/topic-generation/available-quizzes');
           if (availableResponse.data?.quizzes) {
             availableResponse.data.quizzes.forEach((quiz: GeneratedQuiz) => {
               options.push({
