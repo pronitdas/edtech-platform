@@ -15,7 +15,7 @@ interface RoleOption {
   value: UserRole
   label: string
   description: string
-  icon: React.ElementType
+  icon: React.ComponentType<{ className?: string }>
   color: string
 }
 
