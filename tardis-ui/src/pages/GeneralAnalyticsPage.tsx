@@ -249,7 +249,7 @@ export default function GeneralAnalyticsPage() {
               </div>
             </div>
             <div className="text-sm text-gray-400">
-              Welcome back, {user?.first_name || 'Learner'}!
+              Welcome back, {user?.name || 'Learner'}!
             </div>
           </div>
         </div>
