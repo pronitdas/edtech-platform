@@ -12,7 +12,8 @@ import {
   Gauge,
   CheckCircle,
   XCircle,
-  Star
+  Star,
+  Trophy
 } from 'lucide-react'
 
 interface SpeedQuestion {

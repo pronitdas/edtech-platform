@@ -73,10 +73,14 @@ const UdemyPlusVideoPlayer: React.FC<UdemyPlusVideoPlayerProps> = ({
   })
   
   // Video state management
-  const {
-    state,
-    actions
-  } = useVideoState(videoRef)
+  const [state, actions] = useVideoState(
+    videoRef,
+    containerRef,
+    markers,
+    undefined,
+    undefined,
+    undefined
+  )
   
   // Component state
   const [showSidebar, setShowSidebar] = useState(true)
@@ -88,13 +92,13 @@ const UdemyPlusVideoPlayer: React.FC<UdemyPlusVideoPlayerProps> = ({
   const [videoSrc, setVideoSrc] = useState<string>('')
   
   // Control visibility timeout
-  const controlsTimeoutRef = useRef<NodeJS.Timeout>()
+  const controlsTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
   
   // Analytics and voice integration
   const analytics = useVideoAnalytics({
     videoId: knowledgeId.toString(),
     knowledgeId: knowledgeId.toString(),
-    duration: state.duration
+    moduleId: 'default'
   })
   
   const voice = useVoiceIntegration({
@@ -201,34 +205,39 @@ const UdemyPlusVideoPlayer: React.FC<UdemyPlusVideoPlayerProps> = ({
         setBufferedTime(buffered)
       }
     }
-    
+
     const video = videoRef.current
     if (video) {
       video.addEventListener('progress', updateBuffered)
       return () => video.removeEventListener('progress', updateBuffered)
     }
+    return undefined
   }, [])
 
   // Track analytics
   useEffect(() => {
     if (state.isPlaying) {
-      analytics.trackPlay(state.currentTime)
+      analytics.trackPlay(state.currentTime, state.duration)
     } else {
-      analytics.trackPause(state.currentTime)
+      analytics.trackPause(state.currentTime, state.duration)
     }
-  }, [state.isPlaying, analytics])
+  }, [state.isPlaying, state.currentTime, state.duration, analytics])
 
   useEffect(() => {
-    analytics.trackTimeUpdate(state.currentTime)
-  }, [state.currentTime, analytics])
+    if (state.duration > 0) {
+      analytics.checkAndTrackProgress(state.currentTime, state.duration)
+    }
+  }, [state.currentTime, state.duration, analytics])
 
   // Chapter navigation
   const goToNextChapter = () => {
     const currentIndex = videoData.chapters.findIndex(ch => ch.id === videoData.currentChapter?.id)
     if (currentIndex < videoData.chapters.length - 1) {
       const nextChapter = videoData.chapters[currentIndex + 1]
-      actions.seek(nextChapter.timestamp_start)
-      voice.speak(`Moving to next chapter: ${nextChapter.title}`)
+      if (nextChapter) {
+        actions.seek(nextChapter.timestamp_start)
+        voice.speak(`Moving to next chapter: ${nextChapter.title}`)
+      }
     }
   }
 
@@ -236,8 +245,10 @@ const UdemyPlusVideoPlayer: React.FC<UdemyPlusVideoPlayerProps> = ({
     const currentIndex = videoData.chapters.findIndex(ch => ch.id === videoData.currentChapter?.id)
     if (currentIndex > 0) {
       const prevChapter = videoData.chapters[currentIndex - 1]
-      actions.seek(prevChapter.timestamp_start)
-      voice.speak(`Moving to previous chapter: ${prevChapter.title}`)
+      if (prevChapter) {
+        actions.seek(prevChapter.timestamp_start)
+        voice.speak(`Moving to previous chapter: ${prevChapter.title}`)
+      }
     }
   }
 
@@ -245,18 +256,18 @@ const UdemyPlusVideoPlayer: React.FC<UdemyPlusVideoPlayerProps> = ({
   const changePlaybackSpeed = (direction: number) => {
     const currentIndex = PLAYBACK_SPEEDS.findIndex(speed => speed.value === playbackSpeed)
     const newIndex = Math.max(0, Math.min(PLAYBACK_SPEEDS.length - 1, currentIndex + direction))
-    const newSpeed = PLAYBACK_SPEEDS[newIndex].value
-    
-    setPlaybackSpeed(newSpeed)
-    if (videoRef.current) {
-      videoRef.current.playbackRate = newSpeed
+    const newSpeed = PLAYBACK_SPEEDS[newIndex]?.value
+    if (newSpeed !== undefined) {
+      setPlaybackSpeed(newSpeed)
+      if (videoRef.current) {
+        videoRef.current.playbackRate = newSpeed
+      }
     }
   }
 
   // Handle chapter click
   const handleChapterClick = (startTime: number, chapterId: string) => {
     actions.seek(startTime)
-    analytics.trackSeek(state.currentTime, startTime)
     
     const chapter = videoData.chapters.find(ch => ch.id === chapterId)
     if (chapter) {
@@ -416,11 +427,11 @@ const UdemyPlusVideoPlayer: React.FC<UdemyPlusVideoPlayerProps> = ({
             onToggleSpeaking={() => {
               if (voice.isSpeaking) {
                 voice.stopSpeaking()
-              } else if (currentChapter) {
-                voice.speak(`Currently watching: ${currentChapter.title}`)
+              } else if (videoData.currentChapter) {
+                voice.speak(`Currently watching: ${videoData.currentChapter.title}`)
               }
             }}
-            onToggleVoiceEnabled={(enabled) => voice.setVoiceEnabled(!voice.voiceEnabled)}
+            onToggleVoiceEnabled={() => voice.setVoiceEnabled(!voice.voiceEnabled)}
             onShowHelp={() => voice.speak('Voice commands: say play, pause, next chapter, previous chapter, faster, or slower')}
             className="bg-black/50 backdrop-blur-sm"
           />

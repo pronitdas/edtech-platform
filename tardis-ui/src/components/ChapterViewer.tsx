@@ -4,7 +4,7 @@ import { useKnowledgeData } from '../hooks/useKnowledgeData'
 import { useChapters } from '../hooks/useChapters'
 import { useLanguage } from '../hooks/useLanguage'
 import MarkdownViewer from './MarkDownViewer'
-import { VideoPlayer } from './video/VideoPlayer'
+import VideoPlayer from './VideoPlayer'
 import { QuizComponent } from './quiz/QuizComponent'
 
 type TabType = 'content' | 'notes' | 'summary' | 'quiz' | 'mindmap'

@@ -12,8 +12,8 @@ import { VideoState, VideoStateActions, TimelineMarker } from './VideoTypes'
  * @returns Video state and actions
  */
 export function useVideoState(
-  videoRef: React.RefObject<HTMLVideoElement>,
-  containerRef: React.RefObject<HTMLDivElement>,
+  videoRef: React.RefObject<HTMLVideoElement | null>,
+  containerRef: React.RefObject<HTMLDivElement | null>,
   markers: TimelineMarker[] = [],
   onPlay?: () => void,
   onPause?: () => void,

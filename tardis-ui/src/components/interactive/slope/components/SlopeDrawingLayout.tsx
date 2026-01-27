@@ -184,11 +184,17 @@ const SlopeDrawingLayout: React.FC = () => {
       ref={containerRef}
       className='flex h-full w-full overflow-hidden bg-gray-900'
       style={touchOptimizedStyles}
+      role='application'
+      aria-label='Slope Drawing Tool - Interactive math learning tool'
     >
       {/* Main Content */}
       <div className='flex flex-1 overflow-hidden'>
         {/* Drawing Toolbar - Responsive */}
-        <div className='hidden md:block border-r border-gray-600 bg-gray-800 shadow-2xl'>
+        <div
+          className='hidden md:block border-r border-gray-600 bg-gray-800 shadow-2xl'
+          role='toolbar'
+          aria-label='Drawing tools'
+        >
           <DrawingToolbar
             drawingTool={drawingTool}
             setDrawingTool={(tool) => {
@@ -215,7 +221,11 @@ const SlopeDrawingLayout: React.FC = () => {
         </div>
 
         {/* Mobile Drawing Toolbar */}
-        <div className='md:hidden absolute top-0 left-0 right-0 z-10 bg-gray-800 border-b border-gray-600 p-2'>
+        <div
+          className='md:hidden absolute top-0 left-0 right-0 z-10 bg-gray-800 border-b border-gray-600 p-2'
+          role='toolbar'
+          aria-label='Drawing tools'
+        >
           <div className='flex justify-center'>
             <div className='flex space-x-2 overflow-x-auto'>
               <DrawingToolbar
@@ -257,6 +267,8 @@ const SlopeDrawingLayout: React.FC = () => {
               WebkitUserZoom: 'disabled',
               msContentZooming: 'none',
             }}
+            role='img'
+            aria-label={`Interactive graph canvas. Current zoom: ${(zoom * 100).toFixed(0)}%. ${points.length} points placed.`}
           >
             <TouchFeedback
               className="h-full w-full"

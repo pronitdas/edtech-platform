@@ -111,7 +111,7 @@ const GeneratedContentTutor: React.FC<GeneratedContentTutorProps> = ({
   const { user } = useUser();
   const { trackContentView } = useInteractionTracker();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<typeof window.SpeechRecognition | null>(null);
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {

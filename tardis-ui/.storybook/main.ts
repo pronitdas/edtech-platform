@@ -3,7 +3,11 @@ import path from 'path'
 import { mergeConfig } from 'vite'
 
 const config: StorybookConfig = {
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
+  stories: [
+    '../src/**/*.mdx',
+    '../src/**/*.stories.@(js|jsx|ts|tsx)',
+    '../src/components/interactive/slope/**/*.stories.@(js|jsx|ts|tsx)',
+  ],
   addons: [
     '@storybook/addon-links',
     '@storybook/addon-essentials',
@@ -39,6 +43,10 @@ const config: StorybookConfig = {
     builder: '@storybook/builder-vite',
     disableTelemetry: true,
   },
+  staticDirs: [
+    // Additional static directories to serve
+    { from: '../public', to: '/public' },
+  ],
   typescript: {
     reactDocgen: 'react-docgen-typescript',
     check: false,
@@ -47,7 +55,7 @@ const config: StorybookConfig = {
       propFilter: (prop) => (prop.parent ? !/node_modules/.test(prop.parent.fileName) : true),
     },
   },
-  async viteFinal(config, { configType }) {
+  viteFinal(config, { configType }) {
     // Ensure we have a clean alias configuration
     const customConfig = mergeConfig(config, {
       resolve: {

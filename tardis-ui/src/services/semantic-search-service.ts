@@ -322,11 +322,3 @@ export const semanticSearchService = new SemanticSearchService();
 
 // Export class for dependency injection
 export { SemanticSearchService };
-
-// Export types
-export type {
-  SearchQuery,
-  SearchResult,
-  LearningRecommendation,
-  PersonalizedFeed
-};

@@ -19,3 +19,22 @@ aiofiles
 aiohttp
 alembic
 wikipedia
+
+# OCR Dependencies (Docling - IBM's Document Understanding)
+# Enable via USE_DOCLING=true environment variable
+# Docling provides high-quality OCR with layout analysis and table extraction
+# Installation: pip install docling
+docling>=2.0.0
+
+# Optional: DeepSeek OCR 2 for advanced document understanding
+# Enable via USE_DEEPSEEK_OCR=true environment variable
+# DeepSeek-OCR provides multimodal document understanding
+# Installation: pip install deepseek-ocr
+# deepseek-ocr>=0.1.0
+
+# Testing Dependencies
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+httpx==0.25.0  # For async test client
+requests-mock==1.11.0

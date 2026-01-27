@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { BookOpen, Video, ArrowLeftRight } from 'lucide-react'
-import { VideoPlayer } from './video/VideoPlayer'
+import VideoPlayer from './VideoPlayer'
 import MarkdownSlideshow from './MarkdownSlideshow'
 import { useInteractionTracker } from '@/contexts/InteractionTrackerContext'
 

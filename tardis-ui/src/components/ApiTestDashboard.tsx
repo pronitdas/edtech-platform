@@ -189,7 +189,12 @@ This content is designed for comprehensive testing of the knowledge processing s
   }
 
   const resetTests = () => {
-    setTests(prev => prev.map(test => ({ ...test, status: 'idle', result: undefined, error: undefined, duration: undefined })))
+    const resetTestsList: TestResult[] = tests.map(test => ({
+      name: test.name,
+      status: 'idle' as const
+      // Don't set optional properties - they'll be undefined by default
+    }))
+    setTests(resetTestsList)
     setKnowledgeId(null)
   }
 

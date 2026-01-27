@@ -13,6 +13,7 @@ export interface User {
   created_at: string
   role?: 'student' | 'teacher' | 'content_creator'
   onboarding_completed?: boolean
+  subjects_of_interest?: string[]
 }
 
 export interface Knowledge {
