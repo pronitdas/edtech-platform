@@ -4,6 +4,19 @@
  */
 
 import { unifiedApiService } from './unified-api-service'
+import { authService } from './auth'
+
+/**
+ * Get the current user ID from auth context
+ * Returns the user ID or throws an error if not authenticated
+ */
+async function getCurrentUserId(): Promise<number> {
+  if (!authService.isAuthenticated()) {
+    throw new Error('User not authenticated')
+  }
+  const user = await authService.getCurrentUser()
+  return user.id
+}
 
 export interface VideoMetadata {
   duration: number
@@ -217,8 +230,9 @@ export class VideoApiService {
     const client = unifiedApiService.getClient()
     if (!client) throw new Error('API client not initialized')
 
+    const currentUserId = await getCurrentUserId()
     await (client as any).trackEventV2AnalyticsTrackEventPost({
-      user_id: 1, // TODO: Get from auth context
+      user_id: currentUserId,
       knowledge_id: data.knowledge_id,
       chapter_id: data.chapter_id,
       event_type: data.event_type,
@@ -278,8 +292,9 @@ export class VideoApiService {
     const client = unifiedApiService.getClient()
     if (!client) throw new Error('API client not initialized')
 
+    const currentUserId = await getCurrentUserId()
     const response = await (client as any).createNoteV2NotesPost({
-      user_id: 1, // TODO: Get from auth context
+      user_id: currentUserId,
       knowledge_id: data.knowledge_id,
       chapter_id: data.chapter_id,
       timestamp: data.timestamp,
@@ -317,8 +332,9 @@ export class VideoApiService {
     const client = unifiedApiService.getClient()
     if (!client) throw new Error('API client not initialized')
 
+    const currentUserId = await getCurrentUserId()
     const response = await (client as any).createBookmarkV2BookmarksPost({
-      user_id: 1, // TODO: Get from auth context
+      user_id: currentUserId,
       knowledge_id: data.knowledge_id,
       chapter_id: data.chapter_id,
       timestamp: data.timestamp,
