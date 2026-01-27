@@ -41,14 +41,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           try {
             // You might want to add a /me endpoint to validate the token
             // For now, we'll construct user from token payload
-            const payload = JSON.parse(atob(token.split('.')[1]))
-            setUser({
-              id: payload.user_id,
-              email: payload.email || '',
-              display_name: payload.display_name || '',
-              roles: payload.roles || ['user'],
-              verified: payload.verified || false
-            } as User)
+            const tokenPayload = token.split('.')[1]
+            if (!tokenPayload) {
+              throw new Error('Invalid auth token payload')
+            }
+            const parsedPayload = JSON.parse(atob(tokenPayload))
+            const payloadRecord: Record<string, unknown> =
+              typeof parsedPayload === 'object' && parsedPayload !== null
+                ? parsedPayload
+                : {}
+            const idValue = payloadRecord.user_id
+            const id = typeof idValue === 'number'
+              ? idValue
+              : typeof idValue === 'string' && idValue.trim() !== ''
+                ? Number(idValue)
+                : 0
+            const email = typeof payloadRecord.email === 'string'
+              ? payloadRecord.email
+              : ''
+            const nameValue = typeof payloadRecord.name === 'string'
+              ? payloadRecord.name
+              : typeof payloadRecord.display_name === 'string'
+                ? payloadRecord.display_name
+                : undefined
+            const roleValue = payloadRecord.role
+            const role =
+              roleValue === 'student' ||
+              roleValue === 'teacher' ||
+              roleValue === 'content_creator'
+                ? roleValue
+                : undefined
+            const createdAt = typeof payloadRecord.created_at === 'string'
+              ? payloadRecord.created_at
+              : new Date().toISOString()
+            const onboardingCompleted =
+              typeof payloadRecord.onboarding_completed === 'boolean'
+                ? payloadRecord.onboarding_completed
+                : undefined
+            const subjectsOfInterest = Array.isArray(payloadRecord.subjects_of_interest)
+              ? payloadRecord.subjects_of_interest.filter((subject): subject is string => typeof subject === 'string')
+              : undefined
+            const tokenUser: User = {
+              id,
+              email,
+              created_at: createdAt,
+              ...(nameValue ? { name: nameValue } : {}),
+              ...(role ? { role } : {}),
+              ...(typeof onboardingCompleted === 'boolean'
+                ? { onboarding_completed: onboardingCompleted }
+                : {}),
+              ...(subjectsOfInterest ? { subjects_of_interest: subjectsOfInterest } : {})
+            }
+            setUser(tokenUser)
           } catch (tokenError) {
             console.error('Invalid token, clearing auth:', tokenError)
             localStorage.removeItem('auth_token')

@@ -4,6 +4,12 @@ import { authService } from '../services/auth'
 
 type UserRole = 'student' | 'teacher' | 'content_creator'
 
+type TeacherContentGenerationPreferences = {
+  complexity_level: 'beginner' | 'intermediate' | 'advanced'
+  content_style: 'formal' | 'conversational' | 'interactive'
+  assessment_frequency: 'low' | 'medium' | 'high'
+}
+
 // Base user interface with common fields
 interface BaseUser {
   id: string | number
@@ -31,10 +37,13 @@ interface StudentProfile {
 // Teacher-specific profile fields
 interface TeacherProfile {
   school_name?: string
+  subjects_of_interest?: string[]
   subjects_taught?: string[]
   grade_levels_taught?: string[]
   years_experience?: number
   classroom_size?: number
+  topics_to_teach?: string[]
+  content_generation_preferences?: TeacherContentGenerationPreferences
   curriculum_standards?: string[]
   teaching_style?: 'traditional' | 'progressive' | 'montessori' | 'waldorf'
   classroom_management_preferences?: {
@@ -46,6 +55,7 @@ interface TeacherProfile {
 
 // Content Creator-specific profile fields
 interface ContentCreatorProfile {
+  subjects_of_interest?: string[]
   content_specialties?: string[]
   target_audiences?: ('elementary' | 'middle_school' | 'high_school' | 'college' | 'adult')[]
   content_types?: ('video' | 'interactive' | 'quiz' | 'simulation' | 'text' | 'audio')[]
@@ -151,15 +161,17 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }
 
   const register = async (email: string, password: string, name?: string) => {
+    const registerData = name ? { email, password, name } : { email, password }
+
     try {
       // Try traditional auth service first (more reliable)
-      const user = await authService.register({ email, password, name })
+      const user = await authService.register(registerData)
       setUser(user as User)
     } catch (authError) {
       console.warn('Traditional registration failed, trying Kratos:', authError)
       try {
         // Fallback to Kratos
-        const user = await kratosAuthService.register({ email, password, name })
+        const user = await kratosAuthService.register(registerData)
         setUser(user as User)
       } catch (kratosError) {
         console.error('Both registration methods failed:', { authError, kratosError })
@@ -253,9 +265,25 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     if (!user) throw new Error('No user logged in')
 
     try {
+      const sanitizedOnboardingData = Object.fromEntries(
+        Object.entries(onboardingData).filter(([, value]) => value !== undefined)
+      ) as Partial<User>
+
       // Update user with onboarding data
-      const updatedUser = { ...user, ...onboardingData, onboarding_completed: true }
-      setUser(updatedUser)
+      const nextRole = sanitizedOnboardingData.role ?? user.role
+      const updatedUserBase = {
+        ...user,
+        ...sanitizedOnboardingData,
+        onboarding_completed: true,
+        role: nextRole
+      }
+      const updatedUser =
+        nextRole === 'student'
+          ? { ...updatedUserBase, role: 'student' }
+          : nextRole === 'teacher'
+            ? { ...updatedUserBase, role: 'teacher' }
+            : { ...updatedUserBase, role: 'content_creator' }
+      setUser(updatedUser as User)
 
       // Send to backend
       const token = localStorage.getItem('auth_token')
@@ -267,7 +295,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           ...(token && { 'Authorization': `Bearer ${token}` })
         },
         credentials: 'include',
-        body: JSON.stringify({ ...onboardingData, onboarding_completed: true })
+        body: JSON.stringify({
+          ...sanitizedOnboardingData,
+          onboarding_completed: true
+        })
       })
 
       if (!response.ok) {
