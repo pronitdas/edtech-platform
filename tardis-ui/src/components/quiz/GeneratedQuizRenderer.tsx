@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   CheckCircle, 
@@ -59,6 +59,7 @@ const GeneratedQuizRenderer: React.FC<GeneratedQuizRendererProps> = ({
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
   const [isCompleted, setIsCompleted] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const attemptIdRef = useRef(`attempt_${Date.now()}`);
   const [results, setResults] = useState<{
     score: number;
     totalScore: number;
@@ -98,6 +99,7 @@ const GeneratedQuizRenderer: React.FC<GeneratedQuizRendererProps> = ({
   }, [quiz, trackQuizStart]);
 
   const handleAnswerSelect = (answer: string) => {
+    if (!currentQuestion) return;
     setAnswers(prev => ({
       ...prev,
       [currentQuestion.id]: answer
@@ -105,6 +107,7 @@ const GeneratedQuizRenderer: React.FC<GeneratedQuizRendererProps> = ({
   };
 
   const handleNextQuestion = () => {
+    if (!currentQuestion) return;
     const timeSpent = Date.now() - questionStartTime;
     
     // Track the answer
@@ -112,12 +115,14 @@ const GeneratedQuizRenderer: React.FC<GeneratedQuizRendererProps> = ({
       parseInt(quiz.knowledge_id) || 0,
       currentQuestion.id,
       {
+        quizId: quiz.knowledge_id,
+        attemptId: attemptIdRef.current,
         questionId: currentQuestion.id,
-        selectedAnswer: answers[currentQuestion.id] || '',
-        correctAnswer: currentQuestion.correct_answer,
-        isCorrect: answers[currentQuestion.id] === currentQuestion.correct_answer,
-        timeSpent: timeSpent / 1000, // Convert to seconds
         questionType: currentQuestion.question_type,
+        isCorrect: answers[currentQuestion.id] === currentQuestion.correct_answer,
+        timeTaken: timeSpent / 1000,
+        userAnswer: answers[currentQuestion.id] || '',
+        correctAnswer: currentQuestion.correct_answer,
         knowledgeId: quiz.knowledge_id,
         moduleId: quiz.knowledge_id,
         timestamp: Date.now(),
@@ -141,8 +146,9 @@ const GeneratedQuizRenderer: React.FC<GeneratedQuizRendererProps> = ({
   };
 
   const completeQuiz = () => {
-    const startTimestamp = startTime[quiz.questions[0]?.id] || Date.now();
-    const totalTimeSpent = Date.now() - startTimestamp;
+    const firstQuestionId = quiz.questions[0]?.id;
+    const startTimestamp = firstQuestionId ? startTime[firstQuestionId] : undefined;
+    const totalTimeSpent = Date.now() - (startTimestamp ?? Date.now());
     
     // Calculate results
     let score = 0;
@@ -178,11 +184,14 @@ const GeneratedQuizRenderer: React.FC<GeneratedQuizRendererProps> = ({
     // Track quiz completion
     trackQuizComplete(parseInt(quiz.knowledge_id) || 0, {
       quizId: quiz.knowledge_id,
+      attemptId: attemptIdRef.current,
       score: score,
-      totalScore: quiz.total_points,
+      maxScore: quiz.total_points,
+      durationSeconds: totalTimeSpent / 1000,
       correctAnswers: correctAnswers,
       totalQuestions: quiz.questions.length,
-      timeSpent: totalTimeSpent / 1000,
+      attemptNumber: 1,
+      totalScore: quiz.total_points,
       completionRate: (correctAnswers / quiz.questions.length) * 100,
       knowledgeId: quiz.knowledge_id,
       moduleId: quiz.knowledge_id,
@@ -198,7 +207,12 @@ const GeneratedQuizRenderer: React.FC<GeneratedQuizRendererProps> = ({
   const resetQuiz = () => {
     setCurrentQuestionIndex(0);
     setAnswers({});
-    setStartTime({ [quiz.questions[0]?.id]: Date.now() });
+    const firstQuestionId = quiz.questions[0]?.id;
+    if (firstQuestionId) {
+      setStartTime({ [firstQuestionId]: Date.now() });
+    } else {
+      setStartTime({});
+    }
     setQuestionStartTime(Date.now());
     setIsCompleted(false);
     setShowResults(false);
@@ -351,6 +365,18 @@ const GeneratedQuizRenderer: React.FC<GeneratedQuizRendererProps> = ({
           </CardContent>
         </Card>
       </motion.div>
+    );
+  }
+
+  if (!currentQuestion) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-6 text-center text-gray-300">
+            No questions available.
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 

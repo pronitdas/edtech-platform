@@ -111,13 +111,15 @@ export const useAdaptiveQuiz = (
         setCurrentDifficulty((prev) => {
           const levels: AdaptiveConfig['initialDifficulty'][] = ['easy', 'medium', 'hard'];
           const currentIndex = levels.indexOf(prev);
-          return levels[Math.min(currentIndex + 1, levels.length - 1)];
+          const nextIndex = Math.min(Math.max(currentIndex, 0) + 1, levels.length - 1);
+          return levels[nextIndex] ?? prev;
         });
       } else if (accuracy <= 0.4 && currentDifficulty !== defaultConfig.minDifficulty) {
         setCurrentDifficulty((prev) => {
           const levels: AdaptiveConfig['initialDifficulty'][] = ['easy', 'medium', 'hard'];
           const currentIndex = levels.indexOf(prev);
-          return levels[Math.max(currentIndex - 1, 0)];
+          const nextIndex = Math.max(currentIndex - 1, 0);
+          return levels[nextIndex] ?? prev;
         });
       }
     },
@@ -204,6 +206,7 @@ export const AdaptiveQuiz: React.FC<AdaptiveQuizProps> = ({
   }, [currentQ, state.questionStartTime, state.isComplete, state.isPaused]);
 
   const handleTimeUp = useCallback(() => {
+    if (!currentQ) return;
     setState((prev) => ({
       ...prev,
       answers: {
@@ -215,6 +218,7 @@ export const AdaptiveQuiz: React.FC<AdaptiveQuizProps> = ({
 
   const handleAnswer = useCallback(
     (answer: string | string[]) => {
+      if (!currentQ) return;
       setState((prev) => ({
         ...prev,
         answers: {
@@ -256,6 +260,7 @@ export const AdaptiveQuiz: React.FC<AdaptiveQuizProps> = ({
   }, [state.currentQuestion]);
 
   const toggleFlag = useCallback(() => {
+    if (!currentQ) return;
     setState((prev) => {
       const newFlagged = new Set(prev.flagged);
       if (newFlagged.has(currentQ.id)) {
@@ -290,14 +295,13 @@ export const AdaptiveQuiz: React.FC<AdaptiveQuizProps> = ({
       totalTime += state.timeSpent[q.id] || 0;
 
       // Track topic performance
-      if (!topicPerformance[q.topic]) {
-        topicPerformance[q.topic] = { correct: 0, total: 0 };
-      }
-      topicPerformance[q.topic].total++;
-      if (isCorrect) topicPerformance[q.topic].correct++;
+      const topicStats = topicPerformance[q.topic] ?? { correct: 0, total: 0 };
+      topicStats.total++;
+      if (isCorrect) topicStats.correct++;
+      topicPerformance[q.topic] = topicStats;
 
       // Track difficulty distribution
-      difficultyDistribution[q.difficulty]++;
+      difficultyDistribution[q.difficulty] = (difficultyDistribution[q.difficulty] ?? 0) + 1;
     });
 
     const totalPoints = questions.reduce((sum, q) => sum + q.points, 0);
@@ -348,6 +352,16 @@ export const AdaptiveQuiz: React.FC<AdaptiveQuizProps> = ({
 
   // Progress indicator
   const progress = ((state.currentQuestion + 1) / questions.length) * 100;
+
+  if (!currentQ) {
+    return (
+      <div className="max-w-2xl mx-auto p-4">
+        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 text-center text-gray-300">
+          No questions available.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto p-4">
