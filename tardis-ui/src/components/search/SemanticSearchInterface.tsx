@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, BookOpen, Video, FileText, Brain, X, Clock, Star } from 'lucide-react';
-import { semanticSearchService } from '../../services/semantic-search-service';
+import { semanticSearchService } from '@/services/semantic-search-service';
 import { useUser } from '../../contexts/UserContext';
 import { useInteractionTracker } from '../../contexts/InteractionTrackerContext';
-import { motion, AnimatePresence } from 'framer-motion';
 
-interface SearchResult {
+// Local search result interface (mapped from service result)
+interface LocalSearchResult {
   id: string;
   title: string;
   description: string;
@@ -20,11 +21,10 @@ interface SearchResult {
     last_accessed?: string;
   };
 }
-
 interface SemanticSearchInterfaceProps {
   isOpen: boolean;
   onClose: () => void;
-  onResultSelect: (result: SearchResult) => void;
+  onResultSelect: (result: LocalSearchResult) => void;
   initialQuery?: string;
   contentFilter?: string[];
   showFilters?: boolean;
@@ -39,7 +39,7 @@ const SemanticSearchInterface: React.FC<SemanticSearchInterfaceProps> = ({
   showFilters = true
 }) => {
   const [query, setQuery] = useState(initialQuery);
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [results, setResults] = useState<LocalSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState<string[]>(contentFilter);
   const [difficultyFilter, setDifficultyFilter] = useState<string>('');
@@ -83,17 +83,42 @@ const SemanticSearchInterface: React.FC<SemanticSearchInterfaceProps> = ({
 
     setLoading(true);
     try {
-      const response = await semanticSearchService.performSearch({
+      const searchParams: {
+        query: string;
+        user_id: string;
+        limit: number;
+        include_related: boolean;
+        content_types?: string[];
+        difficulty_level?: string;
+      } = {
         query: searchQuery,
-        user_id: user?.id || 'anonymous',
-        content_types: selectedFilters.length > 0 ? selectedFilters : undefined,
-        difficulty_level: difficultyFilter || undefined,
+        user_id: String(user?.id) || 'anonymous',
         limit: 20,
         include_related: true
-      });
+      };
+      if (selectedFilters.length > 0) {
+        searchParams.content_types = selectedFilters;
+      }
+      if (difficultyFilter) {
+        searchParams.difficulty_level = difficultyFilter;
+      }
+      
+      const response = await semanticSearchService.performSearch(searchParams);
 
       if (response.success && response.data.results) {
-        setResults(response.data.results);
+        const mappedResults = response.data.results.map(r => ({
+          id: r.knowledge_id,
+          title: r.title,
+          description: r.summary,
+          content_type: r.content_type as 'video' | 'quiz' | 'notes' | 'interactive' | 'chapter' | 'mindmap' || 'notes',
+          relevance_score: r.relevance_score,
+          knowledge_id: r.knowledge_id,
+          metadata: {
+            difficulty: r.difficulty_level,
+            topic_tags: r.tags,
+          }
+        }));
+        setResults(mappedResults);
         saveRecentSearch(searchQuery);
         
         // Track search event
@@ -140,7 +165,7 @@ const SemanticSearchInterface: React.FC<SemanticSearchInterfaceProps> = ({
   };
 
   // Result selection handler
-  const handleResultSelect = (result: SearchResult) => {
+  const handleResultSelect = (result: LocalSearchResult) => {
     trackContentView(result.id, {
       knowledgeId: result.knowledge_id || 'unknown',
       moduleId: result.chapter_id || 'unknown',
