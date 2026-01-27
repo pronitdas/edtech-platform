@@ -51,6 +51,46 @@ export interface PersonalizedFeed {
   difficulty_matched: SearchResult[];
 }
 
+type ApiDataResponse<T> = {
+  data: T;
+}
+
+interface SearchResultsResponse {
+  results: SearchResult[];
+}
+
+interface SimilarTopicsResponse {
+  similar_topics: SearchResult[];
+}
+
+interface ProgressRecommendationsResponse {
+  recommendations: SearchResult[];
+}
+
+interface PrerequisitesResponse {
+  prerequisites: SearchResult[];
+}
+
+interface AdvancedContentResponse {
+  advanced_content: SearchResult[];
+}
+
+interface TrendingContentResponse {
+  trending: SearchResult[];
+}
+
+interface GapFillingResponse {
+  gap_filling_content: SearchResult[];
+}
+
+interface ReviewRecommendationsResponse {
+  review_recommendations: SearchResult[];
+}
+
+interface CollaborativeContentResponse {
+  collaborative_content: SearchResult[];
+}
+
 class SemanticSearchService {
   private baseUrl = '/api/v2';
 
@@ -59,11 +99,43 @@ class SemanticSearchService {
    */
   async searchContent(searchQuery: SearchQuery): Promise<SearchResult[]> {
     try {
-      const response = await apiClient.post(`${this.baseUrl}/search/semantic`, searchQuery);
+      const response = await apiClient.post<ApiDataResponse<SearchResultsResponse>>(`${this.baseUrl}/search/semantic`, searchQuery);
       return response.data.results;
     } catch (error) {
       console.error('Semantic search failed:', error);
       throw new Error('Failed to search content');
+    }
+  }
+
+  /**
+   * Perform search (wrapper for searchContent with response format)
+   */
+  async performSearch(params: {
+    query: string;
+    user_id?: string;
+    content_types?: string[];
+    difficulty_level?: string;
+    limit?: number;
+    include_related?: boolean;
+  }): Promise<{ success: boolean; data: { results: SearchResult[] } }> {
+    try {
+      const searchQuery: SearchQuery = {
+        query: params.query,
+      };
+      if (params.content_types) {
+        searchQuery.content_types = params.content_types;
+      }
+      if (params.difficulty_level) {
+        searchQuery.difficulty_filter = params.difficulty_level as 'beginner' | 'intermediate' | 'advanced';
+      }
+      if (params.limit !== undefined) {
+        searchQuery.limit = params.limit;
+      }
+      const results = await this.searchContent(searchQuery);
+      return { success: true, data: { results } };
+    } catch (error) {
+      console.error('Search failed:', error);
+      return { success: false, data: { results: [] } };
     }
   }
 
@@ -76,7 +148,7 @@ class SemanticSearchService {
     learningGoals: string[]
   ): Promise<LearningRecommendation> {
     try {
-      const response = await apiClient.post(`${this.baseUrl}/recommendations/learning`, {
+      const response = await apiClient.post<ApiDataResponse<LearningRecommendation>>(`${this.baseUrl}/recommendations/learning`, {
         user_interests: userInterests,
         current_knowledge_level: currentKnowledge,
         learning_goals: learningGoals
@@ -93,7 +165,7 @@ class SemanticSearchService {
    */
   async getPersonalizedFeed(): Promise<PersonalizedFeed> {
     try {
-      const response = await apiClient.get(`${this.baseUrl}/feed/personalized`);
+      const response = await apiClient.get<ApiDataResponse<PersonalizedFeed>>(`${this.baseUrl}/feed/personalized`);
       return response.data;
     } catch (error) {
       console.error('Failed to get personalized feed:', error);
@@ -106,7 +178,7 @@ class SemanticSearchService {
    */
   async findSimilarTopics(topic: string, limit: number = 10): Promise<SearchResult[]> {
     try {
-      const response = await apiClient.post(`${this.baseUrl}/search/similar-topics`, {
+      const response = await apiClient.post<ApiDataResponse<SimilarTopicsResponse>>(`${this.baseUrl}/search/similar-topics`, {
         topic,
         limit
       });
@@ -125,7 +197,7 @@ class SemanticSearchService {
     currentTopic?: string
   ): Promise<SearchResult[]> {
     try {
-      const response = await apiClient.post(`${this.baseUrl}/recommendations/progress-based`, {
+      const response = await apiClient.post<ApiDataResponse<ProgressRecommendationsResponse>>(`${this.baseUrl}/recommendations/progress-based`, {
         completed_topics: completedTopics,
         current_topic: currentTopic
       });
@@ -141,7 +213,7 @@ class SemanticSearchService {
    */
   async findPrerequisites(topic: string): Promise<SearchResult[]> {
     try {
-      const response = await apiClient.post(`${this.baseUrl}/search/prerequisites`, {
+      const response = await apiClient.post<ApiDataResponse<PrerequisitesResponse>>(`${this.baseUrl}/search/prerequisites`, {
         topic
       });
       return response.data.prerequisites;
@@ -156,7 +228,7 @@ class SemanticSearchService {
    */
   async findAdvancedContent(topic: string, currentLevel: string): Promise<SearchResult[]> {
     try {
-      const response = await apiClient.post(`${this.baseUrl}/search/advanced-content`, {
+      const response = await apiClient.post<ApiDataResponse<AdvancedContentResponse>>(`${this.baseUrl}/search/advanced-content`, {
         topic,
         current_level: currentLevel
       });
@@ -175,9 +247,8 @@ class SemanticSearchService {
     limit: number = 20
   ): Promise<SearchResult[]> {
     try {
-      const response = await apiClient.get(`${this.baseUrl}/content/trending`, {
-        params: { timeframe, limit }
-      });
+      const url = `${this.baseUrl}/content/trending?timeframe=${timeframe}&limit=${limit}`;
+      const response = await apiClient.get<ApiDataResponse<TrendingContentResponse>>(url);
       return response.data.trending;
     } catch (error) {
       console.error('Failed to get trending content:', error);
@@ -194,7 +265,7 @@ class SemanticSearchService {
     limit: number = 20
   ): Promise<SearchResult[]> {
     try {
-      const response = await apiClient.post(`${this.baseUrl}/search/by-difficulty`, {
+      const response = await apiClient.post<ApiDataResponse<SearchResultsResponse>>(`${this.baseUrl}/search/by-difficulty`, {
         difficulty_level: difficulty,
         subjects,
         limit
@@ -214,7 +285,7 @@ class SemanticSearchService {
     strugglingAreas: string[]
   ): Promise<SearchResult[]> {
     try {
-      const response = await apiClient.post(`${this.baseUrl}/recommendations/gap-filling`, {
+      const response = await apiClient.post<ApiDataResponse<GapFillingResponse>>(`${this.baseUrl}/recommendations/gap-filling`, {
         current_topic: currentTopic,
         struggling_areas: strugglingAreas
       });
@@ -237,7 +308,7 @@ class SemanticSearchService {
     }
   ): Promise<SearchResult[]> {
     try {
-      const response = await apiClient.post(`${this.baseUrl}/search/natural-language`, {
+      const response = await apiClient.post<ApiDataResponse<SearchResultsResponse>>(`${this.baseUrl}/search/natural-language`, {
         query,
         context
       });
@@ -256,7 +327,7 @@ class SemanticSearchService {
     lastReviewDates: Record<string, string>
   ): Promise<SearchResult[]> {
     try {
-      const response = await apiClient.post(`${this.baseUrl}/recommendations/review`, {
+      const response = await apiClient.post<ApiDataResponse<ReviewRecommendationsResponse>>(`${this.baseUrl}/recommendations/review`, {
         completed_content: completedContent,
         last_review_dates: lastReviewDates
       });
@@ -275,7 +346,7 @@ class SemanticSearchService {
     skillLevel: string
   ): Promise<SearchResult[]> {
     try {
-      const response = await apiClient.post(`${this.baseUrl}/search/collaborative`, {
+      const response = await apiClient.post<ApiDataResponse<CollaborativeContentResponse>>(`${this.baseUrl}/search/collaborative`, {
         user_interests: userInterests,
         skill_level: skillLevel
       });
@@ -304,7 +375,16 @@ class SemanticSearchService {
     success_probability: number;
   }> {
     try {
-      const response = await apiClient.post(`${this.baseUrl}/recommendations/study-plan`, {
+      const response = await apiClient.post<ApiDataResponse<{
+        study_plan: {
+          week: number;
+          topics: string[];
+          estimated_hours: number;
+          milestones: string[];
+        }[];
+        total_duration: string;
+        success_probability: number;
+      }>>(`${this.baseUrl}/recommendations/study-plan`, {
         learning_goals: learningGoals,
         available_time: availableTime,
         target_completion_date: targetCompletionDate

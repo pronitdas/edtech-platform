@@ -72,13 +72,14 @@ export class AuthService {
     localStorage.setItem('auth_token', result.access_token)
     
     // Transform v2 response to match expected User interface
+    const userName = registerPayload.display_name || 'User';
     return {
       id: result.user_id,
       email: result.email,
-      name: registerPayload.display_name,
+      name: userName,
       created_at: new Date().toISOString(),
-      role: 'student', // Default role, will be updated from profile
-      onboarding_completed: true // V2 auth endpoints handle onboarding automatically
+      role: 'student' as const,
+      onboarding_completed: true
     }
   }
 

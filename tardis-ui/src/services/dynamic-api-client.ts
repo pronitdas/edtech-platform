@@ -312,11 +312,18 @@ export class DynamicApiClient {
     for (const [path, methods] of Object.entries(this.spec.paths)) {
       for (const [method, definition] of Object.entries(methods)) {
         const methodName = this.generateMethodName(definition, method, path);
-        endpoints.push({
+        const endpoint: { name: string; description?: string; tags?: string[] } = {
           name: methodName,
-          description: definition.summary || definition.description,
-          tags: definition.tags
-        });
+        };
+        if (definition.summary) {
+          endpoint.description = definition.summary;
+        } else if (definition.description) {
+          endpoint.description = definition.description;
+        }
+        if (definition.tags) {
+          endpoint.tags = definition.tags;
+        }
+        endpoints.push(endpoint);
       }
     }
 
