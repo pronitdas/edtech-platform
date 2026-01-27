@@ -30,6 +30,14 @@ interface ContentDetails {
   metadata: any;
 }
 
+type ApiDataResponse<T> = {
+  data: T;
+};
+
+interface MyGeneratedContentResponse {
+  generated_content: GeneratedContent[];
+}
+
 const ContentManagementInterface: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'create' | 'manage' | 'analytics' | 'sharing'>('create');
   const [myContent, setMyContent] = useState<GeneratedContent[]>([]);
@@ -48,7 +56,7 @@ const ContentManagementInterface: React.FC = () => {
   const loadMyContent = async () => {
     setLoading(true);
     try {
-      const response = await apiClient.get('/api/v2/topic-generation/my-generated-content');
+      const response = await apiClient.get<ApiDataResponse<MyGeneratedContentResponse>>('/api/v2/topic-generation/my-generated-content');
       setMyContent(response.data.generated_content);
     } catch (err: any) {
       setError('Failed to load content');
@@ -60,7 +68,7 @@ const ContentManagementInterface: React.FC = () => {
   const loadContentDetails = async (knowledgeId: string) => {
     setLoading(true);
     try {
-      const response = await apiClient.get(`/api/v2/topic-generation/content/${knowledgeId}`);
+      const response = await apiClient.get<ApiDataResponse<ContentDetails>>(`/api/v2/topic-generation/content/${knowledgeId}`);
       setSelectedContent(response.data);
     } catch (err: any) {
       setError('Failed to load content details');

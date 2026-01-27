@@ -83,6 +83,22 @@ interface TutorContext {
   knowledge_gaps?: string[];
 }
 
+type ApiDataResponse<T> = {
+  data: T;
+};
+
+interface LearningContextResponse {
+  progress?: TutorContext['progress_data'];
+  learning_style?: TutorContext['learning_style'];
+  knowledge_gaps?: string[];
+}
+
+interface TutorChatResponse {
+  response: string;
+  content_reference?: TutorMessage['content_reference'];
+  assistance_type?: TutorMessage['assistance_type'];
+}
+
 interface GeneratedContentTutorProps {
   content: GeneratedContent;
   currentSection?: string;
@@ -158,13 +174,14 @@ const GeneratedContentTutor: React.FC<GeneratedContentTutorProps> = ({
 
   const loadLearningContext = async () => {
     try {
-      const response = await apiClient.get(`/api/v2/analytics/learning-context/${content.knowledge_id}?user_id=${user?.id}`);
+      const response = await apiClient.get<ApiDataResponse<LearningContextResponse>>(`/api/v2/analytics/learning-context/${content.knowledge_id}?user_id=${user?.id}`);
       if (response.data) {
+        const { progress, learning_style, knowledge_gaps } = response.data;
         setTutorContext(prev => ({
           ...prev,
-          progress_data: response.data.progress,
-          learning_style: response.data.learning_style,
-          knowledge_gaps: response.data.knowledge_gaps
+          ...(progress ? { progress_data: progress } : {}),
+          ...(learning_style ? { learning_style } : {}),
+          ...(knowledge_gaps ? { knowledge_gaps } : {})
         }));
       }
     } catch (error) {
@@ -248,7 +265,7 @@ const GeneratedContentTutor: React.FC<GeneratedContentTutorProps> = ({
       // Prepare context for AI tutor
       const tutorPrompt = buildTutorPrompt(currentMessage);
       
-      const response = await apiClient.post('/api/v2/ai-tutor/chat', {
+      const response = await apiClient.post<ApiDataResponse<TutorChatResponse>>('/api/v2/ai-tutor/chat', {
         user_id: user?.id,
         knowledge_id: content.knowledge_id,
         message: currentMessage,
@@ -267,7 +284,7 @@ const GeneratedContentTutor: React.FC<GeneratedContentTutorProps> = ({
           role: 'assistant',
           content: response.data.response,
           timestamp: Date.now(),
-          content_reference: response.data.content_reference,
+          ...(response.data.content_reference ? { content_reference: response.data.content_reference } : {}),
           assistance_type: response.data.assistance_type || 'explanation'
         };
 

@@ -29,6 +29,10 @@ interface GeneratedContentSummary {
   chapters_count: number;
 }
 
+type ApiDataResponse<T> = {
+  data: T;
+};
+
 interface TopicContentGeneratorProps {
   initialTopic?: string;
   onContentGenerated?: (contentId: string) => void;
@@ -147,7 +151,7 @@ const TopicContentGenerator: React.FC<TopicContentGeneratorProps> = ({
         requestData = formDataWithFiles;
       }
 
-      const response = await apiClient.post('/api/v2/topic-generation/generate', requestData);
+      const response = await apiClient.post<ApiDataResponse<GeneratedContentSummary>>('/api/v2/topic-generation/generate', requestData);
       const contentSummary: GeneratedContentSummary = response.data;
       
       setGeneratedContent(contentSummary);
@@ -163,7 +167,7 @@ const TopicContentGenerator: React.FC<TopicContentGeneratorProps> = ({
 
   const pollGenerationStatus = async (knowledgeId: string) => {
     try {
-      const response = await apiClient.get(`/api/v2/topic-generation/generation-status/${knowledgeId}`);
+      const response = await apiClient.get<ApiDataResponse<GenerationStatus>>(`/api/v2/topic-generation/generation-status/${knowledgeId}`);
       const status: GenerationStatus = response.data;
       
       setGenerationStatus(status);

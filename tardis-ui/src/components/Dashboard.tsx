@@ -37,6 +37,10 @@ interface PracticeCard {
   topicIds: string[]
 }
 
+type ApiDataResponse<T> = {
+  data: T
+}
+
 interface DashboardProps {
   userId: string
   courseId?: string
@@ -113,7 +117,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         // Fetch generated content
         try {
-          const generatedResponse = await apiClient.get('/api/v2/topic-generation/my-generated-content')
+          const generatedResponse = await apiClient.get<ApiDataResponse<{ generated_content: any[] }>>('/api/v2/topic-generation/my-generated-content')
           if (generatedResponse.data?.generated_content) {
             setGeneratedContent(generatedResponse.data.generated_content)
           }

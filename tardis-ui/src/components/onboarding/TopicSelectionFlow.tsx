@@ -27,6 +27,16 @@ interface RelatedContent {
   relevance_query: string;
 }
 
+type ApiDataResponse<T> = {
+  data: T;
+};
+
+interface TopicSuggestionsResponse {
+  suggested_topics: TopicSuggestion[];
+  learning_pathways: LearningPathway[];
+  related_existing_content: RelatedContent[];
+}
+
 interface TopicSelectionFlowProps {
   userType: 'teacher' | 'student';
   onComplete: (selectedTopics: string[]) => void;
@@ -131,7 +141,7 @@ const TopicSelectionFlow: React.FC<TopicSelectionFlowProps> = ({
     setError(null);
     
     try {
-      const response = await apiClient.post('/api/v2/topic-generation/suggest-topics', {
+      const response = await apiClient.post<ApiDataResponse<TopicSuggestionsResponse>>('/api/v2/topic-generation/suggest-topics', {
         user_interests: interests,
         current_knowledge_level: knowledgeLevels,
         learning_goals: learningGoals,
