@@ -11,7 +11,7 @@ async function main() {
   console.log('🚀 Starting API Integration Tests')
   console.log('Backend URL: http://localhost:8000')
   console.log('Time:', new Date().toISOString())
-  console.log('=' * 60)
+  console.log('='.repeat(60))
 
   try {
     const results = await runApiIntegrationTests()

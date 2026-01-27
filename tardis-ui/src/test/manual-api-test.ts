@@ -188,20 +188,20 @@ export async function runCompleteTestSuite() {
       knowledgeId = uploadResult.knowledge_id
       console.log(`📝 Using knowledge ID: ${knowledgeId}`)
 
-      await testGetKnowledgeFiles(knowledgeId)
-      await testStartProcessing(knowledgeId)
+      await testGetKnowledgeFiles(knowledgeId!)
+      await testStartProcessing(knowledgeId!)
       
       // Wait for processing to start
       console.log('⏳ Waiting 3 seconds for processing to begin...')
       await new Promise(resolve => setTimeout(resolve, 3000))
       
-      await testProcessingStatus(knowledgeId)
+      await testProcessingStatus(knowledgeId!)
       
       // Try content generation and analytics
       try {
-        await testGenerateContent(knowledgeId)
-        await testGetChapterData(knowledgeId)
-        await testContentAnalytics(knowledgeId)
+        await testGenerateContent(knowledgeId!)
+        await testGetChapterData(knowledgeId!)
+        await testContentAnalytics(knowledgeId!)
       } catch (error) {
         console.log('⚠️  Content operations may require processing to complete first')
       }
@@ -209,8 +209,8 @@ export async function runCompleteTestSuite() {
       // Phase 3: Knowledge graph
       console.log('\n🕸️ Phase 3: Knowledge Graph Operations')
       try {
-        await testSyncKnowledgeGraph(knowledgeId)
-        await testGetKnowledgeGraph(knowledgeId)
+        await testSyncKnowledgeGraph(knowledgeId!)
+        await testGetKnowledgeGraph(knowledgeId!)
       } catch (error) {
         console.log('⚠️  Knowledge graph operations may require processing completion')
       }

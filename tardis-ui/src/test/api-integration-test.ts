@@ -19,6 +19,10 @@ export class ApiIntegrationTester {
   private client: DynamicApiClient | null = null
   private results: TestResult[] = []
 
+  private isNumber(value: unknown): value is number {
+    return typeof value === 'number' && Number.isFinite(value)
+  }
+
   async initialize(): Promise<void> {
     console.log('🚀 Initializing API Integration Tests...')
     try {
@@ -31,7 +35,7 @@ export class ApiIntegrationTester {
     }
   }
 
-  private async testEndpoint(
+  public async testEndpoint(
     name: string,
     method: string,
     testFn: () => Promise<any>
@@ -196,7 +200,7 @@ export class ApiIntegrationTester {
   // Run full test suite
   async runFullTestSuite(): Promise<TestResult[]> {
     console.log('🧪 Starting Full API Integration Test Suite')
-    console.log('=' * 50)
+    console.log('='.repeat(50))
 
     // Clear previous results
     this.results = []
@@ -214,30 +218,38 @@ export class ApiIntegrationTester {
       // Phase 2: Knowledge management workflow
       console.log('\n📚 Phase 2: Knowledge Management Workflow')
       const uploadResult = await this.testUploadKnowledgeFiles()
-      
-      if (uploadResult.success && uploadResult.data?.knowledge_id) {
-        knowledgeId = uploadResult.data.knowledge_id
-        console.log(`📝 Using knowledge ID: ${knowledgeId} for subsequent tests`)
 
-        await this.testGetKnowledgeFiles(knowledgeId)
-        await this.testProcessKnowledge(knowledgeId)
-        
-        // Wait a bit for processing to start
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        
-        await this.testProcessingStatus(knowledgeId)
-        await this.testGenerateContent(knowledgeId)
-        await this.testGetChapterData(knowledgeId)
+      if (uploadResult.success) {
+        const uploadedKnowledgeId = this.isNumber(uploadResult.data?.knowledge_id)
+          ? uploadResult.data.knowledge_id
+          : null
 
-        // Phase 3: Knowledge graph operations
-        console.log('\n🕸️ Phase 3: Knowledge Graph Operations')
-        await this.testSyncKnowledgeGraph(knowledgeId)
-        await this.testGetKnowledgeGraph(knowledgeId)
+        if (uploadedKnowledgeId !== null) {
+          knowledgeId = uploadedKnowledgeId
+          console.log(`📝 Using knowledge ID: ${knowledgeId} for subsequent tests`)
 
-        // Phase 4: Analytics and metrics
-        console.log('\n📊 Phase 4: Analytics and Metrics')
-        await this.testContentAnalytics(knowledgeId)
-        await this.testEngagementMetrics(knowledgeId)
+          await this.testGetKnowledgeFiles(knowledgeId)
+          await this.testProcessKnowledge(knowledgeId)
+
+          // Wait a bit for processing to start
+          await new Promise(resolve => setTimeout(resolve, 2000))
+
+          await this.testProcessingStatus(knowledgeId)
+          await this.testGenerateContent(knowledgeId)
+          await this.testGetChapterData(knowledgeId)
+
+          // Phase 3: Knowledge graph operations
+          console.log('\n🕸️ Phase 3: Knowledge Graph Operations')
+          await this.testSyncKnowledgeGraph(knowledgeId)
+          await this.testGetKnowledgeGraph(knowledgeId)
+
+          // Phase 4: Analytics and metrics
+          console.log('\n📊 Phase 4: Analytics and Metrics')
+          await this.testContentAnalytics(knowledgeId)
+          await this.testEngagementMetrics(knowledgeId)
+        } else {
+          console.log('⚠️  Skipping knowledge-dependent tests due to upload failure')
+        }
       } else {
         console.log('⚠️  Skipping knowledge-dependent tests due to upload failure')
       }
@@ -254,16 +266,18 @@ export class ApiIntegrationTester {
   // Print test summary
   private printTestSummary(): void {
     console.log('\n📊 Test Results Summary')
-    console.log('=' * 50)
+    console.log('='.repeat(50))
 
+    const totalResults = this.results.length
     const passed = this.results.filter(r => r.success).length
     const failed = this.results.filter(r => !r.success).length
     const totalTime = this.results.reduce((sum, r) => sum + r.duration, 0)
+    const successRate = totalResults > 0 ? (passed / totalResults) * 100 : 0
 
     console.log(`✅ Passed: ${passed}`)
     console.log(`❌ Failed: ${failed}`)
     console.log(`⏱️  Total Time: ${totalTime}ms`)
-    console.log(`📈 Success Rate: ${((passed / this.results.length) * 100).toFixed(1)}%`)
+    console.log(`📈 Success Rate: ${successRate.toFixed(1)}%`)
 
     if (failed > 0) {
       console.log('\n❌ Failed Tests:')

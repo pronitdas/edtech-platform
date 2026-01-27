@@ -29,7 +29,7 @@ window.runApiTests = async () => {
     console.log('\n🎉 Test Suite Complete!')
     console.log('Results available in window.testResults')
     
-    return results
+    void results
   } catch (error) {
     console.error('💥 Test suite failed:', error)
     throw error
