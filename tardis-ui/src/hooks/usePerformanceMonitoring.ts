@@ -54,7 +54,9 @@ class PerformanceMonitor {
 
   // Initialize performance monitoring
   init(onMetric?: (name: string, value: number) => void): void {
-    this.onMetric = onMetric;
+    if (onMetric) {
+      this.onMetric = onMetric;
+    }
 
     if (this.config.enableWebVitals) {
       this.initWebVitals();
@@ -147,7 +149,8 @@ class PerformanceMonitor {
         const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
         if (navigation) {
           this.metrics.ttfb = navigation.responseStart - navigation.requestStart;
-          this.metrics.pageLoadTime = navigation.loadEventEnd - navigation.navigationStart;
+          const pageLoadTime = navigation.loadEventEnd - navigation.requestStart;
+          this.metrics.pageLoadTime = pageLoadTime;
 
           this.reportMetric('TTFB', this.metrics.ttfb);
           this.reportMetric('PageLoadTime', this.metrics.pageLoadTime);
@@ -238,12 +241,12 @@ class PerformanceMonitor {
     };
 
     return (
-      (this.metrics.fcp === null || this.metrics.fcp <= good.fcp) &&
-      (this.metrics.lcp === null || this.metrics.lcp <= good.lcp) &&
-      (this.metrics.fid === null || this.metrics.fid <= good.fid) &&
-      (this.metrics.cls === null || (this.metrics.cls || 0) <= good.cls) &&
-      (this.metrics.inp === null || this.metrics.inp <= good.inp) &&
-      (this.metrics.ttfb === null || this.metrics.ttfb <= good.ttfb)
+      (this.metrics.fcp == null || this.metrics.fcp <= good.fcp) &&
+      (this.metrics.lcp == null || this.metrics.lcp <= good.lcp) &&
+      (this.metrics.fid == null || this.metrics.fid <= good.fid) &&
+      (this.metrics.cls == null || (this.metrics.cls || 0) <= good.cls) &&
+      (this.metrics.inp == null || this.metrics.inp <= good.inp) &&
+      (this.metrics.ttfb == null || this.metrics.ttfb <= good.ttfb)
     );
   }
 
@@ -263,7 +266,7 @@ class PerformanceMonitor {
 
     for (const [metric, { good, poor }] of Object.entries(thresholds)) {
       const value = this.metrics[metric as keyof PerformanceMetrics];
-      if (value !== null) {
+      if (value != null && typeof value === 'number') {
         if (value <= good) {
           totalScore += 100;
         } else if (value >= poor) {
@@ -332,7 +335,7 @@ export const useBundleAnalysis = () => {
     libraries: { name: string; size: number }[];
   } | null>(null);
 
-  const analyzeBundle = useCallback(() => {
+  const analyzeBundle = useCallback((): void => {
     if (typeof window === 'undefined') return;
 
     // Get main chunk info from script tags
@@ -342,7 +345,7 @@ export const useBundleAnalysis = () => {
     scripts.forEach((script) => {
       const src = (script as HTMLScriptElement).src;
       const match = src.match(/chunk-([a-zA-Z0-9-_]+)\.js/);
-      if (match) {
+      if (match && match[1]) {
         chunks.push({
           name: match[1],
           size: 0, // Size would require fetch to get Content-Length
@@ -352,16 +355,16 @@ export const useBundleAnalysis = () => {
 
     // Estimate library sizes from package.json (static analysis)
     const knownLibraries = [
-      { name: 'react', estimatedSize: 13000 },
-      { name: 'react-dom', estimatedSize: 14000 },
-      { name: 'framer-motion', estimatedSize: 75000 },
-      { name: 'recharts', estimatedSize: 50000 },
-      { name: 'lucide-react', estimatedSize: 35000 },
-      { name: 'chart.js', estimatedSize: 200000 },
+      { name: 'react', size: 13000 },
+      { name: 'react-dom', size: 14000 },
+      { name: 'framer-motion', size: 75000 },
+      { name: 'recharts', size: 50000 },
+      { name: 'lucide-react', size: 35000 },
+      { name: 'chart.js', size: 200000 },
     ];
 
     setBundleStats({
-      totalSize: knownLibraries.reduce((sum, lib) => sum + lib.estimatedSize, 0),
+      totalSize: knownLibraries.reduce((sum, lib) => sum + lib.size, 0),
       chunks,
       libraries: knownLibraries,
     });
@@ -372,8 +375,10 @@ export const useBundleAnalysis = () => {
       analyzeBundle();
     } else {
       window.addEventListener('load', analyzeBundle);
-      return () => window.removeEventListener('load', analyzeBundle);
     }
+    return () => {
+      window.removeEventListener('load', analyzeBundle);
+    };
   }, [analyzeBundle]);
 
   return bundleStats;
