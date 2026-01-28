@@ -45,7 +45,7 @@ jobs:
         working-directory: ./media-uploader
 
       - name: Run Frontend tests
-        run: pnpm test
+        run: cd tardis-ui && pnpm test
         working-directory: ./tardis-ui
 
   deploy:
