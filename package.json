@@ -5,5 +5,8 @@
   "workspaces": [
     "tardis-ui",
     "e2e-tests"
-  ]
+  ],
+  "scripts": {
+    "build-storybook": "cd tardis-ui && pnpm run build-storybook"
+  }
 }
