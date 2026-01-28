@@ -18,35 +18,57 @@ TEST_POSTGRES_URL = os.getenv('DATABASE_URL')
 TEST_NEO4J_URL = os.getenv('NEO4J_URI')
 TEST_NEO4J_AUTH = (os.getenv('NEO4J_USER'), os.getenv('NEO4J_PASSWORD'))
 
+
+def pytest_configure(config):
+    """Configure pytest markers and check for database availability."""
+    # Register custom markers
+    config.addinivalue_line(
+        "markers", "requires_postgres: test requires PostgreSQL database"
+    )
+    config.addinivalue_line(
+        "markers", "requires_neo4j: test requires Neo4j database"
+    )
+    config.addinivalue_line(
+        "markers", "integration: integration test requiring external services"
+    )
+
+
 @pytest.fixture(scope="session")
 def postgres_engine():
-    """Create test database and return engine."""
+    """Create test database and return engine - skip if DATABASE_URL not set."""
+    if not TEST_POSTGRES_URL:
+        pytest.skip("DATABASE_URL not set - skipping PostgreSQL-dependent tests")
+
     # Create test database engine
     engine = create_engine(TEST_POSTGRES_URL)
-    
+
     # Create all tables
     Base.metadata.drop_all(engine)  # Clean slate
     Base.metadata.create_all(engine)
-    
+
     yield engine
-    
+
     # Cleanup after all tests
     Base.metadata.drop_all(engine)
 
+
 @pytest.fixture(scope="session")
 def neo4j_driver():
-    """Create Neo4j test database connection."""
+    """Create Neo4j test database connection - skip if NEO4J_URI not set."""
+    if not TEST_NEO4J_URL:
+        pytest.skip("NEO4J_URI not set - skipping Neo4j-dependent tests")
+
     driver = GraphDatabase.driver(
         TEST_NEO4J_URL,
         auth=TEST_NEO4J_AUTH
     )
-    
+
     # Verify connection
     with driver.session() as session:
         session.run("MATCH (n) DETACH DELETE n")  # Clean slate
-    
+
     yield driver
-    
+
     # Cleanup after all tests
     with driver.session() as session:
         session.run("MATCH (n) DETACH DELETE n")
@@ -55,6 +77,9 @@ def neo4j_driver():
 @pytest.fixture
 def db_session(postgres_engine):
     """Create a new database session for a test."""
+    if not TEST_POSTGRES_URL:
+        pytest.skip("DATABASE_URL not set - skipping PostgreSQL-dependent tests")
+
     SessionLocal = sessionmaker(bind=postgres_engine)
     session = SessionLocal()
     try:
@@ -66,6 +91,9 @@ def db_session(postgres_engine):
 @pytest.fixture
 def graph_db(neo4j_driver):
     """Create a Neo4j graph service instance for testing."""
+    if not TEST_NEO4J_URL:
+        pytest.skip("NEO4J_URI not set - skipping Neo4j-dependent tests")
+
     graph = Neo4jGraphService(driver=neo4j_driver)
     try:
         yield graph
@@ -87,13 +115,13 @@ def seeded_neo4j(graph_db):
     """Fixture that provides a Neo4j connection with seeded test data."""
     # Create schema constraints first
     graph_db.create_schema_constraints()
-    
+
     # Create test nodes and get their IDs
     node_ids = create_test_nodes(graph_db)
-    
+
     # Create relationships between nodes
     create_test_relationships(graph_db, node_ids)
-    
+
     yield graph_db
     # Cleanup is handled by graph_db fixture
 

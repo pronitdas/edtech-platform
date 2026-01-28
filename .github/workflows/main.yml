@@ -12,6 +12,34 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: edtech_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      neo4j:
+        image: neo4j:5
+        env:
+          NEO4J_AUTH: neo4j/neo4jtest
+        ports:
+          - 7474:7474
+          - 7687:7687
+        options: >-
+          --health-cmd wget --no-verbose --tries=1 --spider http://localhost:7474
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,11 +63,36 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Backend dependencies
-        run: cd media-uploader && pip install -r requirements.txt
+      - name: Set up Python venv and install Backend dependencies
+        run: |
+          cd media-uploader
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov requests colorama
+
+      - name: Run Backend migrations
+        run: |
+          cd media-uploader
+          source venv/bin/activate
+          export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/edtech_test
+          export NEO4J_URI=bolt://localhost:7687
+          export NEO4J_USER=neo4j
+          export NEO4J_PASSWORD=neo4jtest
+          export JWT_SECRET_KEY=test-secret-key
+          python -m alembic -c alembic.ini upgrade head
 
       - name: Run Backend tests
-        run: cd media-uploader && JWT_SECRET_KEY=test-secret-key pytest
+        run: |
+          cd media-uploader
+          source venv/bin/activate
+          export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/edtech_test
+          export NEO4J_URI=bolt://localhost:7687
+          export NEO4J_USER=neo4j
+          export NEO4J_PASSWORD=neo4jtest
+          export JWT_SECRET_KEY=test-secret-key
+          pytest tests/test_v2_api.py -v
 
       - name: Run Frontend tests
         run: cd tardis-ui && pnpm test
