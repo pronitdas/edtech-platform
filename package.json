@@ -1,1 +1,9 @@
-{}
+{
+  "name": "tardis-edtech-platform",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "tardis-ui",
+    "e2e-tests"
+  ]
+}

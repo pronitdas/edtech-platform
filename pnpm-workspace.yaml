@@ -1,0 +1,3 @@
+packages:
+  - 'tardis-ui'
+  - 'e2e-tests'
