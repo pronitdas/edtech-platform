@@ -25,13 +25,15 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: '18'
+        cache: 'pnpm'
 
-    - name: Install Python dependencies
-      run: pip install -r requirements.txt
-      working-directory: ./media-uploader
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
 
     - name: Install Frontend dependencies
-      run: pnpm install
+      run: pnpm install --frozen-lockfile
       working-directory: ./tardis-ui
 
     - name: Run Backend tests
