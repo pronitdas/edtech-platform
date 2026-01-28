@@ -42,6 +42,8 @@ const config: StorybookConfig = {
   core: {
     builder: '@storybook/builder-vite',
     disableTelemetry: true,
+    // Required for GitHub Pages deployment under /edtech-platform subpath
+    base: './',
   },
   staticDirs: [
     // Additional static directories to serve
