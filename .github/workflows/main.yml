@@ -21,16 +21,15 @@ jobs:
       with:
         python-version: '3.9'
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-        cache: 'pnpm'
-
     - name: Install pnpm
       uses: pnpm/action-setup@v4
       with:
         version: 9
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
 
     - name: Install Frontend dependencies
       run: pnpm install --frozen-lockfile
