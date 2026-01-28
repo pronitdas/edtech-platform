@@ -34,19 +34,15 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        working-directory: .
 
       - name: Install Backend dependencies
-        run: pip install -r requirements.txt
-        working-directory: ./media-uploader
+        run: cd media-uploader && pip install -r requirements.txt
 
       - name: Run Backend tests
-        run: JWT_SECRET_KEY=test-secret-key pytest
-        working-directory: ./media-uploader
+        run: cd media-uploader && JWT_SECRET_KEY=test-secret-key pytest
 
       - name: Run Frontend tests
         run: cd tardis-ui && pnpm test
-        working-directory: ./tardis-ui
 
   deploy:
     needs: build-and-test
