@@ -22,8 +22,8 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  group: "pages-${{ github.ref }}"
+  cancel-in-progress: true
 
 jobs:
   deploy-storybook:
@@ -53,6 +53,7 @@ jobs:
         with:
           name: github-pages
           path: tardis-ui/storybook-static
+          if-no-files-found: error
 
       - name: Deploy to GitHub Pages
         id: deployment
