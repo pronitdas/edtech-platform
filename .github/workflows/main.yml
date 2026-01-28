@@ -13,35 +13,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: 9
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
 
-    - name: Install Frontend dependencies
-      run: pnpm install --frozen-lockfile
-      working-directory: ./tardis-ui
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: .
 
-    - name: Run Backend tests
-      run: pytest
-      working-directory: ./media-uploader
+      - name: Install Backend dependencies
+        run: pip install -r media-uploader/requirements.txt
+        working-directory: ./media-uploader
 
-    - name: Run Frontend tests
-      run: pnpm test
-      working-directory: ./tardis-ui
+      - name: Run Backend tests
+        run: pytest
+        working-directory: ./media-uploader
+
+      - name: Run Frontend tests
+        run: pnpm test
+        working-directory: ./tardis-ui
 
   deploy:
     needs: build-and-test
@@ -49,9 +54,8 @@ jobs:
     environment: production
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Deploy to production
-      run: echo "Deploying to production..."
-      # Add your deployment steps here (e.g., Docker build and push, SSH to server, etc.)
+      - name: Deploy to production
+        run: echo "Deploying to production..."
