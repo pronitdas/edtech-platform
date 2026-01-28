@@ -7,8 +7,14 @@ on:
       - 'tardis-ui/src/**'
       - 'tardis-ui/.storybook/**'
       - 'tardis-ui/package.json'
+      - '.github/workflows/storybook-pages.yml'
   pull_request:
     branches: [main]
+    paths:
+      - 'tardis-ui/src/**'
+      - 'tardis-ui/.storybook/**'
+      - 'tardis-ui/package.json'
+      - '.github/workflows/storybook-pages.yml'
 
 permissions:
   contents: read
