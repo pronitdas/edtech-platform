@@ -44,11 +44,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        working-directory: .
 
       - name: Build Storybook
-        run: pnpm build-storybook
-        working-directory: ./tardis-ui
+        run: pnpm --filter tardis-ui run build-storybook
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4

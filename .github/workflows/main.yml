@@ -37,7 +37,7 @@ jobs:
         working-directory: .
 
       - name: Install Backend dependencies
-        run: pip install -r media-uploader/requirements.txt
+        run: pip install -r requirements.txt
         working-directory: ./media-uploader
 
       - name: Run Backend tests
