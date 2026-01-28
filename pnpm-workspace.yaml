@@ -1,3 +1,14 @@
 packages:
-  - 'tardis-ui'
-  - 'e2e-tests'
+  - tardis-ui
+  - e2e-tests
+onlyBuiltDependencies:
+  - '@swc/core@1.15.11'
+  - core-js@3.48.0
+  - deno@2.5.7
+  - esbuild@0.21.5
+  - esbuild@0.25.12
+  - esbuild@0.27.2
+  - puppeteer@22.15.0
+  - puppeteer@24.36.1
+  - tesseract.js@6.0.1
+  - unrs-resolver@1.11.1
