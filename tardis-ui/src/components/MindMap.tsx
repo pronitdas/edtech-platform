@@ -15,6 +15,7 @@ import {
   type Connection,
 } from '@xyflow/react'
 import Dagre from '@dagrejs/dagre'
+import { Graph } from '@dagrejs/graphlib'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Loader2, Plus, Copy, Trash2, Edit } from 'lucide-react'
@@ -71,7 +72,7 @@ const getLayoutedElements = (
   edges: ReactFlowEdge[],
   direction: string = 'TB'
 ) => {
-  const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}))
+  const g = new Graph().setDefaultEdgeLabel(() => ({}))
   g.setGraph({
     rankdir: direction,
     ranksep: 80,

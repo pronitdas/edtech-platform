@@ -2,10 +2,18 @@ import React, { useState } from 'react'
 import type { Meta, StoryFn } from '@storybook/react'
 import GraphCanvas from './GraphCanvas'
 import { Point, Line, Shape, Text, Offset } from '@/types/geometry'
+import { InteractionTrackerProvider } from '@/stories/InteractionTrackerContextMock'
 
 export default {
   title: 'Components/GraphCanvas',
   component: GraphCanvas,
+  decorators: [
+    (Story: any) => (
+      <InteractionTrackerProvider>
+        <Story />
+      </InteractionTrackerProvider>
+    ),
+  ],
 } as Meta
 
 const Template: StoryFn<any> = args => {

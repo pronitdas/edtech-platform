@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import GraphCanvas from '../../../../components/GraphCanvas'
+import { InteractionTrackerProvider } from '../../../../stories/InteractionTrackerContextMock'
 
 const meta = {
   title: 'Slope/GraphCanvas',
@@ -11,7 +12,9 @@ const meta = {
   decorators: [
     Story => (
       <div style={{ width: '600px', height: '400px', background: '#1a1a1a' }}>
-        <Story />
+        <InteractionTrackerProvider>
+          <Story />
+        </InteractionTrackerProvider>
       </div>
     ),
   ],
