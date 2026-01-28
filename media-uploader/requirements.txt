@@ -19,6 +19,7 @@ aiofiles
 aiohttp
 alembic
 wikipedia
+cryptography
 
 # OCR Dependencies (Docling - IBM's Document Understanding)
 # Enable via USE_DOCLING=true environment variable
