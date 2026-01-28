@@ -41,7 +41,7 @@ jobs:
         working-directory: ./media-uploader
 
       - name: Run Backend tests
-        run: pytest
+        run: JWT_SECRET_KEY=test-secret-key pytest
         working-directory: ./media-uploader
 
       - name: Run Frontend tests

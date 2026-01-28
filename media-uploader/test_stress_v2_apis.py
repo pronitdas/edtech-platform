@@ -61,7 +61,8 @@ class StressTestRunner:
         if failed:
             self.log(f"   ❌ Failures: {len(failed)}")
             for failure in failed[:3]:  # Show first 3 failures
-                self.log(f"      {failure.get('error', f'Status: {failure.get('status')}')}") 
+                error_msg = failure.get('error', f"Status: {failure.get('status')}")
+                self.log(f"      {error_msg}") 
         
         return len(successful) / num_requests >= 0.9  # 90% success rate
 

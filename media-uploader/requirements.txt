@@ -38,3 +38,4 @@ pytest-asyncio==0.21.1
 pytest-cov==4.1.0
 httpx==0.25.0  # For async test client
 requests-mock==1.11.0
+colorama==0.4.6
